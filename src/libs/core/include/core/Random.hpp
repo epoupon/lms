@@ -73,6 +73,12 @@ namespace lms::core::random
         std::shuffle(std::begin(container), std::end(container), getRandGenerator());
     }
 
+    template<typename RandomEngine, typename Container>
+    void shuffleContainer(RandomEngine& randomEngine, Container& container)
+    {
+        std::shuffle(std::begin(container), std::end(container), randomEngine);
+    }
+
     template<typename Container>
     typename Container::const_iterator pickRandom(const Container& container)
     {

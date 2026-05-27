@@ -72,6 +72,7 @@ namespace lms::recommendation
 
         void computeDatasetStats();
         void computeReducedFeatures();
+        void computeDistanceThreshold();
 
         void getReducedVector(const SourceVector& sourceVector, ReducedVector& output) const;
         void projectToReduced(const SourceVector& sourceVectorCentered, ReducedVector& output) const;
@@ -98,6 +99,8 @@ namespace lms::recommendation
         std::unordered_map<db::ArtistId, std::vector<std::reference_wrapper<const ReducedVector>>> _artistVectors;
         TrackMetadataMap _trackMetadata;
 
-        TrackCandidateEvaluator _trackCandidateEvaluator;
+        float _distanceThreshold{}; // Dataset-adaptive rejection threshold: mean + k·σ of sampled 1-NN distances.
+        TrackCandidateEvaluator _similarityEvaluator;
+        TrackCandidateEvaluator _pathEvaluator;
     };
 } // namespace lms::recommendation

@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <random>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -32,6 +33,7 @@
 
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
+#include "core/Random.hpp"
 
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
@@ -51,6 +53,7 @@
 
 #include "track-selection-constraints/DuplicateTrackConstraint.hpp"
 #include "track-selection-constraints/InterpolationFitConstraint.hpp"
+#include "track-selection-constraints/MaxDistanceConstraint.hpp"
 #include "track-selection-constraints/SameArtistConstraint.hpp"
 #include "track-selection-constraints/SameReleaseConstraint.hpp"
 #include "track-selection-constraints/SmoothTransitionConstraint.hpp"
@@ -101,7 +104,6 @@ namespace lms::recommendation
         : _db{ db }
         , _ioContextRunner{ _ioContext, 1, "FeaturesEngine" }
     {
-        initializeConstraints();
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
@@ -128,18 +130,25 @@ namespace lms::recommendation
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
     void AudioSimilarityEngine<Provider, ReducedDimCount>::initializeConstraints()
     {
-        _trackCandidateEvaluator = {};
-
         constexpr float interpolationFitWeight{ 0.8F };
         constexpr float smoothTransitionWeight{ 0.2F };
         constexpr float sameReleaseWeight{ 0.5F };
         constexpr float sameArtistWeight{ 0.5F };
 
-        _trackCandidateEvaluator.addHardConstraint(std::make_unique<DuplicateTrackConstraint>());
-        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<InterpolationFitConstraint>(), interpolationFitWeight);
-        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SmoothTransitionConstraint>(), smoothTransitionWeight);
-        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SameReleaseConstraint>(_trackMetadata), sameReleaseWeight);
-        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SameArtistConstraint>(_trackMetadata), sameArtistWeight);
+        _similarityEvaluator = {};
+        _similarityEvaluator.addHardConstraint(std::make_unique<DuplicateTrackConstraint>());
+        _similarityEvaluator.addHardConstraint(std::make_unique<MaxDistanceConstraint>(_distanceThreshold));
+        _similarityEvaluator.addSoftConstraint(std::make_unique<InterpolationFitConstraint>(), interpolationFitWeight);
+        _similarityEvaluator.addSoftConstraint(std::make_unique<SmoothTransitionConstraint>(), smoothTransitionWeight);
+        _similarityEvaluator.addSoftConstraint(std::make_unique<SameReleaseConstraint>(_trackMetadata), sameReleaseWeight);
+        _similarityEvaluator.addSoftConstraint(std::make_unique<SameArtistConstraint>(_trackMetadata), sameArtistWeight);
+
+        _pathEvaluator = {};
+        _pathEvaluator.addHardConstraint(std::make_unique<DuplicateTrackConstraint>());
+        _pathEvaluator.addSoftConstraint(std::make_unique<InterpolationFitConstraint>(), interpolationFitWeight);
+        _pathEvaluator.addSoftConstraint(std::make_unique<SmoothTransitionConstraint>(), smoothTransitionWeight);
+        _pathEvaluator.addSoftConstraint(std::make_unique<SameReleaseConstraint>(_trackMetadata), sameReleaseWeight);
+        _pathEvaluator.addSoftConstraint(std::make_unique<SameArtistConstraint>(_trackMetadata), sameArtistWeight);
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
@@ -245,10 +254,10 @@ namespace lms::recommendation
                     .distanceToPrevious = distanceToPrevious,
                 };
 
-                if (_trackCandidateEvaluator.rejects(context))
+                if (_similarityEvaluator.rejects(context))
                     continue;
 
-                const float score{ _trackCandidateEvaluator.score(context) };
+                const float score{ _similarityEvaluator.score(context) };
                 if (score < bestScore)
                 {
                     bestScore = score;
@@ -312,10 +321,10 @@ namespace lms::recommendation
                     .distanceToPrevious = transitionDistance,
                 };
 
-                if (_trackCandidateEvaluator.rejects(context))
+                if (_pathEvaluator.rejects(context))
                     continue;
 
-                const float score{ _trackCandidateEvaluator.score(context) };
+                const float score{ _pathEvaluator.score(context) };
                 if (score < bestScore)
                 {
                     bestScore = score;
@@ -476,6 +485,8 @@ namespace lms::recommendation
 
         computeDatasetStats();
         computeReducedFeatures();
+        computeDistanceThreshold();
+        initializeConstraints();
         _isReady = true;
 
         LMS_LOG(RECOMMENDATION, INFO, "Loading complete!");
@@ -673,5 +684,54 @@ namespace lms::recommendation
             std::sort(metadata.artistIds.begin(), metadata.artistIds.end());
 
         LMS_LOG(RECOMMENDATION, INFO, "Computed reduced vectors: " << _trackVectors.size() << " tracks, " << _releaseVectors.size() << " releases, " << _artistVectors.size() << " artists");
+    }
+
+    template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
+    void AudioSimilarityEngine<Provider, ReducedDimCount>::computeDistanceThreshold()
+    {
+        LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "ComputeDistanceThreshold");
+
+        constexpr std::size_t maxSampleCount{ 1'000 };
+        constexpr float stdDevMultiplier{ 2.F };
+
+        const std::size_t sampleCount{ std::min(_trackVectors.size(), maxSampleCount) };
+
+        LMS_LOG(RECOMMENDATION, INFO, "Computing distance threshold using " << sampleCount << " samples...");
+
+        // Collect all vector pointers and shuffle for an unbiased random sample.
+        std::vector<const ReducedVector*> allVectors;
+        allVectors.reserve(_trackVectors.size());
+        for (const auto& [id, vec] : _trackVectors)
+            allVectors.push_back(vec);
+
+        std::minstd_rand randomEngine{ 42 };
+        core::random::shuffleContainer(randomEngine, allVectors);
+
+        math::StatsAccumulator<FloatType> stats;
+        for (std::size_t i{}; i < sampleCount; ++i)
+        {
+            const ReducedVector* queryVector{ allVectors[i] };
+            const math::NormalizedCosineDistance distFunc{ *queryVector };
+            FloatType minDist{ std::numeric_limits<FloatType>::max() };
+
+            for (const ReducedVector* candidateVector : allVectors)
+            {
+                if (candidateVector == queryVector)
+                    continue;
+
+                const FloatType d{ distFunc(*candidateVector) };
+                if (d < minDist)
+                    minDist = d;
+            }
+
+            stats.add(minDist);
+        }
+
+        if (stats.getCount() >= 2)
+            _distanceThreshold = stats.getMean() + stdDevMultiplier * stats.getSampleStdDev();
+        else
+            _distanceThreshold = std::numeric_limits<float>::max();
+
+        LMS_LOG(RECOMMENDATION, INFO, "Distance threshold =" << _distanceThreshold);
     }
 } // namespace lms::recommendation
