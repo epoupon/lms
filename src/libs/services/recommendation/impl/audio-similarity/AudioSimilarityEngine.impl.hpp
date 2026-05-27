@@ -732,6 +732,6 @@ namespace lms::recommendation
         else
             _distanceThreshold = std::numeric_limits<float>::max();
 
-        LMS_LOG(RECOMMENDATION, INFO, "Distance threshold =" << _distanceThreshold);
+        LMS_LOG(RECOMMENDATION, INFO, "Distance threshold = " << _distanceThreshold);
     }
 } // namespace lms::recommendation
