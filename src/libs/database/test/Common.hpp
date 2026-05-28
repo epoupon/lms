@@ -35,7 +35,6 @@
 #include "database/objects/ScanSettings.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
-#include "database/objects/TrackAudioFeatures.hpp"
 #include "database/objects/TrackBookmark.hpp"
 #include "database/objects/TrackList.hpp"
 #include "database/objects/User.hpp"

@@ -53,9 +53,8 @@ namespace lms::db
         enum class RecommendationEngineType
         {
             Clusters = 0,
-            AudioFeatures,
-            None,
-            AudioEmbeddings,
+            None = 2,
+            AudioEmbeddings = 3,
         };
 
         ScanSettings() = default;

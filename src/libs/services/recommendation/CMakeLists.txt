@@ -1,8 +1,6 @@
 
 add_library(lmsrecommendation STATIC
 	impl/clusters/ClustersEngine.cpp
-	impl/audio-similarity/features/AudioFeatureEngine.cpp
-	impl/audio-similarity/features/AudioFeatureProvider.cpp
 	impl/audio-similarity/musicnn/MusicNNEmbeddingEngine.cpp
 	impl/audio-similarity/musicnn/MusicNNEmbeddingProvider.cpp
 	impl/track-selection-constraints/SameArtistConstraint.cpp

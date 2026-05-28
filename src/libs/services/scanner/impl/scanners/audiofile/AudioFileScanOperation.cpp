@@ -41,7 +41,6 @@
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
-#include "database/objects/TrackAudioFeatures.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 #include "database/objects/TrackLyrics.hpp"
@@ -791,8 +790,6 @@ namespace lms::scanner
         track.modify()->setTrackMBID(_file->track.mbid);
         if (audioPropertiesChanged)
         {
-            if (auto trackFeatures{ db::TrackAudioFeatures::find(dbSession, track->getId()) })
-                trackFeatures.remove();
             if (auto musicnnEmbedding{ db::TrackMusicNNEmbeddings::find(dbSession, track->getId()) })
                 musicnnEmbedding.remove();
         }

@@ -113,7 +113,6 @@
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Cannot get track duration</message>
 <message id="Lms.Admin.ScannerController.bad-embedded-image">Unable to read the image at index {1}: {2}</message>
-<message id="Lms.Admin.ScannerController.cannot-extract-audio-features">Cannot extract audio features: {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-extract-musicnn-embeddings">Cannot extract MusicNN embeddings: {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">Cannot parse artist info file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Cannot parse audio file</message>
@@ -152,7 +151,6 @@
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Checking for removed files... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compacting database...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Computing stats... {1}%</message>
-<message id="Lms.Admin.ScannerController.step-extract-audio-features">Extracting audio features: {1} of {2} files ({3}%)</message>
 <message id="Lms.Admin.ScannerController.step-extract-musicnn-embeddings">Extracting MusicNN embeddings: {1} of {2} files ({3}%)</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optimizing database... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">Reconciliating artists: {1} entries...</message>

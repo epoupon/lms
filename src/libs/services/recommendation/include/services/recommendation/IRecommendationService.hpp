@@ -41,7 +41,6 @@ namespace lms::recommendation
     {
         None,
         Clusters,
-        AudioFeatures,
         AudioEmbeddings,
     };
 

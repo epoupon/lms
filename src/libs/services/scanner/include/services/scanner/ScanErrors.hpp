@@ -38,7 +38,6 @@ namespace lms::scanner
     struct PlayListFileScanError;
     struct PlayListFilePathMissingError;
     struct PlayListFileAllPathesMissingError;
-    struct AudioFeaturesExtractError;
     struct MusicNNEmbeddingsExtractError;
 
     // Visitor interface
@@ -59,7 +58,6 @@ namespace lms::scanner
         virtual void visit(const PlayListFileScanError&) = 0;
         virtual void visit(const PlayListFilePathMissingError& error) = 0;
         virtual void visit(const PlayListFileAllPathesMissingError& error) = 0;
-        virtual void visit(const AudioFeaturesExtractError& error) = 0;
         virtual void visit(const MusicNNEmbeddingsExtractError& error) = 0;
     };
 
@@ -213,20 +211,6 @@ namespace lms::scanner
         {
             visitor.visit(*this);
         }
-    };
-
-    struct AudioFeaturesExtractError : public ScanError
-    {
-        AudioFeaturesExtractError(const std::filesystem::path& p, std::string_view e)
-            : ScanError{ p }
-            , errorMsg{ e } {}
-
-        void accept(ScanErrorVisitor& visitor) const override
-        {
-            visitor.visit(*this);
-        }
-
-        std::string errorMsg;
     };
 
     struct MusicNNEmbeddingsExtractError : public ScanError

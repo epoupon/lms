@@ -1,4 +1,3 @@
-add_subdirectory(audiofeatures)
 add_subdirectory(audioinfo)
 add_subdirectory(audioplay)
 add_subdirectory(db-generator)

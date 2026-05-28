@@ -1,16 +1,9 @@
 include(GoogleTest)
 
 add_executable(test-audio
-	AudioFeatures.cpp
-	ChromaCalculator.cpp
-	DeltaCalculator.cpp
 	MelFilterBank.cpp
-	MfccCalculator.cpp
 	MusicNNEmbeddings.cpp
-	OnsetCalculator.cpp
 	PcmSpectralFrameDecoder.cpp
-	SpectralFeatureCalculator.cpp
-	ZeroCrossingRateCalculator.cpp
 	)
 
 if (OnnxRuntime_FOUND)

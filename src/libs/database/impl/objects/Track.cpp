@@ -34,7 +34,6 @@
 #include "database/objects/Medium.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/TrackArtistLink.hpp"
-#include "database/objects/TrackAudioFeatures.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 #include "database/objects/TrackLyrics.hpp"
@@ -190,14 +189,6 @@ namespace lms::db
 
             if (params.fileSize.has_value())
                 query.where("t.file_size = ?").bind(static_cast<long long>(params.fileSize.value()));
-
-            if (params.hasAudioFeatures.has_value())
-            {
-                if (*params.hasAudioFeatures)
-                    query.where("EXISTS (SELECT t_a_f.track_id FROM track_audio_features t_a_f WHERE t_a_f.track_id = t.id)");
-                else
-                    query.where("NOT EXISTS (SELECT t_a_f.track_id FROM track_audio_features t_a_f WHERE t_a_f.track_id = t.id)");
-            }
 
             if (params.hasMusicNNEmbeddings.has_value())
             {

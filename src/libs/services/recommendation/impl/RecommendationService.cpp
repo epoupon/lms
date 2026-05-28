@@ -24,7 +24,6 @@
 #include "database/Session.hpp"
 #include "database/objects/ScanSettings.hpp"
 
-#include "audio-similarity/features/AudioFeatureEngine.hpp"
 #include "audio-similarity/musicnn/MusicNNEmbeddingEngine.hpp"
 #include "clusters/ClustersEngine.hpp"
 
@@ -104,7 +103,6 @@ namespace lms::recommendation
             return audio::canExtractMusicNNEmbeddings();
 
         case EngineType::None:
-        case EngineType::AudioFeatures:
         case EngineType::Clusters:
             return true;
         }
@@ -121,10 +119,6 @@ namespace lms::recommendation
         {
         case db::ScanSettings::RecommendationEngineType::Clusters:
             _engine = std::make_unique<ClusterEngine>(_db);
-            break;
-
-        case db::ScanSettings::RecommendationEngineType::AudioFeatures:
-            _engine = std::make_unique<AudioFeatureEngine>(_db);
             break;
 
         case db::ScanSettings::RecommendationEngineType::AudioEmbeddings:

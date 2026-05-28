@@ -39,7 +39,6 @@
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
-#include "database/objects/TrackAudioFeatures.hpp"
 #include "database/objects/TrackMusicNNEmbeddings.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 

@@ -91,11 +91,6 @@ namespace lms::scanner
         LMS_LOG(DBUPDATER, ERROR, "Failed to parse playlist " << error.path << ": all entries are missing");
     }
 
-    void ScanErrorLogger::visit(const AudioFeaturesExtractError& error)
-    {
-        LMS_LOG(DBUPDATER, ERROR, "Failed to extract audio features from " << error.path << ": " << error.errorMsg);
-    }
-
     void ScanErrorLogger::visit(const MusicNNEmbeddingsExtractError& error)
     {
         LMS_LOG(DBUPDATER, ERROR, "Failed to extract MusicNN embeddings from " << error.path << ": " << error.errorMsg);

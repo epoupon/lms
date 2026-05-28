@@ -54,7 +54,6 @@ namespace lms::scanner
         CheckForRemovedFiles,
         ComputeClusterStats,
         Compact,
-        ExtractAudioFeatures,
         ExtractMusicNNEmbeddings,
         Optimize,
         ReconciliateArtists,

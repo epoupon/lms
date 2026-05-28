@@ -49,7 +49,6 @@
 #include "steps/ScanStepCheckForRemovedFiles.hpp"
 #include "steps/ScanStepCompact.hpp"
 #include "steps/ScanStepComputeClusterStats.hpp"
-#include "steps/ScanStepExtractAudioFeatures.hpp"
 #include "steps/ScanStepExtractMusicNNEmbeddings.hpp"
 #include "steps/ScanStepOptimize.hpp"
 #include "steps/ScanStepRemoveOrphanedDbEntries.hpp"
@@ -125,7 +124,6 @@ namespace lms::scanner
             settings->allowArtistMBIDFallback = scanSettings->getAllowMBIDArtistMerge();
             settings->artistImageFallbackToRelease = scanSettings->getArtistImageFallbackToReleaseField();
 
-            settings->extractAudioFeatures = scanSettings->getRecommendationEngineType() == db::ScanSettings::RecommendationEngineType::AudioFeatures;
             settings->extractMusicNNEmbeddings = scanSettings->getRecommendationEngineType() == db::ScanSettings::RecommendationEngineType::AudioEmbeddings;
             settings->musicnnModelPath = core::Service<core::IConfig>::get()->getPath("musicnn-model-path", "/usr/share/lms/models/MSD_musicnn_embedding.onnx");
             settings->musicnnMaxPatchCountPerTrack = core::Service<core::IConfig>::get()->getULong("musicnn-max-patch-count-per-track", 20);
@@ -530,10 +528,7 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepComputeClusterStats>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCheckForDuplicatedFiles>(params));
 
-        // Audio extraction scan steps must be the last one because it is the most long running and we want the user be able to browse the library and play music as soon as possible
-        if (_settings.extractAudioFeatures)
-            _scanSteps.emplace_back(std::make_unique<ScanStepExtractAudioFeatures>(params));
-
+        // Audio extraction scan step must be last as it is the most long running
         if (_settings.extractMusicNNEmbeddings)
             _scanSteps.emplace_back(std::make_unique<ScanStepExtractMusicNNEmbeddings>(params, _settings.musicnnModelPath, _settings.musicnnMaxPatchCountPerTrack));
     }

@@ -97,7 +97,6 @@ namespace lms::db
             DirectoryId directory;                                   // if set, tracks in this directory
             std::optional<std::size_t> fileSize;                     // if set, tracks that match this file size
             TrackEmbeddedImageId embeddedImageId;                    // if set, tracks that have this embedded image
-            std::optional<bool> hasAudioFeatures;                    // If set, tracks that have (or not) audio features
             std::optional<bool> hasMusicNNEmbeddings;                // If set, tracks that have (or not) MusicNN embeddings
             TrackId lastTrackId;                                     // If set, tracks that are after this one, must be used with sort by id
 
@@ -192,11 +191,6 @@ namespace lms::db
             FindParameters& setEmbeddedImage(TrackEmbeddedImageId _embeddedImageId)
             {
                 embeddedImageId = _embeddedImageId;
-                return *this;
-            }
-            FindParameters& setHasAudioFeatures(std::optional<bool> _hasAudioFeatures)
-            {
-                hasAudioFeatures = _hasAudioFeatures;
                 return *this;
             }
             FindParameters& setHasMusicNNEmbeddings(std::optional<bool> _hasMusicNNEmbeddings)

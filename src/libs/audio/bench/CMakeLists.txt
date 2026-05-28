@@ -1,6 +1,5 @@
 add_executable(bench-audio
 	Audio.cpp
-	DeltaCalculator.cpp
 	)
 
 if (OnnxRuntime_FOUND)
