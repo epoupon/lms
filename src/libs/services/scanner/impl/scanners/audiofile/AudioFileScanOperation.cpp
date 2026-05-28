@@ -555,7 +555,7 @@ namespace lms::scanner
                     info.type = image.type;
                     {
                         LMS_SCOPED_TRACE_DETAILED("Scanner", "ImageHash");
-                        info.hash = core::xxHash3_64(image.data);
+                        info.hash = core::XxHash3_64::hash(image.data);
                     }
                     info.size = image.data.size();
                     info.mimeType = image.mimeType;

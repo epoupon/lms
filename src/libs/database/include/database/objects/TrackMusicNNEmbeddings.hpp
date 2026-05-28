@@ -47,6 +47,7 @@ namespace lms::db
         static pointer find(Session& session, TrackId trackId);
         static RangeResults<TrackMusicNNEmbeddingsId> find(Session& session, std::optional<Range> range = std::nullopt);
         static void find(Session& session, std::function<void(const pointer&)> func);
+        static void removeAll(Session& session);
 
         // Accessors
         std::span<const std::byte> getData() const;

@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 104 };
+        static constexpr Version LMS_DATABASE_VERSION{ 105 };
     }
 
     VersionInfo::VersionInfo()
@@ -1730,6 +1730,11 @@ FROM track)");
         // TODO in scan settings, rename similarity engine to recommendation engine
     }
 
+    void migrateFromV104(Session& session)
+    {
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN musicnn_model_identifier TEXT NOT NULL DEFAULT ''");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1810,6 +1815,7 @@ FROM track)");
             { 101, migrateFromV101 },
             { 102, migrateFromV102 },
             { 103, migrateFromV103 },
+            { 104, migrateFromV104 },
         };
 
         bool migrationPerformed{};

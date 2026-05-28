@@ -31,7 +31,27 @@ namespace lms::core
         for (std::size_t i{}; i < buffer.size(); ++i)
             buffer[i] = static_cast<std::byte>(i);
 
-        const std::uint64_t hash{ xxHash3_64(buffer) };
+        const std::uint64_t hash{ XxHash3_64::hash(buffer) };
         EXPECT_EQ(hash, 12137474952470826274ULL);
+    }
+
+    TEST(Xxhash3_64, streamingMatchesOneShot)
+    {
+        std::vector<std::byte> buffer;
+        buffer.resize(1024);
+
+        for (std::size_t i{}; i < buffer.size(); ++i)
+            buffer[i] = static_cast<std::byte>(i);
+
+        const std::uint64_t expected{ XxHash3_64::hash(buffer) };
+
+        // Feed the same data in three unequal chunks to exercise the streaming path
+        constexpr std::size_t chunk1{ 100 };
+        constexpr std::size_t chunk2{ 400 };
+        XxHash3_64 hasher;
+        hasher.update(std::span{ buffer }.subspan(0, chunk1));
+        hasher.update(std::span{ buffer }.subspan(chunk1, chunk2));
+        hasher.update(std::span{ buffer }.subspan(chunk1 + chunk2));
+        EXPECT_EQ(hasher.digest(), expected);
     }
 } // namespace lms::core

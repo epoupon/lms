@@ -42,4 +42,5 @@ namespace lms::audio
 
     bool canExtractMusicNNEmbeddings();
     std::unique_ptr<IMusicNNEmbeddingExtractor> createMusicNNEmbeddingExtractor(const std::filesystem::path& modelPath, std::size_t maxPatchCount);
+    std::string getMusicNNModelIdentifier(const std::filesystem::path& modelPath);
 } // namespace lms::audio

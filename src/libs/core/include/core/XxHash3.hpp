@@ -25,5 +25,20 @@
 
 namespace lms::core
 {
-    std::uint64_t xxHash3_64(std::span<const std::byte> buf);
+    class XxHash3_64
+    {
+    public:
+        static std::uint64_t hash(std::span<const std::byte> buf);
+
+        XxHash3_64();
+        ~XxHash3_64();
+        XxHash3_64(const XxHash3_64&) = delete;
+        XxHash3_64& operator=(const XxHash3_64&) = delete;
+
+        void update(std::span<const std::byte> buf);
+        std::uint64_t digest() const;
+
+    private:
+        void* _state{};
+    };
 } // namespace lms::core

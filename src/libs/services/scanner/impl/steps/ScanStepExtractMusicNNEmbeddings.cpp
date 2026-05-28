@@ -31,12 +31,14 @@
 #include "audio/MusicNNEmbeddings.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
+#include "database/objects/ScanSettings.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackMusicNNEmbeddings.hpp"
 #include "services/scanner/ScanErrors.hpp"
 
 #include "JobQueue.hpp"
 #include "ScanContext.hpp"
+#include "ScannerSettings.hpp"
 #include "TrackLocation.hpp"
 
 namespace lms::scanner
@@ -163,6 +165,26 @@ namespace lms::scanner
     void ScanStepExtractMusicNNEmbeddings::process(ScanContext& context)
     {
         db::Session& dbSession{ _db.getTLSSession() };
+
+        {
+            const std::string fileIdentifier{ audio::getMusicNNModelIdentifier(_settings.musicnnModelPath) };
+            if (fileIdentifier.empty())
+            {
+                LMS_LOG(DBUPDATER, WARNING, "Cannot identify MusicNN model file, skipping embedding extraction");
+                return;
+            }
+            const std::string identifier{ fileIdentifier + "|" + std::to_string(_settings.musicnnMaxPatchCountPerTrack) };
+
+            auto transaction{ dbSession.createWriteTransaction() };
+            db::ScanSettings::pointer settings{ db::ScanSettings::find(dbSession) };
+            assert(settings);
+            if (settings->getMusicNNModelIdentifier() != identifier)
+            {
+                LMS_LOG(DBUPDATER, INFO, "MusicNN model changed, clearing embeddings");
+                db::TrackMusicNNEmbeddings::removeAll(dbSession);
+                settings.modify()->setMusicNNModelIdentifier(identifier);
+            }
+        }
 
         {
             db::Track::FindParameters params{ createFindTrackParams() };

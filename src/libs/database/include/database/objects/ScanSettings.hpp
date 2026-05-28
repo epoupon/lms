@@ -66,6 +66,7 @@ namespace lms::db
         // Getters
         std::size_t getAudioScanVersion() const { return _audioScanVersion; }
         std::size_t getArtistInfoScanVersion() const { return _artistInfoScanVersion; }
+        std::string_view getMusicNNModelIdentifier() const { return _musicnnModelIdentifier; }
         Wt::WTime getUpdateStartTime() const { return _startTime; }
         UpdatePeriod getUpdatePeriod() const { return _updatePeriod; }
         std::vector<std::string_view> getExtraTagsToScan() const;
@@ -88,7 +89,7 @@ namespace lms::db
         void setSkipSingleReleasePlayLists(bool value);
         void setAllowMBIDArtistMerge(bool value);
         void setArtistImageFallbackToReleaseField(bool value);
-
+        void setMusicNNModelIdentifier(std::string_view identifier) { _musicnnModelIdentifier = identifier; }
         template<class Action>
         void persist(Action& a)
         {
@@ -105,6 +106,7 @@ namespace lms::db
             Wt::Dbo::field(a, _skipSingleReleasePlayLists, "skip_single_release_playlists");
             Wt::Dbo::field(a, _allowMBIDArtistMerge, "allow_mbid_artist_merge");
             Wt::Dbo::field(a, _artistImageFallbackToReleaseField, "artist_image_fallback_to_release");
+            Wt::Dbo::field(a, _musicnnModelIdentifier, "musicnn_model_identifier");
         }
 
     private:
@@ -128,5 +130,6 @@ namespace lms::db
         bool _skipSingleReleasePlayLists{};
         bool _allowMBIDArtistMerge{};
         bool _artistImageFallbackToReleaseField{};
+        std::string _musicnnModelIdentifier;
     };
 } // namespace lms::db

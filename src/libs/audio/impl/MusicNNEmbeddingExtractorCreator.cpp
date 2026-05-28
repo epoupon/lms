@@ -18,6 +18,14 @@
  */
 
 #include "audio/IMusicNNEmbeddingExtractor.hpp"
+
+#include <array>
+#include <fstream>
+#include <span>
+#include <string>
+
+#include "core/XxHash3.hpp"
+
 #if LMS_HAVE_ONNX_RUNTIME
     #include "musicnn/MusicNNEmbeddingExtractor.hpp"
 #endif
@@ -40,5 +48,23 @@ namespace lms::audio
 #else
         return {};
 #endif
+    }
+
+    std::string getMusicNNModelIdentifier(const std::filesystem::path& modelPath)
+    {
+        std::ifstream file{ modelPath, std::ios::binary };
+        if (!file)
+            return {};
+
+        core::XxHash3_64 hasher;
+        constexpr std::size_t readBufSize{ 65536 };
+        std::array<char, readBufSize> buf{};
+        while (file.read(buf.data(), buf.size()) || file.gcount() > 0)
+            hasher.update(std::as_bytes(std::span{ buf.data(), static_cast<std::size_t>(file.gcount()) }));
+
+        if (!file.eof())
+            return {};
+
+        return std::to_string(hasher.digest());
     }
 } // namespace lms::audio

@@ -80,6 +80,12 @@ namespace lms::db
         });
     }
 
+    void TrackMusicNNEmbeddings::removeAll(Session& session)
+    {
+        session.checkWriteTransaction();
+        utils::executeCommand(*session.getDboSession(), "DELETE FROM track_musicnn_embeddings");
+    }
+
     std::span<const std::byte> TrackMusicNNEmbeddings::getData() const
     {
         return std::span<const std::byte>{ reinterpret_cast<const std::byte*>(_data.data()), _data.size() };

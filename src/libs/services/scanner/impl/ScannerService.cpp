@@ -127,7 +127,7 @@ namespace lms::scanner
 
             settings->extractAudioFeatures = scanSettings->getRecommendationEngineType() == db::ScanSettings::RecommendationEngineType::AudioFeatures;
             settings->extractMusicNNEmbeddings = scanSettings->getRecommendationEngineType() == db::ScanSettings::RecommendationEngineType::AudioEmbeddings;
-            settings->musicnnModelPath = core::Service<core::IConfig>::get()->getString("musicnn-model-path", "/usr/share/lms/models/MSD_musicnn_embedding.onnx");
+            settings->musicnnModelPath = core::Service<core::IConfig>::get()->getPath("musicnn-model-path", "/usr/share/lms/models/MSD_musicnn_embedding.onnx");
             settings->musicnnMaxPatchCountPerTrack = core::Service<core::IConfig>::get()->getULong("musicnn-max-patch-count-per-track", 20);
 
             // TODO, store this in DB + expose in UI
