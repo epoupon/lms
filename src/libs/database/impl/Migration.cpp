@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 106 };
+        static constexpr Version LMS_DATABASE_VERSION{ 104 };
     }
 
     VersionInfo::VersionInfo()
@@ -1708,16 +1708,8 @@ FROM track)");
 
     void migrateFromV103(Session& session)
     {
-        // Replace previous track_audio_features with a brand new table
+        // Drop previous track_audio_features with a brand new table dedicated to embeddings
         utils::executeCommand(*session.getDboSession(), R"(DROP TABLE track_features)");
-
-        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "track_audio_features" (
-  "id" integer primary key autoincrement,
-  "version" integer not null,
-  "data" blob not null,
-  "track_id" bigint,
-  constraint "fk_track_audio_features_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred
-))");
 
         utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "track_musicnn_embeddings" (
   "id" integer primary key autoincrement,
@@ -1727,19 +1719,8 @@ FROM track)");
   constraint "fk_track_musicnn_embeddings_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred
     ))");
 
-        // TODO in scan settings, rename similarity engine to recommendation engine
-    }
-
-    void migrateFromV104(Session& session)
-    {
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings RENAME COLUMN similarity_engine_type TO recommendation_engine_type");
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN musicnn_model_identifier TEXT NOT NULL DEFAULT ''");
-    }
-
-    void migrateFromV105(Session& session)
-    {
-        utils::executeCommand(*session.getDboSession(), "DROP TABLE IF EXISTS track_audio_features");
-        // Reset any scan_settings row that had AudioFeatures (1) to None (2)
-        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET similarity_engine_type = 2 WHERE similarity_engine_type = 1");
     }
 
     bool doDbMigration(Session& session)
@@ -1822,8 +1803,6 @@ FROM track)");
             { 101, migrateFromV101 },
             { 102, migrateFromV102 },
             { 103, migrateFromV103 },
-            { 104, migrateFromV104 },
-            { 105, migrateFromV105 },
         };
 
         bool migrationPerformed{};

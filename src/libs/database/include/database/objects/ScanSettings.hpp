@@ -97,7 +97,7 @@ namespace lms::db
             Wt::Dbo::field(a, _artistInfoScanVersion, "artist_info_scan_version");
             Wt::Dbo::field(a, _startTime, "start_time");
             Wt::Dbo::field(a, _updatePeriod, "update_period");
-            Wt::Dbo::field(a, _recommendationEngineType, "similarity_engine_type");
+            Wt::Dbo::field(a, _recommendationEngineType, "recommendation_engine_type");
             Wt::Dbo::field(a, _extraTagsToScan, "extra_tags_to_scan");
             Wt::Dbo::field(a, _artistTagDelimiters, "artist_tag_delimiters");
             Wt::Dbo::field(a, _artistsToNotSplit, "artists_to_not_split");
