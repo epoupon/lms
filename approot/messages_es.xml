@@ -164,7 +164,7 @@
 <message id="Lms.Admin.DebugTools.debug-tools">Herramientas de depuración</message>
 
 <!--Db-->
-<message id="Lms.Admin.DebugTools.Db.export-query-plans">Exportar planes de consulta</message>
+<message id="Lms.Admin.DebugTools.Db.export-query-profiling">Exportar datos de perfil de consultas</message>
 <message id="Lms.Admin.DebugTools.Db.db">Base de datos</message>
 
 <!--Tracing-->

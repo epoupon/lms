@@ -164,7 +164,7 @@
 <message id="Lms.Admin.DebugTools.debug-tools">Strumenti di debug</message>
 
 <!--Db-->
-<message id="Lms.Admin.DebugTools.Db.export-query-plans">Esporta i piani di query</message>
+<message id="Lms.Admin.DebugTools.Db.export-query-profiling">Esporta i dati di profilazione delle query</message>
 <message id="Lms.Admin.DebugTools.Db.db">Database</message>
 
 <!--Tracing-->

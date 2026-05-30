@@ -5,7 +5,7 @@
 	<form>
 		<div class="row g-3">
 			<div class="col-12">
-				${export-query-plans-btn class="btn btn-primary"}
+				${export-query-profiling-btn class="btn btn-primary"}
 			</div>
 		</div>
 	</form>

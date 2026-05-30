@@ -162,7 +162,7 @@
 <message id="Lms.Admin.DebugTools.debug-tools">调试工具</message>
 
 <!--Db-->
-<message id="Lms.Admin.DebugTools.Db.export-query-plans">导出查询计划</message>
+<message id="Lms.Admin.DebugTools.Db.export-query-profiling">导出查询分析数据</message>
 <message id="Lms.Admin.DebugTools.Db.db">数据库</message>
 
 <!--Tracing-->

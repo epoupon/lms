@@ -164,7 +164,7 @@
 <message id="Lms.Admin.DebugTools.debug-tools">Outils de débogage</message>
 
 <!--Db-->
-<message id="Lms.Admin.DebugTools.Db.export-query-plans">Exporter les plans de requête</message>
+<message id="Lms.Admin.DebugTools.Db.export-query-profiling">Exporter les données de profilage des requêtes</message>
 <message id="Lms.Admin.DebugTools.Db.db">Base de données</message>
 
 <!--Tracing-->

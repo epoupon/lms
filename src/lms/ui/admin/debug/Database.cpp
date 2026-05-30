@@ -25,28 +25,29 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
 
-#include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
 #include "core/String.hpp"
-#include "database/IQueryPlanRecorder.hpp"
+
+#include "database/profiling/IQueryProfiler.hpp"
 
 namespace lms::ui
 {
     namespace
     {
-        class QueryPlansReportResource : public Wt::WResource
+        class QueryProfilingReportResource : public Wt::WResource
         {
         public:
-            QueryPlansReportResource(const db::IQueryPlanRecorder& recorder)
+            QueryProfilingReportResource(const db::IQueryProfiler& recorder)
                 : _recorder{ recorder }
             {
             }
 
-            ~QueryPlansReportResource()
+            ~QueryProfilingReportResource()
             {
                 beingDeleted();
             }
-            QueryPlansReportResource(const QueryPlansReportResource&) = delete;
-            QueryPlansReportResource& operator=(const QueryPlansReportResource&) = delete;
+            QueryProfilingReportResource(const QueryProfilingReportResource&) = delete;
+            QueryProfilingReportResource& operator=(const QueryProfilingReportResource&) = delete;
 
         private:
             void handleRequest(const Wt::Http::Request&, Wt::Http::Response& response)
@@ -58,16 +59,20 @@ namespace lms::ui
                     return fieldName + "*=UTF-8''" + Wt::Utils::urlEncode(fieldValue);
                 };
 
-                const std::string cdp{ encodeHttpHeaderField("filename", "LMS_db_query_plans_" + core::stringUtils::toISO8601String(Wt::WDateTime::currentDateTime()) + ".txt") };
+                const std::string cdp{ encodeHttpHeaderField("filename", "LMS_db_query_profiling_" + core::stringUtils::toISO8601String(Wt::WDateTime::currentDateTime()) + ".txt") };
                 response.addHeader("Content-Disposition", "attachment; " + cdp);
 
-                _recorder.visitQueryPlans([&](std::string_view query, std::string_view plan) {
-                    response.out() << query << '\n';
-                    response.out() << plan << "\n-------------------------\n";
+                _recorder.visitQueries([&](const db::IQueryProfiler::QueryStats& stats) {
+                    response.out() << stats.query << '\n';
+                    response.out() << "Calls: " << stats.callCount
+                                   << " | Total: " << stats.totalTime.count() << " µs"
+                                   << " | Mean: " << stats.meanTime.count() << " µs"
+                                   << " | StdDev: " << stats.stdDevTime.count() << " µs\n";
+                    response.out() << stats.plan << "\n-------------------------\n";
                 });
             }
 
-            const db::IQueryPlanRecorder& _recorder;
+            const db::IQueryProfiler& _recorder;
         };
     } // namespace
 
@@ -76,11 +81,11 @@ namespace lms::ui
     {
         addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-        Wt::WPushButton* dumpBtn{ bindNew<Wt::WPushButton>("export-query-plans-btn", Wt::WString::tr("Lms.Admin.DebugTools.Db.export-query-plans")) };
+        Wt::WPushButton* dumpBtn{ bindNew<Wt::WPushButton>("export-query-profiling-btn", Wt::WString::tr("Lms.Admin.DebugTools.Db.export-query-profiling")) };
 
-        if (const auto* recorder{ core::Service<db::IQueryPlanRecorder>::get() })
+        if (const auto* recorder{ core::Service<db::IQueryProfiler>::get() })
         {
-            Wt::WLink link{ std::make_shared<QueryPlansReportResource>(*recorder) };
+            Wt::WLink link{ std::make_shared<QueryProfilingReportResource>(*recorder) };
             link.setTarget(Wt::LinkTarget::NewWindow);
             dumpBtn->setLink(link);
         }

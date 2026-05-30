@@ -29,10 +29,9 @@
 #include <Wt/WDateTime.h>
 
 #include "core/ITraceLogger.hpp"
-#include "core/Service.hpp"
 #include "database/Types.hpp"
 
-#include "QueryPlanRecorder.hpp"
+#include "profiling/ScopedQueryProfiler.hpp"
 
 namespace lms::db::utils
 {
@@ -41,16 +40,6 @@ namespace lms::db::utils
     std::string escapeForLikeKeyword(std::string_view keywords);
 
     Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
-
-    namespace detail
-    {
-        template<typename Query>
-        void recordQueryPlanIfNeeded(const Query& query)
-        {
-            if (IQueryPlanRecorder * recorder{ core::Service<IQueryPlanRecorder>::get() })
-                static_cast<QueryPlanRecorder*>(recorder)->recordQueryPlanIfNeeded(query.session(), query.asString());
-        }
-    } // namespace detail
 
     template<typename Query>
     void applyRange(Query& query, std::optional<Range> range)
@@ -100,20 +89,22 @@ namespace lms::db::utils
     template<typename Query, typename UnaryFunc>
     void forEachQueryResult(const Query& query, UnaryFunc&& func)
     {
-        detail::recordQueryPlanIfNeeded(query);
-
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "ForEachQueryResult", "Query", query.asString());
 
-        forEachResult(query.resultList(), std::forward<UnaryFunc>(func));
+        ScopedQueryProfiler queryProfiler{ query };
+        forEachResult(query.resultList(), [&](const auto& result) {
+            queryProfiler.suspend();
+            func(result);
+            queryProfiler.resume();
+        });
     }
 
     template<typename T, typename Query>
     std::vector<T> fetchQueryResults(const Query& query)
     {
-        detail::recordQueryPlanIfNeeded(query);
-
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQueryResults", "Query", query.asString());
 
+        ScopedQueryProfiler queryProfiler{ query };
         auto collection{ query.resultList() };
         return std::vector<T>(collection.begin(), collection.end());
     }
@@ -121,10 +112,9 @@ namespace lms::db::utils
     template<typename Query>
     std::vector<typename QueryResultType<Query>::type> fetchQueryResults(const Query& query)
     {
-        detail::recordQueryPlanIfNeeded(query);
-
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQueryResults", "Query", query.asString());
 
+        ScopedQueryProfiler queryProfiler{ query };
         auto collection{ query.resultList() };
         return std::vector<typename QueryResultType<Query>::type>(collection.begin(), collection.end());
     }
@@ -132,9 +122,8 @@ namespace lms::db::utils
     template<typename Query>
     auto fetchQuerySingleResult(const Query& query)
     {
-        detail::recordQueryPlanIfNeeded(query);
-
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQuerySingleResult", "Query", query.asString());
+        ScopedQueryProfiler queryProfiler{ query };
         return query.resultValue();
     }
 
@@ -184,6 +173,7 @@ namespace lms::db::utils
         moreResults = false;
 
         std::size_t count{};
+        ScopedQueryProfiler queryProfiler{ query };
         const auto collection{ query.resultList() };
         auto it{ fetchFirstResult(collection) };
         while (it != collection.end())
@@ -194,7 +184,9 @@ namespace lms::db::utils
                 break;
             }
 
+            queryProfiler.suspend();
             func(*it);
+            queryProfiler.resume();
             fetchNextResult<ResultType>(it);
         }
     }

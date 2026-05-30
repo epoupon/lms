@@ -25,24 +25,33 @@
 
 #include <Wt/Dbo/Session.h>
 
-#include "database/IQueryPlanRecorder.hpp"
+#include "database/profiling/IQueryProfiler.hpp"
+#include "math/StatsAccumulator.hpp"
 
 namespace lms::db
 {
-    class QueryPlanRecorder : public IQueryPlanRecorder
+    class QueryProfiler : public IQueryProfiler
     {
     public:
-        QueryPlanRecorder();
-        ~QueryPlanRecorder() override;
-        QueryPlanRecorder(const QueryPlanRecorder&) = delete;
-        QueryPlanRecorder& operator=(const QueryPlanRecorder&) = delete;
+        QueryProfiler();
+        ~QueryProfiler() override;
+        QueryProfiler(const QueryProfiler&) = delete;
+        QueryProfiler& operator=(const QueryProfiler&) = delete;
 
-        void visitQueryPlans(const QueryPlanVisitor& visitor) const override;
+        void visitQueries(const QueryVisitor& visitor) const override;
 
-        void recordQueryPlanIfNeeded(Wt::Dbo::Session& session, const std::string& query);
+        void recordQueryExecution(Wt::Dbo::Session& session, const std::string& query, Clock::duration elapsed);
 
     private:
+        void recordQueryPlan(Wt::Dbo::Session& session, const std::string& query);
+
+        struct QueryData
+        {
+            std::string plan;
+            math::StatsAccumulator<double> timeStats; // in Us
+        };
+
         mutable std::shared_mutex _mutex;
-        std::map<std::string, std::string> _queryPlans;
+        std::map<std::string, QueryData> _queries;
     };
 } // namespace lms::db

@@ -164,7 +164,7 @@
 <message id="Lms.Admin.DebugTools.debug-tools">Debug tools</message>
 
 <!--Db-->
-<message id="Lms.Admin.DebugTools.Db.export-query-plans">Export query plans</message>
+<message id="Lms.Admin.DebugTools.Db.export-query-profiling">Export query profiling data</message>
 <message id="Lms.Admin.DebugTools.Db.db">Database</message>
 
 <!--Tracing-->

@@ -38,7 +38,7 @@ add_library(lmsdatabase STATIC
 	impl/IdType.cpp
 	impl/Migration.cpp
 	impl/Object.cpp
-	impl/QueryPlanRecorder.cpp
+	impl/profiling/QueryProfiler.cpp
 	impl/Session.cpp
 	impl/SqlQuery.cpp
 	impl/Transaction.cpp
@@ -59,6 +59,7 @@ target_include_directories(lmsdatabase PRIVATE
 	)
 
 target_link_libraries(lmsdatabase PRIVATE
+	lmsmath
 	Wt::DboSqlite3
 	)
 

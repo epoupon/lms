@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "QueryPlanRecorder.hpp"
+#include "profiling/QueryProfiler.hpp"
 
 #include <memory>
 #include <mutex>
@@ -29,35 +29,38 @@
 
 namespace lms::db
 {
-    std::unique_ptr<IQueryPlanRecorder> createQueryPlanRecorder()
+    std::unique_ptr<IQueryProfiler> createQueryProfiler()
     {
-        return std::make_unique<QueryPlanRecorder>();
+        return std::make_unique<QueryProfiler>();
     }
 
-    QueryPlanRecorder::QueryPlanRecorder()
+    QueryProfiler::QueryProfiler()
     {
-        LMS_LOG(DB, INFO, "Recording database query plans");
+        LMS_LOG(DB, INFO, "Recording database queries");
     }
 
-    QueryPlanRecorder::~QueryPlanRecorder() = default;
+    QueryProfiler::~QueryProfiler() = default;
 
-    void QueryPlanRecorder::visitQueryPlans(const QueryPlanVisitor& visitor) const
+    void QueryProfiler::visitQueries(const QueryVisitor& visitor) const
     {
         const std::shared_lock lock{ _mutex };
 
-        for (const auto& [query, plan] : _queryPlans)
-            visitor(query, plan);
+        for (const auto& [query, data] : _queries)
+        {
+            const QueryStats stats{
+                .query = query,
+                .plan = data.plan,
+                .callCount = data.timeStats.getCount(),
+                .totalTime = std::chrono::microseconds{ static_cast<long long>(data.timeStats.getMean() * static_cast<double>(data.timeStats.getCount())) },
+                .meanTime = std::chrono::microseconds{ static_cast<long long>(data.timeStats.getMean()) },
+                .stdDevTime = std::chrono::microseconds{ static_cast<long long>(data.timeStats.getSampleStdDev()) },
+            };
+            visitor(stats);
+        }
     }
 
-    void QueryPlanRecorder::recordQueryPlanIfNeeded(Wt::Dbo::Session& session, const std::string& query)
+    void QueryProfiler::recordQueryPlan(Wt::Dbo::Session& session, const std::string& query)
     {
-        {
-            const std::shared_lock lock{ _mutex };
-
-            if (_queryPlans.contains(query))
-                return;
-        }
-
         Wt::Dbo::Transaction transaction{ session };
 
         Wt::Dbo::SqlConnection* connection{ transaction.connection() };
@@ -106,7 +109,23 @@ namespace lms::db
 
         {
             const std::unique_lock lock{ _mutex };
-            _queryPlans.try_emplace(query, std::move(result));
+            _queries[query].plan = std::move(result);
         }
+    }
+
+    void QueryProfiler::recordQueryExecution(Wt::Dbo::Session& session, const std::string& query, Clock::duration elapsed)
+    {
+        bool needQueryPlan{};
+        const double elapsedUs{ std::chrono::duration_cast<std::chrono::duration<double, std::micro>>(elapsed).count() };
+        {
+            std::unique_lock lock{ _mutex };
+
+            auto& queryStats{ _queries[query] };
+            queryStats.timeStats.add(elapsedUs);
+            needQueryPlan = queryStats.plan.empty();
+        }
+
+        if (needQueryPlan)
+            recordQueryPlan(session, query);
     }
 } // namespace lms::db

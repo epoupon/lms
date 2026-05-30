@@ -32,13 +32,13 @@
 #include "core/Service.hpp"
 
 #include "database/IDb.hpp"
-#include "database/IQueryPlanRecorder.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/TrackList.hpp"
 #include "database/objects/User.hpp"
+#include "database/profiling/IQueryProfiler.hpp"
 #include "services/artwork/IArtworkService.hpp"
 #include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IEnvService.hpp"
@@ -480,7 +480,7 @@ namespace lms::ui
             navbar->bindNew<Wt::WAnchor>("users", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/users" }, Wt::WString::tr("Lms.Admin.menu-users"));
             // Hide the entry if no debug service is enabled
             if (core::Service<core::tracing::ITraceLogger>::get()
-                || core::Service<db::IQueryPlanRecorder>::get())
+                || core::Service<db::IQueryProfiler>::get())
             {
                 navbar->setCondition("if-debug-tools", true);
                 navbar->bindNew<Wt::WAnchor>("debug-tools", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/debug-tools" }, Wt::WString::tr("Lms.Admin.menu-debug-tools"));

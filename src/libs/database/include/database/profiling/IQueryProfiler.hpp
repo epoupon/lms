@@ -19,21 +19,35 @@
 
 #pragma once
 
+#include <chrono>
 #include <functional>
 #include <memory>
+#include <string_view>
 
 namespace lms::db
 {
     // Due to technical limitations, query plans are recorded globally across all databases.
     // As a result, this class is implemented as a singleton rather than being owned per DB instance.
-    class IQueryPlanRecorder
+    class IQueryProfiler
     {
     public:
-        virtual ~IQueryPlanRecorder() = default;
+        virtual ~IQueryProfiler() = default;
 
-        using QueryPlanVisitor = std::function<void(std::string_view query, std::string_view plan)>;
-        virtual void visitQueryPlans(const QueryPlanVisitor& visitor) const = 0;
+        using Clock = std::chrono::steady_clock;
+
+        struct QueryStats
+        {
+            std::string_view query;
+            std::string_view plan;
+            std::size_t callCount{};
+            std::chrono::microseconds totalTime{};
+            std::chrono::microseconds meanTime{};
+            std::chrono::microseconds stdDevTime{};
+        };
+
+        using QueryVisitor = std::function<void(const QueryStats&)>;
+        virtual void visitQueries(const QueryVisitor& visitor) const = 0;
     };
 
-    std::unique_ptr<IQueryPlanRecorder> createQueryPlanRecorder();
+    std::unique_ptr<IQueryProfiler> createQueryProfiler();
 } // namespace lms::db
