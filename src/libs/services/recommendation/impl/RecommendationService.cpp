@@ -99,7 +99,7 @@ namespace lms::recommendation
     {
         switch (type)
         {
-        case EngineType::AudioEmbeddings:
+        case EngineType::AudioSimilarity:
             return audio::canExtractMusicNNEmbeddings();
 
         case EngineType::None:
@@ -121,7 +121,7 @@ namespace lms::recommendation
             _engine = std::make_unique<ClusterEngine>(_db);
             break;
 
-        case db::ScanSettings::RecommendationEngineType::AudioEmbeddings:
+        case db::ScanSettings::RecommendationEngineType::AudioSimilarity:
             _engine = std::make_unique<MusicNNEmbeddingEngine>(_db);
             break;
 

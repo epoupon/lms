@@ -54,7 +54,7 @@ namespace lms::db
         {
             Clusters = 0,
             None = 2,
-            AudioEmbeddings = 3,
+            AudioSimilarity = 3,
         };
 
         ScanSettings() = default;

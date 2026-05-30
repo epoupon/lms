@@ -96,7 +96,7 @@
 <message id="Lms.Admin.Database.never">Mai</message>
 <message id="Lms.Admin.Database.recommendation-engine-not-supported">Questo motore non è supportato</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">Motore di raccomandazione</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.audio-embeddings">Embedding audio (MusicNN)</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.audio-similarity">Similarità audio</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.clusters">Tag</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.none">Nessuno</message>
 <message id="Lms.Admin.Database.scan-aborted">Scansione annullata!</message>

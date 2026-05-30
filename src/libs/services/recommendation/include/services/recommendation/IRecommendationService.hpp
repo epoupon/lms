@@ -41,7 +41,7 @@ namespace lms::recommendation
     {
         None,
         Clusters,
-        AudioEmbeddings,
+        AudioSimilarity,
     };
 
     class IRecommendationService

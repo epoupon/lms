@@ -94,7 +94,7 @@
 <message id="Lms.Admin.Database.never">从不</message>
 <message id="Lms.Admin.Database.recommendation-engine-not-supported">此引擎不受支持</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">推荐引擎</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.audio-embeddings.zh">音频嵌入 (MusicNN) </message>
+<message id="Lms.Admin.Database.recommendation-engine-type.audio-similarity">音频相似性</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.clusters">标签</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.none">无</message>
 <message id="Lms.Admin.Database.scan-aborted">扫描已中止！</message>

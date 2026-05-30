@@ -96,7 +96,7 @@
 <message id="Lms.Admin.Database.never">Nunca</message>
 <message id="Lms.Admin.Database.recommendation-engine-not-supported">Este motor no es compatible</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">Motor de recomendaciones</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.audio-embeddings">Embeddings de audio (MusicNN)</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.audio-similarity">Similitud de audio</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.clusters">Etiquetas</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.none">Ninguno</message>
 <message id="Lms.Admin.Database.scan-aborted">¡Escaneo interrumpido!</message>

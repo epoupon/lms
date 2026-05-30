@@ -63,9 +63,9 @@ namespace lms::ui
                 std::string inputStr{ input.toUTF8() };
 
                 const auto row{ _model->getRowFromString(inputStr) };
-                if (row && _model->getValue(*row) == db::ScanSettings::RecommendationEngineType::AudioEmbeddings)
+                if (row && _model->getValue(*row) == db::ScanSettings::RecommendationEngineType::AudioSimilarity)
                 {
-                    if (!core::Service<recommendation::IRecommendationService>::get()->isEngineTypeSupported(recommendation::EngineType::AudioEmbeddings))
+                    if (!core::Service<recommendation::IRecommendationService>::get()->isEngineTypeSupported(recommendation::EngineType::AudioSimilarity))
                         return Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.Database.recommendation-engine-not-supported") };
                 }
 
@@ -248,7 +248,7 @@ namespace lms::ui
                 }
 
                 _recommendationEngineTypeModel = std::make_shared<ValueStringModel<db::ScanSettings::RecommendationEngineType>>();
-                _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.audio-embeddings"), db::ScanSettings::RecommendationEngineType::AudioEmbeddings);
+                _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.audio-similarity"), db::ScanSettings::RecommendationEngineType::AudioSimilarity);
                 _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.clusters"), db::ScanSettings::RecommendationEngineType::Clusters);
                 _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.none"), db::ScanSettings::RecommendationEngineType::None);
             }
