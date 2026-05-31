@@ -137,7 +137,7 @@ namespace lms::recommendation
 
         _similarityEvaluator = {};
         _similarityEvaluator.addHardConstraint(std::make_unique<DuplicateTrackConstraint>());
-        _similarityEvaluator.addHardConstraint(std::make_unique<MaxDistanceConstraint>(_distanceThreshold));
+        _similarityEvaluator.addHardConstraint(std::make_unique<MaxDistanceConstraint>(_trackDistanceThreshold));
         _similarityEvaluator.addSoftConstraint(std::make_unique<InterpolationFitConstraint>(), interpolationFitWeight);
         _similarityEvaluator.addSoftConstraint(std::make_unique<SmoothTransitionConstraint>(), smoothTransitionWeight);
         _similarityEvaluator.addSoftConstraint(std::make_unique<SameReleaseConstraint>(_trackMetadata), sameReleaseWeight);
@@ -406,7 +406,8 @@ namespace lms::recommendation
                 queryReleaseFeatures,
                 candidateReleaseVectors) };
 
-            rankedReleases.emplace_back(candidateId, distance);
+            if (distance <= _releaseDistanceThreshold)
+                rankedReleases.emplace_back(candidateId, distance);
         }
 
         const std::size_t resultCount{ std::min(maxCount, rankedReleases.size()) };
@@ -454,7 +455,8 @@ namespace lms::recommendation
                 queryArtistFeatures,
                 candidateArtistFeatures) };
 
-            rankedArtists.emplace_back(candidateId, distance);
+            if (distance <= _artistDistanceThreshold)
+                rankedArtists.emplace_back(candidateId, distance);
         }
 
         const std::size_t resultCount{ std::min(maxCount, rankedArtists.size()) };
@@ -485,7 +487,9 @@ namespace lms::recommendation
 
         computeDatasetStats();
         computeReducedFeatures();
-        computeDistanceThreshold();
+        computeTrackDistanceThreshold();
+        computeReleaseDistanceThreshold();
+        computeArtistDistanceThreshold();
         initializeConstraints();
         _isReady = true;
 
@@ -687,11 +691,11 @@ namespace lms::recommendation
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
-    void AudioSimilarityEngine<Provider, ReducedDimCount>::computeDistanceThreshold()
+    void AudioSimilarityEngine<Provider, ReducedDimCount>::computeTrackDistanceThreshold()
     {
-        LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "ComputeDistanceThreshold");
+        LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "computeTrackDistanceThreshold");
 
-        constexpr std::size_t maxSampleCount{ 1'000 };
+        constexpr std::size_t maxSampleCount{ 500 };
         constexpr float stdDevMultiplier{ 2.F };
 
         const std::size_t sampleCount{ std::min(_trackVectors.size(), maxSampleCount) };
@@ -728,10 +732,100 @@ namespace lms::recommendation
         }
 
         if (stats.getCount() >= 2)
-            _distanceThreshold = stats.getMean() + stdDevMultiplier * stats.getSampleStdDev();
+            _trackDistanceThreshold = stats.getMean() + stdDevMultiplier * stats.getSampleStdDev();
         else
-            _distanceThreshold = std::numeric_limits<float>::max();
+            _trackDistanceThreshold = std::numeric_limits<FloatType>::max();
 
-        LMS_LOG(RECOMMENDATION, INFO, "Distance threshold = " << _distanceThreshold);
+        LMS_LOG(RECOMMENDATION, INFO, "Distance threshold = " << _trackDistanceThreshold);
+    }
+
+    template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
+    void AudioSimilarityEngine<Provider, ReducedDimCount>::computeReleaseDistanceThreshold()
+    {
+        LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "ComputeReleaseDistanceThreshold");
+
+        constexpr std::size_t maxSampleCount{ 200 };
+        constexpr float stdDevMultiplier{ 2.F };
+        using CosineDistance = math::NormalizedCosineDistance<ReducedVector::getSize(), FloatType>;
+
+        std::vector<const std::vector<std::reference_wrapper<const ReducedVector>>*> allProfiles;
+        allProfiles.reserve(_releaseVectors.size());
+        for (const auto& [id, vecs] : _releaseVectors)
+            allProfiles.push_back(&vecs);
+
+        const std::size_t sampleCount{ std::min(allProfiles.size(), maxSampleCount) };
+        LMS_LOG(RECOMMENDATION, INFO, "Computing release distance threshold using " << sampleCount << " samples...");
+
+        std::minstd_rand randomEngine{ 42 };
+        core::random::shuffleContainer(randomEngine, allProfiles);
+
+        math::StatsAccumulator<FloatType> stats;
+        for (std::size_t i{}; i < sampleCount; ++i)
+        {
+            FloatType minDist{ std::numeric_limits<FloatType>::max() };
+            for (const auto* candidate : allProfiles)
+            {
+                if (candidate == allProfiles[i])
+                    continue;
+
+                const FloatType d{ math::symmetricalChamferDistance<CosineDistance>(*allProfiles[i], *candidate) };
+                if (d < minDist)
+                    minDist = d;
+            }
+            if (minDist < std::numeric_limits<FloatType>::max())
+                stats.add(minDist);
+        }
+
+        if (stats.getCount() >= 2)
+            _releaseDistanceThreshold = stats.getMean() + stdDevMultiplier * stats.getSampleStdDev();
+        else
+            _releaseDistanceThreshold = std::numeric_limits<FloatType>::max();
+
+        LMS_LOG(RECOMMENDATION, INFO, "Release distance threshold = " << _releaseDistanceThreshold);
+    }
+
+    template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
+    void AudioSimilarityEngine<Provider, ReducedDimCount>::computeArtistDistanceThreshold()
+    {
+        LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "ComputeArtistDistanceThreshold");
+
+        constexpr std::size_t maxSampleCount{ 200 };
+        constexpr float stdDevMultiplier{ 2.F };
+        using CosineDistance = math::NormalizedCosineDistance<ReducedVector::getSize(), FloatType>;
+
+        std::vector<const std::vector<std::reference_wrapper<const ReducedVector>>*> allProfiles;
+        allProfiles.reserve(_artistVectors.size());
+        for (const auto& [id, vecs] : _artistVectors)
+            allProfiles.push_back(&vecs);
+
+        const std::size_t sampleCount{ std::min(allProfiles.size(), maxSampleCount) };
+        LMS_LOG(RECOMMENDATION, INFO, "Computing artist distance threshold using " << sampleCount << " samples...");
+
+        std::minstd_rand randomEngine{ 42 };
+        core::random::shuffleContainer(randomEngine, allProfiles);
+
+        math::StatsAccumulator<FloatType> stats;
+        for (std::size_t i{}; i < sampleCount; ++i)
+        {
+            FloatType minDist{ std::numeric_limits<FloatType>::max() };
+            for (const auto* candidate : allProfiles)
+            {
+                if (candidate == allProfiles[i])
+                    continue;
+
+                const FloatType d{ math::symmetricalChamferDistance<CosineDistance>(*allProfiles[i], *candidate) };
+                if (d < minDist)
+                    minDist = d;
+            }
+            if (minDist < std::numeric_limits<FloatType>::max())
+                stats.add(minDist);
+        }
+
+        if (stats.getCount() >= 2)
+            _artistDistanceThreshold = stats.getMean() + stdDevMultiplier * stats.getSampleStdDev();
+        else
+            _artistDistanceThreshold = std::numeric_limits<FloatType>::max();
+
+        LMS_LOG(RECOMMENDATION, INFO, "Artist distance threshold = " << _artistDistanceThreshold);
     }
 } // namespace lms::recommendation
