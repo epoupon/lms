@@ -8,3 +8,5 @@ target_link_libraries(lms-recommendation PRIVATE
 	lmsrecommendation
 	Boost::program_options
 	)
+
+	install(TARGETS lms-recommendation DESTINATION bin)
