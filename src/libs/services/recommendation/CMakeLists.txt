@@ -31,3 +31,7 @@ target_link_libraries(lmsrecommendation PUBLIC
 target_compile_options(lmsrecommendation PRIVATE
 	$<$<NOT:$<CONFIG:Debug>>:-ffast-math>
 	)
+
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()
