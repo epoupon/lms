@@ -29,7 +29,6 @@
 #include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
-#include "core/EnumSet.hpp"
 #include "core/UUID.hpp"
 
 #include "database/IdRange.hpp"
@@ -39,7 +38,6 @@
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/Filters.hpp"
 #include "database/objects/MediaLibraryId.hpp"
-#include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
@@ -147,9 +145,6 @@ namespace lms::db
         bool hasMBID() const;
         ObjectPtr<Artwork> getPreferredArtwork() const;
         ArtworkId getPreferredArtworkId() const;
-
-        // No artistLinkTypes means get them all
-        RangeResults<ArtistId> findSimilarArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes = {}, std::optional<Range> range = std::nullopt) const;
 
         // Get the cluster of the tracks made by this artist
         // Each clusters are grouped by cluster type, sorted by the number of occurence

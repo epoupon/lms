@@ -514,38 +514,6 @@ namespace lms::db
         return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(*)", params));
     }
 
-    RangeResults<TrackId> Track::findSimilarTrackIds(Session& session, const std::vector<TrackId>& tracks, std::optional<Range> range)
-    {
-        assert(!tracks.empty());
-        session.checkReadTransaction();
-
-        std::ostringstream oss;
-        for (std::size_t i{}; i < tracks.size(); ++i)
-        {
-            if (!oss.str().empty())
-                oss << ", ";
-            oss << "?";
-        }
-
-        auto query{ session.getDboSession()->query<TrackId>(
-                                               "SELECT t.id FROM track t"
-                                               " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-                                               " AND t_c.cluster_id IN (SELECT DISTINCT c.id FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id WHERE t_c.track_id IN ("
-                                               + oss.str() + "))"
-                                                             " AND t.id NOT IN ("
-                                               + oss.str() + ")")
-                        .groupBy("t.id")
-                        .orderBy("COUNT(*) DESC, RANDOM()") };
-
-        for (TrackId trackId : tracks)
-            query.bind(trackId);
-
-        for (TrackId trackId : tracks)
-            query.bind(trackId);
-
-        return utils::execRangeQuery<TrackId>(query, range);
-    }
-
     void Track::setAbsoluteFilePath(const std::filesystem::path& filePath)
     {
         assert(filePath.is_absolute());

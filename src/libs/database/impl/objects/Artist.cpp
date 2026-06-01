@@ -403,48 +403,6 @@ AND NOT EXISTS (
         return _preferredArtwork.id();
     }
 
-    RangeResults<ArtistId> Artist::findSimilarArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes, std::optional<Range> range) const
-    {
-        assert(session());
-
-        std::ostringstream oss;
-        oss << "SELECT a.id FROM artist a"
-               " INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id"
-               " INNER JOIN track t ON t.id = t_a_l.track_id"
-               " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-               " WHERE "
-               " t_c.cluster_id IN (SELECT DISTINCT c.id from cluster c"
-               " INNER JOIN track t ON c.id = t_c.cluster_id"
-               " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-               " INNER JOIN artist a ON a.id = t_a_l.artist_id"
-               " INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id"
-               " WHERE a.id = ?)"
-               " AND a.id <> ?";
-
-        if (!artistLinkTypes.empty())
-        {
-            oss << " AND t_a_l.type IN (";
-
-            bool first{ true };
-            for (TrackArtistLinkType type : artistLinkTypes)
-            {
-                (void)type;
-                if (!first)
-                    oss << ", ";
-                oss << "?";
-                first = false;
-            }
-            oss << ")";
-        }
-
-        auto query{ session()->query<ArtistId>(oss.str()).bind(getId()).bind(getId()).groupBy("a.id").orderBy("COUNT(*) DESC, RANDOM()") };
-
-        for (const TrackArtistLinkType type : artistLinkTypes)
-            query.bind(type);
-
-        return utils::execRangeQuery<ArtistId>(query, range);
-    }
-
     std::vector<std::vector<Cluster::pointer>> Artist::getClusterGroups(std::span<const ClusterTypeId> clusterTypeIds, std::size_t size) const
     {
         assert(session());

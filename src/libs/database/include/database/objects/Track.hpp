@@ -223,8 +223,6 @@ namespace lms::db
         static bool exists(Session& session, TrackId id);
         static std::vector<pointer> findByRecordingMBID(Session& session, const core::UUID& MBID);
         static std::vector<pointer> findByMBID(Session& session, const core::UUID& MBID);
-        static RangeResults<TrackId> findSimilarTrackIds(Session& session, const std::vector<TrackId>& trackIds, std::optional<Range> range = std::nullopt);
-
         static RangeResults<TrackId> findIds(Session& session, const FindParameters& params);
         static RangeResults<pointer> find(Session& session, const FindParameters& params);
         static void find(Session& session, const FindParameters& params, const std::function<void(const Track::pointer&)>& func);

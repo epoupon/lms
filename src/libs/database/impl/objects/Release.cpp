@@ -749,33 +749,6 @@ namespace lms::db
         return utils::fetchQueryResults(query);
     }
 
-    std::vector<Release::pointer> Release::findSimilarReleases(std::optional<std::size_t> offset, std::optional<std::size_t> count) const
-    {
-        assert(session());
-
-        // Select the similar releases using the 5 most used clusters of the release
-        auto query{ session()->query<Wt::Dbo::ptr<Release>>(
-                                 "SELECT r FROM release r"
-                                 " INNER JOIN track t ON t.release_id = r.id"
-                                 " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-                                 " WHERE "
-                                 " t_c.cluster_id IN "
-                                 "(SELECT DISTINCT c.id FROM cluster c"
-                                 " INNER JOIN track t ON c.id = t_c.cluster_id"
-                                 " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-                                 " INNER JOIN release r ON r.id = t.release_id"
-                                 " WHERE r.id = ?)"
-                                 " AND r.id <> ?")
-                        .bind(getId())
-                        .bind(getId())
-                        .groupBy("r.id")
-                        .orderBy("COUNT(*) DESC, RANDOM()")
-                        .limit(count ? static_cast<int>(*count) : -1)
-                        .offset(offset ? static_cast<int>(*offset) : -1) };
-
-        return utils::fetchQueryResults<Release::pointer>(query);
-    }
-
     ObjectPtr<Artwork> Release::getPreferredArtwork() const
     {
         return ObjectPtr<Artwork>{ _preferredArtwork };
