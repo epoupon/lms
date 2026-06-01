@@ -27,6 +27,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 HF_REPO = "oriyonay/musicnn-pytorch"
+HF_REVISION = "394be17b3a5c2c2e1bb8a6593cfc3c5557eb8a82"
 
 # ---------------------------------------------------------------------------
 # Download musicnn_torch.py from HuggingFace if needed
@@ -53,7 +54,7 @@ def _import_musicnn_torch() -> type:
         if mod_name not in sys.modules:
             sys.modules[mod_name] = types.ModuleType(mod_name)
 
-    local_py = hf_hub_download(repo_id=HF_REPO, filename="musicnn_torch.py")
+    local_py = hf_hub_download(repo_id=HF_REPO, filename="musicnn_torch.py", revision=HF_REVISION)
     spec = importlib.util.spec_from_file_location("musicnn_torch", local_py)
     module = importlib.util.module_from_spec(spec)   # type: ignore[arg-type]
     spec.loader.exec_module(module)                   # type: ignore[union-attr]
@@ -88,16 +89,16 @@ class MusicNNEmbeddingWrapper(nn.Module):
         h = m.bn_input(h)
         f74 = m.timbral_1(h).transpose(1, 2)
         f77 = m.timbral_2(h).transpose(1, 2)
-        s1  = m.temp_1(h).transpose(1, 2)
-        s2  = m.temp_2(h).transpose(1, 2)
-        s3  = m.temp_3(h).transpose(1, 2)
+        s1 = m.temp_1(h).transpose(1, 2)
+        s2 = m.temp_2(h).transpose(1, 2)
+        s3 = m.temp_3(h).transpose(1, 2)
         frontend = torch.cat([f74, f77, s1, s2, s3], dim=2)      # [B, T, 561]
         mid_feats = m.midend(frontend.transpose(1, 2))            # list of 4 tensors
         z = torch.cat(mid_feats, dim=2)                           # [B, T, 753]
 
         # Backend — replicate exactly, stopping before fc2
         be = m.backend
-        max_pool  = torch.max(z, dim=1).values                    # [B, 753]
+        max_pool = torch.max(z, dim=1).values                     # [B, 753]
         mean_pool = torch.mean(z, dim=1)                          # [B, 753]
         # musicnn_torch uses stack+view to interleave, NOT cat
         pooled = torch.stack([max_pool, mean_pool], dim=2)        # [B, 753, 2]
@@ -129,7 +130,7 @@ def main() -> None:
         sys.exit(1)
     hf_path = f"weights/{args.model}.pt"
     print(f"Downloading {hf_path} from {HF_REPO} ...", file=sys.stderr)
-    local_path = hf_hub_download(repo_id=HF_REPO, filename=hf_path)
+    local_path = hf_hub_download(repo_id=HF_REPO, filename=hf_path, revision=HF_REVISION)
     sd = torch.load(local_path, map_location="cpu", weights_only=True)
 
     # num_classes=50 for both MTT and MSD standard models
