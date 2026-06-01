@@ -45,26 +45,21 @@ namespace lms::core::random
     }
 
     template<typename RandomEngine, typename Container>
+        requires std::is_floating_point_v<typename Container::value_type>
     void fillContainer(RandomEngine& randomEngine, Container& container, typename Container::value_type min, typename Container::value_type max)
     {
-        using value_type = Container::value_type;
+        std::uniform_real_distribution<typename Container::value_type> distrib{ min, max };
+        for (auto& v : container)
+            v = distrib(randomEngine);
+    }
 
-        if constexpr (std::is_floating_point_v<value_type>)
-        {
-            std::uniform_real_distribution<value_type> distrib{ min, max };
-            for (auto& v : container)
-                v = distrib(randomEngine);
-        }
-        else if constexpr (std::is_integral_v<value_type>)
-        {
-            std::uniform_int_distribution<value_type> distrib{ min, max };
-            for (auto& v : container)
-                v = distrib(randomEngine);
-        }
-        else
-        {
-            static_assert(false, "Unhandled type");
-        }
+    template<typename RandomEngine, typename Container>
+        requires std::is_integral_v<typename Container::value_type>
+    void fillContainer(RandomEngine& randomEngine, Container& container, typename Container::value_type min, typename Container::value_type max)
+    {
+        std::uniform_int_distribution<typename Container::value_type> distrib{ min, max };
+        for (auto& v : container)
+            v = distrib(randomEngine);
     }
 
     template<typename Container>
