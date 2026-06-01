@@ -19,9 +19,14 @@
 
 #pragma once
 
-#include <optional>
+#include <memory>
 #include <shared_mutex>
 
+#include <boost/asio/io_context.hpp>
+
+#include "core/IOContextRunner.hpp"
+
+#include "database/objects/ScanSettings.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 
 #include "IEngine.hpp"
@@ -46,6 +51,7 @@ namespace lms::recommendation
 
         void requestReload() override;
         bool isLoaded() const override;
+        EngineType getEngineType() const override;
 
         TrackResults findSimilarTracks(db::TrackListId tracklistId, std::size_t maxCount) const override;
         TrackResults findSimilarTracks(std::span<const db::TrackId> trackIds, std::size_t maxCount) const override;
@@ -53,9 +59,14 @@ namespace lms::recommendation
         ArtistResults findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
         TrackResults findTrackSimilarityPath(db::TrackId startTrackId, db::TrackId endTrackId, std::size_t maxCount) const override;
 
+        db::ScanSettings::RecommendationEngineType prepareReload();
+
         db::IDb& _db;
         mutable std::shared_mutex _mutex;
+        EngineType _engineType{ EngineType::None };
         std::unique_ptr<IEngine> _engine;
+        boost::asio::io_context _ioContext;
+        core::IOContextRunner _ioContextRunner;
     };
 
 } // namespace lms::recommendation

@@ -88,11 +88,11 @@ namespace lms::audio::features
         for (std::size_t i{}; i < melPoints.size(); ++i)
             melPoints[i] = melMin + i * (melMax - melMin) / (filterCount + 1);
 
-        // 2. mel → Hz
+        // 2. mel -> Hz
         std::vector<float> freqs(filterCount + 2);
         std::transform(melPoints.begin(), melPoints.end(), freqs.begin(), melToFreq);
 
-        // 3. Hz → bins
+        // 3. Hz -> bins
         std::vector<size_t> bins(filterCount + 2);
         for (std::size_t i{}; i < bins.size(); ++i)
             bins[i] = static_cast<size_t>(std::floor(nfft * freqs[i] / sampleRate));

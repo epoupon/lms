@@ -19,14 +19,9 @@
 
 #pragma once
 
-#include <atomic>
 #include <functional>
 #include <unordered_map>
 #include <vector>
-
-#include <boost/asio/io_context.hpp>
-
-#include "core/IOContextRunner.hpp"
 
 #include "database/Object.hpp"
 #include "database/objects/ArtistId.hpp"
@@ -57,8 +52,7 @@ namespace lms::recommendation
         using ReducedVector = math::Vector<ReducedDimCount, FloatType>;
         static inline constexpr std::size_t SourceDimCount{ SourceVector::getSize() };
 
-        void requestReload() override;
-        bool isLoaded() const override;
+        void load() override;
 
         TrackResults findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const override;
         TrackResults findSimilarTracks(std::span<const db::TrackId> tracksId, std::size_t maxCount) const override;
@@ -66,8 +60,6 @@ namespace lms::recommendation
         ReleaseResults findSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const override;
         ArtistResults findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
-        void abort();
-        void reload();
         void initializeConstraints();
 
         void computeDatasetStats();
@@ -80,9 +72,6 @@ namespace lms::recommendation
         void projectToReduced(const SourceVector& sourceVectorCentered, ReducedVector& output) const;
 
         db::IDb& _db;
-        bool _abortRequested{};
-        boost::asio::io_context _ioContext;
-        core::IOContextRunner _ioContextRunner;
 
         // Stats, used to normalize input data
         std::size_t _trackCount{};
@@ -94,7 +83,6 @@ namespace lms::recommendation
         bool _pcaReady{};
 
         // In-memory cache of reduced feature vectors
-        std::atomic<bool> _isReady;
         std::vector<ReducedVector> _vectors;
         std::unordered_map<db::TrackId, const ReducedVector*> _trackVectors;
         std::unordered_map<db::ReleaseId, std::vector<std::reference_wrapper<const ReducedVector>>> _releaseVectors;

@@ -20,8 +20,19 @@
 #pragma once
 
 #include <span>
+#include <unordered_map>
+#include <vector>
+
+#include "database/objects/ClusterId.hpp"
+#include "track-selection-constraints/TrackCandidateEvaluator.hpp"
+#include "track-selection-constraints/TrackMetadata.hpp"
 
 #include "IEngine.hpp"
+
+namespace lms::db
+{
+    class Session;
+}
 
 namespace lms::recommendation
 {
@@ -34,8 +45,7 @@ namespace lms::recommendation
         ClusterEngine& operator=(const ClusterEngine&) = delete;
 
     private:
-        void requestReload() override;
-        bool isLoaded() const override;
+        void load() override;
 
         TrackResults findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const override;
         TrackResults findSimilarTracks(std::span<const db::TrackId> trackIds, std::size_t maxCount) const override;
@@ -43,6 +53,18 @@ namespace lms::recommendation
         ReleaseResults findSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const override;
         ArtistResults findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
+        TrackResults greedySelect(std::vector<db::TrackId> candidates, std::vector<db::TrackId> selectedTracks, std::size_t maxCount) const;
+        void buildTrackMetadata(db::Session& session);
+        void buildTrackClusters(db::Session& session);
+        void buildReleaseClusters();
+        void buildArtistClusters();
+
         db::IDb& _db;
+
+        TrackMetadataMap _trackMetadata;
+        std::unordered_map<db::TrackId, std::vector<db::ClusterId>> _trackClusters;
+        std::unordered_map<db::ReleaseId, std::vector<db::ClusterId>> _releaseClusters;
+        std::unordered_map<db::ArtistId, std::vector<db::ClusterId>> _artistClusters;
+        TrackCandidateEvaluator _trackEvaluator;
     };
 } // namespace lms::recommendation

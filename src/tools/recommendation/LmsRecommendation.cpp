@@ -486,6 +486,12 @@ int main(int argc, char* argv[])
 
         const auto recommendationService{ recommendation::createRecommendationService(*db) };
 
+        if (recommendationService->getEngineType() == recommendation::EngineType::None)
+        {
+            std::cout << "Recommendation engine is disabled" << std::endl;
+            return EXIT_SUCCESS;
+        }
+
         while (!recommendationService->isLoaded())
             std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
 

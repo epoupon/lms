@@ -39,8 +39,7 @@ namespace lms::recommendation
     public:
         virtual ~IEngine() = default;
 
-        virtual void requestReload() = 0;
-        virtual bool isLoaded() const = 0;
+        virtual void load() = 0;
 
         virtual TrackResults findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
         virtual TrackResults findSimilarTracks(std::span<const db::TrackId> tracksId, std::size_t maxCount) const = 0;

@@ -71,7 +71,7 @@ def _import_musicnn_torch() -> type:
 #   z = cat(mid_feats, dim=2)                                 -- [B, T, 753]
 #   logits, mean_pool, max_pool = backend(z)
 #     backend: max_pool + mean_pool interleaved via stack+view -- [B, 1506]
-#              bn_in → fc1 → relu → bn_fc1 → fc2
+#              bn_in -> fc1 -> relu -> bn_fc1 -> fc2
 #   We stop before fc2 and return bn_fc1 output.
 # ---------------------------------------------------------------------------
 class MusicNNEmbeddingWrapper(nn.Module):

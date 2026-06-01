@@ -19,10 +19,11 @@
 
 #include "RecommendationService.hpp"
 
+#include <boost/asio/post.hpp>
+
 #include "audio/IMusicNNEmbeddingExtractor.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/objects/ScanSettings.hpp"
 
 #include "audio-similarity/musicnn/MusicNNEmbeddingEngine.hpp"
 #include "clusters/ClustersEngine.hpp"
@@ -34,8 +35,35 @@ namespace lms::recommendation
         db::ScanSettings::RecommendationEngineType getRecommendationEngineType(db::Session& session)
         {
             auto transaction{ session.createReadTransaction() };
-
             return db::ScanSettings::find(session)->getRecommendationEngineType();
+        }
+
+        EngineType toEngineType(db::ScanSettings::RecommendationEngineType type)
+        {
+            switch (type)
+            {
+            case db::ScanSettings::RecommendationEngineType::None:
+                return EngineType::None;
+            case db::ScanSettings::RecommendationEngineType::Clusters:
+                return EngineType::Clusters;
+            case db::ScanSettings::RecommendationEngineType::AudioSimilarity:
+                return EngineType::AudioSimilarity;
+            }
+            return EngineType::None;
+        }
+
+        std::unique_ptr<IEngine> createEngine(db::ScanSettings::RecommendationEngineType type, db::IDb& db)
+        {
+            switch (type)
+            {
+            case db::ScanSettings::RecommendationEngineType::Clusters:
+                return std::make_unique<ClusterEngine>(db);
+            case db::ScanSettings::RecommendationEngineType::AudioSimilarity:
+                return std::make_unique<MusicNNEmbeddingEngine>(db);
+            case db::ScanSettings::RecommendationEngineType::None:
+                return nullptr;
+            }
+            return nullptr;
         }
     } // namespace
 
@@ -46,6 +74,7 @@ namespace lms::recommendation
 
     RecommendationService::RecommendationService(db::IDb& db)
         : _db{ db }
+        , _ioContextRunner{ _ioContext, 1, "RecommendationEngine" }
     {
         requestReload();
     }
@@ -110,36 +139,39 @@ namespace lms::recommendation
         return false;
     }
 
+    db::ScanSettings::RecommendationEngineType RecommendationService::prepareReload()
+    {
+        const auto type{ getRecommendationEngineType(_db.getTLSSession()) };
+        std::unique_lock lock{ _mutex };
+        _engineType = toEngineType(type);
+        _engine.reset();
+        return type;
+    }
+
+    EngineType RecommendationService::getEngineType() const
+    {
+        std::shared_lock lock{ _mutex };
+        return _engineType;
+    }
+
     void RecommendationService::requestReload()
     {
-        std::unique_lock lock{ _mutex };
-        _engine.reset(); // may block
+        const auto type{ prepareReload() };
 
-        switch (getRecommendationEngineType(_db.getTLSSession()))
-        {
-        case db::ScanSettings::RecommendationEngineType::Clusters:
-            _engine = std::make_unique<ClusterEngine>(_db);
-            break;
+        boost::asio::post(_ioContext, [this, type] {
+            auto newEngine{ createEngine(type, _db) };
+            if (!newEngine)
+                return;
+            newEngine->load();
 
-        case db::ScanSettings::RecommendationEngineType::AudioSimilarity:
-            _engine = std::make_unique<MusicNNEmbeddingEngine>(_db);
-            break;
-
-        case db::ScanSettings::RecommendationEngineType::None:
-            _engine.reset();
-            break;
-        }
-
-        if (_engine)
-            _engine->requestReload();
+            std::unique_lock lock{ _mutex };
+            _engine = std::move(newEngine);
+        });
     }
 
     bool RecommendationService::isLoaded() const
     {
         std::shared_lock lock{ _mutex, std::try_to_lock };
-        if (!lock || !_engine)
-            return false;
-
-        return _engine->isLoaded();
+        return lock && _engine != nullptr;
     }
 } // namespace lms::recommendation

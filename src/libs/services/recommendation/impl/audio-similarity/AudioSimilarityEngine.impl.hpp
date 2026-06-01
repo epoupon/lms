@@ -29,8 +29,6 @@
 #include <unordered_set>
 #include <utility>
 
-#include <boost/asio/post.hpp>
-
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Random.hpp"
@@ -59,6 +57,8 @@
 #include "track-selection-constraints/SmoothTransitionConstraint.hpp"
 
 #include "Types.hpp"
+
+#define LOG(sev, message) LMS_LOG(RECOMMENDATION, sev, "[audio-similarity] " << message)
 
 namespace lms::recommendation
 {
@@ -102,30 +102,11 @@ namespace lms::recommendation
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
     AudioSimilarityEngine<Provider, ReducedDimCount>::AudioSimilarityEngine(db::IDb& db)
         : _db{ db }
-        , _ioContextRunner{ _ioContext, 1, "FeaturesEngine" }
     {
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
-    AudioSimilarityEngine<Provider, ReducedDimCount>::~AudioSimilarityEngine()
-    {
-        abort();
-    }
-
-    template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
-    void AudioSimilarityEngine<Provider, ReducedDimCount>::requestReload()
-    {
-        LMS_LOG(RECOMMENDATION, DEBUG, "Request audio similarity engine reload");
-
-        _isReady = false;
-        boost::asio::post(_ioContext, [this] { reload(); });
-    }
-
-    template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
-    bool AudioSimilarityEngine<Provider, ReducedDimCount>::isLoaded() const
-    {
-        return _isReady;
-    }
+    AudioSimilarityEngine<Provider, ReducedDimCount>::~AudioSimilarityEngine() = default;
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
     void AudioSimilarityEngine<Provider, ReducedDimCount>::initializeConstraints()
@@ -155,9 +136,9 @@ namespace lms::recommendation
 
     TrackResults AudioSimilarityEngine<Provider, ReducedDimCount>::findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const
     {
-        LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Find similar tracks from tracklist");
+        LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "Find similar tracks from tracklist");
 
-        if (maxCount == 0 || !_isReady)
+        if (maxCount == 0)
             return {};
 
         std::vector<db::TrackId> trackIds;
@@ -182,10 +163,10 @@ namespace lms::recommendation
 
     TrackResults AudioSimilarityEngine<Provider, ReducedDimCount>::findSimilarTracks(std::span<const db::TrackId> tracksId, std::size_t maxCount) const
     {
-        LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Find similar tracks");
+        LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "Find similar tracks");
 
         TrackResults res;
-        if (maxCount == 0 || tracksId.empty() || !_isReady)
+        if (maxCount == 0 || tracksId.empty())
             return res;
 
         math::MedoidCalculator<ReducedVector> medoidCalculator;
@@ -281,9 +262,9 @@ namespace lms::recommendation
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
     TrackResults AudioSimilarityEngine<Provider, ReducedDimCount>::findTrackSimilarityPath(db::TrackId startTrackId, db::TrackId endTrackId, std::size_t maxCount) const
     {
-        LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Find track similarity path");
+        LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "Find track similarity path");
 
-        if (maxCount == 0 || !_isReady)
+        if (maxCount == 0)
             return {};
 
         const auto itStart{ _trackVectors.find(startTrackId) };
@@ -379,10 +360,10 @@ namespace lms::recommendation
         db::ReleaseId releaseId,
         std::size_t maxCount) const
     {
-        LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Find similar releases");
+        LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "Find similar releases");
 
         ResultContainer<db::ReleaseId> res;
-        if (maxCount == 0 || !_isReady)
+        if (maxCount == 0)
             return res;
 
         const auto itQueryRelease{ _releaseVectors.find(releaseId) };
@@ -425,10 +406,10 @@ namespace lms::recommendation
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
     ArtistResults AudioSimilarityEngine<Provider, ReducedDimCount>::findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
     {
-        LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Find similar artists");
+        LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "Find similar artists");
 
         ArtistResults res;
-        if (maxCount == 0 || !_isReady)
+        if (maxCount == 0)
             return res;
 
         if (!linkTypes.contains(db::TrackArtistLinkType::Artist))
@@ -472,18 +453,11 @@ namespace lms::recommendation
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
-    void AudioSimilarityEngine<Provider, ReducedDimCount>::abort()
+    void AudioSimilarityEngine<Provider, ReducedDimCount>::load()
     {
-        _abortRequested = true;
-        _ioContextRunner.wait();
-    }
+        LMS_SCOPED_TRACE_OVERVIEW("AudioSimilarityEngine", "Loading");
 
-    template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
-    void AudioSimilarityEngine<Provider, ReducedDimCount>::reload()
-    {
-        LMS_SCOPED_TRACE_OVERVIEW("FeaturesEngine", "Loading");
-
-        LMS_LOG(RECOMMENDATION, INFO, "Loading...");
+        LOG(INFO, "loading...");
 
         computeDatasetStats();
         computeReducedFeatures();
@@ -491,17 +465,16 @@ namespace lms::recommendation
         computeReleaseDistanceThreshold();
         computeArtistDistanceThreshold();
         initializeConstraints();
-        _isReady = true;
 
-        LMS_LOG(RECOMMENDATION, INFO, "Loading complete!");
+        LOG(INFO, "loading complete!");
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
     void AudioSimilarityEngine<Provider, ReducedDimCount>::computeDatasetStats()
     {
-        LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Compute dataset stats");
+        LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "Compute dataset stats");
 
-        LMS_LOG(RECOMMENDATION, DEBUG, "Computing dataset stats...");
+        LOG(DEBUG, "computing dataset stats...");
 
         _pcaReady = false;
         _trackCount = 0;
@@ -570,7 +543,7 @@ namespace lms::recommendation
         }
 
         _pcaReady = true;
-        LMS_LOG(RECOMMENDATION, DEBUG, "Computing dataset stats DONE");
+        LOG(DEBUG, "computing dataset stats done");
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
@@ -596,7 +569,7 @@ namespace lms::recommendation
     {
         LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "ComputeReducedVectors");
 
-        LMS_LOG(RECOMMENDATION, INFO, "Computing reduced vectors... Reducing from " << SourceDimCount << " to " << ReducedDimCount << " dimensions");
+        LOG(INFO, "computing reduced vectors... Reducing from " << SourceDimCount << " to " << ReducedDimCount << " dimensions");
 
         db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
@@ -687,7 +660,7 @@ namespace lms::recommendation
         for (auto& [trackId, metadata] : _trackMetadata)
             std::sort(metadata.artistIds.begin(), metadata.artistIds.end());
 
-        LMS_LOG(RECOMMENDATION, INFO, "Computed reduced vectors: " << _trackVectors.size() << " tracks, " << _releaseVectors.size() << " releases, " << _artistVectors.size() << " artists");
+        LOG(INFO, "computed reduced vectors: " << _trackVectors.size() << " tracks, " << _releaseVectors.size() << " releases, " << _artistVectors.size() << " artists");
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
@@ -700,7 +673,7 @@ namespace lms::recommendation
 
         const std::size_t sampleCount{ std::min(_trackVectors.size(), maxSampleCount) };
 
-        LMS_LOG(RECOMMENDATION, INFO, "Computing distance threshold using " << sampleCount << " samples...");
+        LOG(INFO, "computing track distance threshold using " << sampleCount << " samples...");
 
         // Collect all vector pointers and shuffle for an unbiased random sample.
         std::vector<const ReducedVector*> allVectors;
@@ -736,7 +709,7 @@ namespace lms::recommendation
         else
             _trackDistanceThreshold = std::numeric_limits<FloatType>::max();
 
-        LMS_LOG(RECOMMENDATION, INFO, "Distance threshold = " << _trackDistanceThreshold);
+        LOG(INFO, "track distance threshold = " << _trackDistanceThreshold);
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
@@ -754,7 +727,7 @@ namespace lms::recommendation
             allProfiles.push_back(&vecs);
 
         const std::size_t sampleCount{ std::min(allProfiles.size(), maxSampleCount) };
-        LMS_LOG(RECOMMENDATION, INFO, "Computing release distance threshold using " << sampleCount << " samples...");
+        LOG(INFO, "computing release distance threshold using " << sampleCount << " samples...");
 
         std::minstd_rand randomEngine{ 42 };
         core::random::shuffleContainer(randomEngine, allProfiles);
@@ -781,7 +754,7 @@ namespace lms::recommendation
         else
             _releaseDistanceThreshold = std::numeric_limits<FloatType>::max();
 
-        LMS_LOG(RECOMMENDATION, INFO, "Release distance threshold = " << _releaseDistanceThreshold);
+        LOG(INFO, "release distance threshold = " << _releaseDistanceThreshold);
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
@@ -799,7 +772,7 @@ namespace lms::recommendation
             allProfiles.push_back(&vecs);
 
         const std::size_t sampleCount{ std::min(allProfiles.size(), maxSampleCount) };
-        LMS_LOG(RECOMMENDATION, INFO, "Computing artist distance threshold using " << sampleCount << " samples...");
+        LOG(INFO, "computing artist distance threshold using " << sampleCount << " samples...");
 
         std::minstd_rand randomEngine{ 42 };
         core::random::shuffleContainer(randomEngine, allProfiles);
@@ -826,6 +799,8 @@ namespace lms::recommendation
         else
             _artistDistanceThreshold = std::numeric_limits<FloatType>::max();
 
-        LMS_LOG(RECOMMENDATION, INFO, "Artist distance threshold = " << _artistDistanceThreshold);
+        LOG(INFO, "artist distance threshold = " << _artistDistanceThreshold);
     }
 } // namespace lms::recommendation
+
+#undef LOG

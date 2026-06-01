@@ -53,6 +53,7 @@ namespace lms::recommendation
 
         virtual void requestReload() = 0;
         virtual bool isLoaded() const = 0;
+        virtual EngineType getEngineType() const = 0;
 
         virtual TrackResults findSimilarTracks(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
         virtual TrackResults findSimilarTracks(std::span<const db::TrackId> tracksId, std::size_t maxCount) const = 0;
