@@ -20,6 +20,7 @@
 #pragma once
 
 #include <cstddef>
+#include <span>
 #include <vector>
 
 #include <boost/asio/io_context.hpp>

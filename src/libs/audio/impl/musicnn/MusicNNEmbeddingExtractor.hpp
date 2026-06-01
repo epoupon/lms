@@ -37,7 +37,7 @@ namespace lms::audio::musicnn
         MusicNNEmbeddingExtractor& operator=(const MusicNNEmbeddingExtractor&) = delete;
 
     private:
-        [[nodiscard]] ExtractionResult extract(const std::filesystem::path& audioFile) const;
+        [[nodiscard]] ExtractionResult extract(const std::filesystem::path& audioFile) const override;
 
         // MusicNN signal processing constants (from musicnn/configuration.py and musicnn_torch.py)
         static constexpr std::size_t sampleRate{ 16'000 };
