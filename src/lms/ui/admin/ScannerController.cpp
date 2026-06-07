@@ -21,6 +21,7 @@
 
 #include <Wt/WCheckBox.h>
 #include <Wt/WDateTime.h>
+#include <Wt/WLocalDateTime.h>
 #include <Wt/WLocale.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
@@ -114,11 +115,12 @@ namespace lms::ui
     {
         if (status.lastCompleteScanStats)
         {
+            const Wt::WLocalDateTime localStopTime{ status.lastCompleteScanStats->stopTime.toLocalTime() };
             _lastScanStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.last-scan-status")
                                          .arg(status.lastCompleteScanStats->getTotalFileCount())
                                          .arg(durationToString(status.lastCompleteScanStats->startTime, status.lastCompleteScanStats->stopTime))
-                                         .arg(status.lastCompleteScanStats->stopTime.date().toString(Wt::WLocale::currentLocale().dateFormat()))
-                                         .arg(status.lastCompleteScanStats->stopTime.time().toString(Wt::WLocale::currentLocale().timeFormat()))
+                                         .arg(localStopTime.date().toString(Wt::WLocale::currentLocale().dateFormat()))
+                                         .arg(localStopTime.time().toString(Wt::WLocale::currentLocale().timeFormat()))
                                          .arg(status.lastCompleteScanStats->errorsCount)
                                          .arg(status.lastCompleteScanStats->duplicates.size()));
 
@@ -144,11 +146,14 @@ namespace lms::ui
             break;
 
         case IScannerService::State::Scheduled:
-            _status->setText(Wt::WString::tr("Lms.Admin.ScannerController.status-scheduled")
-                                 .arg(status.nextScheduledScan.date().toString(Wt::WLocale::currentLocale().dateFormat()))
-                                 .arg(status.nextScheduledScan.time().toString(Wt::WLocale::currentLocale().timeFormat())));
-            _stepStatus->setText("");
-            break;
+            {
+                const Wt::WLocalDateTime localNextScan{ status.nextScheduledScan.toLocalTime() };
+                _status->setText(Wt::WString::tr("Lms.Admin.ScannerController.status-scheduled")
+                                     .arg(localNextScan.date().toString(Wt::WLocale::currentLocale().dateFormat()))
+                                     .arg(localNextScan.time().toString(Wt::WLocale::currentLocale().timeFormat())));
+                _stepStatus->setText("");
+                break;
+            }
 
         case IScannerService::State::InProgress:
             assert(status.currentScanStepStats);

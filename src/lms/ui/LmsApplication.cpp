@@ -22,6 +22,7 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WEnvironment.h>
 #include <Wt/WLineEdit.h>
+#include <Wt/WLocalDateTime.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WServer.h>
 #include <Wt/WStackedWidget.h>
@@ -117,7 +118,7 @@ namespace lms::ui
             return res;
         }
 
-        Wt::WLocale createLocale(const std::string& name)
+        Wt::WLocale createLocale(const std::string& name, const std::string& timeZoneName)
         {
             Wt::WLocale locale{ name };
             locale.setDecimalPoint(Wt::WString::tr("Lms.locale.decimal-point").toUTF8());
@@ -125,6 +126,18 @@ namespace lms::ui
             locale.setDateFormat(Wt::WString::tr("Lms.locale.date-format").toUTF8());
             locale.setTimeFormat(Wt::WString::tr("Lms.locale.time-format").toUTF8());
             locale.setDateTimeFormat(Wt::WString::tr("Lms.locale.date-time-format").toUTF8());
+
+            if (!timeZoneName.empty())
+            {
+                try
+                {
+                    locale.setTimeZone(Wt::cpp20::date::locate_zone(timeZoneName));
+                }
+                catch (const std::runtime_error&)
+                {
+                    // unknown zone, display stays UTC
+                }
+            }
 
             return locale;
         }
@@ -224,7 +237,7 @@ namespace lms::ui
 
         setTitle();
         setLocalizedStrings(getOrCreateMessageBundle());
-        setLocale(createLocale(Wt::WLocale::currentLocale().name()));
+        setLocale(createLocale(Wt::WLocale::currentLocale().name(), environment().timeZoneName()));
 
         // Handle Media Scanner events and other session events
         enableUpdates(true);
@@ -325,7 +338,7 @@ namespace lms::ui
 
         setUserInfo(userId, strongAuth);
 
-        LMS_LOG(UI, INFO, "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent() << ", locale = '" << locale().name() << "'");
+        LMS_LOG(UI, INFO, "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent() << ", locale = '" << locale().name() << "', timezone = '" << environment().timeZoneName() << "'");
 
         _appManager.registerApplication(*this);
         _appManager.applicationRegistered.connect(this, [this](LmsApplication& otherApplication) {

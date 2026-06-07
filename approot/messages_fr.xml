@@ -129,7 +129,7 @@
 <message id="Lms.Admin.ScannerController.get-report">Rapport</message>
 <message id="Lms.Admin.ScannerController.last-scan">Dernier scan</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Non disponible</message>
-<message id="Lms.Admin.ScannerController.last-scan-status">{1} fichiers analysés en {2} à {4} le {3} (UTC) - {5} erreurs, {6} duplicatas</message>
+<message id="Lms.Admin.ScannerController.last-scan-status">{1} fichiers analysés en {2} à {4} le {3} - {5} erreurs, {6} duplicatas</message>
 <message id="Lms.Admin.ScannerController.missing-artist-name">Nom de l'artiste manquant</message>
 <message id="Lms.Admin.ScannerController.playlist-all-pathes-missing">Impossible de trouver les chemins des pistes</message>
 <message id="Lms.Admin.ScannerController.playlist-path-missing">Impossible de trouver le chemin "{1}"</message>
@@ -141,7 +141,7 @@
 <message id="Lms.Admin.ScannerController.scanner">Scanner</message>
 <message id="Lms.Admin.ScannerController.status">Statut</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Non planifié</message>
-<message id="Lms.Admin.ScannerController.status-scheduled">Planifié à {2} le {1} (UTC)</message>
+<message id="Lms.Admin.ScannerController.status-scheduled">Planifié à {2} le {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">En cours de scan : étape {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Association des images des artistes: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Association des paroles externes: {1}%...</message>

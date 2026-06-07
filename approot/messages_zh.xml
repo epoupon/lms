@@ -127,7 +127,7 @@
 <message id="Lms.Admin.ScannerController.get-report">生成报告</message>
 <message id="Lms.Admin.ScannerController.last-scan">最后扫描</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">不可用</message>
-<message id="Lms.Admin.ScannerController.last-scan-status">已扫描 {1} 个文件，用时 {2}，在 {3} 的 {4} (UTC) - {5} 个错误，{6} 个重复项</message>
+<message id="Lms.Admin.ScannerController.last-scan-status">已扫描 {1} 个文件，用时 {2}，在 {3} 的 {4} - {5} 个错误，{6} 个重复项</message>
 <message id="Lms.Admin.ScannerController.missing-artist-name">缺少艺术家名称</message>
 <message id="Lms.Admin.ScannerController.playlist-all-pathes-missing">无法找到曲目路径</message>
 <message id="Lms.Admin.ScannerController.playlist-path-missing">无法找到路径 "{1}"</message>
@@ -139,7 +139,7 @@
 <message id="Lms.Admin.ScannerController.scanner">扫描器</message>
 <message id="Lms.Admin.ScannerController.status">状态</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">无计划</message>
-<message id="Lms.Admin.ScannerController.status-scheduled">计划于 {2} 在 {1} (UTC)</message>
+<message id="Lms.Admin.ScannerController.status-scheduled">计划于 {2} 在 {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">扫描中: 阶段 {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">关联艺术家图片：{1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">关联外部歌词：{1}%...</message>
