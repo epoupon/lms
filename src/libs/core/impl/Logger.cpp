@@ -55,8 +55,8 @@ namespace
         result += static_cast<char>('0' + ms % 10);
         result += offsetView.substr(0, 3); // sign + HH
         result += ':';
-        result += offsetView.substr(3);    // MM
-        
+        result += offsetView.substr(3); // MM
+
         return result;
     }
 } // namespace
