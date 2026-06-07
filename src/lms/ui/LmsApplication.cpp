@@ -19,7 +19,7 @@
 
 #include "LmsApplication.hpp"
 
-#include <Wt/cpp20/tz.hpp>
+#include <Wt/WConfig.h>
 
 #include <Wt/WAnchor.h>
 #include <Wt/WEnvironment.h>
@@ -119,7 +119,7 @@ namespace lms::ui
             return res;
         }
 
-        Wt::WLocale createLocale(const std::string& name, const std::string& timeZoneName)
+        Wt::WLocale createLocale(const std::string& name, [[maybe_unused]] const std::string& timeZoneName)
         {
             Wt::WLocale locale{ name };
             locale.setDecimalPoint(Wt::WString::tr("Lms.locale.decimal-point").toUTF8());
@@ -128,18 +128,19 @@ namespace lms::ui
             locale.setTimeFormat(Wt::WString::tr("Lms.locale.time-format").toUTF8());
             locale.setDateTimeFormat(Wt::WString::tr("Lms.locale.date-time-format").toUTF8());
 
+#ifdef WT_DATE_TZ_USE_STD
             if (!timeZoneName.empty())
             {
                 try
                 {
-                    locale.setTimeZone(Wt::cpp20::date::locate_zone(timeZoneName));
+                    locale.setTimeZone(std::chrono::locate_zone(timeZoneName));
                 }
                 catch (const std::runtime_error&)
                 {
                     // unknown zone, display stays UTC
                 }
             }
-
+#endif
             return locale;
         }
 
