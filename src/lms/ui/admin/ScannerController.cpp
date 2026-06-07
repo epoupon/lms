@@ -115,12 +115,26 @@ namespace lms::ui
     {
         if (status.lastCompleteScanStats)
         {
-            const Wt::WLocalDateTime localStopTime{ status.lastCompleteScanStats->stopTime.toLocalTime() };
+            const auto& locale{ Wt::WLocale::currentLocale() };
+            const Wt::WDateTime& stopTime{ status.lastCompleteScanStats->stopTime };
+            Wt::WString stopDateStr;
+            Wt::WString stopTimeStr;
+            if (locale.timeZone())
+            {
+                const Wt::WLocalDateTime local{ stopTime.toLocalTime() };
+                stopDateStr = local.date().toString(locale.dateFormat());
+                stopTimeStr = local.time().toString(locale.timeFormat());
+            }
+            else
+            {
+                stopDateStr = stopTime.date().toString(locale.dateFormat());
+                stopTimeStr = stopTime.time().toString(locale.timeFormat()) + " (UTC)";
+            }
             _lastScanStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.last-scan-status")
                                          .arg(status.lastCompleteScanStats->getTotalFileCount())
                                          .arg(durationToString(status.lastCompleteScanStats->startTime, status.lastCompleteScanStats->stopTime))
-                                         .arg(localStopTime.date().toString(Wt::WLocale::currentLocale().dateFormat()))
-                                         .arg(localStopTime.time().toString(Wt::WLocale::currentLocale().timeFormat()))
+                                         .arg(stopDateStr)
+                                         .arg(stopTimeStr)
                                          .arg(status.lastCompleteScanStats->errorsCount)
                                          .arg(status.lastCompleteScanStats->duplicates.size()));
 
@@ -147,10 +161,23 @@ namespace lms::ui
 
         case IScannerService::State::Scheduled:
             {
-                const Wt::WLocalDateTime localNextScan{ status.nextScheduledScan.toLocalTime() };
+                const auto& locale{ Wt::WLocale::currentLocale() };
+                Wt::WString nextDateStr;
+                Wt::WString nextTimeStr;
+                if (locale.timeZone())
+                {
+                    const Wt::WLocalDateTime local{ status.nextScheduledScan.toLocalTime() };
+                    nextDateStr = local.date().toString(locale.dateFormat());
+                    nextTimeStr = local.time().toString(locale.timeFormat());
+                }
+                else
+                {
+                    nextDateStr = status.nextScheduledScan.date().toString(locale.dateFormat());
+                    nextTimeStr = status.nextScheduledScan.time().toString(locale.timeFormat()) + " (UTC)";
+                }
                 _status->setText(Wt::WString::tr("Lms.Admin.ScannerController.status-scheduled")
-                                     .arg(localNextScan.date().toString(Wt::WLocale::currentLocale().dateFormat()))
-                                     .arg(localNextScan.time().toString(Wt::WLocale::currentLocale().timeFormat())));
+                                     .arg(nextDateStr)
+                                     .arg(nextTimeStr));
                 _stepStatus->setText("");
                 break;
             }
