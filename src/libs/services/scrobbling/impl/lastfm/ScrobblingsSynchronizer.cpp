@@ -107,7 +107,7 @@ namespace lms::scrobbling::lastFm
                 params["album"] = *info.albumName;
             if (info.duration)
                 params["duration"] = std::to_string(info.duration->count());
-            
+
             return params;
         }
     } // namespace

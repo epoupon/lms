@@ -85,10 +85,10 @@ namespace lms::scrobbling::lastFm
     }
 
     void LastFmBackend::initiateLastFmLink(db::UserId userId,
-        std::string_view apiKey,
-        std::string_view apiSecret,
-        std::function<void(std::string_view authUrl)> onSuccess,
-        std::function<void()> onFailure)
+                                           std::string_view apiKey,
+                                           std::string_view apiSecret,
+                                           std::function<void(std::string_view authUrl)> onSuccess,
+                                           std::function<void()> onFailure)
     {
         const std::string apiKeyStr{ apiKey };
         const std::string apiSecretStr{ apiSecret };
@@ -127,8 +127,8 @@ namespace lms::scrobbling::lastFm
     }
 
     void LastFmBackend::continueLastFmLink(db::UserId userId,
-        std::function<void()> onSuccess,
-        std::function<void()> onFailure)
+                                           std::function<void()> onSuccess,
+                                           std::function<void()> onFailure)
     {
         PendingAuth pending;
         {
