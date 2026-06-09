@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,21 +17,19 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "core/Md5.hpp"
 
-#include <Wt/WContainerWidget.h>
+#include <Wt/Utils.h>
 
-namespace lms::ui
+namespace lms::core
 {
-    class ServicesSettingsView : public Wt::WContainerWidget
+    std::array<std::byte, 16> md5(std::string_view data)
     {
-    public:
-        ServicesSettingsView();
+        const std::string raw{ Wt::Utils::md5(std::string{ data }) };
 
-    private:
-        void refreshView();
-        void refreshFormSection();
-        void refreshLastFmCardSection();
-        void showLastFmLinkModal();
-    };
-} // namespace lms::ui
+        std::array<std::byte, 16> result;
+        for (std::size_t i{}; i < 16; ++i)
+            result[i] = static_cast<std::byte>(static_cast<unsigned char>(raw[i]));
+        return result;
+    }
+} // namespace lms::core

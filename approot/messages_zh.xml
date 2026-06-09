@@ -316,6 +316,22 @@
 <message id="Lms.Settings.backend.internal">内部</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">ListenBrainz API 令牌</message>
+<message id="Lms.Settings.backend.lastfm">Last.fm</message>
+<message id="Lms.Settings.services.lastfm-api-key">Last.fm API 密钥</message>
+<message id="Lms.Settings.services.lastfm-api-secret">Last.fm API 共享密钥</message>
+<message id="Lms.Settings.services.lastfm-card-title">Last.fm 账户</message>
+<message id="Lms.Settings.services.lastfm-linked">已关联</message>
+<message id="Lms.Settings.services.lastfm-link">关联账户</message>
+<message id="Lms.Settings.services.lastfm-unlink">取消关联账户</message>
+<message id="Lms.Settings.services.lastfm-link-modal-title">关联 Last.fm 账户</message>
+<message id="Lms.Settings.services.lastfm-link-modal-help">输入您的 Last.fm API 密钥和共享密钥（从 <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a> 获取），然后点击授权。</message>
+<message id="Lms.Settings.services.lastfm-authorize">在 Last.fm 上授权</message>
+<message id="Lms.Settings.services.lastfm-done">完成，我已授权</message>
+<message id="Lms.Settings.services.lastfm-auth-url">未打开？点击此处在 Last.fm 上授权</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-title">取消关联 Last.fm 账户</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-body">您确定要取消关联 Last.fm 账户吗？在重新关联之前，scrobbling 将停止。</message>
+<message id="Lms.Settings.services.lastfm-missing-credentials">请输入您的 Last.fm API 密钥和共享密钥。</message>
+<message id="Lms.Settings.services.lastfm-auth-error">Last.fm 认证失败。请检查您的 API 密钥和共享密钥。</message>
 <message id="Lms.Settings.change-password">更改密码</message>
 <message id="Lms.Settings.date-asc">发行日期（升序）</message>
 <message id="Lms.Settings.date-desc">发行日期（降序）</message>

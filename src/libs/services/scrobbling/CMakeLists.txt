@@ -1,6 +1,9 @@
 
 add_library(lmsscrobbling STATIC
 	impl/internal/InternalBackend.cpp
+	impl/lastfm/LastFmBackend.cpp
+	impl/lastfm/ScrobblingsSynchronizer.cpp
+	impl/lastfm/Utils.cpp
 	impl/listenbrainz/ListenBrainzBackend.cpp
 	impl/listenbrainz/ListenTypes.cpp
 	impl/listenbrainz/ListensParser.cpp

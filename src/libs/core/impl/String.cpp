@@ -462,6 +462,22 @@ namespace lms::core::stringUtils
         detail::writeEscapedString(os, str, detail::xmlEscapeChars);
     }
 
+    std::string urlEncode(std::string_view str)
+    {
+        std::ostringstream encoded;
+        encoded << std::hex << std::uppercase;
+
+        for (const unsigned char c : str)
+        {
+            if (std::isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
+                encoded << c;
+            else
+                encoded << '%' << std::setw(2) << std::setfill('0') << static_cast<int>(c);
+        }
+
+        return encoded.str();
+    }
+
     std::string escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar)
     {
         std::string res;

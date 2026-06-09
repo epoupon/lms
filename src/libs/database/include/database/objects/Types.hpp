@@ -198,6 +198,7 @@ namespace lms::db
     {
         Internal = 0,
         ListenBrainz = 1,
+        LastFm = 2,
     };
 
     enum class FeedbackBackend

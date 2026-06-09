@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 105 };
+        static constexpr Version LMS_DATABASE_VERSION{ 106 };
     }
 
     VersionInfo::VersionInfo()
@@ -1729,6 +1729,13 @@ FROM track)");
         utils::executeCommand(*session.getDboSession(), R"(ALTER TABLE "playlist_file" ADD COLUMN "cover_image_file" text NOT NULL DEFAULT '')");
     }
 
+    void migrateFromV105(Session& session)
+    {
+        utils::executeCommand(*session.getDboSession(), R"(ALTER TABLE "user" ADD COLUMN "lastfm_api_key" TEXT NOT NULL DEFAULT '')");
+        utils::executeCommand(*session.getDboSession(), R"(ALTER TABLE "user" ADD COLUMN "lastfm_api_secret" TEXT NOT NULL DEFAULT '')");
+        utils::executeCommand(*session.getDboSession(), R"(ALTER TABLE "user" ADD COLUMN "lastfm_session_key" TEXT NOT NULL DEFAULT '')");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1810,6 +1817,7 @@ FROM track)");
             { 102, migrateFromV102 },
             { 103, migrateFromV103 },
             { 104, migrateFromV104 },
+            { 105, migrateFromV105 },
         };
 
         bool migrationPerformed{};

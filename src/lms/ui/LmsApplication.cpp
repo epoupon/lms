@@ -562,9 +562,14 @@ namespace lms::ui
         }
     }
 
-    void LmsApplication::post(std::function<void()> func)
+    void LmsApplication::post(const std::string& sessionId, const std::function<void()>& func)
     {
-        Wt::WServer::instance()->post(LmsApp->sessionId(), std::move(func));
+        Wt::WServer::instance()->post(sessionId, func);
+    }
+
+    void LmsApplication::post(const std::function<void()>& func)
+    {
+        post(sessionId(), func);
     }
 
     void LmsApplication::setTitle(const Wt::WString& title)

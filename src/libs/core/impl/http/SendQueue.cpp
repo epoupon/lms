@@ -284,8 +284,12 @@ namespace lms::core::http
         LOG(DEBUG, "Remaining messages = " << (remainingCount ? *remainingCount : 0));
         if (mustThrottle || (remainingCount && *remainingCount == 0))
         {
-            const auto waitDuration{ headerReadAs<std::chrono::seconds>(msg, "X-RateLimit-Reset-In") };
-            throttle(waitDuration.value_or(_defaultRetryWaitDuration));
+            const std::chrono::seconds waitDuration{
+                headerReadAs<std::chrono::seconds>(msg, "X-RateLimit-Reset-In")
+                    .value_or(headerReadAs<std::chrono::seconds>(msg, "Retry-After")
+                                  .value_or(_defaultRetryWaitDuration))
+            };
+            throttle(waitDuration);
         }
 
         if (!mustThrottle)

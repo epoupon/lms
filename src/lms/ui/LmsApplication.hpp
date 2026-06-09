@@ -78,7 +78,8 @@ namespace lms::ui
         AuthenticationBackend getAuthBackend() const { return _authBackend; }
 
         // Utils
-        void post(std::function<void()> func);
+        static void post(const std::string& sessionId, const std::function<void()>& func);
+        void post(const std::function<void()>& func);
         void setTitle(const Wt::WString& title = "");
 
         // Used to classify the message sent to the user

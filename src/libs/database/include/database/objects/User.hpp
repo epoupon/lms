@@ -118,6 +118,9 @@ namespace lms::db
         void setFeedbackBackend(FeedbackBackend feedbackBackend) { _feedbackBackend = feedbackBackend; }
         void setScrobblingBackend(ScrobblingBackend scrobblingBackend) { _scrobblingBackend = scrobblingBackend; }
         void setListenBrainzToken(std::string_view token) { _listenbrainzToken = token; }
+        void setLastFmApiKey(std::string_view key) { _lastFmApiKey = key; }
+        void setLastFmApiSecret(std::string_view secret) { _lastFmApiSecret = secret; }
+        void setLastFmSessionKey(std::string_view key) { _lastFmSessionKey = key; }
 
         // read
         bool isAdmin() const { return _type == UserType::ADMIN; }
@@ -134,6 +137,9 @@ namespace lms::db
         FeedbackBackend getFeedbackBackend() const { return _feedbackBackend; }
         ScrobblingBackend getScrobblingBackend() const { return _scrobblingBackend; }
         std::string_view getListenBrainzToken() const { return _listenbrainzToken; }
+        std::string_view getLastFmApiKey() const { return _lastFmApiKey; }
+        std::string_view getLastFmApiSecret() const { return _lastFmApiSecret; }
+        std::string_view getLastFmSessionKey() const { return _lastFmSessionKey; }
 
         template<class Action>
         void persist(Action& a)
@@ -155,6 +161,9 @@ namespace lms::db
             Wt::Dbo::field(a, _feedbackBackend, "feedback_backend");
             Wt::Dbo::field(a, _scrobblingBackend, "scrobbling_backend");
             Wt::Dbo::field(a, _listenbrainzToken, "listenbrainz_token");
+            Wt::Dbo::field(a, _lastFmApiKey, "lastfm_api_key");
+            Wt::Dbo::field(a, _lastFmApiSecret, "lastfm_api_secret");
+            Wt::Dbo::field(a, _lastFmSessionKey, "lastfm_session_key");
 
             Wt::Dbo::hasMany(a, _authTokens, Wt::Dbo::ManyToOne, "user");
             Wt::Dbo::hasMany(a, _uiStates, Wt::Dbo::ManyToOne, "user");
@@ -176,7 +185,10 @@ namespace lms::db
         core::EnumSet<TrackArtistLinkType> _uiInlineArtistRelationships{ TrackArtistLinkType::Composer, TrackArtistLinkType::Performer };
         FeedbackBackend _feedbackBackend{ defaultFeedbackBackend };
         ScrobblingBackend _scrobblingBackend{ defaultScrobblingBackend };
-        std::string _listenbrainzToken; // Musicbrainz Identifier
+        std::string _listenbrainzToken;
+        std::string _lastFmApiKey;
+        std::string _lastFmApiSecret;
+        std::string _lastFmSessionKey;
 
         // Admin defined settings
         UserType _type{ UserType::REGULAR };

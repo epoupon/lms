@@ -28,6 +28,11 @@
 
 #include "IScrobblingBackend.hpp"
 
+namespace lms::scrobbling::lastFm
+{
+    class LastFmBackend;
+}
+
 namespace lms::scrobbling
 {
     class ScrobblingService : public IScrobblingService
@@ -59,12 +64,21 @@ namespace lms::scrobbling
         ReleaseContainer getTopReleases(const FindParameters& params) override;
         TrackContainer getTopTracks(const FindParameters& params) override;
 
+        void initiateLastFmLink(db::UserId userId, std::string_view apiKey, std::string_view apiSecret,
+                                std::function<void(std::string_view authUrl)> onSuccess,
+                                std::function<void()> onFailure) override;
+
+        void continueLastFmLink(db::UserId userId,
+                                std::function<void()> onSuccess,
+                                std::function<void()> onFailure) override;
+
         std::optional<db::ScrobblingBackend> getUserBackend(db::UserId userId);
 
         void insertNowPlayingEntry(const Listen& listen);
 
         db::IDb& _db;
         std::unordered_map<db::ScrobblingBackend, std::unique_ptr<IScrobblingBackend>> _scrobblingBackends;
+        lastFm::LastFmBackend* _lastFmBackend{}; // non-owning, owned via _scrobblingBackends
 
         std::shared_mutex _nowPlayingEntriesMutex;
         struct NowPlayingEntry

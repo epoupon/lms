@@ -345,6 +345,22 @@
 <message id="Lms.Settings.backend.internal">Interno</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">Token API ListenBrainz</message>
+<message id="Lms.Settings.backend.lastfm">Last.fm</message>
+<message id="Lms.Settings.services.lastfm-api-key">Chiave API Last.fm</message>
+<message id="Lms.Settings.services.lastfm-api-secret">Segreto API Last.fm</message>
+<message id="Lms.Settings.services.lastfm-card-title">Account Last.fm</message>
+<message id="Lms.Settings.services.lastfm-linked">Collegato</message>
+<message id="Lms.Settings.services.lastfm-link">Collega account</message>
+<message id="Lms.Settings.services.lastfm-unlink">Scollega account</message>
+<message id="Lms.Settings.services.lastfm-link-modal-title">Collega account Last.fm</message>
+<message id="Lms.Settings.services.lastfm-link-modal-help">Inserisci la chiave API e il segreto condiviso di Last.fm (ottenili su <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a>), poi clicca su Autorizza.</message>
+<message id="Lms.Settings.services.lastfm-authorize">Autorizza su Last.fm</message>
+<message id="Lms.Settings.services.lastfm-done">Fatto, ho autorizzato</message>
+<message id="Lms.Settings.services.lastfm-auth-url">Non si è aperto? Clicca qui per autorizzare su Last.fm</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-title">Scollega account Last.fm</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-body">Sei sicuro di voler scollegare il tuo account Last.fm? Lo scrobbling si interromperà finché non lo ricolleghi.</message>
+<message id="Lms.Settings.services.lastfm-missing-credentials">Inserisci la chiave API e il segreto Last.fm.</message>
+<message id="Lms.Settings.services.lastfm-auth-error">Autenticazione Last.fm fallita. Controlla la chiave API e il segreto.</message>
 <message id="Lms.Settings.change-password">Cambia password</message>
 <message id="Lms.Settings.date-asc">Data di uscita (Crescente)</message>
 <message id="Lms.Settings.date-desc">Data di uscita (Decrescente)</message>

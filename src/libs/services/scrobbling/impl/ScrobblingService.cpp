@@ -29,6 +29,7 @@
 #include "database/objects/User.hpp"
 
 #include "internal/InternalBackend.hpp"
+#include "lastfm/LastFmBackend.hpp"
 #include "listenbrainz/ListenBrainzBackend.hpp"
 
 namespace lms::scrobbling
@@ -67,6 +68,11 @@ namespace lms::scrobbling
         LMS_LOG(SCROBBLING, INFO, "Starting service...");
         _scrobblingBackends.emplace(ScrobblingBackend::Internal, std::make_unique<InternalBackend>(_db));
         _scrobblingBackends.emplace(ScrobblingBackend::ListenBrainz, std::make_unique<listenBrainz::ListenBrainzBackend>(ioContext, _db));
+        {
+            auto backend{ std::make_unique<lastFm::LastFmBackend>(ioContext, _db) };
+            _lastFmBackend = backend.get();
+            _scrobblingBackends.emplace(ScrobblingBackend::LastFm, std::move(backend));
+        }
         LMS_LOG(SCROBBLING, INFO, "Service started!");
     }
 
@@ -93,6 +99,28 @@ namespace lms::scrobbling
     {
         if (std::optional<ScrobblingBackend> backend{ getUserBackend(listen.userId) })
             _scrobblingBackends[*backend]->addTimedListen(listen);
+    }
+
+    void ScrobblingService::initiateLastFmLink(db::UserId userId,
+                                               std::string_view apiKey,
+                                               std::string_view apiSecret,
+                                               std::function<void(std::string_view authUrl)> onSuccess,
+                                               std::function<void()> onFailure)
+    {
+        if (_lastFmBackend)
+            _lastFmBackend->initiateLastFmLink(userId, apiKey, apiSecret, std::move(onSuccess), std::move(onFailure));
+        else
+            onFailure();
+    }
+
+    void ScrobblingService::continueLastFmLink(db::UserId userId,
+                                               std::function<void()> onSuccess,
+                                               std::function<void()> onFailure)
+    {
+        if (_lastFmBackend)
+            _lastFmBackend->continueLastFmLink(userId, std::move(onSuccess), std::move(onFailure));
+        else
+            onFailure();
     }
 
     void ScrobblingService::visitNowPlayingListens(const std::function<void(Clock::time_point startedAt, const Listen&)>& visitor, db::UserId userId)

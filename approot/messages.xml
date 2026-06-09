@@ -343,8 +343,24 @@
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">These audio settings are local to your browser</message>
 <message id="Lms.Settings.backend.internal">Internal</message>
+<message id="Lms.Settings.backend.lastfm">Last.fm</message>
+<message id="Lms.Settings.services.lastfm-api-key">Last.fm API key</message>
+<message id="Lms.Settings.services.lastfm-api-secret">Last.fm API secret</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">ListenBrainz API token</message>
+<message id="Lms.Settings.services.lastfm-card-title">Last.fm account</message>
+<message id="Lms.Settings.services.lastfm-linked">Linked</message>
+<message id="Lms.Settings.services.lastfm-link">Link account</message>
+<message id="Lms.Settings.services.lastfm-unlink">Unlink account</message>
+<message id="Lms.Settings.services.lastfm-link-modal-title">Link Last.fm account</message>
+<message id="Lms.Settings.services.lastfm-link-modal-help">Enter your Last.fm API key and shared secret (get them at <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a>), then click Authorize.</message>
+<message id="Lms.Settings.services.lastfm-authorize">Authorize on Last.fm</message>
+<message id="Lms.Settings.services.lastfm-done">Done, I've authorized</message>
+<message id="Lms.Settings.services.lastfm-auth-url">Didn't open? Click here to authorize on Last.fm</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-title">Unlink Last.fm account</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-body">Are you sure you want to unlink your Last.fm account? Scrobbling will stop until you link again.</message>
+<message id="Lms.Settings.services.lastfm-missing-credentials">Please enter your Last.fm API key and secret.</message>
+<message id="Lms.Settings.services.lastfm-auth-error">Last.fm authentication failed. Check your API key and secret.</message>
 <message id="Lms.Settings.change-password">Change password</message>
 <message id="Lms.Settings.date-asc">Release Date (Ascending)</message>
 <message id="Lms.Settings.date-desc">Release Date (Descending)</message>

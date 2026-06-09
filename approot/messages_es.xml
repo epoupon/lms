@@ -345,6 +345,22 @@
 <message id="Lms.Settings.backend.internal">Interno</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">Token de la API de ListenBrainz</message>
+<message id="Lms.Settings.backend.lastfm">Last.fm</message>
+<message id="Lms.Settings.services.lastfm-api-key">Clave API de Last.fm</message>
+<message id="Lms.Settings.services.lastfm-api-secret">Secreto de API de Last.fm</message>
+<message id="Lms.Settings.services.lastfm-card-title">Cuenta de Last.fm</message>
+<message id="Lms.Settings.services.lastfm-linked">Vinculado</message>
+<message id="Lms.Settings.services.lastfm-link">Vincular cuenta</message>
+<message id="Lms.Settings.services.lastfm-unlink">Desvincular cuenta</message>
+<message id="Lms.Settings.services.lastfm-link-modal-title">Vincular cuenta de Last.fm</message>
+<message id="Lms.Settings.services.lastfm-link-modal-help">Introduce tu clave API y secreto compartido de Last.fm (obténlos en <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a>), luego haz clic en Autorizar.</message>
+<message id="Lms.Settings.services.lastfm-authorize">Autorizar en Last.fm</message>
+<message id="Lms.Settings.services.lastfm-done">Hecho, he autorizado</message>
+<message id="Lms.Settings.services.lastfm-auth-url">¿No se abrió? Haz clic aquí para autorizar en Last.fm</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-title">Desvincular cuenta de Last.fm</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-body">¿Estás seguro de que deseas desvincular tu cuenta de Last.fm? El scrobbling se detendrá hasta que vuelvas a vincularla.</message>
+<message id="Lms.Settings.services.lastfm-missing-credentials">Por favor, introduce tu clave API y secreto de Last.fm.</message>
+<message id="Lms.Settings.services.lastfm-auth-error">Error de autenticación de Last.fm. Comprueba tu clave API y secreto.</message>
 <message id="Lms.Settings.change-password">Cambiar contraseña</message>
 <message id="Lms.Settings.date-asc">Fecha de publicación (Ascendiente)</message>
 <message id="Lms.Settings.date-desc">Fecha de publicación (Descendiente)</message>

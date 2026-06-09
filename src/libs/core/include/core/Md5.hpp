@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,19 +19,11 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget.h>
+#include <array>
+#include <cstddef>
+#include <string_view>
 
-namespace lms::ui
+namespace lms::core
 {
-    class ServicesSettingsView : public Wt::WContainerWidget
-    {
-    public:
-        ServicesSettingsView();
-
-    private:
-        void refreshView();
-        void refreshFormSection();
-        void refreshLastFmCardSection();
-        void showLastFmLinkModal();
-    };
-} // namespace lms::ui
+    std::array<std::byte, 16> md5(std::string_view data);
+} // namespace lms::core

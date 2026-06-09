@@ -371,6 +371,22 @@
 <message id="Lms.Settings.backend.internal">Wewnętrzny</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">ListenBrainz API token</message>
+<message id="Lms.Settings.backend.lastfm">Last.fm</message>
+<message id="Lms.Settings.services.lastfm-api-key">Klucz API Last.fm</message>
+<message id="Lms.Settings.services.lastfm-api-secret">Sekret API Last.fm</message>
+<message id="Lms.Settings.services.lastfm-card-title">Konto Last.fm</message>
+<message id="Lms.Settings.services.lastfm-linked">Połączono</message>
+<message id="Lms.Settings.services.lastfm-link">Połącz konto</message>
+<message id="Lms.Settings.services.lastfm-unlink">Odłącz konto</message>
+<message id="Lms.Settings.services.lastfm-link-modal-title">Połącz konto Last.fm</message>
+<message id="Lms.Settings.services.lastfm-link-modal-help">Wprowadź klucz API i współdzielony sekret Last.fm (uzyskaj je na <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a>), następnie kliknij Autoryzuj.</message>
+<message id="Lms.Settings.services.lastfm-authorize">Autoryzuj na Last.fm</message>
+<message id="Lms.Settings.services.lastfm-done">Gotowe, autoryzowałem</message>
+<message id="Lms.Settings.services.lastfm-auth-url">Nie otworzyło się? Kliknij tutaj, aby autoryzować na Last.fm</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-title">Odłącz konto Last.fm</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-body">Czy na pewno chcesz odłączyć swoje konto Last.fm? Scrobbling zostanie zatrzymany do czasu ponownego połączenia.</message>
+<message id="Lms.Settings.services.lastfm-missing-credentials">Wprowadź klucz API i sekret Last.fm.</message>
+<message id="Lms.Settings.services.lastfm-auth-error">Uwierzytelnianie Last.fm nie powiodło się. Sprawdź klucz API i sekret.</message>
 <message id="Lms.Settings.change-password">Zmień hasło</message>
 <message id="Lms.Settings.date-asc">Data wydania (Rosnąco)</message>
 <message id="Lms.Settings.date-desc">Data wydania (Malejąco)</message>

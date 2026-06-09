@@ -34,6 +34,7 @@ add_library(lmscore STATIC
 	impl/String.cpp
 	impl/TraceLogger.cpp
 	impl/UUID.cpp
+	impl/Md5.cpp
 	impl/XxHash3.cpp
 	${CMAKE_CURRENT_BINARY_DIR}/impl/Version.cpp
 	)
