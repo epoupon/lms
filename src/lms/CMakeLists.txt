@@ -57,6 +57,7 @@ add_executable(lms
 	ui/resource/AudioTranscodingResource.cpp
 	ui/resource/ArtworkResource.cpp
 	ui/resource/DownloadResource.cpp
+	ui/resource/PlaylistExportResource.cpp
 	)
 
 target_include_directories(lms PRIVATE

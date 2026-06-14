@@ -37,6 +37,7 @@
 #include "explore/PlayQueueController.hpp"
 #include "explore/TrackListHelpers.hpp"
 #include "resource/DownloadResource.hpp"
+#include "resource/PlaylistExportResource.hpp"
 
 namespace lms::ui
 {
@@ -137,6 +138,9 @@ namespace lms::ui
 
         bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
             ->setLink(Wt::WLink{ std::make_unique<DownloadTrackListResource>(*trackListId) });
+
+        bindNew<Wt::WPushButton>("download-m3u", Wt::WString::tr("Lms.Explore.download-m3u"))
+            ->setLink(Wt::WLink{ std::make_unique<PlaylistExportResource>(*trackListId) });
 
         if (trackList->getUserId() == LmsApp->getUserId())
         {

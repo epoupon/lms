@@ -199,6 +199,7 @@
 <message id="Lms.Explore.bitrate">Bitrate</message>
 <message id="Lms.Explore.codec">Codec</message>
 <message id="Lms.Explore.download">Download</message>
+<message id="Lms.Explore.download-m3u">Download M3U</message>
 <message id="Lms.Explore.duration">Duration</message>
 <message id="Lms.Explore.filter-added">Filter added</message>
 <message id="Lms.Explore.filters">Filters</message>
