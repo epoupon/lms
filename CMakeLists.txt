@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-<<<<<<< Updated upstream
-project(lms VERSION 3.72.1)
-=======
 project(lms VERSION 3.77.0)
->>>>>>> Stashed changes
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules/)
 
