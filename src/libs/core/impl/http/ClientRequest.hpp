@@ -35,6 +35,7 @@ namespace lms::core::http
             : _parameters{ std::move(POSTParams) } {}
 
         std::size_t retryCount{};
+        std::size_t bytesReceived{};
 
         const ClientRequestParameters& getParameters() const
         {

@@ -21,21 +21,32 @@
 
 #include <atomic>
 #include <deque>
+#include <memory>
 #include <string_view>
 
-#include <Wt/Http/Client.h>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/io_context_strand.hpp>
 #include <boost/asio/steady_timer.hpp>
 
 #include "ClientRequest.hpp"
+#include "IWtHttpClient.hpp"
 
 namespace lms::core::http
 {
+    // Retry/throttle timings
+    struct RetryPolicy
+    {
+        std::size_t maxRetryCount{ 2 };
+        std::chrono::seconds defaultRetryWaitDuration{ 30 };
+        std::chrono::seconds minRetryWaitDuration{ 1 };
+        std::chrono::seconds maxRetryWaitDuration{ 300 };
+    };
+
     class SendQueue
     {
     public:
         SendQueue(boost::asio::io_context& ioContext, std::string_view baseUrl);
+        SendQueue(boost::asio::io_context& ioContext, std::string_view baseUrl, std::unique_ptr<IWtHttpClient> httpClient, RetryPolicy retryPolicy = {});
         ~SendQueue();
 
         SendQueue(const SendQueue&) = delete;
@@ -56,10 +67,7 @@ namespace lms::core::http
         void onClientDoneSuccess(std::unique_ptr<ClientRequest> request, const Wt::Http::Message& msg);
         void throttle(std::chrono::seconds duration);
 
-        const std::size_t _maxRetryCount{ 2 };
-        const std::chrono::seconds _defaultRetryWaitDuration{ 30 };
-        const std::chrono::seconds _minRetryWaitDuration{ 1 };
-        const std::chrono::seconds _maxRetryWaitDuration{ 300 };
+        const RetryPolicy _retryPolicy;
 
         boost::asio::io_context& _ioContext;
         boost::asio::io_context::strand _strand{ _ioContext }; // protect _state, _sendQueue and _currentRequest
@@ -75,7 +83,7 @@ namespace lms::core::http
         void setState(State state);
         std::atomic<bool> _abortAllRequests;
         State _state;
-        Wt::Http::Client _client;
+        std::unique_ptr<IWtHttpClient> _httpClient;
         std::map<ClientRequestParameters::Priority, std::deque<std::unique_ptr<ClientRequest>>> _sendQueue;
         std::unique_ptr<ClientRequest> _currentRequest;
     };

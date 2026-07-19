@@ -8,11 +8,16 @@ add_executable(test-core
 	PartialDateTime.cpp
 	Path.cpp
 	RecursiveSharedMutex.cpp
+	SendQueue.cpp
 	Service.cpp
 	String.cpp
 	TraceLogger.cpp
 	UUID.cpp
 	XxHash3.cpp
+	)
+
+target_include_directories(test-core PRIVATE
+	../impl
 	)
 
 target_link_libraries(test-core PRIVATE
