@@ -145,9 +145,6 @@ namespace lms::ui
             return locale;
         }
 
-            return locale;
-        }
-
         enum IdxRoot
         {
             IdxExplore = 0,

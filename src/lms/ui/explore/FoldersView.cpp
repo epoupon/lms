@@ -152,7 +152,7 @@ void Folders::onPathOrFilterChanged()
         params.setSortMethod(db::ReleaseSortMethod::SortName);
         params.setRange(db::Range{ 0, _maxReleaseCount });
 
-        return db::Release::find(LmsApp->getDbSession(), params).results;
+        return db::Release::find(LmsApp->getDbSession(), params);
     }
 
     void Folders::renderBreadcrumbs(std::optional<db::DirectoryId> currentDirectoryId)

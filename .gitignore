@@ -5,3 +5,4 @@ CMakeFiles/
 build/
 .cache/
 .vscode/
+.lms-workdir
