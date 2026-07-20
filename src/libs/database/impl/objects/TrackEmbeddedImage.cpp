@@ -27,7 +27,9 @@
 #include "database/objects/Grouping.hpp"
 #include "database/objects/Language.hpp"
 #include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/Track.hpp"
+#include "database/objects/Work.hpp"
 
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 

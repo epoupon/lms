@@ -416,6 +416,72 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, ReleaseSearchByMediumName)
+    {
+        ScopedRelease release{ session, "The Beatles In Mono" };
+        ScopedMedium medium{ session, release.lockAndGet() };
+        ScopedTrack track{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            track.get().modify()->setRelease(release.get());
+            track.get().modify()->setMedium(medium.get());
+            medium.get().modify()->setName("Sgt. Pepper's Lonely Hearts Club Band");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            // matches only the medium (discsubtitle), not the release name
+            {
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "Sgt. Pepper" })) };
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases.front(), release.getId());
+            }
+            // release name search still works
+            {
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "Beatles In Mono" })) };
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases.front(), release.getId());
+            }
+            // no match on either field
+            {
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "NoSuchKeyword" })) };
+                EXPECT_EQ(releases.size(), 0);
+            }
+        }
+    }
+
+    TEST_F(DatabaseFixture, ReleaseSearchByMediumName_multipleMediaNoDuplicates)
+    {
+        ScopedRelease release{ session, "The Beatles In Mono" };
+        ScopedMedium medium1{ session, release.lockAndGet() };
+        ScopedMedium medium2{ session, release.lockAndGet() };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            track1.get().modify()->setRelease(release.get());
+            track1.get().modify()->setMedium(medium1.get());
+            medium1.get().modify()->setName("Sgt. Pepper's Lonely Hearts Club Band");
+
+            track2.get().modify()->setRelease(release.get());
+            track2.get().modify()->setMedium(medium2.get());
+            medium2.get().modify()->setName("Abbey Road");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "Sgt. Pepper" })) };
+            ASSERT_EQ(releases.size(), 1); // not duplicated despite the 1:N join
+            EXPECT_EQ(releases.front(), release.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, MultiTracksSingleReleaseTotalDiscTrack)
     {
         ScopedRelease release1{ session, "MyRelease" };

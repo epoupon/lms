@@ -17,6 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <array>
+#include <limits>
+
 #include <gtest/gtest.h>
 
 #include <Wt/WDate.h>
@@ -385,6 +388,31 @@ namespace lms::core::stringUtils::tests
         EXPECT_FALSE(stringEndsWith("FooBar", "R"));
     }
 
+    TEST(StringUtils, utf8Truncate)
+    {
+        EXPECT_EQ(utf8Truncate("abc", 10), "abc");
+        EXPECT_EQ(utf8Truncate("abcdef", 6), "abcdef");
+        EXPECT_EQ(utf8Truncate("", 10), "");
+        EXPECT_EQ(utf8Truncate("abc", 0), "");
+
+        EXPECT_EQ(utf8Truncate("caf\xC3\xA9", 4), "caf");
+        EXPECT_EQ(utf8Truncate("caf\xC3\xA9", 5), "caf\xC3\xA9");
+
+        EXPECT_EQ(utf8Truncate("\xE2\x82\xAC", 1), "");
+        EXPECT_EQ(utf8Truncate("\xE2\x82\xAC", 2), "");
+        EXPECT_EQ(utf8Truncate("\xE2\x82\xAC", 3), "\xE2\x82\xAC");
+
+        EXPECT_EQ(utf8Truncate("\xF0\x9F\x98\x80", 1), "");
+        EXPECT_EQ(utf8Truncate("\xF0\x9F\x98\x80", 2), "");
+        EXPECT_EQ(utf8Truncate("\xF0\x9F\x98\x80", 3), "");
+        EXPECT_EQ(utf8Truncate("\xF0\x9F\x98\x80", 4), "\xF0\x9F\x98\x80");
+
+        EXPECT_EQ(utf8Truncate("e\xCC\x81", 2), "e");
+        EXPECT_EQ(utf8Truncate("e\xCC\x81", 3), "e\xCC\x81");
+
+        EXPECT_EQ(utf8Truncate("\x80\x80\x80", 2), "");
+    }
+
     TEST(StringUtils, stringCaseInsensitiveContains)
     {
         EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "Bar"));
@@ -397,13 +425,11 @@ namespace lms::core::stringUtils::tests
         EXPECT_FALSE(stringCaseInsensitiveContains("", "Foo"));
     }
 
-    TEST(StringUtils, toHexString)
+    TEST(StringUtils, bufferToHexString)
     {
-        EXPECT_EQ(toHexString(""), "");
-        EXPECT_EQ(toHexString("123"), "313233");
-        EXPECT_EQ(toHexString("1234"), "31323334");
-        EXPECT_EQ(toHexString("12345"), "3132333435");
-        EXPECT_EQ(toHexString("Test"), "54657374");
+        EXPECT_EQ(bufferToHexString({}), "");
+        EXPECT_EQ(bufferToHexString(std::array{ std::byte{ 0x31 }, std::byte{ 0x32 }, std::byte{ 0x33 } }), "313233");
+        EXPECT_EQ(bufferToHexString(std::array{ std::byte{ 0x00 }, std::byte{ 0xab }, std::byte{ 0xcd }, std::byte{ 0xff } }), "00ABCDFF");
 
         // test back stringFromHex
         EXPECT_EQ(stringFromHex(""), "");
@@ -411,5 +437,33 @@ namespace lms::core::stringUtils::tests
         EXPECT_EQ(stringFromHex("31323334"), "1234");
         EXPECT_EQ(stringFromHex("3132333435"), "12345");
         EXPECT_EQ(stringFromHex("54657374"), "Test");
+    }
+
+    TEST(StringUtils, toRomanNumeral)
+    {
+        EXPECT_EQ(toRomanNumeral(1), "i");
+        EXPECT_EQ(toRomanNumeral(2), "ii");
+        EXPECT_EQ(toRomanNumeral(3), "iii");
+        EXPECT_EQ(toRomanNumeral(4), "iv");
+        EXPECT_EQ(toRomanNumeral(5), "v");
+        EXPECT_EQ(toRomanNumeral(6), "vi");
+        EXPECT_EQ(toRomanNumeral(7), "vii");
+        EXPECT_EQ(toRomanNumeral(8), "viii");
+        EXPECT_EQ(toRomanNumeral(9), "ix");
+        EXPECT_EQ(toRomanNumeral(10), "x");
+        EXPECT_EQ(toRomanNumeral(11), "xi");
+        EXPECT_EQ(toRomanNumeral(14), "xiv");
+        EXPECT_EQ(toRomanNumeral(16), "xvi");
+        EXPECT_EQ(toRomanNumeral(40), "xl");
+        EXPECT_EQ(toRomanNumeral(50), "l");
+        EXPECT_EQ(toRomanNumeral(90), "xc");
+        EXPECT_EQ(toRomanNumeral(99), "xcix");
+        EXPECT_EQ(toRomanNumeral(444), "cdxliv");
+        EXPECT_EQ(toRomanNumeral(1994), "mcmxciv");
+        EXPECT_EQ(toRomanNumeral(3999), "mmmcmxcix");
+        EXPECT_EQ(toRomanNumeral(0), "");
+        EXPECT_EQ(toRomanNumeral(4000), "");
+        EXPECT_EQ(toRomanNumeral(static_cast<std::size_t>(-1)), ""); // underflows to SIZE_MAX
+        EXPECT_EQ(toRomanNumeral(std::numeric_limits<std::size_t>::max()), "");
     }
 } // namespace lms::core::stringUtils::tests

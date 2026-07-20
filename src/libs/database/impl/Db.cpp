@@ -248,7 +248,7 @@ namespace lms::db
         }
         else if (checkType != "none")
         {
-            throw Exception("Invalid 'db-integrity-check' value: '" + checkType + "'. Expected 'quick', 'full' or 'none'.");
+            throw Exception{ "Invalid 'db-integrity-check' value: '" + checkType + "'. Expected 'quick', 'full' or 'none'." };
         }
     }
 
@@ -360,7 +360,7 @@ namespace lms::db
         }) };
 
         if (!foreignKeyConstraintsPassed)
-            throw Exception("Foreign key constraints check failed! Please restore from a backup or recreate the database.");
+            throw Exception{ "Foreign key constraints check failed! Please restore from a backup or recreate the database." };
 
         LMS_LOG(DB, INFO, "Foreign key constraints check passed!");
     }

@@ -47,7 +47,6 @@ namespace lms::api::subsonic
             ServerMustUpgrade = 30,
             WrongUsernameOrPassword = 40,
             TokenAuthenticationNotSupportedForLDAPUsers = 41,
-            ProvidedAuthenticationMechanismNotSupported = 42,
             MultipleConflictingAuthenticationMechanismsProvided = 43,
             InvalidAPIkey = 44,
             UserNotAuthorized = 50,
@@ -129,19 +128,6 @@ namespace lms::api::subsonic
 
     private:
         std::string getMessage() const override { return "Token authentication not supported for LDAP users."; }
-    };
-
-    class ProvidedAuthenticationMechanismNotSupportedError : public Error
-    {
-    public:
-        ProvidedAuthenticationMechanismNotSupportedError()
-            : Error{ Code::ProvidedAuthenticationMechanismNotSupported } {}
-
-    private:
-        std::string getMessage() const override
-        {
-            return "Provided authentication mechanism not supported.";
-        }
     };
 
     class MultipleConflictingAuthenticationMechanismsProvidedError : public Error
@@ -312,8 +298,8 @@ namespace lms::api::subsonic
             map<Key, ValuesType> _childrenValues;
         };
 
-        static Response createOkResponse(ProtocolVersion protocolVersion);
-        static Response createFailedResponse(ProtocolVersion protocolVersion, const Error& error);
+        static Response createOkResponse();
+        static Response createFailedResponse(const Error& error);
 
         ~Response() = default;
         Response(const Response&) = delete;
@@ -328,7 +314,7 @@ namespace lms::api::subsonic
         void write(std::ostream& os, ResponseFormat format) const;
 
     private:
-        static Response createResponseCommon(ProtocolVersion protocolVersion, const Error* error = nullptr);
+        static Response createResponseCommon(const Error* error = nullptr);
 
         class JsonSerializer
         {

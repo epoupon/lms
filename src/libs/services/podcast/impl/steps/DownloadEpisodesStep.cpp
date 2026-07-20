@@ -212,11 +212,13 @@ namespace lms::podcast
                     else
                     {
                         LMS_LOG(PODCAST, WARNING, "Failed to get audio properties from downloaded episode from '" << url << "'");
+                        utils::removeFile(tmpFilePath);
                     }
                 }
                 catch (const audio::Exception& e)
                 {
                     LMS_LOG(PODCAST, WARNING, "Failed to parse downloaded episode from '" << url << "': " << e.what());
+                    utils::removeFile(tmpFilePath);
                 }
 
                 processNext();

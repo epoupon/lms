@@ -40,6 +40,7 @@ namespace lms::scanner
         void removeOrphanedGroupings(ScanContext& context);
         void removeOrphanedLanguages(ScanContext& context);
         void removeOrphanedMoods(ScanContext& context);
+        void removeOrphanedWorks(ScanContext& context);
         void removeOrphanedArtists(ScanContext& context);
         void removeOrphanedMediums(ScanContext& context);
         void removeOrphanedReleases(ScanContext& context);

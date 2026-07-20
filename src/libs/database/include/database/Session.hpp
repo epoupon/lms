@@ -28,6 +28,7 @@
 
 #include "database/Transaction.hpp"
 #include "database/Types.hpp"
+#include "database/objects/Types.hpp"
 
 namespace lms::db
 {
@@ -58,6 +59,8 @@ namespace lms::db
 
         void prepareTablesIfNeeded(); // need to run only once at startup
         bool migrateSchemaIfNeeded(); // returns true if migration was performed
+        void createScanSettingsIfNeeded(RecommendationEngineType defaultRecommendationEngineType = RecommendationEngineType::Clusters);
+        void createServerInfoIfNeeded();
         void createIndexesIfNeeded();
         void vacuumIfNeeded();
         void vacuum();

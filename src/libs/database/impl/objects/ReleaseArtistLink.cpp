@@ -22,6 +22,8 @@
 #include <Wt/Dbo/Impl.h>
 
 #include "core/ILogger.hpp"
+#include "core/String.hpp"
+
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Genre.hpp"
@@ -149,13 +151,13 @@ namespace lms::db
 
     void ReleaseArtistLink::setArtistName(std::string_view artistName)
     {
-        _artistName.assign(artistName, 0, Artist::maxNameLength);
+        _artistName = core::stringUtils::utf8Truncate(artistName, Artist::maxNameLength);
         LMS_LOG_IF(DB, WARNING, artistName.size() > Artist::maxNameLength, "Artist link name too long, truncated to '" << _artistName << "'");
     }
 
     void ReleaseArtistLink::setArtistSortName(std::string_view artistSortName)
     {
-        _artistSortName.assign(artistSortName, 0, Artist::maxNameLength);
+        _artistSortName = core::stringUtils::utf8Truncate(artistSortName, Artist::maxNameLength);
         LMS_LOG_IF(DB, WARNING, artistSortName.size() > Artist::maxNameLength, "Artist link sort name too long, truncated to '" << _artistSortName << "'");
     }
 } // namespace lms::db

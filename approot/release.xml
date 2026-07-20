@@ -55,36 +55,43 @@
 	${artist class="text-decoration-none link-success"}
 </message>
 
-<message id="Lms.Explore.Release.template.entry-disc">
-	<h4 class="d-flex align-items-center">
-		${<if-has-artwork>}
-		<div class="p-1">${artwork class="Lms-cursor-pointer"}</div>
-		${</if-has-artwork>}
-		<div class="p-2 flex-fill">${disc-title}</div>
-		<div class="p-2 d-flex">
-			${play-btn class="d-none d-sm-block btn btn-sm btn-outline-secondary border-0"}
-			<div class="dropdown d-inline-block">
-				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
-				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
-					<li class="d-block d-sm-none">${play class="dropdown-item"}</li>
-					<li>${play-next class="dropdown-item"}</li>
-					<li>${play-last class="dropdown-item"}</li>
-					<li>${play-shuffled class="dropdown-item"}</li>
-				</ul>
-			</div>
+<message id="Lms.Explore.Release.template.segment-header">
+	${<if-has-artwork>}
+	<div class="p-1">${artwork class="Lms-cursor-pointer"}</div>
+	${</if-has-artwork>}
+	<div class="p-2 flex-fill">${title}</div>
+	<div class="p-2 d-flex">
+		${play-btn class="d-none d-sm-block btn btn-sm btn-outline-secondary border-0"}
+		<div class="dropdown d-inline-block">
+			${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
+			<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+				<li class="d-block d-sm-none">${play class="dropdown-item"}</li>
+				<li>${play-next class="dropdown-item"}</li>
+				<li>${play-last class="dropdown-item"}</li>
+				<li>${play-shuffled class="dropdown-item"}</li>
+			</ul>
 		</div>
-	</h4>
+	</div>
+</message>
+
+<message id="Lms.Explore.Release.template.segment-disc">
+	<h4>${header class="d-flex align-items-center"}</h4>
+	${tracks class="d-grid gap-1"}
+</message>
+
+<message id="Lms.Explore.Release.template.segment-work">
+	<h5 class="text-muted">${header class="d-flex align-items-center"}</h5>
 	${tracks class="d-grid gap-1 Lms-row-container"}
 </message>
 
-<message id="Lms.Explore.Release.template.entry-nodisc">
+<message id="Lms.Explore.Release.template.segment-flat">
 	${tracks class="d-grid gap-1 Lms-row-container"}
 </message>
 
-<message id="Lms.Explore.Release.template.entry">
+<message id="Lms.Explore.Release.template.track">
 	<div class="d-flex align-items-center">
 		<div class="p-2 text-muted text-end Lms-tracks-entry-position">
-			${<if-has-track-number>}${track-number}${</if-has-track-number>}
+			${<if-has-position>}${position}${</if-has-position>}
 		</div>
 		<div class="row align-items-center flex-fill overflow-hidden">
 			<div class="col-12 col-md-8">

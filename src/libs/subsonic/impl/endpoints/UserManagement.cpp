@@ -50,7 +50,7 @@ namespace lms::api::subsonic
         if (!user)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         response.addNode("user", createUserNode(context, user));
 
         return response;
@@ -58,7 +58,7 @@ namespace lms::api::subsonic
 
     Response handleGetUsersRequest(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& usersNode{ response.createNode("users") };
 
         auto transaction{ context.getDbSession().createReadTransaction() };

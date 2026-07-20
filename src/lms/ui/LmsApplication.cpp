@@ -212,9 +212,9 @@ namespace lms::ui
 
     } // namespace
 
-    std::unique_ptr<Wt::WApplication> LmsApplication::create(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend)
+    std::unique_ptr<Wt::WApplication> LmsApplication::create(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend, const core::UUID& serverInstanceId)
     {
-        return std::make_unique<LmsApplication>(env, db, appManager, authBackend);
+        return std::make_unique<LmsApplication>(env, db, appManager, authBackend, serverInstanceId);
     }
 
     LmsApplication* LmsApplication::instance()
@@ -222,11 +222,12 @@ namespace lms::ui
         return static_cast<LmsApplication*>(Wt::WApplication::instance());
     }
 
-    LmsApplication::LmsApplication(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend)
+    LmsApplication::LmsApplication(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend, const core::UUID& serverInstanceId)
         : Wt::WApplication{ env }
         , _db{ db }
         , _appManager{ appManager }
         , _authBackend{ authBackend }
+        , _serverInstanceId{ serverInstanceId }
         , _areDownloadsEnabled(core::Service<core::IConfig>::get()->getBool("ui-allow-downloads", true))
     {
         try

@@ -60,7 +60,6 @@ namespace lms::api::subsonic
         std::string getClientIpAddr() const;
         std::string_view getClientName() const;
 
-        ProtocolVersion getServerProtocolVersion() const;
         ResponseFormat getResponseFormat() const;
         bool isOpenSubsonicEnabled() const;
 
@@ -74,7 +73,6 @@ namespace lms::api::subsonic
         const ProtocolVersion _clientProtocolVersion;
         const ResponseFormat _responseFormat;
 
-        const ProtocolVersion _serverProtocolVersion;
         const bool _isOpenSubsonicEnabled;
     };
 } // namespace lms::api::subsonic

@@ -282,6 +282,7 @@ int main(int argc, char* argv[])
         db::Session session{ *db };
         session.prepareTablesIfNeeded();
         session.migrateSchemaIfNeeded();
+        session.createScanSettingsIfNeeded();
         session.createIndexesIfNeeded();
 
         std::cout << "Starting generation..." << std::endl;

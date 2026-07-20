@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -103,4 +104,11 @@ namespace lms::ui::utils
     std::unique_ptr<Wt::WInteractWidget> createCopyright(std::string_view copyright, std::string_view copyrightURL);
 
     void copyToClipboard(std::string_view text);
+
+    struct TrackDisplayInfo
+    {
+        std::string title;                   // "i. MovementName" when track has work + movement, otherwise just the track's title
+        std::optional<std::string> workName; // only set when title comes from a movement
+    };
+    TrackDisplayInfo computeTrackDisplayInfo(const db::ObjectPtr<db::Track>& track);
 } // namespace lms::ui::utils

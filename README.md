@@ -43,8 +43,8 @@ _LMS_ provides several ways to help you find the music you like:
   * ...
 
 __Note__: the recommendation engine supports two modes:
+* **Audio similarity** (default): uses MusicNN embeddings. Extraction throughput depends heavily on both the number of scanner threads and the speed of your storage. Typical reported speeds range from ~1k tracks/hour on a Raspberry Pi 4 to ~25k tracks/hour on an Intel Core i5-13500.
 * **Tag-based**: uses metadata tags `genre`, `mood`, `grouping`, and `language`.
-* **Audio similarity**: uses MusicNN embeddings. Extraction throughput depends heavily on both the number of scanner threads and the speed of your storage. Typical reported speeds range from ~1k tracks/hour on a Raspberry Pi 4 (3 threads) to ~25k tracks/hour on an Intel Core i5-13500 (10 threads). To speed up extraction, consider tweaking `scanner-thread-count` in `lms.conf` (defaults to half the number of logical CPUs).
 
 ## About tags
 _LMS_ primarily relies on tags to organize your music collection but also supports browsing by directory using the [Subsonic/OpenSubsonic API](SUBSONIC.md).

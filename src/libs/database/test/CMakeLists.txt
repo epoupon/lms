@@ -16,6 +16,7 @@ add_executable(test-database
 	Medium.cpp
 	Migration.cpp
 	Mood.cpp
+	Movement.cpp
 	PlayListFile.cpp
 	Podcast.cpp
 	RatedArtist.cpp
@@ -29,6 +30,7 @@ add_executable(test-database
 	StarredTrack.cpp
 	Track.cpp
 	TrackArtistLink.cpp
+	Work.cpp
 	TrackBookmark.cpp
 	TrackEmbeddedImage.cpp
 	TrackList.cpp

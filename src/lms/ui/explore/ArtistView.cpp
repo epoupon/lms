@@ -196,23 +196,27 @@ namespace lms::ui
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
             ->clicked()
             .connect([this] {
-                _playQueueController.processCommand(PlayQueueController::Command::Play, { _artistId });
+                db::ArtistId artists[]{ _artistId };
+                _playQueueController.processCommand(PlayQueueController::Command::Play, artists);
             });
 
         bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
             ->clicked()
             .connect([this] {
-                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, { _artistId });
+                db::ArtistId artists[]{ _artistId };
+                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, artists);
             });
         bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
             ->clicked()
             .connect([this] {
-                _playQueueController.processCommand(PlayQueueController::Command::PlayNext, { _artistId });
+                db::ArtistId artists[]{ _artistId };
+                _playQueueController.processCommand(PlayQueueController::Command::PlayNext, artists);
             });
         bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
             ->clicked()
             .connect([this] {
-                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, { _artistId });
+                db::ArtistId artists[]{ _artistId };
+                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, artists);
             });
 
         if (LmsApp->areDownloadsEnabled())

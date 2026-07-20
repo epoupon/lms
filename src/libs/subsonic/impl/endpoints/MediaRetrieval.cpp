@@ -236,7 +236,7 @@ namespace lms::api::subsonic
         std::string artistName{ getParameterAs<std::string>(context.getParameters(), "artist").value_or("") };
         std::string titleName{ getParameterAs<std::string>(context.getParameters(), "title").value_or("") };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         // best effort search, as this API is really limited
         auto transaction{ context.getDbSession().createReadTransaction() };
@@ -269,7 +269,7 @@ namespace lms::api::subsonic
         // mandatory params
         db::TrackId id{ getMandatoryParameterAs<db::TrackId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& lyricsList{ response.createNode("lyricsList") };
         lyricsList.createEmptyArrayChild("structuredLyrics");
 

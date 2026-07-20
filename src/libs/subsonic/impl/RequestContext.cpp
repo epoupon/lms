@@ -50,10 +50,9 @@ namespace lms::api::subsonic
         , _clientName{ getMandatoryParameterAs<std::string>(_request.getParameterMap(), "c") }
         , _clientProtocolVersion{ getMandatoryParameterAs<ProtocolVersion>(_request.getParameterMap(), "v") }
         , _responseFormat{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml }
-        , _serverProtocolVersion{ _config.serverProtocolVersionsByClient.contains(_clientName) ? _config.serverProtocolVersionsByClient.at(_clientName) : defaultServerProtocolVersion }
         , _isOpenSubsonicEnabled{ !_config.openSubsonicDisabledClients.contains(_clientName) }
     {
-        checkProtocolVersion(_clientProtocolVersion, _serverProtocolVersion);
+        checkProtocolVersion(_clientProtocolVersion, serverProtocolVersion);
     }
 
     RequestContext::~RequestContext() = default;
@@ -91,11 +90,6 @@ namespace lms::api::subsonic
     std::string_view RequestContext::getClientName() const
     {
         return _clientName;
-    }
-
-    ProtocolVersion RequestContext::getServerProtocolVersion() const
-    {
-        return _serverProtocolVersion;
     }
 
     ResponseFormat RequestContext::getResponseFormat() const

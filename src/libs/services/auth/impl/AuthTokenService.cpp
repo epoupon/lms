@@ -87,8 +87,19 @@ namespace lms::auth
         }
     }
 
+    bool AuthTokenService::isClientThrottled(const boost::asio::ip::address& clientAddress) const
+    {
+        std::shared_lock lock{ _mutex };
+
+        return _loginThrottler.isClientThrottled(clientAddress);
+    }
+
     std::optional<AuthTokenService::AuthTokenInfo> AuthTokenService::processAuthToken(core::LiteralString domain, std::string_view token)
     {
+        // An empty token must never match: some callers use it as a "no candidate" sentinel value,
+        if (token.empty())
+            return std::nullopt;
+
         db::Session& session{ getDbSession() };
         auto transaction{ session.createWriteTransaction() };
 

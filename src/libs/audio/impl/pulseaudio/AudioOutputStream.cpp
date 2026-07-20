@@ -226,7 +226,7 @@ namespace lms::audio::pulseaudio
         {
             pa_operation* op{ ::pa_stream_flush(_stream.get(), nullptr, nullptr) };
             if (!op)
-                throw PaException("pa_stream_flush failed", pa_context_errno(_context));
+                throw PaException{ "pa_stream_flush failed", pa_context_errno(_context) };
 
             ::pa_operation_unref(op);
         }
@@ -249,7 +249,7 @@ namespace lms::audio::pulseaudio
 
         pa_operation* op{ ::pa_stream_cork(_stream.get(), 1, nullptr, nullptr) };
         if (!op)
-            throw PaException("pa_stream_cork (pause) failed", pa_context_errno(_context));
+            throw PaException{ "pa_stream_cork (pause) failed", pa_context_errno(_context) };
 
         ::pa_operation_unref(op);
     }
@@ -263,14 +263,14 @@ namespace lms::audio::pulseaudio
         {
             pa_operation* op{ ::pa_stream_cork(_stream.get(), 0, nullptr, nullptr) };
             if (!op)
-                throw PaException("pa_stream_cork (resume) failed", pa_context_errno(_context));
+                throw PaException{ "pa_stream_cork (resume) failed", pa_context_errno(_context) };
             ::pa_operation_unref(op);
         }
 
         {
             pa_operation* op{ ::pa_stream_trigger(_stream.get(), NULL, NULL) };
             if (!op)
-                throw PaException("pa_stream_trigger failed", pa_context_errno(_context));
+                throw PaException{ "pa_stream_trigger failed", pa_context_errno(_context) };
             ::pa_operation_unref(op);
         }
     }
@@ -301,7 +301,7 @@ namespace lms::audio::pulseaudio
             nullptr,
             nullptr) };
         if (!op)
-            throw PaException("pa_context_set_sink_input_volume failed", pa_context_errno(_context));
+            throw PaException{ "pa_context_set_sink_input_volume failed", pa_context_errno(_context) };
 
         ::pa_operation_unref(op);
 
@@ -425,7 +425,7 @@ namespace lms::audio::pulseaudio
 
         ::pa_operation* op{ ::pa_stream_drain(_stream.get(), [](pa_stream*, int success, void* userdata) { static_cast<AudioOutputStream*>(userdata)->onDrainComplete(success); }, this) };
         if (!op)
-            throw PaException("pa_stream_drain failed", pa_context_errno(_context));
+            throw PaException{ "pa_stream_drain failed", pa_context_errno(_context) };
 
         ::pa_operation_unref(op);
     }

@@ -130,7 +130,7 @@ namespace lms::api::subsonic
         for (const TrackId id : params.trackIds)
             core::Service<feedback::IFeedbackService>::get()->star(context.getUser()->getId(), id);
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 
     Response handleUnstarRequest(RequestContext& context)
@@ -152,7 +152,7 @@ namespace lms::api::subsonic
         for (const TrackId id : params.trackIds)
             core::Service<feedback::IFeedbackService>::get()->unstar(context.getUser()->getId(), id);
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 
     Response handleSetRating(RequestContext& context)
@@ -171,7 +171,7 @@ namespace lms::api::subsonic
         else if (const TrackId * trackId{ std::get_if<TrackId>(&params.id) })
             core::Service<feedback::IFeedbackService>::get()->setRating(context.getUser()->getId(), *trackId, params.rating);
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 
     Response handleScrobble(RequestContext& context)
@@ -209,6 +209,6 @@ namespace lms::api::subsonic
             }
         }
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 } // namespace lms::api::subsonic

@@ -33,7 +33,7 @@ namespace lms::api::subsonic
         unsigned patch{};
     };
 
-    static inline constexpr ProtocolVersion defaultServerProtocolVersion{ 1, 16, 1 };
+    static inline constexpr ProtocolVersion serverProtocolVersion{ 1, 16, 1 };
 } // namespace lms::api::subsonic
 
 namespace lms::core::stringUtils

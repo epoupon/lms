@@ -114,6 +114,13 @@ namespace lms::db
         PubDateDesc,
     };
 
+    enum class RecommendationEngineType
+    {
+        Clusters = 0,
+        None = 2,
+        AudioSimilarity = 3,
+    };
+
     enum class ReleaseArtistLinkSortMethod
     {
         None,

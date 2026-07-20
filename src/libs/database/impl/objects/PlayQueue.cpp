@@ -33,6 +33,7 @@
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Medium.hpp"
 #include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
@@ -40,6 +41,7 @@
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/User.hpp"
+#include "database/objects/Work.hpp"
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"

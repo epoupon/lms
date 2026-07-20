@@ -56,6 +56,8 @@ namespace lms::scanner
             bool operator==(const Rule&) const = default;
         };
 
+        bool matchesRules(const std::filesystem::path& relativePath, IsDirectory isDir) const;
+
         std::vector<Rule> _rules;
 
     public:

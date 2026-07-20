@@ -29,6 +29,7 @@
 
 #include "database/IdType.hpp"
 #include "database/Object.hpp"
+#include "database/objects/Types.hpp"
 
 LMS_DECLARE_IDTYPE(ScanSettingsId)
 
@@ -47,14 +48,6 @@ namespace lms::db
             Weekly,
             Monthly,
             Hourly,
-        };
-
-        // Do not modify values (just add)
-        enum class RecommendationEngineType
-        {
-            Clusters = 0,
-            None = 2,
-            AudioSimilarity = 3,
         };
 
         ScanSettings() = default;

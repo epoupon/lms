@@ -44,7 +44,7 @@ namespace lms::ui
 {
     namespace
     {
-        using RecommendationEngineTypeModel = ValueStringModel<db::ScanSettings::RecommendationEngineType>;
+        using RecommendationEngineTypeModel = ValueStringModel<db::RecommendationEngineType>;
 
         class RecommendationEngineValidator : public Wt::WValidator
         {
@@ -63,7 +63,7 @@ namespace lms::ui
                 std::string inputStr{ input.toUTF8() };
 
                 const auto row{ _model->getRowFromString(inputStr) };
-                if (row && _model->getValue(*row) == db::ScanSettings::RecommendationEngineType::AudioSimilarity)
+                if (row && _model->getValue(*row) == db::RecommendationEngineType::AudioSimilarity)
                 {
                     if (!core::Service<recommendation::IRecommendationService>::get()->isEngineTypeSupported(recommendation::EngineType::AudioSimilarity))
                         return Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.Database.recommendation-engine-not-supported") };
@@ -247,10 +247,10 @@ namespace lms::ui
                     _updateStartTimeModel->add(time.toString(), time);
                 }
 
-                _recommendationEngineTypeModel = std::make_shared<ValueStringModel<db::ScanSettings::RecommendationEngineType>>();
-                _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.audio-similarity"), db::ScanSettings::RecommendationEngineType::AudioSimilarity);
-                _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.clusters"), db::ScanSettings::RecommendationEngineType::Clusters);
-                _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.none"), db::ScanSettings::RecommendationEngineType::None);
+                _recommendationEngineTypeModel = std::make_shared<ValueStringModel<db::RecommendationEngineType>>();
+                _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.audio-similarity"), db::RecommendationEngineType::AudioSimilarity);
+                _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.clusters"), db::RecommendationEngineType::Clusters);
+                _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.none"), db::RecommendationEngineType::None);
             }
 
             std::shared_ptr<UpdatePeriodModel> _updatePeriodModel;

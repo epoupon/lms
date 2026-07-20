@@ -126,7 +126,7 @@ namespace lms::scanner
             settings->allowArtistMBIDFallback = scanSettings->getAllowMBIDArtistMerge();
             settings->artistImageFallbackToRelease = scanSettings->getArtistImageFallbackToRelease();
 
-            settings->extractMusicNNEmbeddings = scanSettings->getRecommendationEngineType() == db::ScanSettings::RecommendationEngineType::AudioSimilarity;
+            settings->extractMusicNNEmbeddings = scanSettings->getRecommendationEngineType() == db::RecommendationEngineType::AudioSimilarity;
             settings->musicnnModelPath = core::Service<core::IConfig>::get()->getPath("musicnn-model-path", "/usr/share/lms/models/MSD_musicnn_embedding.onnx");
             settings->musicnnMaxPatchCountPerTrack = core::Service<core::IConfig>::get()->getULong("musicnn-max-patch-count-per-track", 20);
 

@@ -31,6 +31,7 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
+#include "core/http/UrlValidation.hpp"
 
 #define LOG(sev, message) LMS_LOG(HTTP, sev, "[Http SendQueue] - " << message)
 
@@ -189,6 +190,12 @@ namespace lms::core::http
 
         const std::string url{ _baseUrl + request.getParameters().relativeUrl };
         LOG(DEBUG, "Sending " << (request.getType() == ClientRequest::Type::GET ? "GET" : "POST") << " request to url '" << url << "'");
+
+        if (!isValidUrl(url))
+        {
+            LOG(ERROR, "Refusing request to '" << url << "': invalid URL");
+            return false;
+        }
 
         _client.setMaximumResponseSize(request.getParameters().onChunkReceived ? 0 : request.getParameters().responseBufferSize);
 

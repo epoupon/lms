@@ -84,7 +84,7 @@ namespace lms::api::subsonic
         const ClientInfo clientInfo{ parseClientInfoFromJson(context.getBody()) };
         const AudioFileInfo audioFileInfo{ getAudioFileInfo(context.getDbSession(), audioFileId) };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& transcodeNode{ response.createNode("transcodeDecision") };
 
         {

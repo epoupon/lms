@@ -32,35 +32,35 @@ namespace lms::recommendation
 {
     namespace
     {
-        db::ScanSettings::RecommendationEngineType getRecommendationEngineType(db::Session& session)
+        db::RecommendationEngineType getRecommendationEngineType(db::Session& session)
         {
             auto transaction{ session.createReadTransaction() };
             return db::ScanSettings::find(session)->getRecommendationEngineType();
         }
 
-        EngineType toEngineType(db::ScanSettings::RecommendationEngineType type)
+        EngineType toEngineType(db::RecommendationEngineType type)
         {
             switch (type)
             {
-            case db::ScanSettings::RecommendationEngineType::None:
+            case db::RecommendationEngineType::None:
                 return EngineType::None;
-            case db::ScanSettings::RecommendationEngineType::Clusters:
+            case db::RecommendationEngineType::Clusters:
                 return EngineType::Clusters;
-            case db::ScanSettings::RecommendationEngineType::AudioSimilarity:
+            case db::RecommendationEngineType::AudioSimilarity:
                 return EngineType::AudioSimilarity;
             }
             return EngineType::None;
         }
 
-        std::unique_ptr<IEngine> createEngine(db::ScanSettings::RecommendationEngineType type, db::IDb& db)
+        std::unique_ptr<IEngine> createEngine(db::RecommendationEngineType type, db::IDb& db)
         {
             switch (type)
             {
-            case db::ScanSettings::RecommendationEngineType::Clusters:
+            case db::RecommendationEngineType::Clusters:
                 return std::make_unique<TagsEngine>(db);
-            case db::ScanSettings::RecommendationEngineType::AudioSimilarity:
+            case db::RecommendationEngineType::AudioSimilarity:
                 return std::make_unique<MusicNNEmbeddingEngine>(db);
-            case db::ScanSettings::RecommendationEngineType::None:
+            case db::RecommendationEngineType::None:
                 return nullptr;
             }
             return nullptr;
@@ -139,7 +139,7 @@ namespace lms::recommendation
         return false;
     }
 
-    db::ScanSettings::RecommendationEngineType RecommendationService::prepareReload()
+    db::RecommendationEngineType RecommendationService::prepareReload()
     {
         const auto type{ getRecommendationEngineType(_db.getTLSSession()) };
         std::unique_lock lock{ _mutex };

@@ -40,18 +40,19 @@
 		<div class="p-1">
 			${cover}
 		</div>
-		<div class="row align-items-center flex-fill overflow-hidden">
+		<div class="row align-items-center flex-fill">
 			<div class="col-12 col-md-6 col-lg-4">
-				<div class="p-2 overflow-hidden">
-					<div class="d-block text-truncate">${name}</div>
-					${<if-has-artists>}${artists class="d-block d-md-none text-truncate"}${</if-has-artists>}
+				<div class="p-2">
+					<div class="d-block">${name}</div>
+					${<if-has-artists>}${artists class="d-block d-md-none"}${</if-has-artists>}
+					${<if-has-work>}<div class="text-muted small ms-2">${work}</div>${</if-has-work>}
 				</div>
 			</div>
 			<div class="col-md-6 col-lg-4">
-				${<if-has-artists>}${artists-md class="d-none d-md-block text-truncate"}${</if-has-artists>}
+				${<if-has-artists>}${artists-md class="d-none d-md-block"}${</if-has-artists>}
 			</div>
-			<div class="col-lg-4 text-truncate">
-				${<if-has-release>}${release class="d-none d-lg-inline text-truncate text-decoration-none link-success"}${</if-has-release>}
+			<div class="col-lg-4">
+				${<if-has-release>}${release class="d-none d-lg-inline text-decoration-none link-success"}${</if-has-release>}
 			</div>
 		</div>
 		<div class="p-2 d-none d-sm-block text-muted text-center Lms-tracks-entry-duration">

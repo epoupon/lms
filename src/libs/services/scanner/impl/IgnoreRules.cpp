@@ -21,6 +21,7 @@
 
 #include <fnmatch.h>
 
+#include <cassert>
 #include <fstream>
 
 namespace lms::scanner
@@ -79,9 +80,28 @@ namespace lms::scanner
 
     bool IgnoreRules::isIgnored(const std::filesystem::path& relativePath, IsDirectory isDir) const
     {
+        assert(relativePath.is_relative());
+
         if (_rules.empty())
             return false;
 
+        std::filesystem::path currentPath{ relativePath };
+        IsDirectory currentIsDir{ isDir };
+
+        while (!currentPath.empty())
+        {
+            if (matchesRules(currentPath, currentIsDir))
+                return true;
+
+            currentPath = currentPath.parent_path();
+            currentIsDir = IsDirectory{ true };
+        }
+
+        return false;
+    }
+
+    bool IgnoreRules::matchesRules(const std::filesystem::path& relativePath, IsDirectory isDir) const
+    {
         bool ignored{};
         for (const Rule& rule : _rules)
         {

@@ -59,7 +59,7 @@ namespace lms::recommendation
         ArtistResults findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
         TrackResults findTrackSimilarityPath(db::TrackId startTrackId, db::TrackId endTrackId, std::size_t maxCount) const override;
 
-        db::ScanSettings::RecommendationEngineType prepareReload();
+        db::RecommendationEngineType prepareReload();
 
         db::IDb& _db;
         mutable std::shared_mutex _mutex;

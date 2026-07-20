@@ -20,11 +20,14 @@
 #pragma once
 
 #include <optional>
+#include <span>
 
 #include <Wt/WCheckBox.h>
 #include <Wt/WContainerWidget.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
+
+#include "core/TaggedType.hpp"
 
 #include "database/Object.hpp"
 #include "database/objects/TrackId.hpp"
@@ -49,11 +52,13 @@ namespace lms::ui
     public:
         PlayQueue();
 
-        void play(const std::vector<db::TrackId>& trackIds);
-        void playNext(const std::vector<db::TrackId>& trackIds);
-        void playShuffled(const std::vector<db::TrackId>& trackIds);
-        void playOrAddLast(const std::vector<db::TrackId>& trackIds); // play if queue empty, otherwise just add last
-        void playAtIndex(const std::vector<db::TrackId>& trackIds, std::size_t index);
+        using ResetNextPlayPos = core::TaggedBool<struct ResetNextPlayPosTag>;
+
+        void play(std::span<const db::TrackId> trackIds);
+        void playNext(std::span<const db::TrackId> trackIds);
+        void playShuffled(std::span<const db::TrackId> trackIds);
+        void playOrAddLast(std::span<const db::TrackId> trackIds); // play if queue empty, otherwise just add last
+        void playAtIndex(std::span<const db::TrackId> trackIds, std::size_t index);
 
         // play the next track in the queue
         void playNext();
@@ -83,8 +88,9 @@ namespace lms::ui
         bool isFull() const;
 
         void clearTracks();
-        void enqueueTracks(const std::vector<db::TrackId>& trackIds);
-        std::vector<db::TrackId> getAndClearNextTracks();
+        void enqueueTracks(std::span<const db::TrackId> trackIds);
+        std::vector<db::TrackId> getAndClearTracksFrom(std::size_t pos);
+        void advanceTrack(ResetNextPlayPos resetNextPlayPos);
         void addSome();
         void addEntry(const db::ObjectPtr<db::TrackListEntry>& entry);
         void enqueueRadioTracksIfNeeded();
@@ -94,7 +100,7 @@ namespace lms::ui
         bool isRepeatAllSet() const;
         bool isRadioModeSet() const;
 
-        void loadTrack(std::size_t pos, bool play);
+        void loadTrack(std::size_t pos, bool play, ResetNextPlayPos resetNextPlayPos = ResetNextPlayPos{ true });
         void stop();
 
         std::optional<float> getReplayGain(std::size_t pos, const db::ObjectPtr<db::Track>& track) const;
@@ -113,7 +119,8 @@ namespace lms::ui
         Wt::WText* _duration{};
         Wt::WCheckBox* _repeatBtn{};
         Wt::WCheckBox* _radioBtn{};
-        std::optional<std::size_t> _trackPos; // current track position, if set
+        std::optional<std::size_t> _trackPos;    // current track position, if set
+        std::optional<std::size_t> _nextPlayPos; // where the next "play next" insertion happens, if set
         bool _isTrackSelected{};
     };
 

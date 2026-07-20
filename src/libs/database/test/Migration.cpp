@@ -37,6 +37,7 @@
 #include "database/objects/RatedTrack.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/ScanSettings.hpp"
+#include "database/objects/ServerInfo.hpp"
 #include "database/objects/StarredArtist.hpp"
 #include "database/objects/StarredRelease.hpp"
 #include "database/objects/StarredTrack.hpp"
@@ -344,6 +345,8 @@ VALUES
 
         // Now perform full migration
         db.getTLSSession().migrateSchemaIfNeeded();
+        db.getTLSSession().createScanSettingsIfNeeded();
+        db.getTLSSession().createServerInfoIfNeeded();
 
         // Now perform some dummy finds to ensure all fields are correctly mapped
         {
@@ -373,6 +376,7 @@ VALUES
             EXPECT_FALSE(ReleaseArtistLink::find(session, ReleaseArtistLinkId{}));
             EXPECT_FALSE(ReleaseType::find(session, ReleaseTypeId{}));
             EXPECT_FALSE(ScanSettings::find(session, ScanSettingsId{}));
+            EXPECT_NE(ServerInfo::get(session)->getInstanceId(), core::UUID{});
             EXPECT_FALSE(StarredArtist::find(session, StarredArtistId{}));
             EXPECT_FALSE(StarredRelease::find(session, StarredReleaseId{}));
             EXPECT_FALSE(StarredTrack::find(session, StarredTrackId{}));

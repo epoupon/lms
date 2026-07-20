@@ -13,6 +13,7 @@ configure_file(
 add_library(lmscore STATIC
 	impl/http/Client.cpp
 	impl/http/SendQueue.cpp
+	impl/http/UrlValidation.cpp
 	impl/media/Codec.cpp
 	impl/media/Container.cpp
 	impl/media/ImageType.cpp

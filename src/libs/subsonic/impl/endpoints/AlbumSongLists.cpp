@@ -163,7 +163,7 @@ namespace lms::api::subsonic
                 throw NotImplementedGenericError{};
             }
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             Response::Node& albumListNode{ response.createNode(id3 ? Response::Node::Key{ "albumList2" } : Response::Node::Key{ "albumList" }) };
 
             for (const ReleaseId releaseId : releases)
@@ -182,7 +182,7 @@ namespace lms::api::subsonic
 
             auto transaction{ context.getDbSession().createReadTransaction() };
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             Response::Node& starredNode{ response.createNode(id3 ? Response::Node::Key{ "starred2" } : Response::Node::Key{ "starred" }) };
 
             feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
@@ -238,7 +238,7 @@ namespace lms::api::subsonic
         if (size > defaultMaxCountSize)
             throw ParameterValueTooHighGenericError{ "size", defaultMaxCountSize };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& randomSongsNode{ response.createNode("randomSongs") };
 
         auto transaction{ context.getDbSession().createReadTransaction() };
@@ -274,7 +274,7 @@ namespace lms::api::subsonic
         if (!genreObj)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& songsByGenreNode{ response.createNode("songsByGenre") };
 
         Track::FindParameters params;
@@ -291,7 +291,7 @@ namespace lms::api::subsonic
 
     Response handleGetNowPlayingRequest(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& nowPlayingNode{ response.createNode("nowPlaying") };
 
         scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };

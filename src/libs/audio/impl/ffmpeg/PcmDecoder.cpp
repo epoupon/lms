@@ -65,7 +65,7 @@ namespace lms::audio::ffmpeg
                 return planar ? AV_SAMPLE_FMT_DBLP : AV_SAMPLE_FMT_DBL;
             }
 
-            throw Exception("Unsupported PcmSampleType");
+            throw Exception{ "Unsupported PcmSampleType" };
         }
 
         SwrContextPtr createResampler(const PcmParameters& params, const AVChannelLayout& inLayout, AVSampleFormat inFmt, int inSampleRate)
@@ -104,7 +104,7 @@ namespace lms::audio::ffmpeg
         : _parameters{ parameters }
     {
         if (_parameters.channelCount > AV_NUM_DATA_POINTERS)
-            throw Exception("Channel count exceeds maximum supported channels");
+            throw Exception{ "Channel count exceeds maximum supported channels" };
 
         utils::init();
 
@@ -179,7 +179,7 @@ namespace lms::audio::ffmpeg
         {
             int error{ ::avcodec_open2(_decoderContext.get(), decoder, nullptr) };
             if (error < 0)
-                throw FFmpegException("Cannot open decoder", error);
+                throw FFmpegException{ "Cannot open decoder", error };
         }
 
         _decodedFrame = AVFramePtr{ av_frame_alloc() };

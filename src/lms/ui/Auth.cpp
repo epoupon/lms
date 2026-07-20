@@ -44,16 +44,26 @@ namespace lms::ui
     namespace
     {
         static constexpr core::LiteralString authTokenDomain{ "ui" };
-        static const std::string authCookieName{ "LmsAuth" };
-        static const std::string authCookieSalt{ Wt::Auth::SHA1HashFunction{}.compute(authCookieName, authTokenDomain.c_str()) }; // changing this will invalidate existing tokens
+
+        // Scoped per-instance so several LMS instances on the same host don't collide
+        std::string getAuthCookieName()
+        {
+            return "LmsAuth-" + LmsApp->getServerInstanceId().toString();
+        }
+
+        // changing the instance id, or this salt computation, invalidates existing "remember me" tokens
+        std::string getAuthCookieSalt()
+        {
+            return Wt::Auth::SHA1HashFunction{}.compute(LmsApp->getServerInstanceId().toString(), authTokenDomain.c_str());
+        }
 
         void createAuthToken(db::UserId userId, const Wt::WDateTime& expiry)
         {
             const std::string authCookie{ Wt::WRandom::generateId(64) };
-            const std::string hashedAuthCookie{ Wt::Auth::SHA1HashFunction{}.compute(authCookie, authCookieSalt) };
+            const std::string hashedAuthCookie{ Wt::Auth::SHA1HashFunction{}.compute(authCookie, getAuthCookieSalt()) };
             core::Service<auth::IAuthTokenService>::get()->createAuthToken(authTokenDomain, userId, hashedAuthCookie);
 
-            LmsApp->setCookie(authCookieName,
+            LmsApp->setCookie(getAuthCookieName(),
                               authCookie,
                               expiry.toTime_t() - Wt::WDateTime::currentDateTime().toTime_t(),
                               "",
@@ -128,7 +138,7 @@ namespace lms::ui
                     return Wt::WFormModel::validateField(field);
                 }
 
-                setValidation(field, Wt::WValidator::Result(error.empty() ? Wt::ValidationState::Valid : Wt::ValidationState::Invalid, error));
+                setValidation(field, Wt::WValidator::Result{ error.empty() ? Wt::ValidationState::Valid : Wt::ValidationState::Invalid, error });
 
                 return (validation(field).state() == Wt::ValidationState::Valid);
             }
@@ -147,18 +157,18 @@ namespace lms::ui
 
     db::UserId processAuthToken(const Wt::WEnvironment& env)
     {
-        const std::string* authCookie{ env.getCookie(authCookieName) };
+        const std::string* authCookie{ env.getCookie(getAuthCookieName()) };
         if (!authCookie)
             return db::UserId{};
 
-        const std::string hashedCookie{ Wt::Auth::SHA1HashFunction{}.compute(*authCookie, authCookieSalt) };
+        const std::string hashedCookie{ Wt::Auth::SHA1HashFunction{}.compute(*authCookie, getAuthCookieSalt()) };
 
         const auto res{ core::Service<auth::IAuthTokenService>::get()->processAuthToken(authTokenDomain, boost::asio::ip::make_address(env.clientAddress()), hashedCookie) };
         switch (res.state)
         {
         case auth::IAuthTokenService::AuthTokenProcessResult::State::Denied:
         case auth::IAuthTokenService::AuthTokenProcessResult::State::Throttled:
-            LmsApp->setCookie(authCookieName, std::string{}, 0, "", "", env.urlScheme() == "https");
+            LmsApp->setCookie(getAuthCookieName(), std::string{}, 0, "", "", env.urlScheme() == "https");
             return db::UserId{};
 
         case auth::IAuthTokenService::AuthTokenProcessResult::State::Granted:

@@ -29,9 +29,11 @@
 #include "database/objects/Grouping.hpp"
 #include "database/objects/Language.hpp"
 #include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/PlayListFile.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
+#include "database/objects/Work.hpp"
 
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
@@ -113,7 +115,7 @@ namespace lms::db
                 WhereClause clusterClause;
                 for (const ClusterId clusterId : params.filters.clusters)
                 {
-                    clusterClause.Or(WhereClause("c.id = ?"));
+                    clusterClause.Or(WhereClause{ "c.id = ?" });
                     query.bind(clusterId);
                 }
 

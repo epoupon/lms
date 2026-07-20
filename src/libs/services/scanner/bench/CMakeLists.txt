@@ -1,5 +1,6 @@
 
 add_executable(bench-scanner
+	IgnoreRules.cpp
 	Lyrics.cpp
 	Scanner.cpp
 	TrackMetadataParser.cpp

@@ -23,6 +23,8 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/PartialDateTime.hpp"
+#include "core/String.hpp"
+
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
@@ -35,6 +37,7 @@
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Medium.hpp"
 #include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
@@ -42,6 +45,7 @@
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/User.hpp"
+#include "database/objects/Work.hpp"
 
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
@@ -92,6 +96,9 @@ namespace lms::db
             {
                 query.join("track t ON t.release_id = r.id");
             }
+
+            if (!params.keywords.empty())
+                query.leftJoin("medium m ON m.release_id = r.id");
 
             if (params.parentDirectory.isValid())
             {
@@ -145,8 +152,25 @@ namespace lms::db
             if (!params.name.empty())
                 query.where("r.name = ?").bind(params.name);
 
-            for (std::string_view keyword : params.keywords)
-                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
+            if (!params.keywords.empty())
+            {
+                std::vector<std::string> nameClauses;
+                std::vector<std::string> mediumNameClauses;
+
+                for (const std::string_view keyword : params.keywords)
+                {
+                    nameClauses.push_back("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
+                    query.bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
+                }
+
+                for (const std::string_view keyword : params.keywords)
+                {
+                    mediumNameClauses.push_back("m.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
+                    query.bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
+                }
+
+                query.where("(" + core::stringUtils::joinStrings(nameClauses, " AND ") + ") OR (" + core::stringUtils::joinStrings(mediumNameClauses, " AND ") + ")");
+            }
 
             if (params.starringUser.isValid())
             {
@@ -212,7 +236,7 @@ namespace lms::db
                 WhereClause clusterClause;
                 for (const ClusterId clusterId : params.filters.clusters)
                 {
-                    clusterClause.Or(WhereClause("t_c.cluster_id = ?"));
+                    clusterClause.Or(WhereClause{ "t_c.cluster_id = ?" });
                     query.bind(clusterId);
                 }
 
@@ -489,7 +513,7 @@ namespace lms::db
     }
 
     Release::Release(const std::string& name, const std::optional<core::UUID>& MBID)
-        : _name{ std::string(name, 0, _maxNameLength) }
+        : _name{ core::stringUtils::utf8Truncate(name, _maxNameLength) }
         , _MBID{ MBID }
     {
     }
@@ -979,11 +1003,11 @@ namespace lms::db
 
         oss << "SELECT c from cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN track t ON t.id = t_c.track_id ";
 
-        where.And(WhereClause("t.release_id = ?")).bind(getId().toString());
+        where.And(WhereClause{ "t.release_id = ?" }).bind(getId().toString());
         {
             WhereClause clusterClause;
             for (const ClusterTypeId clusterTypeId : clusterTypeIds)
-                clusterClause.Or(WhereClause("c.cluster_type_id = ?")).bind(clusterTypeId.toString());
+                clusterClause.Or(WhereClause{ "c.cluster_type_id = ?" }).bind(clusterTypeId.toString());
             where.And(clusterClause);
         }
         oss << " " << where.get();

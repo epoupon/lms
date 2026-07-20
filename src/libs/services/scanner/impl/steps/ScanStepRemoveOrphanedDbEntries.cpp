@@ -33,6 +33,7 @@
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
+#include "database/objects/Work.hpp"
 
 #include "ScanContext.hpp"
 
@@ -52,6 +53,7 @@ namespace lms::scanner
         removeOrphanedGroupings(context);
         removeOrphanedLanguages(context);
         removeOrphanedMoods(context);
+        removeOrphanedWorks(context);
         removeOrphanedArtists(context);
         removeOrphanedReleases(context);
         removeOrphanedMediums(context); // after release so that most entries are removed using the medium foreign key
@@ -96,6 +98,12 @@ namespace lms::scanner
     {
         LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned moods...");
         removeOrphanedEntries<db::Mood>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedWorks(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned works...");
+        removeOrphanedEntries<db::Work>(context);
     }
 
     void ScanStepRemoveOrphanedDbEntries::removeOrphanedArtists(ScanContext& context)

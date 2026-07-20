@@ -127,7 +127,7 @@ namespace lms::db
                 WhereClause clusterClause;
                 for (const db::ClusterId id : params.filters.clusters)
                 {
-                    clusterClause.Or(WhereClause("t_c.cluster_id = ?"));
+                    clusterClause.Or(WhereClause{ "t_c.cluster_id = ?" });
                     query.bind(id);
                 }
 
@@ -229,7 +229,7 @@ namespace lms::db
                 WhereClause clusterClause;
                 for (const ClusterId id : params.filters.clusters)
                 {
-                    clusterClause.Or(WhereClause("c.id = ?"));
+                    clusterClause.Or(WhereClause{ "c.id = ?" });
                     query.bind(id);
                 }
 
@@ -313,7 +313,7 @@ namespace lms::db
                 WhereClause clusterClause;
                 for (const ClusterId id : params.filters.clusters)
                 {
-                    clusterClause.Or(WhereClause("c.id = ?")).bind(id.toString());
+                    clusterClause.Or(WhereClause{ "c.id = ?" }).bind(id.toString());
                     query.bind(id);
                 }
 

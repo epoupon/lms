@@ -1,5 +1,6 @@
 
 add_library(lmssubsonic STATIC
+	impl/AuthUtils.cpp
 	impl/endpoints/transcoding/AudioFileInfo.cpp
 	impl/endpoints/transcoding/TranscodeDecision.cpp
 	impl/endpoints/transcoding/TranscodeDecisionTracker.cpp

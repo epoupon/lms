@@ -36,11 +36,13 @@
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Medium.hpp"
 #include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/User.hpp"
+#include "database/objects/Work.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
@@ -249,6 +251,28 @@ namespace lms::api::subsonic
         trackResponse.setAttribute("explicitStatus", advisoryToExplicitStatus(track->getAdvisory()));
 
         trackResponse.addChild("replayGain", createReplayGainNode(track, medium));
+
+        trackResponse.createEmptyArrayChild("works");
+        for (const auto& work : track->getWorks())
+        {
+            Response::Node workNode;
+            workNode.setAttribute("name", work->getName());
+            if (const auto mbid{ work->getMBID() })
+                workNode.setAttribute("musicBrainzId", mbid->toString());
+            trackResponse.addArrayChild("works", std::move(workNode));
+        }
+
+        trackResponse.createEmptyArrayChild("movements");
+        for (const auto& movement : track->getMovements())
+        {
+            Response::Node movementNode;
+            movementNode.setAttribute("name", movement->getName());
+            if (const auto n{ movement->getNumber() })
+                movementNode.setAttribute("number", *n);
+            if (const auto c{ movement->getCount() })
+                movementNode.setAttribute("count", *c);
+            trackResponse.addArrayChild("movements", std::move(movementNode));
+        }
 
         return trackResponse;
     }

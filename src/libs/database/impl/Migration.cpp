@@ -36,7 +36,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 108 };
+        static constexpr Version LMS_DATABASE_VERSION{ 110 };
     }
 
     VersionInfo::VersionInfo()
@@ -1922,6 +1922,50 @@ WHERE ct.name = 'GROUPING')");
         utils::executeCommand(*session.getDboSession(), R"(DELETE FROM cluster_type WHERE name IN ('GENRE', 'MOOD', 'LANGUAGE', 'GROUPING'))");
     }
 
+    void migrateFromV108(Session& session)
+    {
+        utils::executeCommand(*session.getDboSession(), R"(
+CREATE TABLE IF NOT EXISTS "work" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null,
+  "mbid" blob
+))");
+        utils::executeCommand(*session.getDboSession(), R"(
+CREATE TABLE IF NOT EXISTS "track_work" (
+  "work_id" bigint,
+  "track_id" bigint,
+  primary key ("work_id", "track_id"),
+  constraint "fk_track_work_key1" foreign key ("work_id") references "work" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_track_work_key2" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred
+))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "track_work_work" on "track_work" ("work_id"))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "track_work_track" on "track_work" ("track_id"))");
+        utils::executeCommand(*session.getDboSession(), R"(
+CREATE TABLE IF NOT EXISTS "track_movement" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null,
+  "number" integer,
+  "count" integer,
+  "track_id" bigint,
+  constraint "fk_track_movement_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred
+))");
+
+        // Just increment the scan version of the settings to make the next scan rescan all audio files
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
+    }
+
+    void migrateFromV109(Session& session)
+    {
+        utils::executeCommand(*session.getDboSession(), R"(
+CREATE TABLE IF NOT EXISTS "server_info" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "instance_id" blob not null
+))");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -2006,6 +2050,8 @@ WHERE ct.name = 'GROUPING')");
             { 105, migrateFromV105 },
             { 106, migrateFromV106 },
             { 107, migrateFromV107 },
+            { 108, migrateFromV108 },
+            { 109, migrateFromV109 },
         };
 
         LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");

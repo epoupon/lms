@@ -214,7 +214,7 @@ namespace lms::api::subsonic
 
             auto transaction{ context.getDbSession().createReadTransaction() };
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             Response::Node& similarSongsNode{ response.createNode(id3 ? Response::Node::Key{ "similarSongs2" } : Response::Node::Key{ "similarSongs" }) };
             for (const TrackId trackId : tracks)
             {
@@ -244,7 +244,7 @@ namespace lms::api::subsonic
 
     Response handleGetMusicFoldersRequest(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& musicFoldersNode{ response.createNode("musicFolders") };
 
         auto transaction{ context.getDbSession().createReadTransaction() };
@@ -263,7 +263,7 @@ namespace lms::api::subsonic
         // Optional params
         const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.getParameters(), "musicFolderId").value_or(MediaLibraryId{}) };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& indexesNode{ response.createNode("indexes") };
         indexesNode.setAttribute("ignoredArticles", "");
         indexesNode.setAttribute("lastModified", reportedDummyDateULong); // TODO report last file write?
@@ -310,7 +310,7 @@ namespace lms::api::subsonic
         // Mandatory params
         const auto directoryId{ getMandatoryParameterAs<DirectoryId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& directoryNode{ response.createNode("directory") };
 
         auto transaction{ context.getDbSession().createReadTransaction() };
@@ -374,7 +374,7 @@ namespace lms::api::subsonic
 
     Response handleGetGenresRequest(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         Response::Node& genresNode{ response.createNode("genres") };
 
@@ -392,7 +392,7 @@ namespace lms::api::subsonic
         // Optional params
         const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.getParameters(), "musicFolderId").value_or(MediaLibraryId{}) };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         Response::Node& artistsNode{ response.createNode("artists") };
         artistsNode.setAttribute("ignoredArticles", "");
@@ -473,7 +473,7 @@ namespace lms::api::subsonic
         if (!artist)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node artistNode{ createArtistNode(context, artist) };
 
         auto addRelease{ [&](const Release::pointer& release) {
@@ -505,7 +505,7 @@ namespace lms::api::subsonic
         if (!release)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node albumNode{ createAlbumNode(context, release, true /* id3 */) };
 
         const auto tracks{ Track::find(context.getDbSession(), Track::FindParameters{}.setRelease(id).setSortMethod(TrackSortMethod::Release)) };
@@ -528,7 +528,7 @@ namespace lms::api::subsonic
         if (!track)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         response.addNode("song", createSongNode(context, track, context.getUser()));
 
         return response;
@@ -542,7 +542,7 @@ namespace lms::api::subsonic
         // Optional params
         std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(20) };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& artistInfoNode{ response.createNode(Response::Node::Key{ "artistInfo2" }) };
 
         {
@@ -601,7 +601,7 @@ namespace lms::api::subsonic
     {
         const db::DirectoryId directoryId{ getMandatoryParameterAs<db::DirectoryId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         {
             auto transaction{ context.getDbSession().createReadTransaction() };
@@ -616,7 +616,7 @@ namespace lms::api::subsonic
     {
         const db::ReleaseId releaseId{ getMandatoryParameterAs<db::ReleaseId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         {
             auto transaction{ context.getDbSession().createReadTransaction() };
@@ -648,7 +648,7 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& topSongs{ response.createNode("topSongs") };
 
         const auto artists{ Artist::find(context.getDbSession(), artistName) };
@@ -684,7 +684,7 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         for (const auto& similarTrack : similarTracks)
         {
@@ -715,7 +715,7 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         for (const auto& pathTrack : pathTracks)
         {

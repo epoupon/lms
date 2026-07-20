@@ -118,7 +118,7 @@ namespace lms::scrobbling::listenBrainz
             Wt::Json::Object trackMetadata;
             trackMetadata["additional_info"] = std::move(additionalInfo);
             trackMetadata["artist_name"] = Wt::Json::Value{ std::string{ track->getArtistDisplayName() } };
-            trackMetadata["track_name"] = Wt::Json::Value{ track->getName() };
+            trackMetadata["track_name"] = Wt::Json::Value{ std::string{ track->getName() } };
             if (track->getRelease())
                 trackMetadata["release_name"] = Wt::Json::Value{ std::string{ track->getRelease()->getName() } };
 

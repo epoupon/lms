@@ -20,6 +20,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstddef>
 #include <optional>
 #include <span>
 #include <sstream>
@@ -54,16 +55,20 @@ namespace lms::core::stringUtils
     [[nodiscard]] std::string_view stringTrim(std::string_view str, std::string_view whitespaces = " \t\r");
     [[nodiscard]] std::string_view stringTrimEnd(std::string_view str, std::string_view whitespaces = " \t\r");
 
+    // Like str.substr(0, maxBytes), but takes utf8 into account to properly truncate
+    [[nodiscard]] std::string_view utf8Truncate(std::string_view str, std::size_t maxBytes);
+
     [[nodiscard]] std::string stringToLower(std::string_view str);
     void stringToLower(std::string& str);
     [[nodiscard]] std::string stringToUpper(const std::string& str);
-
-    [[nodiscard]] std::string bufferToString(std::span<const unsigned char> data);
 
     [[nodiscard]] bool stringCaseInsensitiveEqual(std::string_view strA, std::string_view strB);
     [[nodiscard]] std::string_view::size_type stringCaseInsensitiveContains(std::string_view str, std::string_view strtoFind);
 
     void capitalize(std::string& str);
+
+    // returns empty string if invalid input
+    [[nodiscard]] std::string toRomanNumeral(std::size_t n);
 
     template<typename T>
     [[nodiscard]] std::optional<T> readAs(std::string_view str)
@@ -116,7 +121,7 @@ namespace lms::core::stringUtils
     [[nodiscard]] bool stringEndsWith(std::string_view str, std::string_view ending);
 
     [[nodiscard]] std::optional<std::string> stringFromHex(std::string_view str);
-    [[nodiscard]] std::string toHexString(std::string_view str);
+    [[nodiscard]] std::string bufferToHexString(std::span<const std::byte> data);
 
     [[nodiscard]] std::string toISO8601String(const Wt::WDateTime& dateTime);
     [[nodiscard]] std::string toISO8601String(const Wt::WDate& date);

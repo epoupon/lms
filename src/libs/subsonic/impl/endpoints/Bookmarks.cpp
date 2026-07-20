@@ -38,7 +38,7 @@ namespace lms::api::subsonic
 
         const auto bookmarkIds{ db::TrackBookmark::find(context.getDbSession(), context.getUser()->getId()) };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& bookmarksNode{ response.createNode("bookmarks") };
 
         for (const db::TrackBookmarkId bookmarkId : bookmarkIds)
@@ -74,7 +74,7 @@ namespace lms::api::subsonic
         if (comment)
             bookmark.modify()->setComment(*comment);
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 
     Response handleDeleteBookmark(RequestContext& context)
@@ -90,7 +90,7 @@ namespace lms::api::subsonic
 
         bookmark.remove();
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 
     static db::PlayQueue::pointer getOrCreatePlayQueue(RequestContext& context)
@@ -122,7 +122,7 @@ namespace lms::api::subsonic
     // PlayQueue makes use of a dedicated internal playlist
     static Response handleGetPlayQueueCommon(RequestContext& context, bool byIndex)
     {
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         const db::PlayQueue::pointer playQueue{ getOrCreatePlayQueue(context) };
         assert(playQueue);
@@ -204,7 +204,7 @@ namespace lms::api::subsonic
             playQueue.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
         }
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 
     Response handleSavePlayQueue(RequestContext& context)

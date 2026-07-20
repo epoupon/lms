@@ -36,12 +36,14 @@
 #include "database/objects/Image.hpp"
 #include "database/objects/Language.hpp"
 #include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/ScanSettings.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackList.hpp"
+#include "database/objects/Work.hpp"
 
 #include "LmsApplication.hpp"
 #include "ModalManager.hpp"
@@ -559,5 +561,33 @@ namespace lms::ui::utils
     void copyToClipboard(std::string_view text)
     {
         LmsApp->doJavaScript("navigator.clipboard.writeText('" + core::stringUtils::jsEscape(text) + "').catch(function(){})");
+    }
+
+    TrackDisplayInfo computeTrackDisplayInfo(const db::ObjectPtr<db::Track>& track)
+    {
+        const auto movements{ track->getMovements() };
+        if (!movements.empty() && track->hasWork())
+        {
+            const db::Movement::pointer& movement{ movements.front() };
+            std::string title;
+            if (const auto n{ movement->getNumber() })
+            {
+                if (const std::string numeral{ core::stringUtils::toRomanNumeral(*n) }; !numeral.empty())
+                    title += numeral + ". ";
+            }
+
+            title += movement->getName();
+
+            if (!title.empty())
+            {
+                TrackDisplayInfo info{ .title = std::move(title), .workName = std::nullopt };
+                if (const auto works{ track->getWorks() }; !works.empty())
+                    info.workName = std::string{ works.front()->getName() };
+
+                return info;
+            }
+        }
+
+        return TrackDisplayInfo{ .title = std::string{ track->getName() }, .workName = std::nullopt };
     }
 } // namespace lms::ui::utils

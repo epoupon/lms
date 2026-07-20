@@ -32,10 +32,9 @@
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/User.hpp"
-#include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
 
-#include "ParameterParsing.hpp"
+#include "AuthUtils.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicResponse.hpp"
 #include "endpoints/AlbumSongLists.hpp"
@@ -269,15 +268,6 @@ namespace lms::api::subsonic
             TLSMonotonicMemoryResourceCleaner& operator=(const TLSMonotonicMemoryResourceCleaner&) = delete;
         };
 
-        db::User::pointer getUserFromUserId(db::Session& session, db::UserId userId)
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            if (db::User::pointer user{ db::User::find(session, userId) })
-                return user;
-
-            throw UserNotAuthorizedError{};
-        }
     } // namespace
 
     SubsonicResource::SubsonicResource(db::IDb& db)
@@ -328,7 +318,7 @@ namespace lms::api::subsonic
             // Media retrieval endpoints are always authenticated but we don't reauth user for a continuation
             db::User::pointer user;
             if (!request.continuation())
-                user = getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
+                user = utils::getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
 
             requestContext.setUser(user);
 
@@ -383,7 +373,7 @@ namespace lms::api::subsonic
         }
         catch (const Error& e)
         {
-            writeResponse(Response::createFailedResponse(defaultServerProtocolVersion, e), ResponseFormat::xml);
+            writeResponse(Response::createFailedResponse(e), ResponseFormat::xml);
             throw;
         }
 
@@ -396,7 +386,7 @@ namespace lms::api::subsonic
                 db::User::pointer user;
                 if (itEntryPoint->second.authMode == AuthenticationMode::Authenticated)
                 {
-                    user = getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
+                    user = utils::getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
                     checkUserTypeIsAllowed(user, itEntryPoint->second.allowedUserTypes);
                     requestContext->setUser(user);
                 }
@@ -417,7 +407,7 @@ namespace lms::api::subsonic
         }
         catch (const Error& e)
         {
-            Response resp{ Response::createFailedResponse(requestContext->getServerProtocolVersion(), e) };
+            Response resp{ Response::createFailedResponse(e) };
             writeResponse(resp, requestContext->getResponseFormat());
             throw;
         }
@@ -425,50 +415,6 @@ namespace lms::api::subsonic
 
     db::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request)
     {
-        const auto& parameters{ request.getParameterMap() };
-
-        if (hasParameter(parameters, "t"))
-            throw ProvidedAuthenticationMechanismNotSupportedError{};
-
-        const auto user{ getParameterAs<std::string>(parameters, "u") };
-        const auto password{ getParameterAs<std::string>(parameters, "p") };
-        if (!_config.supportUserPasswordAuthentication && (password || user))
-            throw ProvidedAuthenticationMechanismNotSupportedError{};
-
-        const auto apiKey{ getParameterAs<std::string>(parameters, "apiKey") };
-
-        if (user && !password)
-            throw RequiredParameterMissingError{ "p" };
-        if (!user && password)
-            throw RequiredParameterMissingError{ "u" };
-        if (apiKey && password)
-            throw MultipleConflictingAuthenticationMechanismsProvidedError{};
-        if (!apiKey && !password)
-            throw RequiredParameterMissingError{ "apiKey" };
-
-        const auto clientAddress{ boost::asio::ip::make_address(request.clientAddress()) };
-        const std::string authToken{ apiKey ? *apiKey : decodePasswordIfNeeded(*password) };
-
-        const auto authResult{ core::Service<auth::IAuthTokenService>::get()->processAuthToken("subsonic", clientAddress, authToken) };
-        switch (authResult.state)
-        {
-        case auth::IAuthTokenService::AuthTokenProcessResult::State::Granted:
-            if (user)
-            {
-                const auto authenticatedUser{ getUserFromUserId(_db.getTLSSession(), authResult.authTokenInfo->userId) };
-                if (!authenticatedUser || authenticatedUser->getLoginName() != *user)
-                    throw WrongUsernameOrPasswordError{};
-            }
-            return authResult.authTokenInfo->userId;
-        case auth::IAuthTokenService::AuthTokenProcessResult::State::Denied:
-            if (apiKey)
-                throw InvalidAPIkeyError{};
-            else
-                throw WrongUsernameOrPasswordError{};
-        case auth::IAuthTokenService::AuthTokenProcessResult::State::Throttled:
-            throw LoginThrottledGenericError{};
-        }
-
-        throw InternalErrorGenericError{ "Cannot authenticate user" };
+        return utils::authenticateUser(request, _db.getTLSSession());
     }
 } // namespace lms::api::subsonic

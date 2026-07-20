@@ -38,6 +38,7 @@
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Medium.hpp"
 #include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/PlayListFile.hpp"
 #include "database/objects/PlayQueue.hpp"
 #include "database/objects/Podcast.hpp"
@@ -48,6 +49,7 @@
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/ScanSettings.hpp"
+#include "database/objects/ServerInfo.hpp"
 #include "database/objects/StarredArtist.hpp"
 #include "database/objects/StarredRelease.hpp"
 #include "database/objects/StarredTrack.hpp"
@@ -61,6 +63,7 @@
 #include "database/objects/TrackMusicNNEmbeddings.hpp"
 #include "database/objects/UIState.hpp"
 #include "database/objects/User.hpp"
+#include "database/objects/Work.hpp"
 
 #include "Db.hpp"
 #include "Migration.hpp"
@@ -111,6 +114,7 @@ namespace lms::db
         _session.mapClass<StarredRelease>("starred_release");
         _session.mapClass<StarredTrack>("starred_track");
         _session.mapClass<Track>("track");
+        _session.mapClass<Movement>("track_movement");
         _session.mapClass<TrackBookmark>("track_bookmark");
         _session.mapClass<TrackArtistLink>("track_artist_link");
         _session.mapClass<TrackEmbeddedImage>("track_embedded_image");
@@ -120,7 +124,9 @@ namespace lms::db
         _session.mapClass<TrackListEntry>("tracklist_entry");
         _session.mapClass<TrackLyrics>("track_lyrics");
         _session.mapClass<UIState>("ui_state");
+        _session.mapClass<Work>("work");
         _session.mapClass<User>("user");
+        _session.mapClass<ServerInfo>("server_info");
         _session.mapClass<VersionInfo>("version_info");
     }
 
@@ -176,17 +182,22 @@ namespace lms::db
 
     bool Session::migrateSchemaIfNeeded()
     {
-        const bool migrationPerformed{ Migration::doDbMigration(*this) };
+        return Migration::doDbMigration(*this);
+    }
 
-        // TODO: move this elsewhere
-        {
-            auto uniqueTransaction{ createWriteTransaction() };
+    void Session::createScanSettingsIfNeeded(RecommendationEngineType defaultRecommendationEngineType)
+    {
+        auto uniqueTransaction{ createWriteTransaction() };
 
-            if (!ScanSettings::find(*this))
-                create<ScanSettings>();
-        }
+        if (!ScanSettings::find(*this))
+            create<ScanSettings>().modify()->setRecommendationEngineType(defaultRecommendationEngineType);
+    }
 
-        return migrationPerformed;
+    void Session::createServerInfoIfNeeded()
+    {
+        auto uniqueTransaction{ createWriteTransaction() };
+
+        ServerInfo::getOrCreate(*this);
     }
 
     void Session::createIndexesIfNeeded()
@@ -321,6 +332,10 @@ namespace lms::db
             "CREATE INDEX IF NOT EXISTS track_lyrics_absolute_file_path_idx ON track_lyrics(absolute_file_path)",
             "CREATE INDEX IF NOT EXISTS track_lyrics_directory_idx ON track_lyrics(directory_id)",
             "CREATE INDEX IF NOT EXISTS track_lyrics_track_idx ON track_lyrics(track_id)",
+
+            "CREATE INDEX IF NOT EXISTS track_movement_track_idx ON track_movement(track_id)",
+
+            "CREATE INDEX IF NOT EXISTS work_mbid_idx ON work(mbid)",
 
             "CREATE INDEX IF NOT EXISTS track_bookmark_user_idx ON track_bookmark(user_id)",
             "CREATE INDEX IF NOT EXISTS track_bookmark_user_track_idx ON track_bookmark(user_id,track_id)",

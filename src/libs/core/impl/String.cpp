@@ -341,6 +341,15 @@ namespace lms::core::stringUtils
         return str.substr(0, str.find_last_not_of(whitespaces) + 1);
     }
 
+    std::string_view utf8Truncate(std::string_view str, std::size_t maxBytes)
+    {
+        std::size_t len{ std::min(maxBytes, str.size()) };
+        while (len > 0 && len < str.size() && (static_cast<unsigned char>(str[len]) & 0xC0) == 0x80)
+            --len;
+
+        return str.substr(0, len);
+    }
+
     std::string stringToLower(std::string_view str)
     {
         std::string res;
@@ -364,18 +373,6 @@ namespace lms::core::stringUtils
         std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](char c) { return std::toupper(c); });
 
         return res;
-    }
-
-    std::string bufferToString(std::span<const unsigned char> data)
-    {
-        std::ostringstream oss;
-
-        for (unsigned char c : data)
-        {
-            oss << std::setw(2) << std::setfill('0') << std::hex << (int)c;
-        }
-
-        return oss.str();
     }
 
     bool stringCaseInsensitiveEqual(std::string_view strA, std::string_view strB)
@@ -416,6 +413,44 @@ namespace lms::core::stringUtils
 
             break;
         }
+    }
+
+    std::string toRomanNumeral(std::size_t n)
+    {
+        if (n == 0 || n > 3999)
+            return {};
+
+        static constexpr struct
+        {
+            std::size_t val;
+            const char* sym;
+        } table[]{
+            { 1000, "m" },
+            { 900, "cm" },
+            { 500, "d" },
+            { 400, "cd" },
+            { 100, "c" },
+            { 90, "xc" },
+            { 50, "l" },
+            { 40, "xl" },
+            { 10, "x" },
+            { 9, "ix" },
+            { 5, "v" },
+            { 4, "iv" },
+            { 1, "i" }
+        };
+
+        std::string res;
+        for (const auto& [val, sym] : table)
+        {
+            while (n >= val)
+            {
+                res += sym;
+                n -= val;
+            }
+        }
+
+        return res;
     }
 
     std::string replaceInString(std::string_view str, std::string_view from, std::string_view to)
@@ -561,16 +596,18 @@ namespace lms::core::stringUtils
         return res;
     }
 
-    std::string toHexString(std::string_view str)
+    std::string bufferToHexString(std::span<const std::byte> data)
     {
         constexpr char lut[]{ "0123456789ABCDEF" };
 
         std::string res;
+        res.reserve(data.size() * 2);
 
-        for (char c : str)
+        for (const std::byte b : data)
         {
-            res.push_back(lut[(c >> 4) & 0xF]);
-            res.push_back(lut[c & 0xF]);
+            const unsigned value{ std::to_integer<unsigned>(b) };
+            res.push_back(lut[(value >> 4) & 0xF]);
+            res.push_back(lut[value & 0xF]);
         }
 
         return res;

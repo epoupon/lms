@@ -23,6 +23,8 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/ILogger.hpp"
+#include "core/String.hpp"
+
 #include "database/Session.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Directory.hpp"
@@ -171,7 +173,7 @@ namespace lms::db
 
     void PlayListFile::setName(std::string_view name)
     {
-        _name = std::string{ name, 0, _maxNameLength };
+        _name = core::stringUtils::utf8Truncate(name, _maxNameLength);
         LMS_LOG_IF(DB, WARNING, name.size() > _maxNameLength, "PlaylistFile name too long, truncated to '" << _name << "'");
     }
 

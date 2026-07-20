@@ -244,6 +244,7 @@ namespace lms::ui
             const std::string nativeResource{ _audioFileResource->getUrl(trackId) };
 
             const auto artistDisplayInfo{ utils::computeArtistDisplayInfo(track, db::TrackArtistLinkType::Artist) };
+            const std::string displayTitle{ utils::computeTrackDisplayInfo(track).title };
 
             oss
                 << "var params = {"
@@ -252,7 +253,7 @@ namespace lms::ui
                 << " transcodingResource: \"" << transcodingResource << "\","
                 << " duration: " << std::chrono::duration_cast<std::chrono::duration<float>>(track->getDuration()).count() << ","
                 << " replayGain: " << replayGain << ","
-                << " title: \"" << core::stringUtils::jsEscape(track->getName()) << "\","
+                << " title: \"" << core::stringUtils::jsEscape(displayTitle) << "\","
                 << " artist: \"" << (!artistDisplayInfo.displayName.empty() ? core::stringUtils::jsEscape(track->getArtistDisplayName()) : "") << "\","
                 << " release: \"" << (release ? core::stringUtils::jsEscape(release->getName()) : "") << "\",";
 
@@ -282,7 +283,7 @@ namespace lms::ui
             oss << jsRef() + ".mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay
 
             _title->setTextFormat(Wt::TextFormat::Plain);
-            _title->setText(Wt::WString::fromUTF8(track->getName()));
+            _title->setText(Wt::WString::fromUTF8(displayTitle));
 
             _artists->clear();
             _artists->addWidget(utils::createArtistsAnchors(artistDisplayInfo));

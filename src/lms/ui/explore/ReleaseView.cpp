@@ -20,7 +20,9 @@
 #include "ReleaseView.hpp"
 
 #include <algorithm>
+#include <array>
 #include <map>
+#include <span>
 #include <string>
 
 #include <Wt/WAnchor.h>
@@ -30,6 +32,7 @@
 #include <Wt/WTemplate.h>
 
 #include "core/String.hpp"
+#include "core/Utils.hpp"
 
 #include "database/Session.hpp"
 #include "database/Types.hpp"
@@ -40,11 +43,13 @@
 #include "database/objects/Language.hpp"
 #include "database/objects/Medium.hpp"
 #include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ScanSettings.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/User.hpp"
+#include "database/objects/Work.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
@@ -197,11 +202,21 @@ namespace lms::ui
             return res;
         }
 
-        std::unique_ptr<Wt::WTemplate> createNoDiscContainer()
+        template<typename T, typename SameRunFunc, typename Visitor>
+        void visitRuns(std::span<const T> entries, SameRunFunc sameRun, Visitor visit)
         {
-            return std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-nodisc"));
+            std::size_t startIndex{};
+            for (std::size_t i{ 1 }; i < entries.size(); ++i)
+            {
+                if (!sameRun(entries[i - 1], entries[i]))
+                {
+                    visit(entries.subspan(startIndex, i - startIndex));
+                    startIndex = i;
+                }
+            }
+            if (!entries.empty())
+                visit(entries.subspan(startIndex));
         }
-
     } // namespace
 
     Release::Release(Filters& filters, PlayQueueController& playQueueController)
@@ -329,28 +344,33 @@ namespace lms::ui
             }
         }
 
+        const auto discInfoList{ createDiscInfoList(release) };
+        _trackIds.clear();
+        for (const DiscInfo& disc : discInfoList)
+            appendTrackIds(_trackIds, disc);
+
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
             ->clicked()
             .connect([this] {
-                _playQueueController.processCommand(PlayQueueController::Command::Play, { _releaseId });
+                _playQueueController.processCommand(PlayQueueController::Command::Play, _trackIds);
             });
 
         bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
             ->clicked()
             .connect([this] {
-                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, { _releaseId });
+                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, _trackIds);
             });
 
         bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
             ->clicked()
             .connect([this] {
-                _playQueueController.processCommand(PlayQueueController::Command::PlayNext, { _releaseId });
+                _playQueueController.processCommand(PlayQueueController::Command::PlayNext, _trackIds);
             });
 
         bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
             ->clicked()
             .connect([this] {
-                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, { _releaseId });
+                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, _trackIds);
             });
 
         if (LmsApp->areDownloadsEnabled())
@@ -384,7 +404,7 @@ namespace lms::ui
             });
         }
 
-        refreshDiscs(release);
+        refreshDiscs(release, discInfoList);
     }
 
     void Release::refreshArtwork(db::ArtworkId artworkId)
@@ -416,152 +436,286 @@ namespace lms::ui
         }
     }
 
-    void Release::refreshDiscs(const db::Release::pointer& release)
+    void Release::refreshDiscs(const db::ObjectPtr<db::Release>& release, std::span<const DiscInfo> discoInfoList)
     {
-        Wt::WContainerWidget* discsContainer{ bindNew<Wt::WContainerWidget>("disc-container") };
+        Wt::WContainerWidget* discContainer{ bindNew<Wt::WContainerWidget>("disc-container") };
+
+        const DisplayOptions displayOptions{
+            .displayTrackArtists = shouldDisplayTrackArtists(release),
+            .showDiscHeaders = discoInfoList.size() > 1
+                            || release->getTotalDisc().value_or(0) > 1
+                            || std::any_of(std::cbegin(discoInfoList), std::cend(discoInfoList), [](const DiscInfo& discInfo) {
+                                   return !discInfo.medium->getName().empty() || discInfo.medium->getPreferredArtworkId().isValid();
+                               })
+        };
+
+        for (const DiscInfo& discInfo : discoInfoList)
+            addDisc(discContainer, discInfo, displayOptions);
+    }
+
+    std::vector<Release::DiscInfo> Release::createDiscInfoList(const db::Release::pointer& release)
+    {
+        std::vector<Release::DiscInfo> discInfoList;
+
         const std::vector<db::Medium::pointer> mediums{ release->getMediums() };
-        if (mediums.empty())
-            return;
 
-        const bool displayTrackArtists{ shouldDisplayTrackArtists(release) };
-        const auto totalDisc{ release->getTotalDisc() };
-
-        const bool createDiscs{ mediums.size() > 1
-                                || !mediums[0]->getName().empty()
-                                || totalDisc > 1 };
-
+        discInfoList.reserve(mediums.size());
         for (const db::Medium::pointer& medium : mediums)
-        {
-            Wt::WTemplate* disc{ discsContainer->addWidget<Wt::WTemplate>(createDiscs ? createDisc(medium) : createNoDiscContainer()) };
+            discInfoList.push_back(createDiscInfo(medium));
 
-            Wt::WContainerWidget* tracksContainer{ disc->bindNew<Wt::WContainerWidget>("tracks") };
-            createTracks(tracksContainer, medium, displayTrackArtists);
+        return discInfoList;
+    }
+
+    Release::DiscInfo Release::createDiscInfo(const db::Medium::pointer& medium)
+    {
+        const std::vector<TrackInfo> tracks{ collectMediumTrackInfoList(medium) };
+
+        auto trackUseWork{ [](const TrackInfo& info) { return info.work && info.movement; } };
+        auto trackComputeWorkKey{ [&trackUseWork](const TrackInfo& info) { return trackUseWork(info) ? info.work->getId() : db::WorkId{}; } };
+
+        DiscInfo disc;
+        disc.medium = medium;
+
+        visitRuns<TrackInfo>(
+            tracks,
+            [&](const TrackInfo& a, const TrackInfo& b) { return trackComputeWorkKey(a) == trackComputeWorkKey(b); },
+            [&](std::span<const TrackInfo> entries) {
+                std::vector<TrackInfo> tracks(std::cbegin(entries), std::cend(entries));
+
+                if (trackUseWork(tracks.front()))
+                {
+                    std::stable_sort(std::begin(tracks), std::end(tracks), [](const TrackInfo& a, const TrackInfo& b) {
+                        // fallback on track-number order
+                        return a.movement->getNumber().value_or(0) < b.movement->getNumber().value_or(0);
+                    });
+
+                    disc.segments.push_back(WorkInfo{ .work = tracks.front().work, .tracks = std::move(tracks) });
+                }
+                else
+                {
+                    disc.segments.push_back(std::move(tracks));
+                } });
+
+        return disc;
+    }
+
+    void Release::appendTrackIds(std::vector<db::TrackId>& trackIds, const DiscInfo& disc)
+    {
+        for (const DiscInfo::Segment& segment : disc.segments)
+        {
+            std::visit(core::utils::overloads{
+                           [&](const WorkInfo& work) {
+                               appendTrackIds(trackIds, work.tracks);
+                           },
+                           [&](const TrackInfoList& tracks) {
+                               appendTrackIds(trackIds, tracks);
+                           } },
+                       segment);
         }
     }
 
-    void Release::createTracks(Wt::WContainerWidget* tracksContainer, const db::Medium::pointer& medium, bool displayTrackArtists)
+    void Release::appendTrackIds(std::vector<db::TrackId>& trackIds, const TrackInfoList& tracks)
+    {
+        for (const TrackInfo& track : tracks)
+            trackIds.push_back(track.track->getId());
+    }
+
+    void Release::addDisc(Wt::WContainerWidget* container, const DiscInfo& discInfo, DisplayOptions displayOptions)
+    {
+        if (displayOptions.showDiscHeaders)
+        {
+            Wt::WString discTitle;
+            if (discInfo.medium->getName().empty())
+                discTitle = Wt::WString::tr("Lms.Explore.Release.disc").arg(discInfo.medium->getPosition().value_or(1));
+            else
+                discTitle = Wt::WString::fromUTF8(std::string{ discInfo.medium->getName() });
+
+            std::vector<db::TrackId> trackIds;
+            appendTrackIds(trackIds, discInfo);
+            container = addSegment(container, discTitle, discInfo.medium->getPreferredArtworkId(), trackIds, "Lms.Explore.Release.template.segment-disc");
+        }
+
+        for (const DiscInfo::Segment& segment : discInfo.segments)
+        {
+            std::visit(core::utils::overloads{
+                           [&](const WorkInfo& work) {
+                               std::vector<db::TrackId> trackIds;
+                               appendTrackIds(trackIds, work.tracks);
+
+                               Wt::WContainerWidget* workContainer{ addSegment(container, Wt::WString::fromUTF8(std::string{ work.work->getName() }), db::ArtworkId{}, trackIds, "Lms.Explore.Release.template.segment-work") };
+                               addTrackEntries(workContainer, work.tracks, displayOptions.displayTrackArtists);
+                           },
+                           [&](const TrackInfoList& tracks) {
+                               std::vector<db::TrackId> trackIds;
+                               appendTrackIds(trackIds, tracks);
+
+                               // A run of tracks with no work header
+                               auto* flat{ container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.segment-flat")) };
+                               addTrackEntries(flat->bindNew<Wt::WContainerWidget>("tracks"), tracks, displayOptions.displayTrackArtists);
+                           } },
+                       segment);
+        }
+    }
+
+    Release::TrackInfoList Release::collectMediumTrackInfoList(const db::Medium::pointer& medium)
     {
         db::Track::FindParameters params;
         params.setMedium(medium->getId());
         params.setSortMethod(db::TrackSortMethod::TrackNumber);
 
+        std::vector<TrackInfo> tracks;
         db::Track::find(LmsApp->getDbSession(), params, [&](const db::Track::pointer& track) {
-            const db::TrackId trackId{ track->getId() };
+            const auto works{ track->getWorks() };
+            const auto movements{ track->getMovements() };
 
-            Template* entry{ tracksContainer->addNew<Template>(Wt::WString::tr("Lms.Explore.Release.template.entry")) };
-            entry->addFunction("id", &Wt::WTemplate::Functions::id);
-
-            entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
-
-            if (displayTrackArtists)
-            {
-                const auto artistDisplayInfo{ utils::computeArtistDisplayInfo(track, db::TrackArtistLinkType::Artist) };
-                if (!artistDisplayInfo.entries.empty())
-                {
-                    entry->setCondition("if-has-artists", true);
-                    entry->bindWidget("artists", utils::createArtistsAnchors(artistDisplayInfo));
-                    entry->bindWidget("artists-md", utils::createArtistsAnchors(artistDisplayInfo));
-                }
-            }
-
-            fillTrackArtistLinks(entry, track);
-
-            auto trackNumber{ track->getTrackNumber() };
-            if (trackNumber)
-            {
-                entry->setCondition("if-has-track-number", true);
-                entry->bindInt("track-number", *trackNumber);
-            }
-
-            Wt::WPushButton* playBtn{ entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML) };
-            playBtn->setAttributeValue("aria-label", Wt::WString::tr("Lms.play-item").arg(track->getName()));
-            playBtn->clicked().connect([this, trackId] {
-                _playQueueController.playTrackInRelease(trackId);
+            tracks.push_back(TrackInfo{
+                .track = track,
+                .work = works.empty() ? db::Work::pointer{} : works.front(),
+                .movement = movements.empty() ? db::Movement::pointer{} : movements.front(),
             });
-
-            {
-                entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML)
-                    ->setAttributeValue("aria-label", Wt::WString::tr("Lms.more"));
-                entry->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
-                    ->clicked()
-                    .connect([this, trackId] {
-                        _playQueueController.playTrackInRelease(trackId);
-                    });
-                entry->bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"))
-                    ->clicked()
-                    .connect([this, trackId] {
-                        _playQueueController.processCommand(PlayQueueController::Command::PlayNext, { trackId });
-                    });
-                entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
-                    ->clicked()
-                    .connect([this, trackId] {
-                        _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, { trackId });
-                    });
-
-                {
-                    auto isStarred{ [=] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); } };
-
-                    Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star-btn", Wt::WString::tr(isStarred() ? "Lms.template.unstar-btn" : "Lms.template.star-btn"), Wt::TextFormat::XHTML) };
-                    starBtn->setAttributeValue("aria-pressed", isStarred() ? "true" : "false");
-                    starBtn->setAttributeValue("aria-label", Wt::WString::tr("Lms.Explore.star-item").arg(track->getName()));
-                    Wt::WPushButton* starMenuEntry{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
-
-                    auto toggle{ [=] {
-                        auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-
-                        if (isStarred())
-                        {
-                            core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
-                            starMenuEntry->setText(Wt::WString::tr("Lms.Explore.star"));
-                            starBtn->setText(Wt::WString::tr("Lms.template.star-btn"));
-                            starBtn->setAttributeValue("aria-pressed", "false");
-                        }
-                        else
-                        {
-                            core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
-                            starMenuEntry->setText(Wt::WString::tr("Lms.Explore.unstar"));
-                            starBtn->setText(Wt::WString::tr("Lms.template.unstar-btn"));
-                            starBtn->setAttributeValue("aria-pressed", "true");
-                        }
-                    } };
-
-                    starMenuEntry->clicked().connect([=] { toggle(); });
-                    starBtn->clicked().connect([=] { toggle(); });
-                }
-
-                if (LmsApp->areDownloadsEnabled())
-                {
-                    entry->setCondition("if-has-download", true);
-                    entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
-                        ->setLink(Wt::WLink{ std::make_unique<DownloadTrackResource>(trackId) });
-                }
-
-                entry->bindNew<Wt::WPushButton>("track-info", Wt::WString::tr("Lms.Explore.track-info"))
-                    ->clicked()
-                    .connect([this, trackId] { TrackListHelpers::showTrackInfoModal(trackId, _filters); });
-
-                if (track->hasLyrics())
-                {
-                    entry->setCondition("if-has-lyrics", true);
-                    entry->bindNew<Wt::WPushButton>("track-lyrics", Wt::WString::tr("Lms.Explore.track-lyrics"))
-                        ->clicked()
-                        .connect([trackId] { TrackListHelpers::showTrackLyricsModal(trackId); });
-                }
-            }
-
-            entry->bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
-
-            LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=](db::TrackId loadedTrackId) {
-                entry->toggleStyleClass("Lms-entry-playing", loadedTrackId == trackId);
-            });
-
-            if (auto trackIdLoaded{ LmsApp->getMediaPlayer().getTrackLoaded() })
-            {
-                entry->toggleStyleClass("Lms-entry-playing", *trackIdLoaded == trackId);
-            }
-            else
-                entry->removeStyleClass("Lms-entry-playing");
         });
+        return tracks;
+    }
+
+    void Release::addTrackEntries(Wt::WContainerWidget* container, std::span<const TrackInfo> tracks, bool displayTrackArtists)
+    {
+        for (const TrackInfo& trackInfo : tracks)
+            addTrackEntry(container, trackInfo, displayTrackArtists);
+    }
+
+    void Release::addTrackEntry(Wt::WContainerWidget* container, const TrackInfo& trackInfo, bool displayTrackArtists)
+    {
+        const db::Track::pointer& track{ trackInfo.track };
+        const db::TrackId trackId{ track->getId() };
+
+        Template* entry{ container->addNew<Template>(Wt::WString::tr("Lms.Explore.Release.template.track")) };
+        entry->addFunction("id", &Wt::WTemplate::Functions::id);
+
+        const std::string title{ (trackInfo.movement && !trackInfo.movement->getName().empty()) ? trackInfo.movement->getName() : track->getName() };
+        entry->bindString("name", Wt::WString::fromUTF8(title), Wt::TextFormat::Plain);
+
+        if (displayTrackArtists)
+        {
+            const auto artistDisplayInfo{ utils::computeArtistDisplayInfo(track, db::TrackArtistLinkType::Artist) };
+            if (!artistDisplayInfo.entries.empty())
+            {
+                entry->setCondition("if-has-artists", true);
+                entry->bindWidget("artists", utils::createArtistsAnchors(artistDisplayInfo));
+                entry->bindWidget("artists-md", utils::createArtistsAnchors(artistDisplayInfo));
+            }
+        }
+
+        fillTrackArtistLinks(entry, track);
+
+        if (trackInfo.movement && trackInfo.movement->getNumber())
+        {
+            const std::size_t number{ *trackInfo.movement->getNumber() };
+            entry->setCondition("if-has-position", true);
+            if (const std::string numeral{ core::stringUtils::toRomanNumeral(number) }; !numeral.empty())
+                entry->bindString("position", Wt::WString::fromUTF8(numeral), Wt::TextFormat::Plain);
+            else
+                entry->bindInt("position", static_cast<int>(number));
+        }
+        else if (const auto n{ track->getTrackNumber() })
+        {
+            entry->setCondition("if-has-position", true);
+            entry->bindInt("position", static_cast<int>(*n));
+        }
+
+        auto playTrack{ [this, trackId] {
+            const auto it{ std::find(std::cbegin(_trackIds), std::cend(_trackIds), trackId) };
+            if (it == std::cend(_trackIds))
+                return;
+
+            _playQueueController.playAtIndex(_trackIds, static_cast<std::size_t>(std::distance(std::cbegin(_trackIds), it)));
+        } };
+
+        Wt::WPushButton* playBtn{ entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML) };
+        playBtn->setAttributeValue("aria-label", Wt::WString::tr("Lms.play-item").arg(title));
+        playBtn->clicked().connect(playTrack);
+
+        {
+            entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML)
+                ->setAttributeValue("aria-label", Wt::WString::tr("Lms.more"));
+            entry->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
+                ->clicked()
+                .connect(playTrack);
+            entry->bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"))
+                ->clicked()
+                .connect([this, trackId] {
+                    db::TrackId trackIds[]{ trackId };
+                    _playQueueController.processCommand(PlayQueueController::Command::PlayNext, trackIds);
+                });
+            entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
+                ->clicked()
+                .connect([this, trackId] {
+                    db::TrackId trackIds[]{ trackId };
+                    _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, trackIds);
+                });
+
+            {
+                auto isStarred{ [=] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); } };
+
+                Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star-btn", Wt::WString::tr(isStarred() ? "Lms.template.unstar-btn" : "Lms.template.star-btn"), Wt::TextFormat::XHTML) };
+                starBtn->setAttributeValue("aria-pressed", isStarred() ? "true" : "false");
+                starBtn->setAttributeValue("aria-label", Wt::WString::tr("Lms.Explore.star-item").arg(title));
+                Wt::WPushButton* starMenuEntry{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
+
+                auto toggle{ [=] {
+                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+
+                    if (isStarred())
+                    {
+                        core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
+                        starMenuEntry->setText(Wt::WString::tr("Lms.Explore.star"));
+                        starBtn->setText(Wt::WString::tr("Lms.template.star-btn"));
+                        starBtn->setAttributeValue("aria-pressed", "false");
+                    }
+                    else
+                    {
+                        core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
+                        starMenuEntry->setText(Wt::WString::tr("Lms.Explore.unstar"));
+                        starBtn->setText(Wt::WString::tr("Lms.template.unstar-btn"));
+                        starBtn->setAttributeValue("aria-pressed", "true");
+                    }
+                } };
+
+                starMenuEntry->clicked().connect([=] { toggle(); });
+                starBtn->clicked().connect([=] { toggle(); });
+            }
+
+            if (LmsApp->areDownloadsEnabled())
+            {
+                entry->setCondition("if-has-download", true);
+                entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+                    ->setLink(Wt::WLink{ std::make_unique<DownloadTrackResource>(trackId) });
+            }
+
+            entry->bindNew<Wt::WPushButton>("track-info", Wt::WString::tr("Lms.Explore.track-info"))
+                ->clicked()
+                .connect([this, trackId] { TrackListHelpers::showTrackInfoModal(trackId, _filters); });
+
+            if (track->hasLyrics())
+            {
+                entry->setCondition("if-has-lyrics", true);
+                entry->bindNew<Wt::WPushButton>("track-lyrics", Wt::WString::tr("Lms.Explore.track-lyrics"))
+                    ->clicked()
+                    .connect([trackId] { TrackListHelpers::showTrackLyricsModal(trackId); });
+            }
+        }
+
+        entry->bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
+
+        LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=](db::TrackId loadedTrackId) {
+            entry->toggleStyleClass("Lms-entry-playing", loadedTrackId == trackId);
+        });
+
+        if (auto trackIdLoaded{ LmsApp->getMediaPlayer().getTrackLoaded() })
+        {
+            entry->toggleStyleClass("Lms-entry-playing", *trackIdLoaded == trackId);
+        }
+        else
+            entry->removeStyleClass("Lms-entry-playing");
     }
 
     void Release::refreshCopyright(const db::Release::pointer& release)
@@ -626,7 +780,7 @@ namespace lms::ui
         }
     }
 
-    void Release::refreshRelatedReleases(const std::vector<db::ReleaseId>& similarReleaseIds)
+    void Release::refreshRelatedReleases(std::span<const db::ReleaseId> similarReleaseIds)
     {
         if (similarReleaseIds.empty())
             return;
@@ -644,63 +798,58 @@ namespace lms::ui
         }
     }
 
-    std::unique_ptr<Wt::WTemplate> Release::createDisc(const db::Medium::pointer& medium)
+    Wt::WContainerWidget* Release::addSegment(Wt::WContainerWidget* container, const Wt::WString& title, db::ArtworkId artworkId, std::span<const db::TrackId> trackIds, const char* segmentTemplate)
     {
-        const db::MediumId mediumId{ medium->getId() };
+        const std::vector<db::TrackId> ids{ std::cbegin(trackIds), std::cend(trackIds) };
 
-        std::unique_ptr<Wt::WTemplate> disc{ std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Release.template.entry-disc")) };
-        disc->addFunction("id", &Wt::WTemplate::Functions::id);
+        auto header{ std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Release.template.segment-header")) };
+        header->addFunction("id", &Wt::WTemplate::Functions::id);
 
-        if (db::ArtworkId artworkId{ medium->getPreferredArtworkId() }; artworkId.isValid())
+        if (artworkId.isValid())
         {
             auto image{ utils::createArtworkImage(artworkId, ArtworkResource::DefaultArtworkType::Release, ArtworkResource::Size::Small) };
-
-            disc->setCondition("if-has-artwork", true);
-
+            header->setCondition("if-has-artwork", true);
             image->addStyleClass("Lms-cover-track rounded"); // HACK
             image->clicked().connect([artworkId] {
                 utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtworkUrl(artworkId, ArtworkResource::DefaultArtworkType::Release) });
             });
-            disc->bindWidget<Wt::WImage>("artwork", std::move(image));
+            header->bindWidget<Wt::WImage>("artwork", std::move(image));
         }
 
-        Wt::WString discTitle;
-        if (medium->getName().empty())
-            discTitle = Wt::WString::tr("Lms.Explore.Release.disc").arg(medium->getPosition() ? *medium->getPosition() : 1 /* TODO */);
-        else
-            discTitle = Wt::WString::fromUTF8(std::string{ medium->getName() });
-        disc->bindNew<Wt::WText>("disc-title", discTitle, Wt::TextFormat::Plain);
+        header->bindNew<Wt::WText>("title", title, Wt::TextFormat::Plain);
 
-        Wt::WPushButton* playBtn{ disc->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML) };
-        playBtn->setAttributeValue("aria-label", Wt::WString::tr("Lms.play-item").arg(discTitle));
-        playBtn->clicked().connect([this, mediumId] {
-            _playQueueController.processCommand(PlayQueueController::Command::Play, mediumId);
+        Wt::WPushButton* playBtn{ header->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML) };
+        playBtn->setAttributeValue("aria-label", Wt::WString::tr("Lms.play-item").arg(title));
+        playBtn->clicked().connect([this, ids] {
+            _playQueueController.processCommand(PlayQueueController::Command::Play, ids);
         });
-        disc->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML)
+        header->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML)
             ->setAttributeValue("aria-label", Wt::WString::tr("Lms.more"));
-        ;
-        disc->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
+        header->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
             ->clicked()
-            .connect([this, mediumId] {
-                _playQueueController.processCommand(PlayQueueController::Command::Play, mediumId);
+            .connect([this, ids] {
+                _playQueueController.processCommand(PlayQueueController::Command::Play, ids);
             });
-        disc->bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"))
+        header->bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"))
             ->clicked()
-            .connect([this, mediumId] {
-                _playQueueController.processCommand(PlayQueueController::Command::PlayNext, mediumId);
+            .connect([this, ids] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayNext, ids);
             });
-
-        disc->bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
+        header->bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
             ->clicked()
-            .connect([this, mediumId] {
-                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, mediumId);
+            .connect([this, ids] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, ids);
             });
-        disc->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
+        header->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
             ->clicked()
-            .connect([this, mediumId] {
-                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, mediumId);
+            .connect([this, ids] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, ids);
             });
 
-        return disc;
+        Template* segment{ container->addNew<Template>(Wt::WString::tr(segmentTemplate)) };
+        segment->bindWidget("header", std::move(header));
+
+        return segment->bindNew<Wt::WContainerWidget>("tracks");
     }
+
 } // namespace lms::ui

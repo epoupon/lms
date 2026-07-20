@@ -71,7 +71,7 @@ namespace lms::api::subsonic
 
         Response handleJukeboxGet(RequestContext& context, jukebox::IJukeboxService& jukeboxService)
         {
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             Response::Node jukeboxPlaylistNode{ createJukeboxStatusNode(jukeboxService) };
 
             {
@@ -88,9 +88,9 @@ namespace lms::api::subsonic
             return response;
         }
 
-        Response handleJukeboxStatus(RequestContext& context, jukebox::IJukeboxService& jukeboxService)
+        Response handleJukeboxStatus(RequestContext& /*context*/, jukebox::IJukeboxService& jukeboxService)
         {
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             response.addNode("jukeboxStatus", createJukeboxStatusNode(jukeboxService));
             return response;
         }
@@ -103,25 +103,25 @@ namespace lms::api::subsonic
             jukeboxService.clearTracks();
             jukeboxService.appendTracks(trackIds);
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             response.addNode("jukeboxStatus", createJukeboxStatusNode(jukeboxService));
             return response;
         }
 
-        Response handleJukeboxStart(RequestContext& context, jukebox::IJukeboxService& jukeboxService)
+        Response handleJukeboxStart(RequestContext& /*context*/, jukebox::IJukeboxService& jukeboxService)
         {
             jukeboxService.resume();
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             response.addNode("jukeboxStatus", createJukeboxStatusNode(jukeboxService));
             return response;
         }
 
-        Response handleJukeboxStop(RequestContext& context, jukebox::IJukeboxService& jukeboxService)
+        Response handleJukeboxStop(RequestContext& /*context*/, jukebox::IJukeboxService& jukeboxService)
         {
             jukeboxService.pause();
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             response.addNode("jukeboxStatus", createJukeboxStatusNode(jukeboxService));
             return response;
         }
@@ -134,7 +134,7 @@ namespace lms::api::subsonic
             // do not report potential range error
             jukeboxService.play(index, std::chrono::seconds{ offset });
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             response.addNode("jukeboxStatus", createJukeboxStatusNode(jukeboxService));
             return response;
         }
@@ -145,16 +145,16 @@ namespace lms::api::subsonic
 
             jukeboxService.appendTracks(trackIds);
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             response.addNode("jukeboxStatus", createJukeboxStatusNode(jukeboxService));
             return response;
         }
 
-        Response handleJukeboxClear(RequestContext& context, jukebox::IJukeboxService& jukeboxService)
+        Response handleJukeboxClear(RequestContext& /*context*/, jukebox::IJukeboxService& jukeboxService)
         {
             jukeboxService.clearTracks();
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             response.addNode("jukeboxStatus", createJukeboxStatusNode(jukeboxService));
             return response;
         }
@@ -164,16 +164,16 @@ namespace lms::api::subsonic
             const auto index{ getMandatoryParameterAs<std::size_t>(context.getParameters(), "index") };
             jukeboxService.removeTrack(index);
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             response.addNode("jukeboxStatus", createJukeboxStatusNode(jukeboxService));
             return response;
         }
 
-        Response handleJukeboxShuffle(RequestContext& context, jukebox::IJukeboxService& jukeboxService)
+        Response handleJukeboxShuffle(RequestContext& /*context*/, jukebox::IJukeboxService& jukeboxService)
         {
             jukeboxService.shuffleTracks();
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             response.addNode("jukeboxStatus", createJukeboxStatusNode(jukeboxService));
             return response;
         }
@@ -186,7 +186,7 @@ namespace lms::api::subsonic
 
             jukeboxService.setVolume(gain); // consider gain is linear
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             response.addNode("jukeboxStatus", createJukeboxStatusNode(jukeboxService));
             return response;
         }

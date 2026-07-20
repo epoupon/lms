@@ -114,6 +114,24 @@ namespace lms::scanner::tests
         EXPECT_EQ(track.producerArtists[1].name, "MyProducer2");
         ASSERT_TRUE(track.recordingMBID.has_value());
         EXPECT_EQ(track.recordingMBID.value(), core::UUID::fromString("bd3fc666-89de-4ac8-93f6-2dbf028ad8d5"));
+        ASSERT_EQ(track.works.size(), 2);
+        EXPECT_EQ(track.works[0].name, "MyWork1");
+        EXPECT_EQ(track.works[1].name, "MyWork2");
+        ASSERT_TRUE(track.works[0].mbid.has_value());
+        EXPECT_EQ(track.works[0].mbid.value(), core::UUID::fromString("11112222-3333-4444-5555-666677778888"));
+        ASSERT_TRUE(track.works[1].mbid.has_value());
+        EXPECT_EQ(track.works[1].mbid.value(), core::UUID::fromString("aaaabbbb-cccc-dddd-eeee-ffff00001111"));
+        ASSERT_EQ(track.movements.size(), 2);
+        EXPECT_EQ(track.movements[0].name, "Allegro con brio");
+        ASSERT_TRUE(track.movements[0].number.has_value());
+        EXPECT_EQ(track.movements[0].number.value(), 1);
+        ASSERT_TRUE(track.movements[0].count.has_value());
+        EXPECT_EQ(track.movements[0].count.value(), 4);
+        EXPECT_EQ(track.movements[1].name, "Andante");
+        ASSERT_TRUE(track.movements[1].number.has_value());
+        EXPECT_EQ(track.movements[1].number.value(), 2);
+        ASSERT_TRUE(track.movements[1].count.has_value());
+        EXPECT_EQ(track.movements[1].count.value(), 4);
         ASSERT_TRUE(track.replayGain.has_value());
         EXPECT_FLOAT_EQ(track.replayGain.value(), -0.33);
         ASSERT_EQ(track.remixerArtists.size(), 2);
@@ -718,6 +736,60 @@ namespace lms::scanner::tests
         EXPECT_EQ(track.artists[1].name, "Artist2");
         EXPECT_EQ(track.artists[1].mbid, std::nullopt);
         EXPECT_EQ(track.artistDisplayName, "Artist1, Artist2"); // reconstruct the artist display name
+    }
+
+    TEST(TrackMetadataParser, works_allMbidsPresent)
+    {
+        const TestTagReader testTags{
+            {
+                { audio::TagType::WorkTitle, { "MyWork1", "MyWork2" } },
+                { audio::TagType::MusicBrainzWorkID, { "11112222-3333-4444-5555-666677778888", "aaaabbbb-cccc-dddd-eeee-ffff00001111" } },
+            }
+        };
+
+        const Track track{ TrackMetadataParser{}.parseTrackMetaData(testTags) };
+
+        ASSERT_EQ(track.works.size(), 2);
+        EXPECT_EQ(track.works[0].name, "MyWork1");
+        EXPECT_EQ(track.works[0].mbid, core::UUID::fromString("11112222-3333-4444-5555-666677778888"));
+        EXPECT_EQ(track.works[1].name, "MyWork2");
+        EXPECT_EQ(track.works[1].mbid, core::UUID::fromString("aaaabbbb-cccc-dddd-eeee-ffff00001111"));
+    }
+
+    TEST(TrackMetadataParser, works_noMbids)
+    {
+        const TestTagReader testTags{
+            {
+                { audio::TagType::WorkTitle, { "MyWork1", "MyWork2" } },
+            }
+        };
+
+        const Track track{ TrackMetadataParser{}.parseTrackMetaData(testTags) };
+
+        ASSERT_EQ(track.works.size(), 2);
+        EXPECT_EQ(track.works[0].name, "MyWork1");
+        EXPECT_EQ(track.works[0].mbid, std::nullopt);
+        EXPECT_EQ(track.works[1].name, "MyWork2");
+        EXPECT_EQ(track.works[1].mbid, std::nullopt);
+    }
+
+    TEST(TrackMetadataParser, works_mismatchedMbidCount)
+    {
+        // mbid count does not match work title count => mbids are all discarded (all or nothing)
+        const TestTagReader testTags{
+            {
+                { audio::TagType::WorkTitle, { "MyWork1", "MyWork2" } },
+                { audio::TagType::MusicBrainzWorkID, { "11112222-3333-4444-5555-666677778888" } },
+            }
+        };
+
+        const Track track{ TrackMetadataParser{}.parseTrackMetaData(testTags) };
+
+        ASSERT_EQ(track.works.size(), 2);
+        EXPECT_EQ(track.works[0].name, "MyWork1");
+        EXPECT_EQ(track.works[0].mbid, std::nullopt);
+        EXPECT_EQ(track.works[1].name, "MyWork2");
+        EXPECT_EQ(track.works[1].mbid, std::nullopt);
     }
 
     TEST(TrackMetadataParser, heterogeneousArtistMbids)
