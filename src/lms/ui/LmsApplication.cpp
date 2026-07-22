@@ -26,7 +26,6 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WServer.h>
-#include <Wt/WStackedWidget.h>
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
@@ -143,68 +142,6 @@ namespace lms::ui
             }
 #endif
             return locale;
-        }
-
-        enum IdxRoot
-        {
-            IdxExplore = 0,
-            IdxPlayQueue,
-            IdxSettings,
-            IdxAdminLibraries,
-            IdxAdminScanSettings,
-            IdxAdminScanner,
-            IdxAdminUsers,
-            IdxAdminUser,
-            IdxAdminDebugTools,
-        };
-
-        void handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
-        {
-            static const struct
-            {
-                std::string path;
-                int index;
-                bool admin;
-                std::optional<Wt::WString> title;
-            } views[] = {
-                { "/artists", IdxExplore, false, Wt::WString::tr("Lms.Explore.artists") },
-                { "/artist", IdxExplore, false, std::nullopt },
-                { "/releases", IdxExplore, false, Wt::WString::tr("Lms.Explore.releases") },
-                { "/release", IdxExplore, false, std::nullopt },
-                { "/tracks", IdxExplore, false, Wt::WString::tr("Lms.Explore.tracks") },
-                { "/tracklists", IdxExplore, false, Wt::WString::tr("Lms.Explore.tracklists") },
-                { "/tracklist", IdxExplore, false, std::nullopt },
-                { "/folders", IdxExplore, false, Wt::WString::tr("Lms.Explore.folders") },
-                { "/folder", IdxExplore, false, std::nullopt },
-                { "/playqueue", IdxPlayQueue, false, Wt::WString::tr("Lms.PlayQueue.playqueue") },
-                { "/settings", IdxSettings, false, Wt::WString::tr("Lms.Settings.settings") },
-                { "/admin/libraries", IdxAdminLibraries, true, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries") },
-                { "/admin/scan-settings", IdxAdminScanSettings, true, Wt::WString::tr("Lms.Admin.Database.scan-settings") },
-                { "/admin/scanner", IdxAdminScanner, true, Wt::WString::tr("Lms.Admin.ScannerController.scanner") },
-                { "/admin/users", IdxAdminUsers, true, Wt::WString::tr("Lms.Admin.Users.users") },
-                { "/admin/user", IdxAdminUser, true, std::nullopt },
-                { "/admin/debug-tools", IdxAdminDebugTools, true, Wt::WString::tr("Lms.Admin.DebugTools.debug-tools") },
-            };
-
-            LMS_LOG(UI, DEBUG, "Internal path changed to '" << wApp->internalPath() << "'");
-
-            for (const auto& view : views)
-            {
-                if (wApp->internalPathMatches(view.path))
-                {
-                    if (view.admin && !isAdmin)
-                        break;
-
-                    stack.setCurrentIndex(view.index);
-                    if (view.title)
-                        LmsApp->setTitle(*view.title);
-
-                    LmsApp->doJavaScript(LmsApp->javaScriptClass() + ".updateActiveNav('" + view.path + "')");
-                    return;
-                }
-            }
-
-            wApp->setInternalPath(defaultPath, true);
         }
 
     } // namespace
@@ -527,6 +464,8 @@ namespace lms::ui
         mainRouter->addRoute("/tracks", Wt::WString::tr("Lms.Explore.tracks"), explore);
         mainRouter->addRoute("/tracklists", Wt::WString::tr("Lms.Explore.tracklists"), explore);
         mainRouter->addRoute("/tracklist", std::nullopt, explore);
+        mainRouter->addRoute("/folders", Wt::WString::tr("Lms.Explore.folders"), explore);
+        mainRouter->addRoute("/folder", std::nullopt, explore);
 
         mainRouter->add<SettingsView>("/settings", std::nullopt);
 
