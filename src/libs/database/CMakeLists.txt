@@ -11,6 +11,7 @@ add_library(lmsdatabase STATIC
 	impl/objects/Image.cpp
 	impl/objects/Language.cpp
 	impl/objects/Listen.cpp
+	impl/objects/ListenBackendSync.cpp
 	impl/objects/MediaLibrary.cpp
 	impl/objects/Medium.cpp
 	impl/objects/Mood.cpp

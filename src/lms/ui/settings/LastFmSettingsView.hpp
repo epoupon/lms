@@ -20,18 +20,22 @@
 #pragma once
 
 #include <Wt/WContainerWidget.h>
+#include <Wt/WTemplate.h>
 
 namespace lms::ui
 {
-    class ServicesSettingsView : public Wt::WContainerWidget
+    class LastFmSettingsView : public Wt::WContainerWidget
     {
     public:
-        ServicesSettingsView();
+        LastFmSettingsView();
 
     private:
         void refreshView();
-        void refreshFormSection();
-        void refreshLastFmCardSection();
-        void showLastFmLinkModal();
+        void refreshForm();
+        void refreshAccountCard();
+        void updateAccountCardVisibility();
+        void showLinkModal();
+
+        Wt::WTemplate* _accountCard{};
     };
 } // namespace lms::ui

@@ -322,13 +322,16 @@ namespace lms::feedback::listenBrainz
         request.relativeUrl = "/1/validate-token";
         request.headers = { { "Authorization", "Token " + listenBrainzToken } };
         request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
-            context.listenBrainzUserName = utils::parseValidateToken(msg.body());
-            if (context.listenBrainzUserName.empty())
-            {
-                onSyncEnded(context);
-                return;
-            }
-            enqueGetFeedbackCount(context);
+            std::string listenBrainzUserName{ utils::parseValidateToken(msg.body()) };
+            boost::asio::post(boost::asio::bind_executor(_strand, [this, listenBrainzUserName = std::move(listenBrainzUserName), &context]() mutable {
+                context.listenBrainzUserName = std::move(listenBrainzUserName);
+                if (context.listenBrainzUserName.empty())
+                {
+                    onSyncEnded(context);
+                    return;
+                }
+                enqueGetFeedbackCount(context);
+            }));
         };
         request.onFailureFunc = [this, &context] {
             onSyncEnded(context);

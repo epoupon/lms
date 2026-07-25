@@ -222,3 +222,10 @@ body {
 .Lms-tracks-entry-duration {
 	min-width: 4rem;
 }
+
+.Lms-settings-menu-icon svg {
+	width: 1em;
+	height: 1em;
+	margin-right: .45rem;
+	vertical-align: -0.125em;
+}

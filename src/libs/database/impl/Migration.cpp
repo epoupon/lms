@@ -36,7 +36,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 110 };
+        static constexpr Version LMS_DATABASE_VERSION{ 111 };
     }
 
     VersionInfo::VersionInfo()
@@ -1966,6 +1966,73 @@ CREATE TABLE IF NOT EXISTS "server_info" (
 ))");
     }
 
+    void migrateFromV110(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        LMS_LOG(DB, INFO, "Splitting listen delivery state into a dedicated table...");
+
+        // Make sure we remove all the previously created index, the createIndexesIfNeeded will recreate them all
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS listen_backend_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS listen_user_backend_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS listen_user_backend_date_time_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS listen_track_user_backend_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS listen_user_track_backend_date_time_idx");
+
+        // Create the replacement index now to not run unindexed now that the old indexes are gone
+        utils::executeCommand(dboSession, R"(CREATE INDEX IF NOT EXISTS listen_user_track_date_time_idx ON listen(user_id,track_id,date_time))");
+
+        utils::executeCommand(dboSession, R"(
+CREATE TABLE IF NOT EXISTS "listen_backend_sync" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "backend" integer not null,
+  "sync_state" integer not null,
+  "listen_id" bigint,
+  constraint "fk_listen_backend_sync_listen" foreign key ("listen_id") references "listen" ("id") on delete cascade deferrable initially deferred
+))");
+
+        const int listenCountBefore{ utils::fetchQuerySingleResult(dboSession.query<int>("SELECT COUNT(*) FROM listen")) };
+
+        // Collapse rows that used to represent the same playback event once per backend into a single canonical row,
+        // recording one listen_backend_sync entry per non-Internal backend that had a row in the group.
+        // sync_state priority when a group has more than one row for the same backend (shouldn't normally happen): Synchronized > PendingAdd > PendingRemove
+        utils::executeCommand(dboSession, R"(
+INSERT INTO listen_backend_sync (version, listen_id, backend, sync_state)
+SELECT 0, c.canonical_id, l.backend,
+       CASE MIN(CASE l.sync_state WHEN 1 THEN 0 WHEN 0 THEN 1 ELSE 2 END)
+            WHEN 0 THEN 1
+            WHEN 1 THEN 0
+            ELSE 2
+       END
+FROM listen l
+JOIN (
+  SELECT user_id, track_id, date_time, MIN(id) AS canonical_id
+  FROM listen
+  GROUP BY user_id, track_id, date_time
+) c ON c.user_id = l.user_id AND c.track_id = l.track_id AND c.date_time = l.date_time
+WHERE l.backend != 0
+GROUP BY c.canonical_id, l.backend)");
+
+        utils::executeCommand(dboSession, R"(
+DELETE FROM listen WHERE id NOT IN (
+  SELECT MIN(id) FROM listen GROUP BY user_id, track_id, date_time
+))");
+
+        const int listenCountAfter{ utils::fetchQuerySingleResult(dboSession.query<int>("SELECT COUNT(*) FROM listen")) };
+        const int deliveryCount{ utils::fetchQuerySingleResult(dboSession.query<int>("SELECT COUNT(*) FROM listen_backend_sync")) };
+        LMS_LOG(DB, INFO, "Collapsed " << listenCountBefore << " listen rows into " << listenCountAfter << ", created " << deliveryCount << " listen_backend_sync rows");
+
+        utils::executeCommand(dboSession, R"(ALTER TABLE "listen" DROP COLUMN "backend")");
+        utils::executeCommand(dboSession, R"(ALTER TABLE "listen" DROP COLUMN "sync_state")");
+
+        // A user can now enable zero, one or more scrobbling backends at once (bitmask). "Internal" is no longer a togglable backend:
+        // recording a Listen row is itself the "Internal" behavior, so a user whose old single backend was Internal ends up with an empty set.
+        utils::executeCommand(dboSession, R"(ALTER TABLE "user" ADD COLUMN "scrobbling_backends" bigint not null default 0)");
+        utils::executeCommand(dboSession, R"(UPDATE "user" SET "scrobbling_backends" = (1 << "scrobbling_backend") WHERE "scrobbling_backend" != 0)");
+        utils::executeCommand(dboSession, R"(ALTER TABLE "user" DROP COLUMN "scrobbling_backend")");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -2052,6 +2119,7 @@ CREATE TABLE IF NOT EXISTS "server_info" (
             { 107, migrateFromV107 },
             { 108, migrateFromV108 },
             { 109, migrateFromV109 },
+            { 110, migrateFromV110 },
         };
 
         LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");

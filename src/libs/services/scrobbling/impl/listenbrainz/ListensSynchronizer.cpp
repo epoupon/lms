@@ -34,6 +34,7 @@
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Listen.hpp"
+#include "database/objects/ListenBackendSync.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
@@ -239,7 +240,7 @@ namespace lms::scrobbling::listenBrainz
     {
         LMS_LOG_LISTENBRAINZ(INFO, "Starting Listens synchronizer, maxSyncListenCount = " << _maxSyncListenCount << ", _syncListensPeriod = " << _syncListensPeriod.count() << " hours");
 
-        scheduleSync(std::chrono::seconds{ 30 });
+        scheduleDeliveryFlush(std::chrono::seconds{ 30 });
     }
 
     void ListensSynchronizer::enqueListen(const TimedListen& listen)
@@ -251,6 +252,20 @@ namespace lms::scrobbling::listenBrainz
     void ListensSynchronizer::enqueListenNow(const scrobbling::Listen& listen)
     {
         enqueListen(listen, {});
+    }
+
+    void ListensSynchronizer::requestImmediateImport(db::UserId userId)
+    {
+        boost::asio::post(boost::asio::bind_executor(_strand, [this, userId] {
+            UserContext& context{ getUserContext(userId) };
+            if (context.importing)
+            {
+                LMS_LOG_LISTENBRAINZ(DEBUG, "Import already in progress for this user, ignoring manual trigger");
+                return;
+            }
+
+            startImport(context);
+        }));
     }
 
     void ListensSynchronizer::enqueListen(const scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
@@ -309,7 +324,7 @@ namespace lms::scrobbling::listenBrainz
         db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() }; // TODO: unique only if needed
 
-        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, db::ScrobblingBackend::ListenBrainz, listen.listenedAt) };
+        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
         if (!dbListen)
         {
             const db::User::pointer user{ db::User::find(session, listen.userId) };
@@ -320,18 +335,22 @@ namespace lms::scrobbling::listenBrainz
             if (!track)
                 return false;
 
-            dbListen = session.create<db::Listen>(user, track, db::ScrobblingBackend::ListenBrainz, listen.listenedAt);
-            dbListen.modify()->setSyncState(scrobblingState);
+            dbListen = session.create<db::Listen>(user, track, listen.listenedAt);
+            LMS_LOG_LISTENBRAINZ(DEBUG, "Listen created for user " << user->getLoginName() << ", track '" << track->getName() << "' at " << listen.listenedAt.toString());
+        }
 
-            LMS_LOG_LISTENBRAINZ(DEBUG, "LISTEN CREATED for user " << user->getLoginName() << ", track '" << track->getName() << "' AT " << listen.listenedAt.toString());
-
+        db::ListenBackendSync::pointer sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::ListenBrainz) };
+        if (!sync)
+        {
+            sync = session.create<db::ListenBackendSync>(dbListen, db::ScrobblingBackend::ListenBrainz);
+            sync.modify()->setSyncState(scrobblingState);
             return true;
         }
 
-        if (dbListen->getSyncState() == scrobblingState)
+        if (sync->getSyncState() == scrobblingState)
             return false;
 
-        dbListen.modify()->setSyncState(scrobblingState);
+        sync.modify()->setSyncState(scrobblingState);
         return true;
     }
 
@@ -344,29 +363,26 @@ namespace lms::scrobbling::listenBrainz
 
             auto transaction{ session.createWriteTransaction() };
 
-            db::Listen::FindParameters params;
-            params.setScrobblingBackend(db::ScrobblingBackend::ListenBrainz)
+            db::ListenBackendSync::FindParameters params;
+            params.setBackend(db::ScrobblingBackend::ListenBrainz)
                 .setSyncState(db::SyncState::PendingAdd)
                 .setRange(db::Range{ 0, 100 }); // don't flood too much?
 
-            const auto results{ db::Listen::find(session, params) };
-            pendingListens.reserve(results.size());
-
-            for (db::ListenId listenId : results)
-            {
-                const db::Listen::pointer listen{ db::Listen::find(session, listenId) };
+            db::ListenBackendSync::find(session, params, [&](const db::ListenBackendSync::pointer& sync) {
+                const db::Listen::pointer listen{ sync->getListen() };
 
                 TimedListen timedListen;
                 timedListen.listenedAt = listen->getDateTime();
                 timedListen.userId = listen->getUser()->getId();
                 timedListen.trackId = listen->getTrack()->getId();
 
-                pendingListens.push_back(std::move(timedListen));
-            }
+                pendingListens.push_back(timedListen);
+            });
         }
 
         LMS_LOG_LISTENBRAINZ(DEBUG, "Queing " << pendingListens.size() << " pending listen");
 
+        // TODO batch send
         for (const TimedListen& pendingListen : pendingListens)
             enqueListen(pendingListen);
     }
@@ -384,77 +400,54 @@ namespace lms::scrobbling::listenBrainz
         return itContext->second;
     }
 
-    bool ListensSynchronizer::isSyncing() const
-    {
-        return std::any_of(std::cbegin(_userContexts), std::cend(_userContexts), [](const auto& contextEntry) {
-            return contextEntry.second.syncing;
-        });
-    }
-
-    void ListensSynchronizer::scheduleSync(std::chrono::seconds fromNow)
+    void ListensSynchronizer::scheduleDeliveryFlush(std::chrono::seconds fromNow)
     {
         if (_syncListensPeriod.count() == 0 || _maxSyncListenCount == 0)
             return;
 
-        LMS_LOG_LISTENBRAINZ(DEBUG, "Scheduled sync in " << fromNow.count() << " seconds...");
+        LMS_LOG_LISTENBRAINZ(DEBUG, "Scheduled delivery flush in " << fromNow.count() << " seconds...");
         _syncTimer.expires_after(fromNow);
         _syncTimer.async_wait(boost::asio::bind_executor(_strand, [this](const boost::system::error_code& ec) {
             if (ec == boost::asio::error::operation_aborted)
             {
-                LMS_LOG_LISTENBRAINZ(DEBUG, "getListens aborted");
+                LMS_LOG_LISTENBRAINZ(DEBUG, "Periodic delivery flush timer aborted");
                 return;
             }
-            else if (ec)
-            {
-                throw Exception{ "GetListens timer failure: " + std::string{ ec.message() } };
-            }
 
-            startSync();
+            if (ec)
+                throw Exception{ "GetListens timer failure: " + std::string{ ec.message() } };
+
+            flushPendingDeliveries();
         }));
     }
 
-    void ListensSynchronizer::startSync()
+    void ListensSynchronizer::flushPendingDeliveries()
     {
-        LMS_LOG_LISTENBRAINZ(DEBUG, "Starting sync!");
-
-        assert(!isSyncing());
+        LMS_LOG_LISTENBRAINZ(DEBUG, "Flushing pending deliveries!");
 
         enquePendingListens();
 
-        std::vector<db::UserId> userIds;
-        {
-            db::Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createReadTransaction() };
-            userIds = db::User::find(_db.getTLSSession(), db::User::FindParameters{}.setScrobblingBackend(db::ScrobblingBackend::ListenBrainz));
-        }
-
-        for (const db::UserId userId : userIds)
-            startSync(getUserContext(userId));
-
-        if (!isSyncing())
-            scheduleSync(_syncListensPeriod);
+        scheduleDeliveryFlush(_syncListensPeriod);
     }
 
-    void ListensSynchronizer::startSync(UserContext& context)
+    void ListensSynchronizer::startImport(UserContext& context)
     {
-        context.syncing = true;
+        context.importing = true;
         context.listenBrainzUserName = "";
         context.maxDateTime = {};
         context.fetchedListenCount = 0;
         context.matchedListenCount = 0;
         context.importedListenCount = 0;
+        context.pendingListenCount = std::nullopt;
 
         enqueValidateToken(context);
     }
 
-    void ListensSynchronizer::onSyncEnded(UserContext& context)
+    void ListensSynchronizer::onImportEnded(UserContext& context)
     {
-        boost::asio::post(boost::asio::bind_executor(_strand, [this, &context] {
-            LMS_LOG_LISTENBRAINZ(INFO, "Sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount);
-            context.syncing = false;
-
-            if (!isSyncing())
-                scheduleSync(_syncListensPeriod);
+        boost::asio::post(boost::asio::bind_executor(_strand, [&context] {
+            LMS_LOG_LISTENBRAINZ(INFO, "Import done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount);
+            context.importing = false;
         }));
     }
 
@@ -465,7 +458,7 @@ namespace lms::scrobbling::listenBrainz
         const std::string listenBrainzToken{ utils::getListenBrainzToken(_db.getTLSSession(), context.userId) };
         if (listenBrainzToken.empty())
         {
-            onSyncEnded(context);
+            onImportEnded(context);
             return;
         }
 
@@ -474,16 +467,22 @@ namespace lms::scrobbling::listenBrainz
         request.relativeUrl = "/1/validate-token";
         request.headers = { { "Authorization", "Token " + listenBrainzToken } };
         request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
-            context.listenBrainzUserName = utils::parseValidateToken(msg.body());
-            if (context.listenBrainzUserName.empty())
-            {
-                onSyncEnded(context);
-                return;
-            }
-            enqueGetListenCount(context);
+            std::string listenBrainzUserName{ utils::parseValidateToken(msg.body()) };
+            boost::asio::post(boost::asio::bind_executor(_strand, [this, listenBrainzUserName = std::move(listenBrainzUserName), &context]() mutable {
+                context.listenBrainzUserName = std::move(listenBrainzUserName);
+                if (context.listenBrainzUserName.empty())
+                {
+                    onImportEnded(context);
+                    return;
+                }
+                enqueGetListenCount(context);
+            }));
         };
         request.onFailureFunc = [this, &context] {
-            onSyncEnded(context);
+            onImportEnded(context);
+        };
+        request.onAbortFunc = [this, &context] {
+            onImportEnded(context);
         };
 
         _client.sendGETRequest(std::move(request));
@@ -499,24 +498,30 @@ namespace lms::scrobbling::listenBrainz
         request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
             const auto listenCount{ parseListenCount(msg.body()) };
             boost::asio::post(boost::asio::bind_executor(_strand, [this, listenCount, &context] {
-                if (listenCount)
-                    LMS_LOG_LISTENBRAINZ(DEBUG, "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount);
-
-                bool needSync{ listenCount && (!context.listenCount || *context.listenCount != *listenCount) };
-                context.listenCount = listenCount;
-
-                if (!needSync)
+                if (!listenCount)
                 {
-                    onSyncEnded(context);
+                    onImportEnded(context);
                     return;
                 }
 
+                LMS_LOG_LISTENBRAINZ(DEBUG, "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount);
+
+                if (context.listenCount && *context.listenCount == *listenCount)
+                {
+                    onImportEnded(context);
+                    return;
+                }
+
+                context.pendingListenCount = listenCount;
                 context.maxDateTime = Wt::WDateTime::currentDateTime();
                 enqueGetListens(context);
             }));
         };
         request.onFailureFunc = [this, &context] {
-            onSyncEnded(context);
+            onImportEnded(context);
+        };
+        request.onAbortFunc = [this, &context] {
+            onImportEnded(context);
         };
 
         _client.sendGETRequest(std::move(request));
@@ -530,17 +535,24 @@ namespace lms::scrobbling::listenBrainz
         request.relativeUrl = "/1/user/" + context.listenBrainzUserName + "/listens?max_ts=" + std::to_string(context.maxDateTime.toTime_t());
         request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
-            processGetListensResponse(msg.body(), context);
-            if (context.fetchedListenCount >= _maxSyncListenCount || !context.maxDateTime.isValid())
-            {
-                onSyncEnded(context);
-                return;
-            }
+            std::string body{ msg.body() };
+            boost::asio::post(boost::asio::bind_executor(_strand, [this, body = std::move(body), &context] {
+                processGetListensResponse(body, context);
+                if (context.fetchedListenCount >= _maxSyncListenCount || !context.maxDateTime.isValid())
+                {
+                    context.listenCount = context.pendingListenCount;
+                    onImportEnded(context);
+                    return;
+                }
 
-            enqueGetListens(context);
+                enqueGetListens(context);
+            }));
         };
         request.onFailureFunc = [this, &context] {
-            onSyncEnded(context);
+            onImportEnded(context);
+        };
+        request.onAbortFunc = [this, &context] {
+            onImportEnded(context);
         };
 
         _client.sendGETRequest(std::move(request));

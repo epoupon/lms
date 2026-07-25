@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Settings.listenbrainz.template.form">
+	<form class="row g-3">
+		<legend>${tr:Lms.Settings.listenbrainz}</legend>
+		<div class="col-lg-12">
+			<div class="form-check">
+				${enable-scrobbling class="form-check-input"}
+				<label class="form-check-label" for="${id:enable-scrobbling}">
+					${tr:Lms.Settings.listenbrainz-enable-scrobbling}
+				</label>
+			</div>
+			<div class="form-check">
+				${enable-feedback class="form-check-input"}
+				<label class="form-check-label" for="${id:enable-feedback}">
+					${tr:Lms.Settings.listenbrainz-enable-feedback}
+				</label>
+			</div>
+		</div>
+		<div class="col-lg-12">
+			<label class="form-label" for="${id:token}">
+				${tr:Lms.Settings.listenbrainz-token}
+			</label>
+			<div class="input-group mb-3">
+				${token class="form-control"}
+				${token-visibility-btn class="btn btn-outline-secondary"}
+				<div class="invalid-feedback">
+					${token-info class="help-block"}
+				</div>
+			</div>
+		</div>
+	</form>
+	<hr/>
+	${save-btn class="btn btn-primary me-1"}${discard-btn class="btn btn-secondary"}
+</message>
+
+<message id="Lms.Settings.listenbrainz.template.import-card">
+	<div class="card mt-3">
+		<div class="card-header">
+			${tr:Lms.Settings.listenbrainz-import-card-title}
+		</div>
+		<div class="card-body d-flex align-items-center gap-2">
+			${import-btn}
+		</div>
+	</div>
+</message>
+
+</messages>

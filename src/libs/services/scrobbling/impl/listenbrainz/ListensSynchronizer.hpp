@@ -52,6 +52,7 @@ namespace lms::scrobbling::listenBrainz
 
         void enqueListen(const TimedListen& listen);
         void enqueListenNow(const Listen& listen);
+        void requestImmediateImport(db::UserId userId);
 
     private:
         void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
@@ -70,7 +71,7 @@ namespace lms::scrobbling::listenBrainz
             UserContext& operator=(UserContext&&) = delete;
 
             const db::UserId userId;
-            bool syncing{};
+            bool importing{};
             std::optional<std::size_t> listenCount{};
 
             // resetted at each sync
@@ -79,14 +80,14 @@ namespace lms::scrobbling::listenBrainz
             std::size_t fetchedListenCount{};
             std::size_t matchedListenCount{};
             std::size_t importedListenCount{};
+            std::optional<std::size_t> pendingListenCount{}; // only committed to listenCount once the fetch actually completes
         };
 
         UserContext& getUserContext(db::UserId userId);
-        bool isSyncing() const;
-        void scheduleSync(std::chrono::seconds fromNow);
-        void startSync();
-        void startSync(UserContext& context);
-        void onSyncEnded(UserContext& context);
+        void scheduleDeliveryFlush(std::chrono::seconds fromNow);
+        void flushPendingDeliveries();
+        void startImport(UserContext& context);
+        void onImportEnded(UserContext& context);
         void enqueValidateToken(UserContext& context);
         void enqueGetListenCount(UserContext& context);
         void enqueGetListens(UserContext& context);

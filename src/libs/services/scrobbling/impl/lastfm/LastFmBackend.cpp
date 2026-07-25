@@ -70,13 +70,12 @@ namespace lms::scrobbling::lastFm
         _synchronizer.enqueListenNow(listen);
     }
 
-    void LastFmBackend::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> playedDuration)
+    void LastFmBackend::listenFinished(const TimedListen& listen, std::optional<std::chrono::seconds> playedDuration)
     {
         if (playedDuration && !canBeScrobbled(_db.getTLSSession(), listen.trackId, *playedDuration))
             return;
 
-        const TimedListen timedListen{ listen, Wt::WDateTime::currentDateTime() };
-        _synchronizer.enqueListen(timedListen);
+        _synchronizer.enqueListen(listen);
     }
 
     void LastFmBackend::addTimedListen(const TimedListen& timedListen)

@@ -71,17 +71,21 @@ namespace lms::scrobbling::listenBrainz
         _listensSynchronizer.enqueListenNow(listen);
     }
 
-    void ListenBrainzBackend::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
+    void ListenBrainzBackend::listenFinished(const TimedListen& listen, std::optional<std::chrono::seconds> duration)
     {
         if (duration && !canBeScrobbled(_db.getTLSSession(), listen.trackId, *duration))
             return;
 
-        const TimedListen timedListen{ listen, Wt::WDateTime::currentDateTime() };
-        _listensSynchronizer.enqueListen(timedListen);
+        _listensSynchronizer.enqueListen(listen);
     }
 
-    void ListenBrainzBackend::addTimedListen(const TimedListen& timedListen)
+    void ListenBrainzBackend::addTimedListen(const TimedListen& listen)
     {
-        _listensSynchronizer.enqueListen(timedListen);
+        _listensSynchronizer.enqueListen(listen);
+    }
+
+    void ListenBrainzBackend::requestImmediateImport(db::UserId userId)
+    {
+        _listensSynchronizer.requestImmediateImport(userId);
     }
 } // namespace lms::scrobbling::listenBrainz

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,28 +19,6 @@
 
 #pragma once
 
-#include <chrono>
-#include <optional>
+#include "database/IdType.hpp"
 
-#include "services/scrobbling/Listen.hpp"
-
-namespace lms::db
-{
-    class Session;
-    class TrackList;
-    class User;
-} // namespace lms::db
-
-namespace lms::scrobbling
-{
-    class IScrobblingBackend
-    {
-    public:
-        virtual ~IScrobblingBackend() = default;
-
-        // Listens
-        virtual void listenStarted(const Listen& listen) = 0;
-        virtual void listenFinished(const TimedListen& listen, std::optional<std::chrono::seconds> duration) = 0;
-        virtual void addTimedListen(const TimedListen& listen) = 0;
-    };
-} // namespace lms::scrobbling
+LMS_DECLARE_IDTYPE(ListenBackendSyncId)

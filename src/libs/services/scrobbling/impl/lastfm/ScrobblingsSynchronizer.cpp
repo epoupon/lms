@@ -29,6 +29,7 @@
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Listen.hpp"
+#include "database/objects/ListenBackendSync.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
@@ -190,7 +191,7 @@ namespace lms::scrobbling::lastFm
         db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, db::ScrobblingBackend::LastFm, listen.listenedAt) };
+        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
         if (!dbListen)
         {
             const db::User::pointer user{ db::User::find(session, listen.userId) };
@@ -201,15 +202,21 @@ namespace lms::scrobbling::lastFm
             if (!track)
                 return false;
 
-            dbListen = session.create<db::Listen>(user, track, db::ScrobblingBackend::LastFm, listen.listenedAt);
-            dbListen.modify()->setSyncState(syncState);
+            dbListen = session.create<db::Listen>(user, track, listen.listenedAt);
+        }
+
+        db::ListenBackendSync::pointer sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::LastFm) };
+        if (!sync)
+        {
+            sync = session.create<db::ListenBackendSync>(dbListen, db::ScrobblingBackend::LastFm);
+            sync.modify()->setSyncState(syncState);
             return true;
         }
 
-        if (dbListen->getSyncState() == syncState)
+        if (sync->getSyncState() == syncState)
             return false;
 
-        dbListen.modify()->setSyncState(syncState);
+        sync.modify()->setSyncState(syncState);
         return true;
     }
 
@@ -221,22 +228,20 @@ namespace lms::scrobbling::lastFm
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            db::Listen::FindParameters params;
-            params.setScrobblingBackend(db::ScrobblingBackend::LastFm)
+            db::ListenBackendSync::FindParameters params;
+            params.setBackend(db::ScrobblingBackend::LastFm)
                 .setSyncState(db::SyncState::PendingAdd)
                 .setRange(db::Range{ 0, maxBatchSize * 10 });
 
-            const auto results{ db::Listen::find(session, params) };
-            for (const db::ListenId listenId : results)
-            {
-                const db::Listen::pointer dbListen{ db::Listen::find(session, listenId) };
+            db::ListenBackendSync::find(session, params, [&](const db::ListenBackendSync::pointer& sync) {
+                const db::Listen::pointer dbListen{ sync->getListen() };
 
                 TimedListen tl;
                 tl.listenedAt = dbListen->getDateTime();
                 tl.userId = dbListen->getUser()->getId();
                 tl.trackId = dbListen->getTrack()->getId();
                 pendingByUser[tl.userId].push_back(tl);
-            }
+            });
         }
 
         for (auto& [userId, listens] : pendingByUser)

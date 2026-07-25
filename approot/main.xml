@@ -61,7 +61,8 @@
 							${<if-has-subsonic-api-menu>}
 							<li>${settings-subsonic class="dropdown-item"}</li>
 							${</if-has-subsonic-api-menu>}
-							<li>${settings-services class="dropdown-item"}</li>
+							<li>${settings-listenbrainz class="dropdown-item"}</li>
+							<li>${settings-lastfm class="dropdown-item"}</li>
 							${<if-has-change-password-menu>}
 							<li>${settings-password class="dropdown-item"}</li>
 							${</if-has-change-password-menu>}

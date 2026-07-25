@@ -24,6 +24,8 @@
 #include <shared_mutex>
 #include <unordered_map>
 
+#include "core/EnumSet.hpp"
+
 #include "services/scrobbling/IScrobblingService.hpp"
 
 #include "IScrobblingBackend.hpp"
@@ -31,6 +33,10 @@
 namespace lms::scrobbling::lastFm
 {
     class LastFmBackend;
+}
+namespace lms::scrobbling::listenBrainz
+{
+    class ListenBrainzBackend;
 }
 
 namespace lms::scrobbling
@@ -72,13 +78,19 @@ namespace lms::scrobbling
                                 std::function<void()> onSuccess,
                                 std::function<void()> onFailure) override;
 
-        std::optional<db::ScrobblingBackend> getUserBackend(db::UserId userId);
+        void requestImmediateImport(db::UserId userId, db::ScrobblingBackend backend) override;
+
+        core::EnumSet<db::ScrobblingBackend> getUserEnabledBackends(db::UserId userId);
+
+        // Independent of which backends are enabled, since recording is now backend-agnostic (was previously InternalBackend's job)
+        std::optional<TimedListen> recordListen(const Listen& listen, const Wt::WDateTime& listenedAt, std::optional<std::chrono::seconds> duration);
 
         void insertNowPlayingEntry(const Listen& listen);
 
         db::IDb& _db;
         std::unordered_map<db::ScrobblingBackend, std::unique_ptr<IScrobblingBackend>> _scrobblingBackends;
-        lastFm::LastFmBackend* _lastFmBackend{}; // non-owning, owned via _scrobblingBackends
+        lastFm::LastFmBackend* _lastFmBackend{};
+        listenBrainz::ListenBrainzBackend* _listenBrainzBackend{};
 
         std::shared_mutex _nowPlayingEntriesMutex;
         struct NowPlayingEntry

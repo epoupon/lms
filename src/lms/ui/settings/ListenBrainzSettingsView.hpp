@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,25 +19,22 @@
 
 #pragma once
 
-#include "IScrobblingBackend.hpp"
+#include <Wt/WContainerWidget.h>
+#include <Wt/WTemplate.h>
 
-namespace lms::db
+namespace lms::ui
 {
-    class IDb;
-}
-
-namespace lms::scrobbling
-{
-    class InternalBackend final : public IScrobblingBackend
+    class ListenBrainzSettingsView : public Wt::WContainerWidget
     {
     public:
-        InternalBackend(db::IDb& db);
+        ListenBrainzSettingsView();
 
     private:
-        void listenStarted(const Listen& listen) override;
-        void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
-        void addTimedListen(const TimedListen& listen) override;
+        void refreshView();
+        void refreshForm();
+        void refreshImportCard();
+        void updateImportCardVisibility();
 
-        db::IDb& _db;
+        Wt::WTemplate* _importCard{};
     };
-} // namespace lms::scrobbling
+} // namespace lms::ui

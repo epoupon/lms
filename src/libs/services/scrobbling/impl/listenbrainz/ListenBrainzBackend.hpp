@@ -40,12 +40,14 @@ namespace lms::scrobbling::listenBrainz
         ListenBrainzBackend(boost::asio::io_context& ioContext, db::IDb& db);
         ~ListenBrainzBackend() override;
 
+        void requestImmediateImport(db::UserId userId);
+
     private:
         ListenBrainzBackend(const ListenBrainzBackend&) = delete;
         ListenBrainzBackend& operator=(const ListenBrainzBackend&) = delete;
 
         void listenStarted(const Listen& listen) override;
-        void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
+        void listenFinished(const TimedListen& listen, std::optional<std::chrono::seconds> duration) override;
         void addTimedListen(const TimedListen& listen) override;
 
         // Submit listens

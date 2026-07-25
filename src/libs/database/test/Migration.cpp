@@ -27,6 +27,7 @@
 #include "database/objects/AuthToken.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Image.hpp"
+#include "database/objects/ListenBackendSync.hpp"
 #include "database/objects/Medium.hpp"
 #include "database/objects/PlayListFile.hpp"
 #include "database/objects/PlayQueue.hpp"
@@ -329,7 +330,22 @@ VALUES
 INSERT INTO track_artist_link (version, type, name, track_id, artist_id)
 VALUES
 (1, 1, 'Artist A', 5, 1),
-(2, 1, 'Artist B', 6, 2);)" };
+(2, 1, 'Artist B', 6, 2);
+
+-- Inserting users: MyUser used ListenBrainz (scrobbler=1), InternalUser never enabled an external backend (scrobbler=0)
+INSERT INTO user (version, type, login_name, password_salt, password_hash, subsonic_transcode_enable, subsonic_transcode_format, subsonic_transcode_bitrate, subsonic_artist_list_mode, ui_theme, cur_playing_track_pos, repeat_all, radio, scrobbler)
+VALUES
+(1, 0, 'MyUser', 'salt', 'hash', 0, 0, 128000, 0, 0, 0, 0, 0, 1),
+(1, 0, 'InternalUser', 'salt', 'hash', 0, 0, 128000, 0, 0, 0, 0, 0, 0);
+
+-- Inserting listens for MyUser (id=1) on Orphan Track 1 (id=1):
+-- two rows share the exact same (user, track, date_time) with different scrobbler/scrobbling_state,
+-- a third row is at a different date_time
+INSERT INTO listen (version, date_time, scrobbler, scrobbling_state, track_id, user_id)
+VALUES
+(1, '2024-05-08T12:00:00', 0, 1, 1, 1),
+(1, '2024-05-08T12:00:00', 1, 0, 1, 1),
+(1, '2024-05-08T13:00:00', 1, 1, 1, 1);)" };
 
         Session session{ db };
 
@@ -398,6 +414,37 @@ VALUES
             const auto release{ Release::find(session, *releaseMBID) };
             ASSERT_TRUE(release);
             EXPECT_EQ(release->getMBID(), releaseMBID);
+
+            // migrateFromV110: user.scrobbler backfills to a bitmask, Internal (0) becoming an empty set
+            const auto myUser{ User::find(session, "MyUser") };
+            ASSERT_TRUE(myUser);
+            EXPECT_EQ(myUser->getScrobblingBackends().size(), 1);
+            EXPECT_TRUE(myUser->getScrobblingBackends().contains(ScrobblingBackend::ListenBrainz));
+
+            const auto internalUser{ User::find(session, "InternalUser") };
+            ASSERT_TRUE(internalUser);
+            EXPECT_TRUE(internalUser->getScrobblingBackends().empty());
+
+            // migrateFromV110: the two rows sharing (user, track, date_time) across Internal/ListenBrainz collapse into
+            // one canonical listen (Internal dropped, since it's implicit) + one ListenBackendSync row; the third row
+            // (different date_time) stays a separate canonical listen with its own delivery row
+            const auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(myUser->getId())) };
+            ASSERT_EQ(listens.size(), 2);
+            EXPECT_EQ(ListenBackendSync::getCount(session), 2);
+
+            for (const ListenId listenId : listens)
+            {
+                const Listen::pointer listen{ Listen::find(session, listenId) };
+                const ListenBackendSync::pointer sync{ ListenBackendSync::find(session, listenId, ScrobblingBackend::ListenBrainz) };
+                ASSERT_TRUE(sync);
+
+                if (listen->getDateTime() == Wt::WDateTime{ Wt::WDate{ 2024, 5, 8 }, Wt::WTime{ 12, 0, 0 } })
+                    EXPECT_EQ(sync->getSyncState(), SyncState::PendingAdd);
+                else if (listen->getDateTime() == Wt::WDateTime{ Wt::WDate{ 2024, 5, 8 }, Wt::WTime{ 13, 0, 0 } })
+                    EXPECT_EQ(sync->getSyncState(), SyncState::Synchronized);
+                else
+                    ADD_FAILURE() << "Unexpected listen date_time: " << listen->getDateTime().toString();
+            }
         }
     }
 } // namespace lms::db::tests

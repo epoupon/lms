@@ -67,8 +67,6 @@ namespace lms::db
 
         auto query{ session.getDboSession()->query<UserId>("SELECT id FROM user") };
 
-        if (params.scrobblingBackend)
-            query.where("scrobbling_backend = ?").bind(*params.scrobblingBackend);
         if (params.feedbackBackend)
             query.where("feedback_backend = ?").bind(*params.feedbackBackend);
 
@@ -79,8 +77,6 @@ namespace lms::db
     {
         auto query{ session.getDboSession()->find<User>() };
 
-        if (params.scrobblingBackend)
-            query.where("scrobbling_backend = ?").bind(*params.scrobblingBackend);
         if (params.feedbackBackend)
             query.where("feedback_backend = ?").bind(*params.feedbackBackend);
 
@@ -108,5 +104,10 @@ namespace lms::db
     {
         assert(isAudioBitrateAllowed(bitrate));
         _subsonicDefaultTranscodingOutputBitrate = bitrate;
+    }
+
+    void User::setScrobblingBackends(core::EnumSet<ScrobblingBackend> backends)
+    {
+        _scrobblingBackends = backends;
     }
 } // namespace lms::db

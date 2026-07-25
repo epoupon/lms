@@ -231,7 +231,6 @@ namespace lms::db
 
     enum class ScrobblingBackend
     {
-        Internal = 0,
         ListenBrainz = 1,
         LastFm = 2,
     };

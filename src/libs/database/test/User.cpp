@@ -48,4 +48,54 @@ namespace lms::db::tests
             EXPECT_EQ(visitedUsers[1], user2->getId());
         }
     }
+
+    TEST_F(DatabaseFixture, User_scrobblingBackends)
+    {
+        ScopedUser user{ session, "MyUser" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_TRUE(user->getScrobblingBackends().empty());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            user.get().modify()->setScrobblingBackends({ ScrobblingBackend::ListenBrainz });
+        }
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_TRUE(user->getScrobblingBackends().contains(ScrobblingBackend::ListenBrainz));
+            EXPECT_FALSE(user->getScrobblingBackends().contains(ScrobblingBackend::LastFm));
+        }
+
+        // setting the backends must not be additive: it replaces the whole set
+        {
+            auto transaction{ session.createWriteTransaction() };
+            user.get().modify()->setScrobblingBackends({ ScrobblingBackend::LastFm });
+        }
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_FALSE(user->getScrobblingBackends().contains(ScrobblingBackend::ListenBrainz));
+            EXPECT_TRUE(user->getScrobblingBackends().contains(ScrobblingBackend::LastFm));
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            user.get().modify()->setScrobblingBackends({ ScrobblingBackend::ListenBrainz, ScrobblingBackend::LastFm });
+        }
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_TRUE(user->getScrobblingBackends().contains(ScrobblingBackend::ListenBrainz));
+            EXPECT_TRUE(user->getScrobblingBackends().contains(ScrobblingBackend::LastFm));
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            user.get().modify()->setScrobblingBackends({});
+        }
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_TRUE(user->getScrobblingBackends().empty());
+        }
+    }
 } // namespace lms::db::tests

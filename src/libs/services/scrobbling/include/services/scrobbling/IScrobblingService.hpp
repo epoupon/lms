@@ -65,6 +65,21 @@ namespace lms::scrobbling
         // Visit all now-playing listens
         virtual void visitNowPlayingListens(const std::function<void(Clock::time_point startedAt, const Listen&)>& visitor, db::UserId userId = {}) = 0;
 
+        virtual void initiateLastFmLink(db::UserId userId,
+                                        std::string_view apiKey,
+                                        std::string_view apiSecret,
+                                        std::function<void(std::string_view authUrl)> onSuccess,
+                                        std::function<void()> onFailure)
+            = 0;
+
+        virtual void continueLastFmLink(db::UserId userId,
+                                        std::function<void()> onSuccess,
+                                        std::function<void()> onFailure)
+            = 0;
+
+        // Manually trigger an on-demand import of listen history from the given backend for this user (if supported)
+        virtual void requestImmediateImport(db::UserId userId, db::ScrobblingBackend backend) = 0;
+
         // Stats
         using ArtistContainer = std::vector<db::ArtistId>;
         using ReleaseContainer = std::vector<db::ReleaseId>;
@@ -144,18 +159,6 @@ namespace lms::scrobbling
         virtual ArtistContainer getTopArtists(const ArtistFindParameters& params) = 0;
         virtual ReleaseContainer getTopReleases(const FindParameters& params) = 0;
         virtual TrackContainer getTopTracks(const FindParameters& params) = 0;
-
-        virtual void initiateLastFmLink(db::UserId userId,
-                                        std::string_view apiKey,
-                                        std::string_view apiSecret,
-                                        std::function<void(std::string_view authUrl)> onSuccess,
-                                        std::function<void()> onFailure)
-            = 0;
-
-        virtual void continueLastFmLink(db::UserId userId,
-                                        std::function<void()> onSuccess,
-                                        std::function<void()> onFailure)
-            = 0;
     };
 
     std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, db::IDb& db);

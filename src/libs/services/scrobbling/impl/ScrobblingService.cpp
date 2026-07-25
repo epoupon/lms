@@ -28,7 +28,6 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 
-#include "internal/InternalBackend.hpp"
 #include "lastfm/LastFmBackend.hpp"
 #include "listenbrainz/ListenBrainzBackend.hpp"
 
@@ -66,8 +65,11 @@ namespace lms::scrobbling
         : _db{ db }
     {
         LMS_LOG(SCROBBLING, INFO, "Starting service...");
-        _scrobblingBackends.emplace(ScrobblingBackend::Internal, std::make_unique<InternalBackend>(_db));
-        _scrobblingBackends.emplace(ScrobblingBackend::ListenBrainz, std::make_unique<listenBrainz::ListenBrainzBackend>(ioContext, _db));
+        {
+            auto backend{ std::make_unique<listenBrainz::ListenBrainzBackend>(ioContext, _db) };
+            _listenBrainzBackend = backend.get();
+            _scrobblingBackends.emplace(ScrobblingBackend::ListenBrainz, std::move(backend));
+        }
         {
             auto backend{ std::make_unique<lastFm::LastFmBackend>(ioContext, _db) };
             _lastFmBackend = backend.get();
@@ -85,20 +87,54 @@ namespace lms::scrobbling
     {
         insertNowPlayingEntry(listen);
 
-        if (std::optional<ScrobblingBackend> backend{ getUserBackend(listen.userId) })
-            _scrobblingBackends[*backend]->listenStarted(listen);
+        for (const ScrobblingBackend backend : getUserEnabledBackends(listen.userId))
+            _scrobblingBackends[backend]->listenStarted(listen);
     }
 
     void ScrobblingService::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
     {
-        if (std::optional<ScrobblingBackend> backend{ getUserBackend(listen.userId) })
-            _scrobblingBackends[*backend]->listenFinished(listen, duration);
+        const std::optional<TimedListen> recordedListen{ recordListen(listen, Wt::WDateTime::currentDateTime(), duration) };
+        if (!recordedListen)
+            return;
+
+        for (const ScrobblingBackend backend : getUserEnabledBackends(listen.userId))
+            _scrobblingBackends[backend]->listenFinished(*recordedListen, duration);
     }
 
     void ScrobblingService::addTimedListen(const TimedListen& listen)
     {
-        if (std::optional<ScrobblingBackend> backend{ getUserBackend(listen.userId) })
-            _scrobblingBackends[*backend]->addTimedListen(listen);
+        const std::optional<TimedListen> recordedListen{ recordListen(listen, listen.listenedAt, std::nullopt) };
+        if (!recordedListen)
+            return;
+
+        for (const ScrobblingBackend backend : getUserEnabledBackends(listen.userId))
+            _scrobblingBackends[backend]->addTimedListen(*recordedListen);
+    }
+
+    std::optional<TimedListen> ScrobblingService::recordListen(const Listen& listen, const Wt::WDateTime& listenedAt, std::optional<std::chrono::seconds> duration)
+    {
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createWriteTransaction() };
+
+        const Track::pointer track{ Track::find(session, listen.trackId) };
+        if (!track)
+            return std::nullopt;
+
+        // This must be less restrictive than the least restrictive backend
+        const std::chrono::seconds minRequiredDuration{ std::min(std::chrono::seconds{ 5 }, std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()) / 2) };
+        if (duration && *duration < minRequiredDuration)
+            return std::nullopt;
+
+        if (!db::Listen::find(session, listen.userId, listen.trackId, listenedAt))
+        {
+            const User::pointer user{ User::find(session, listen.userId) };
+            if (!user)
+                return std::nullopt;
+
+            session.create<db::Listen>(user, track, listenedAt);
+        }
+
+        return TimedListen{ listen, listenedAt };
     }
 
     void ScrobblingService::initiateLastFmLink(db::UserId userId,
@@ -141,16 +177,26 @@ namespace lms::scrobbling
         }
     }
 
-    std::optional<ScrobblingBackend> ScrobblingService::getUserBackend(UserId userId)
+    core::EnumSet<ScrobblingBackend> ScrobblingService::getUserEnabledBackends(UserId userId)
     {
-        std::optional<ScrobblingBackend> backend;
+        core::EnumSet<ScrobblingBackend> backends;
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
         if (const User::pointer user{ User::find(session, userId) })
-            backend = user->getScrobblingBackend();
+            backends = user->getScrobblingBackends();
 
-        return backend;
+        return backends;
+    }
+
+    void ScrobblingService::requestImmediateImport(db::UserId userId, db::ScrobblingBackend backend)
+    {
+        if (backend != ScrobblingBackend::ListenBrainz)
+            return; // no import support for other backends
+
+        assert(_listenBrainzBackend);
+        if (getUserEnabledBackends(userId).contains(backend))
+            _listenBrainzBackend->requestImmediateImport(userId);
     }
 
     ScrobblingService::ArtistContainer ScrobblingService::getRecentArtists(const ArtistFindParameters& params)

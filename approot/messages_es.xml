@@ -367,25 +367,25 @@
 <message id="Lms.Settings.artist-release-sort-method">Método para ordenar los álbumes del artista</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">Estas opciones de audio son locales a tu navegador</message>
-<message id="Lms.Settings.backend.internal">Interno</message>
-<message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
-<message id="Lms.Settings.backend.listenbrainz-token">Token de la API de ListenBrainz</message>
-<message id="Lms.Settings.backend.lastfm">Last.fm</message>
-<message id="Lms.Settings.services.lastfm-api-key">Clave API de Last.fm</message>
-<message id="Lms.Settings.services.lastfm-api-secret">Secreto de API de Last.fm</message>
-<message id="Lms.Settings.services.lastfm-card-title">Cuenta de Last.fm</message>
-<message id="Lms.Settings.services.lastfm-linked">Vinculado</message>
-<message id="Lms.Settings.services.lastfm-link">Vincular cuenta</message>
-<message id="Lms.Settings.services.lastfm-unlink">Desvincular cuenta</message>
-<message id="Lms.Settings.services.lastfm-link-modal-title">Vincular cuenta de Last.fm</message>
-<message id="Lms.Settings.services.lastfm-link-modal-help">Introduce tu clave API y secreto compartido de Last.fm (obténlos en <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a>), luego haz clic en Autorizar.</message>
-<message id="Lms.Settings.services.lastfm-authorize">Autorizar en Last.fm</message>
-<message id="Lms.Settings.services.lastfm-done">Hecho, he autorizado</message>
-<message id="Lms.Settings.services.lastfm-auth-url">¿No se abrió? Haz clic aquí para autorizar en Last.fm</message>
-<message id="Lms.Settings.services.lastfm-unlink-confirm-title">Desvincular cuenta de Last.fm</message>
-<message id="Lms.Settings.services.lastfm-unlink-confirm-body">¿Estás seguro de que deseas desvincular tu cuenta de Last.fm? El scrobbling se detendrá hasta que vuelvas a vincularla.</message>
-<message id="Lms.Settings.services.lastfm-missing-credentials">Por favor, introduce tu clave API y secreto de Last.fm.</message>
-<message id="Lms.Settings.services.lastfm-auth-error">Error de autenticación de Last.fm. Comprueba tu clave API y secreto.</message>
+<message id="Lms.Settings.lastfm">Last.fm</message>
+<message id="Lms.Settings.lastfm-api-key">Clave API de Last.fm</message>
+<message id="Lms.Settings.lastfm-api-secret">Secreto de API de Last.fm</message>
+<message id="Lms.Settings.lastfm-auth-error">Error de autenticación de Last.fm. Comprueba tu clave API y secreto.</message>
+<message id="Lms.Settings.lastfm-auth-url">¿No se abrió? Haz clic aquí para autorizar en Last.fm</message>
+<message id="Lms.Settings.lastfm-authorize">Autorizar en Last.fm</message>
+<message id="Lms.Settings.lastfm-card-title">Cuenta de Last.fm</message>
+<message id="Lms.Settings.lastfm-done">Hecho, he autorizado</message>
+<message id="Lms.Settings.lastfm-link">Vincular cuenta</message>
+<message id="Lms.Settings.lastfm-link-modal-help">Introduce tu clave API y secreto compartido de Last.fm (obténlos en <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a>), luego haz clic en Autorizar.</message>
+<message id="Lms.Settings.lastfm-link-modal-title">Vincular cuenta de Last.fm</message>
+<message id="Lms.Settings.lastfm-linked">Vinculado</message>
+<message id="Lms.Settings.lastfm-missing-credentials">Por favor, introduce tu clave API y secreto de Last.fm.</message>
+<message id="Lms.Settings.lastfm-unlink">Desvincular cuenta</message>
+<message id="Lms.Settings.lastfm-unlink-confirm-body">¿Estás seguro de que deseas desvincular tu cuenta de Last.fm? El scrobbling se detendrá hasta que vuelvas a vincularla.</message>
+<message id="Lms.Settings.lastfm-unlink-confirm-title">Desvincular cuenta de Last.fm</message>
+<message id="Lms.Settings.listenbrainz">ListenBrainz</message>
+<message id="Lms.Settings.listenbrainz-token">Token de la API de ListenBrainz</message>
+<message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.change-password">Cambiar contraseña</message>
 <message id="Lms.Settings.date-asc">Fecha de publicación (Ascendiente)</message>
 <message id="Lms.Settings.date-desc">Fecha de publicación (Descendiente)</message>
@@ -394,12 +394,10 @@
 <message id="Lms.Settings.demo-cannot-save">¡No se puede guardar usando una cuenta de demostración!</message>
 <message id="Lms.Settings.enable-inline-artist-relationships">Mostrar las relaciones entre artistas dentro de los álbumes</message>
 <message id="Lms.Settings.enable-transcoding-by-default">Activar por defecto la transcodificación</message>
-<message id="Lms.Settings.feedback">Feedback</message>
 <message id="Lms.Settings.inline-artist-relationships">Tipos de relaciones entre artistas a mostrar</message>
 <message id="Lms.Settings.menu-ui"><i class="fa fa-fw fa-paint-brush" aria-hidden="true"></i> Interfaz de usuario</message>
 <message id="Lms.Settings.menu-audio"><i class="fa fa-fw fa-music" aria-hidden="true"></i> Audio</message>
-<message id="Lms.Settings.menu-subsonic"><i class="fa fa-fw fa-key" aria-hidden="true"></i> API Subsonic</message>
-<message id="Lms.Settings.menu-services"><i class="fa fa-fw fa-exchange" aria-hidden="true"></i> Servicios</message>
+<message id="Lms.Settings.menu-lastfm"><i class="fa fa-fw fa-lastfm" aria-hidden="true"></i> Last.fm</message>
 <message id="Lms.Settings.menu-password"><i class="fa fa-fw fa-lock" aria-hidden="true"></i> Cambiar contraseña</message>
 <message id="Lms.Settings.name">Nombre del álbum</message>
 <message id="Lms.Settings.original-date-asc">Fecha de publicación original (Ascendiente)</message>
@@ -421,8 +419,6 @@
 <message id="Lms.Settings.replaygain-mode.release">Álbum</message>
 <message id="Lms.Settings.replaygain-preamp">Pre-amplificación ReplayGain</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">Pre-amplification ReplayGain (si no hay información)</message>
-<message id="Lms.Settings.scrobbling">Scrobbling</message>
-<message id="Lms.Settings.services">Servicios</message>
 <message id="Lms.Settings.settings">Ajustes</message>
 <message id="Lms.Settings.settings-saved">¡Ajustes guardados!</message>
 <message id="Lms.Settings.subsonic-artist-list-mode">Modo de listado de artistas</message>

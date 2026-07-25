@@ -35,6 +35,7 @@
 #include "database/objects/Image.hpp"
 #include "database/objects/Language.hpp"
 #include "database/objects/Listen.hpp"
+#include "database/objects/ListenBackendSync.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Medium.hpp"
 #include "database/objects/Mood.hpp"
@@ -97,6 +98,7 @@ namespace lms::db
         _session.mapClass<Image>("image");
         _session.mapClass<Label>("label");
         _session.mapClass<Listen>("listen");
+        _session.mapClass<ListenBackendSync>("listen_backend_sync");
         _session.mapClass<MediaLibrary>("media_library");
         _session.mapClass<Medium>("medium");
         _session.mapClass<PlayListFile>("playlist_file");
@@ -258,12 +260,11 @@ namespace lms::db
             "CREATE INDEX IF NOT EXISTS label_id_idx ON label(id)",
             "CREATE INDEX IF NOT EXISTS label_name_idx ON label(name COLLATE NOCASE)",
 
-            "CREATE INDEX IF NOT EXISTS listen_backend_idx ON listen(backend)",
             "CREATE INDEX IF NOT EXISTS listen_id_idx ON listen(id)",
-            "CREATE INDEX IF NOT EXISTS listen_user_backend_idx ON listen(user_id,backend)",
-            "CREATE INDEX IF NOT EXISTS listen_user_backend_date_time_idx ON listen(user_id, backend, date_time DESC)",
-            "CREATE INDEX IF NOT EXISTS listen_track_user_backend_idx ON listen(track_id,user_id,backend)",
-            "CREATE INDEX IF NOT EXISTS listen_user_track_backend_date_time_idx ON listen(user_id,track_id,backend,date_time)",
+            "CREATE INDEX IF NOT EXISTS listen_user_track_date_time_idx ON listen(user_id, track_id, date_time)",
+
+            "CREATE UNIQUE INDEX IF NOT EXISTS listen_backend_sync_listen_backend_idx ON listen_backend_sync(listen_id, backend)",
+            "CREATE INDEX IF NOT EXISTS listen_backend_sync_backend_sync_state_idx ON listen_backend_sync(backend, sync_state)",
 
             "CREATE INDEX IF NOT EXISTS media_library_id_idx ON media_library(id)",
 

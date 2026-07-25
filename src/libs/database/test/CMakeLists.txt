@@ -13,6 +13,7 @@ add_executable(test-database
 	Image.cpp
 	Language.cpp
 	Listen.cpp
+	ListenBackendSync.cpp
 	Medium.cpp
 	Migration.cpp
 	Mood.cpp
