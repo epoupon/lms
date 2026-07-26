@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <unordered_map>
 
 #include <boost/asio/io_context.hpp>
@@ -59,6 +60,7 @@ namespace lms::scrobbling::listenBrainz
         bool saveListen(const TimedListen& listen, db::SyncState scrobblingState);
 
         void enquePendingListens();
+        void sendListenBatch(const std::string& listenBrainzToken, std::span<const TimedListen> listens);
 
         struct UserContext
         {
@@ -71,16 +73,23 @@ namespace lms::scrobbling::listenBrainz
             UserContext& operator=(UserContext&&) = delete;
 
             const db::UserId userId;
-            bool importing{};
+
+            // Shared between the import (fetch from ListenBrainz) and submit (send to ListenBrainz) paths:
+            // cached total listen count on ListenBrainz for this user, kept roughly in sync by both.
             std::optional<std::size_t> listenCount{};
 
-            // resetted at each sync
-            std::string listenBrainzUserName; // need to be resolved first
-            Wt::WDateTime maxDateTime;
-            std::size_t fetchedListenCount{};
-            std::size_t matchedListenCount{};
-            std::size_t importedListenCount{};
-            std::optional<std::size_t> pendingListenCount{}; // only committed to listenCount once the fetch actually completes
+            // Import-only bookkeeping, reset at the start of each import cycle.
+            struct ImportState
+            {
+                bool importing{};
+                std::string listenBrainzUserName; // need to be resolved first
+                Wt::WDateTime maxDateTime;
+                std::size_t fetchedListenCount{};
+                std::size_t matchedListenCount{};
+                std::size_t importedListenCount{};
+                std::optional<std::size_t> pendingListenCount{}; // only committed to listenCount once the fetch actually completes
+            };
+            ImportState import;
         };
 
         UserContext& getUserContext(db::UserId userId);

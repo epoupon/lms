@@ -19,6 +19,8 @@
 
 #include "ListensSynchronizer.hpp"
 
+#include <unordered_map>
+
 #include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
 #include <Wt/Json/Parser.h>
@@ -48,6 +50,9 @@ namespace lms::scrobbling::listenBrainz
 {
     namespace
     {
+        // ListenBrainz's own hard limit on listens per submit-listens request (MAX_LISTENS_PER_REQUEST)
+        constexpr std::size_t listenBrainzMaxListensPerRequest{ 1000 };
+
         struct Artist
         {
             std::string name;
@@ -145,6 +150,37 @@ namespace lms::scrobbling::listenBrainz
 
             res = Wt::Json::serialize(root);
             return res;
+        }
+
+        struct BatchPayload
+        {
+            std::string bodyText;
+            std::vector<TimedListen> validListens;
+        };
+
+        BatchPayload buildImportPayload(db::Session& session, std::span<const TimedListen> listens)
+        {
+            Wt::Json::Array payloadArray;
+            std::vector<TimedListen> validListens;
+
+            for (const TimedListen& listen : listens)
+            {
+                std::optional<Wt::Json::Object> item{ listenToJsonPayload(session, listen, listen.listenedAt) };
+                if (!item)
+                    continue;
+
+                payloadArray.push_back(std::move(*item));
+                validListens.push_back(listen);
+            }
+
+            if (validListens.empty())
+                return {};
+
+            Wt::Json::Object root;
+            root["listen_type"] = Wt::Json::Value{ std::string{ "import" } };
+            root["payload"] = std::move(payloadArray);
+
+            return { Wt::Json::serialize(root), std::move(validListens) };
         }
 
         std::optional<std::size_t> parseListenCount(std::string_view msgBody)
@@ -258,7 +294,7 @@ namespace lms::scrobbling::listenBrainz
     {
         boost::asio::post(boost::asio::bind_executor(_strand, [this, userId] {
             UserContext& context{ getUserContext(userId) };
-            if (context.importing)
+            if (context.import.importing)
             {
                 LMS_LOG_LISTENBRAINZ(DEBUG, "Import already in progress for this user, ignoring manual trigger");
                 return;
@@ -356,17 +392,16 @@ namespace lms::scrobbling::listenBrainz
 
     void ListensSynchronizer::enquePendingListens()
     {
-        std::vector<TimedListen> pendingListens;
+        std::unordered_map<db::UserId, std::vector<TimedListen>> pendingByUser;
 
         {
             db::Session& session{ _db.getTLSSession() };
-
-            auto transaction{ session.createWriteTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             db::ListenBackendSync::FindParameters params;
             params.setBackend(db::ScrobblingBackend::ListenBrainz)
                 .setSyncState(db::SyncState::PendingAdd)
-                .setRange(db::Range{ 0, 100 }); // don't flood too much?
+                .setRange(db::Range{ 0, listenBrainzMaxListensPerRequest });
 
             db::ListenBackendSync::find(session, params, [&](const db::ListenBackendSync::pointer& sync) {
                 const db::Listen::pointer listen{ sync->getListen() };
@@ -376,15 +411,58 @@ namespace lms::scrobbling::listenBrainz
                 timedListen.userId = listen->getUser()->getId();
                 timedListen.trackId = listen->getTrack()->getId();
 
-                pendingListens.push_back(timedListen);
+                pendingByUser[timedListen.userId].push_back(timedListen);
             });
         }
 
-        LMS_LOG_LISTENBRAINZ(DEBUG, "Queing " << pendingListens.size() << " pending listen");
+        for (auto& [userId, listens] : pendingByUser)
+        {
+            const std::string listenBrainzToken{ utils::getListenBrainzToken(_db.getTLSSession(), userId) };
+            if (listenBrainzToken.empty())
+            {
+                LMS_LOG_LISTENBRAINZ(DEBUG, "No listenbrainz token found for user: skipping");
+                continue;
+            }
 
-        // TODO batch send
-        for (const TimedListen& pendingListen : pendingListens)
-            enqueListen(pendingListen);
+            for (std::span<const TimedListen> remaining{ listens }; !remaining.empty();)
+            {
+                const std::size_t count{ std::min(listenBrainzMaxListensPerRequest, remaining.size()) };
+                sendListenBatch(listenBrainzToken, remaining.first(count));
+                remaining = remaining.subspan(count);
+            }
+        }
+    }
+
+    void ListensSynchronizer::sendListenBatch(const std::string& listenBrainzToken, std::span<const TimedListen> listens)
+    {
+        BatchPayload batch{ buildImportPayload(_db.getTLSSession(), listens) };
+        if (batch.validListens.empty())
+            return;
+
+        LMS_LOG_LISTENBRAINZ(DEBUG, "Sending listen batch of " << batch.validListens.size() << " listens");
+
+        core::http::ClientPOSTRequestParameters request;
+        request.relativeUrl = "/1/submit-listens";
+        request.priority = core::http::ClientRequestParameters::Priority::Normal;
+        request.message.addBodyText(batch.bodyText);
+        request.message.addHeader("Authorization", "Token " + listenBrainzToken);
+        request.message.addHeader("Content-Type", "application/json");
+        request.onSuccessFunc = [this, validListens = std::move(batch.validListens)](const Wt::Http::Message&) mutable {
+            boost::asio::post(boost::asio::bind_executor(_strand, [this, validListens = std::move(validListens)] {
+                for (const TimedListen& listen : validListens)
+                {
+                    if (saveListen(listen, db::SyncState::Synchronized))
+                    {
+                        UserContext& context{ getUserContext(listen.userId) };
+                        if (context.listenCount)
+                            (*context.listenCount)++;
+                    }
+                }
+            }));
+        };
+        // on failure, these listens stay PendingAdd and are retried on the next periodic flush
+
+        _client.sendPOSTRequest(std::move(request));
     }
 
     ListensSynchronizer::UserContext& ListensSynchronizer::getUserContext(db::UserId userId)
@@ -423,7 +501,7 @@ namespace lms::scrobbling::listenBrainz
 
     void ListensSynchronizer::flushPendingDeliveries()
     {
-        LMS_LOG_LISTENBRAINZ(DEBUG, "Flushing pending deliveries!");
+        LMS_LOG_LISTENBRAINZ(DEBUG, "Flushing pending deliveries...");
 
         enquePendingListens();
 
@@ -432,13 +510,13 @@ namespace lms::scrobbling::listenBrainz
 
     void ListensSynchronizer::startImport(UserContext& context)
     {
-        context.importing = true;
-        context.listenBrainzUserName = "";
-        context.maxDateTime = {};
-        context.fetchedListenCount = 0;
-        context.matchedListenCount = 0;
-        context.importedListenCount = 0;
-        context.pendingListenCount = std::nullopt;
+        context.import.importing = true;
+        context.import.listenBrainzUserName = "";
+        context.import.maxDateTime = {};
+        context.import.fetchedListenCount = 0;
+        context.import.matchedListenCount = 0;
+        context.import.importedListenCount = 0;
+        context.import.pendingListenCount = std::nullopt;
 
         enqueValidateToken(context);
     }
@@ -446,14 +524,14 @@ namespace lms::scrobbling::listenBrainz
     void ListensSynchronizer::onImportEnded(UserContext& context)
     {
         boost::asio::post(boost::asio::bind_executor(_strand, [&context] {
-            LMS_LOG_LISTENBRAINZ(INFO, "Import done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount);
-            context.importing = false;
+            LMS_LOG_LISTENBRAINZ(INFO, "Import done for listenbrainz user '" << context.import.listenBrainzUserName << "', fetched: " << context.import.fetchedListenCount << ", matched: " << context.import.matchedListenCount << ", imported: " << context.import.importedListenCount);
+            context.import.importing = false;
         }));
     }
 
     void ListensSynchronizer::enqueValidateToken(UserContext& context)
     {
-        assert(context.listenBrainzUserName.empty());
+        assert(context.import.listenBrainzUserName.empty());
 
         const std::string listenBrainzToken{ utils::getListenBrainzToken(_db.getTLSSession(), context.userId) };
         if (listenBrainzToken.empty())
@@ -469,8 +547,8 @@ namespace lms::scrobbling::listenBrainz
         request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
             std::string listenBrainzUserName{ utils::parseValidateToken(msg.body()) };
             boost::asio::post(boost::asio::bind_executor(_strand, [this, listenBrainzUserName = std::move(listenBrainzUserName), &context]() mutable {
-                context.listenBrainzUserName = std::move(listenBrainzUserName);
-                if (context.listenBrainzUserName.empty())
+                context.import.listenBrainzUserName = std::move(listenBrainzUserName);
+                if (context.import.listenBrainzUserName.empty())
                 {
                     onImportEnded(context);
                     return;
@@ -490,10 +568,10 @@ namespace lms::scrobbling::listenBrainz
 
     void ListensSynchronizer::enqueGetListenCount(UserContext& context)
     {
-        assert(!context.listenBrainzUserName.empty());
+        assert(!context.import.listenBrainzUserName.empty());
 
         core::http::ClientGETRequestParameters request;
-        request.relativeUrl = "/1/user/" + std::string{ context.listenBrainzUserName } + "/listen-count";
+        request.relativeUrl = "/1/user/" + std::string{ context.import.listenBrainzUserName } + "/listen-count";
         request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
             const auto listenCount{ parseListenCount(msg.body()) };
@@ -504,7 +582,7 @@ namespace lms::scrobbling::listenBrainz
                     return;
                 }
 
-                LMS_LOG_LISTENBRAINZ(DEBUG, "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount);
+                LMS_LOG_LISTENBRAINZ(DEBUG, "Listen count for listenbrainz user '" << context.import.listenBrainzUserName << "' = " << *listenCount);
 
                 if (context.listenCount && *context.listenCount == *listenCount)
                 {
@@ -512,8 +590,8 @@ namespace lms::scrobbling::listenBrainz
                     return;
                 }
 
-                context.pendingListenCount = listenCount;
-                context.maxDateTime = Wt::WDateTime::currentDateTime();
+                context.import.pendingListenCount = listenCount;
+                context.import.maxDateTime = Wt::WDateTime::currentDateTime();
                 enqueGetListens(context);
             }));
         };
@@ -529,18 +607,18 @@ namespace lms::scrobbling::listenBrainz
 
     void ListensSynchronizer::enqueGetListens(UserContext& context)
     {
-        assert(!context.listenBrainzUserName.empty());
+        assert(!context.import.listenBrainzUserName.empty());
 
         core::http::ClientGETRequestParameters request;
-        request.relativeUrl = "/1/user/" + context.listenBrainzUserName + "/listens?max_ts=" + std::to_string(context.maxDateTime.toTime_t());
+        request.relativeUrl = "/1/user/" + context.import.listenBrainzUserName + "/listens?max_ts=" + std::to_string(context.import.maxDateTime.toTime_t());
         request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
             std::string body{ msg.body() };
             boost::asio::post(boost::asio::bind_executor(_strand, [this, body = std::move(body), &context] {
                 processGetListensResponse(body, context);
-                if (context.fetchedListenCount >= _maxSyncListenCount || !context.maxDateTime.isValid())
+                if (context.import.fetchedListenCount >= _maxSyncListenCount || !context.import.maxDateTime.isValid())
                 {
-                    context.listenCount = context.pendingListenCount;
+                    context.listenCount = context.import.pendingListenCount;
                     onImportEnded(context);
                     return;
                 }
@@ -562,9 +640,9 @@ namespace lms::scrobbling::listenBrainz
     {
         db::Session& session{ _db.getTLSSession() };
 
-        context.maxDateTime = {}; // invalidate to break in case no more listens are fetched
+        context.import.maxDateTime = {}; // invalidate to break in case no more listens are fetched
         ListensParser::Result result{ ListensParser::parse(msgBody) };
-        context.fetchedListenCount += result.listenCount;
+        context.import.fetchedListenCount += result.listenCount;
 
         for (const Listen& parsedListen : result.listens)
         {
@@ -575,16 +653,16 @@ namespace lms::scrobbling::listenBrainz
                 continue;
             }
 
-            if (!context.maxDateTime.isValid() || context.maxDateTime > parsedListen.listenedAt)
-                context.maxDateTime = parsedListen.listenedAt;
+            if (!context.import.maxDateTime.isValid() || context.import.maxDateTime > parsedListen.listenedAt)
+                context.import.maxDateTime = parsedListen.listenedAt;
 
             if (const db::TrackId trackId{ tryGetMatchingTrack(session, parsedListen) }; trackId.isValid())
             {
-                context.matchedListenCount++;
+                context.import.matchedListenCount++;
 
                 const scrobbling::TimedListen listen{ { context.userId, trackId }, parsedListen.listenedAt };
                 if (saveListen(listen, db::SyncState::Synchronized))
-                    context.importedListenCount++;
+                    context.import.importedListenCount++;
             }
         }
     }
