@@ -26,7 +26,7 @@
 #include <boost/asio/io_context_strand.hpp>
 #include <boost/asio/steady_timer.hpp>
 
-#include "database/objects/StarredTrackId.hpp"
+#include "database/objects/TrackFeedbackId.hpp"
 #include "database/objects/UserId.hpp"
 
 #include "FeedbackTypes.hpp"
@@ -53,11 +53,14 @@ namespace lms::feedback::listenBrainz
         FeedbacksSynchronizer(const FeedbacksSynchronizer&) = delete;
         FeedbacksSynchronizer& operator=(const FeedbacksSynchronizer&) = delete;
 
-        void enqueFeedback(FeedbackType type, db::StarredTrackId starredTrackId);
+        void enqueFeedback(db::TrackFeedbackId id);
+        void requestImmediateImport(db::UserId userId);
+        void requestImmediateExport(db::UserId userId);
 
     private:
-        void onFeedbackSent(FeedbackType type, db::StarredTrackId starredTrackId);
+        void onFeedbackSent(db::TrackFeedbackId id);
         void enquePendingFeedbacks();
+        void markPendingExports(db::UserId userId);
 
         struct UserContext
         {
@@ -69,24 +72,28 @@ namespace lms::feedback::listenBrainz
             UserContext& operator=(const UserContext&) = delete;
 
             const db::UserId userId;
-            bool syncing{};
+
+            // Shared between the import (fetch from ListenBrainz) and delivery (send to ListenBrainz) paths:
+            // cached total feedback count on ListenBrainz for this user, kept roughly in sync by both.
             std::optional<std::size_t> feedbackCount;
 
-            // resetted at each sync
-            std::string listenBrainzUserName; // need to be resolved first
-
-            std::size_t currentOffset{};
-            std::size_t fetchedFeedbackCount{};
-            std::size_t matchedFeedbackCount{};
-            std::size_t importedFeedbackCount{};
+            // Import-only bookkeeping, reset at the start of each import cycle.
+            struct ImportState
+            {
+                bool importing{};
+                std::string listenBrainzUserName; // need to be resolved first
+                std::size_t fetchedFeedbackCount{};
+                std::size_t matchedFeedbackCount{};
+                std::size_t importedFeedbackCount{};
+            };
+            ImportState import;
         };
 
         UserContext& getUserContext(db::UserId userId);
-        bool isSyncing() const;
-        void scheduleSync(std::chrono::seconds fromNow);
-        void startSync();
-        void startSync(UserContext& context);
-        void onSyncEnded(UserContext& context);
+        void scheduleDeliveryFlush(std::chrono::seconds fromNow);
+        void flushPendingDeliveries();
+        void startImport(UserContext& context);
+        void onImportEnded(UserContext& context);
         void enqueValidateToken(UserContext& context);
         void enqueGetFeedbackCount(UserContext& context);
         void enqueGetFeedbacks(UserContext& context);

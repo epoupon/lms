@@ -41,6 +41,7 @@
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackFeedback.hpp"
 #include "database/objects/User.hpp"
 #include "database/objects/Work.hpp"
 #include "services/feedback/IFeedbackService.hpp"
@@ -163,8 +164,8 @@ namespace lms::api::subsonic
         if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.getUser()->getId(), track->getId()) })
             trackResponse.setAttribute("userRating", *rating);
 
-        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.getUser()->getId(), track->getId()) }; dateTime.isValid())
-            trackResponse.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
+        if (const db::TrackFeedback::pointer feedback{ db::TrackFeedback::find(context.getDbSession(), track->getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == db::FeedbackValue::Loved)
+            trackResponse.setAttribute("starred", core::stringUtils::toISO8601String(feedback->getDateTime()));
 
         // Report the first genre for this track
         const auto genres{ track->getGenres() };

@@ -17,24 +17,24 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "FeedbackService.hpp"
 #include "FeedbackService.impl.hpp"
+
+#include <cassert>
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
+#include "database/objects/ArtistFeedback.hpp"
 #include "database/objects/RatedArtist.hpp"
 #include "database/objects/RatedRelease.hpp"
 #include "database/objects/RatedTrack.hpp"
 #include "database/objects/Release.hpp"
-#include "database/objects/StarredArtist.hpp"
-#include "database/objects/StarredRelease.hpp"
-#include "database/objects/StarredTrack.hpp"
+#include "database/objects/ReleaseFeedback.hpp"
 #include "database/objects/Track.hpp"
+#include "database/objects/TrackFeedback.hpp"
 #include "database/objects/User.hpp"
 
-#include "internal/InternalBackend.hpp"
 #include "listenbrainz/ListenBrainzBackend.hpp"
 
 namespace lms::feedback
@@ -48,8 +48,11 @@ namespace lms::feedback
         : _db{ db }
     {
         LMS_LOG(SCROBBLING, INFO, "Starting service...");
-        _backends.emplace(db::FeedbackBackend::Internal, std::make_unique<InternalBackend>(_db));
-        _backends.emplace(db::FeedbackBackend::ListenBrainz, std::make_unique<listenBrainz::ListenBrainzBackend>(ioContext, _db));
+
+        auto listenBrainzBackend{ std::make_unique<listenBrainz::ListenBrainzBackend>(ioContext, _db) };
+        _listenBrainzBackend = listenBrainzBackend.get();
+        _backends.emplace(db::FeedbackBackend::ListenBrainz, std::move(listenBrainzBackend));
+
         LMS_LOG(SCROBBLING, INFO, "Service started!");
     }
 
@@ -58,142 +61,150 @@ namespace lms::feedback
         LMS_LOG(SCROBBLING, INFO, "Service stopped!");
     }
 
-    std::optional<db::FeedbackBackend> FeedbackService::getUserFeedbackBackend(db::UserId userId)
+    core::EnumSet<db::FeedbackBackend> FeedbackService::getUserFeedbackBackends(db::UserId userId)
     {
-        std::optional<db::FeedbackBackend> feedbackBackend;
+        core::EnumSet<db::FeedbackBackend> backends;
 
-        Session& session{ _db.getTLSSession() };
+        db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
-        if (const User::pointer user{ User::find(session, userId) })
-            feedbackBackend = user->getFeedbackBackend();
+        if (const db::User::pointer user{ db::User::find(session, userId) })
+            backends = user->getFeedbackBackends();
 
-        return feedbackBackend;
+        return backends;
     }
 
-    void FeedbackService::star(UserId userId, ArtistId artistId)
+    void FeedbackService::requestImmediateImport(db::UserId userId, db::FeedbackBackend backend)
     {
-        star<Artist, ArtistId, StarredArtist>(userId, artistId);
+        if (backend != db::FeedbackBackend::ListenBrainz)
+            return; // no import support for other backends
+
+        assert(_listenBrainzBackend);
+        if (getUserFeedbackBackends(userId).contains(backend))
+            _listenBrainzBackend->requestImmediateImport(userId);
     }
 
-    void FeedbackService::unstar(UserId userId, ArtistId artistId)
+    void FeedbackService::requestImmediateExport(db::UserId userId, db::FeedbackBackend backend)
     {
-        unstar<Artist, ArtistId, StarredArtist>(userId, artistId);
+        if (backend != db::FeedbackBackend::ListenBrainz)
+            return; // no export support for other backends
+
+        assert(_listenBrainzBackend);
+        if (getUserFeedbackBackends(userId).contains(backend))
+            _listenBrainzBackend->requestImmediateExport(userId);
     }
 
-    bool FeedbackService::isStarred(UserId userId, ArtistId artistId)
+    void FeedbackService::setFeedback(db::UserId userId, db::ArtistId artistId, db::FeedbackValue value)
     {
-        return isStarred<Artist, ArtistId, StarredArtist>(userId, artistId);
+        setFeedback<db::Artist, db::ArtistId, db::ArtistFeedback>(userId, artistId, value);
     }
 
-    Wt::WDateTime FeedbackService::getStarredDateTime(UserId userId, ArtistId artistId)
+    db::FeedbackValue FeedbackService::getFeedback(db::UserId userId, db::ArtistId artistId)
     {
-        return getStarredDateTime<Artist, ArtistId, StarredArtist>(userId, artistId);
+        return getFeedback<db::Artist, db::ArtistId, db::ArtistFeedback>(userId, artistId);
     }
 
-    FeedbackService::ArtistContainer FeedbackService::findStarredArtists(const ArtistFindParameters& params)
+    Wt::WDateTime FeedbackService::getFeedbackDateTime(db::UserId userId, db::ArtistId artistId)
     {
-        Artist::FindParameters searchParams;
+        return getFeedbackDateTime<db::Artist, db::ArtistId, db::ArtistFeedback>(userId, artistId);
+    }
+
+    FeedbackService::ArtistContainer FeedbackService::findArtistsByFeedback(const ArtistFindParameters& params)
+    {
+        db::Artist::FindParameters searchParams;
         searchParams.setFilters(params.filters);
-        searchParams.setStarringUser(params.user);
+        searchParams.setFeedbackUser(params.user);
+        searchParams.setFeedbackValue(params.feedbackValue);
         searchParams.setKeywords(params.keywords);
         searchParams.setTrackArtistLinkType(params.trackArtistLinkType);
         searchParams.setSortMethod(params.sortMethod);
         searchParams.setRange(params.range);
 
-        Session& session{ _db.getTLSSession() };
+        db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        return Artist::findIds(session, searchParams);
+        return db::Artist::findIds(session, searchParams);
     }
 
     void FeedbackService::setRating(db::UserId userId, db::ArtistId artistId, std::optional<db::Rating> rating)
     {
-        setRating<Artist, ArtistId, RatedArtist>(userId, artistId, rating);
+        setRating<db::Artist, db::ArtistId, db::RatedArtist>(userId, artistId, rating);
     }
 
     std::optional<db::Rating> FeedbackService::getRating(db::UserId userId, db::ArtistId artistId)
     {
-        return getRating<Artist, ArtistId, RatedArtist>(userId, artistId);
+        return getRating<db::Artist, db::ArtistId, db::RatedArtist>(userId, artistId);
     }
 
-    void FeedbackService::star(UserId userId, ReleaseId releaseId)
+    void FeedbackService::setFeedback(db::UserId userId, db::ReleaseId releaseId, db::FeedbackValue value)
     {
-        star<Release, ReleaseId, StarredRelease>(userId, releaseId);
+        setFeedback<db::Release, db::ReleaseId, db::ReleaseFeedback>(userId, releaseId, value);
     }
 
-    void FeedbackService::unstar(UserId userId, ReleaseId releaseId)
+    db::FeedbackValue FeedbackService::getFeedback(db::UserId userId, db::ReleaseId releaseId)
     {
-        unstar<Release, ReleaseId, StarredRelease>(userId, releaseId);
+        return getFeedback<db::Release, db::ReleaseId, db::ReleaseFeedback>(userId, releaseId);
     }
 
-    bool FeedbackService::isStarred(UserId userId, ReleaseId releaseId)
+    Wt::WDateTime FeedbackService::getFeedbackDateTime(db::UserId userId, db::ReleaseId releaseId)
     {
-        return isStarred<Release, ReleaseId, StarredRelease>(userId, releaseId);
+        return getFeedbackDateTime<db::Release, db::ReleaseId, db::ReleaseFeedback>(userId, releaseId);
     }
 
-    Wt::WDateTime FeedbackService::getStarredDateTime(UserId userId, ReleaseId releaseId)
+    FeedbackService::ReleaseContainer FeedbackService::findReleasesByFeedback(const FindParameters& params)
     {
-        return getStarredDateTime<Release, ReleaseId, StarredRelease>(userId, releaseId);
-    }
-
-    FeedbackService::ReleaseContainer FeedbackService::findStarredReleases(const FindParameters& params)
-    {
-        Release::FindParameters searchParams;
-        searchParams.setStarringUser(params.user);
+        db::Release::FindParameters searchParams;
+        searchParams.setFeedbackUser(params.user);
+        searchParams.setFeedbackValue(params.feedbackValue);
         searchParams.setFilters(params.filters);
         searchParams.setKeywords(params.keywords);
-        searchParams.setSortMethod(ReleaseSortMethod::StarredDateDesc);
+        searchParams.setSortMethod(db::ReleaseSortMethod::FeedbackDateDesc);
         searchParams.setRange(params.range);
 
-        Session& session{ _db.getTLSSession() };
+        db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        return Release::findIds(session, searchParams);
+        return db::Release::findIds(session, searchParams);
     }
 
     void FeedbackService::setRating(db::UserId userId, db::ReleaseId releaseId, std::optional<db::Rating> rating)
     {
-        setRating<Release, ReleaseId, RatedRelease>(userId, releaseId, rating);
+        setRating<db::Release, db::ReleaseId, db::RatedRelease>(userId, releaseId, rating);
     }
 
     std::optional<db::Rating> FeedbackService::getRating(db::UserId userId, db::ReleaseId releaseId)
     {
-        return getRating<Release, ReleaseId, RatedRelease>(userId, releaseId);
+        return getRating<db::Release, db::ReleaseId, db::RatedRelease>(userId, releaseId);
     }
 
-    void FeedbackService::star(UserId userId, TrackId trackId)
+    void FeedbackService::setFeedback(db::UserId userId, db::TrackId trackId, db::FeedbackValue value)
     {
-        star<Track, TrackId, StarredTrack>(userId, trackId);
+        setFeedback<db::Track, db::TrackId, db::TrackFeedback>(userId, trackId, value);
     }
 
-    void FeedbackService::unstar(UserId userId, TrackId trackId)
+    db::FeedbackValue FeedbackService::getFeedback(db::UserId userId, db::TrackId trackId)
     {
-        unstar<Track, TrackId, StarredTrack>(userId, trackId);
+        return getFeedback<db::Track, db::TrackId, db::TrackFeedback>(userId, trackId);
     }
 
-    bool FeedbackService::isStarred(UserId userId, TrackId trackId)
+    Wt::WDateTime FeedbackService::getFeedbackDateTime(db::UserId userId, db::TrackId trackId)
     {
-        return isStarred<Track, TrackId, StarredTrack>(userId, trackId);
+        return getFeedbackDateTime<db::Track, db::TrackId, db::TrackFeedback>(userId, trackId);
     }
 
-    Wt::WDateTime FeedbackService::getStarredDateTime(UserId userId, TrackId trackId)
+    FeedbackService::TrackContainer FeedbackService::findTracksByFeedback(const FindParameters& params)
     {
-        return getStarredDateTime<Track, TrackId, StarredTrack>(userId, trackId);
-    }
-
-    FeedbackService::TrackContainer FeedbackService::findStarredTracks(const FindParameters& params)
-    {
-        Track::FindParameters searchParams;
-        searchParams.setStarringUser(params.user);
+        db::Track::FindParameters searchParams;
+        searchParams.setFeedbackUser(params.user);
+        searchParams.setFeedbackValue(params.feedbackValue);
         searchParams.setFilters(params.filters);
         searchParams.setKeywords(params.keywords);
-        searchParams.setSortMethod(TrackSortMethod::StarredDateDesc);
+        searchParams.setSortMethod(db::TrackSortMethod::FeedbackDateDesc);
         searchParams.setRange(params.range);
 
-        Session& session{ _db.getTLSSession() };
+        db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        return Track::findIds(session, searchParams);
+        return db::Track::findIds(session, searchParams);
     }
 
     void FeedbackService::setRating(db::UserId userId, db::TrackId trackId, std::optional<db::Rating> rating)

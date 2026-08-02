@@ -26,6 +26,7 @@
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Track.hpp"
+#include "database/objects/TrackArtistLink.hpp"
 
 #include "Utils.hpp"
 
@@ -35,7 +36,7 @@ namespace lms::scrobbling::listenBrainz
 
     namespace
     {
-        bool canBeScrobbled(Session& session, TrackId trackId, std::chrono::seconds duration)
+        bool canBeScrobbled(Session& session, TrackId trackId, std::optional<std::chrono::seconds> duration)
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -43,11 +44,23 @@ namespace lms::scrobbling::listenBrainz
             if (!track)
                 return false;
 
-            const bool res{ duration >= std::chrono::minutes(4) || (duration >= track->getDuration() / 2) };
-            if (!res)
-                LMS_LOG_LISTENBRAINZ(DEBUG, "Track cannot be scrobbled since played duration is too short: " << duration.count() << "s, total duration = " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << "s");
+            if (track->getArtistLinks(TrackArtistLinkType::Artist).empty())
+            {
+                LMS_LOG_LISTENBRAINZ(DEBUG, "Track cannot be scrobbled: no artist");
+                return false;
+            }
 
-            return res;
+            if (duration)
+            {
+                const bool longEnough{ *duration >= std::chrono::minutes(4) || (*duration >= track->getDuration() / 2) };
+                if (!longEnough)
+                {
+                    LMS_LOG_LISTENBRAINZ(DEBUG, "Track cannot be scrobbled since played duration is too short: " << duration->count() << "s, total duration = " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << "s");
+                    return false;
+                }
+            }
+
+            return true;
         }
     } // namespace
 
@@ -73,7 +86,7 @@ namespace lms::scrobbling::listenBrainz
 
     void ListenBrainzBackend::listenFinished(const TimedListen& listen, std::optional<std::chrono::seconds> duration)
     {
-        if (duration && !canBeScrobbled(_db.getTLSSession(), listen.trackId, *duration))
+        if (!canBeScrobbled(_db.getTLSSession(), listen.trackId, duration))
             return;
 
         _listensSynchronizer.enqueListen(listen);
@@ -81,11 +94,19 @@ namespace lms::scrobbling::listenBrainz
 
     void ListenBrainzBackend::addTimedListen(const TimedListen& listen)
     {
+        if (!canBeScrobbled(_db.getTLSSession(), listen.trackId, std::nullopt))
+            return;
+
         _listensSynchronizer.enqueListen(listen);
     }
 
     void ListenBrainzBackend::requestImmediateImport(db::UserId userId)
     {
         _listensSynchronizer.requestImmediateImport(userId);
+    }
+
+    void ListenBrainzBackend::requestImmediateExport(db::UserId userId)
+    {
+        _listensSynchronizer.requestImmediateExport(userId);
     }
 } // namespace lms::scrobbling::listenBrainz

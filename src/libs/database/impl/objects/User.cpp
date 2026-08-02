@@ -67,18 +67,12 @@ namespace lms::db
 
         auto query{ session.getDboSession()->query<UserId>("SELECT id FROM user") };
 
-        if (params.feedbackBackend)
-            query.where("feedback_backend = ?").bind(*params.feedbackBackend);
-
         return utils::execRangeQuery<UserId>(query, params.range);
     }
 
     void User::find(Session& session, const FindParameters& params, const std::function<void(const User::pointer&)>& func)
     {
         auto query{ session.getDboSession()->find<User>() };
-
-        if (params.feedbackBackend)
-            query.where("feedback_backend = ?").bind(*params.feedbackBackend);
 
         return utils::forEachQueryRangeResult(query, params.range, func);
     }
@@ -109,5 +103,10 @@ namespace lms::db
     void User::setScrobblingBackends(core::EnumSet<ScrobblingBackend> backends)
     {
         _scrobblingBackends = backends;
+    }
+
+    void User::setFeedbackBackends(core::EnumSet<FeedbackBackend> backends)
+    {
+        _feedbackBackends = backends;
     }
 } // namespace lms::db

@@ -79,6 +79,7 @@ namespace lms::scrobbling
                                 std::function<void()> onFailure) override;
 
         void requestImmediateImport(db::UserId userId, db::ScrobblingBackend backend) override;
+        void requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend) override;
 
         core::EnumSet<db::ScrobblingBackend> getUserEnabledBackends(db::UserId userId);
 

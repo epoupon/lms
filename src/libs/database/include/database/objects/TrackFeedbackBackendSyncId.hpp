@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -21,4 +21,4 @@
 
 #include "database/IdType.hpp"
 
-LMS_DECLARE_IDTYPE(StarredArtistId)
+LMS_DECLARE_IDTYPE(TrackFeedbackBackendSyncId)

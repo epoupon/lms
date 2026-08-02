@@ -80,6 +80,9 @@ namespace lms::scrobbling
         // Manually trigger an on-demand import of listen history from the given backend for this user (if supported)
         virtual void requestImmediateImport(db::UserId userId, db::ScrobblingBackend backend) = 0;
 
+        // Manually trigger an on-demand export of all existing local listens to the given backend for this user (if supported)
+        virtual void requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend) = 0;
+
         // Stats
         using ArtistContainer = std::vector<db::ArtistId>;
         using ReleaseContainer = std::vector<db::ReleaseId>;

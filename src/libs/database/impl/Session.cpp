@@ -25,6 +25,8 @@
 #include "core/ITraceLogger.hpp"
 
 #include "database/objects/Artist.hpp"
+#include "database/objects/ArtistFeedback.hpp"
+#include "database/objects/ArtistFeedbackBackendSync.hpp"
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/AuthToken.hpp"
@@ -49,16 +51,17 @@
 #include "database/objects/RatedTrack.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
+#include "database/objects/ReleaseFeedback.hpp"
+#include "database/objects/ReleaseFeedbackBackendSync.hpp"
 #include "database/objects/ScanSettings.hpp"
 #include "database/objects/ServerInfo.hpp"
-#include "database/objects/StarredArtist.hpp"
-#include "database/objects/StarredRelease.hpp"
-#include "database/objects/StarredTrack.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackBookmark.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
+#include "database/objects/TrackFeedback.hpp"
+#include "database/objects/TrackFeedbackBackendSync.hpp"
 #include "database/objects/TrackList.hpp"
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/TrackMusicNNEmbeddings.hpp"
@@ -112,9 +115,12 @@ namespace lms::db
         _session.mapClass<ReleaseArtistLink>("release_artist_link");
         _session.mapClass<ReleaseType>("release_type");
         _session.mapClass<ScanSettings>("scan_settings");
-        _session.mapClass<StarredArtist>("starred_artist");
-        _session.mapClass<StarredRelease>("starred_release");
-        _session.mapClass<StarredTrack>("starred_track");
+        _session.mapClass<ArtistFeedback>("artist_feedback");
+        _session.mapClass<ArtistFeedbackBackendSync>("artist_feedback_backend_sync");
+        _session.mapClass<ReleaseFeedback>("release_feedback");
+        _session.mapClass<ReleaseFeedbackBackendSync>("release_feedback_backend_sync");
+        _session.mapClass<TrackFeedback>("track_feedback");
+        _session.mapClass<TrackFeedbackBackendSync>("track_feedback_backend_sync");
         _session.mapClass<Track>("track");
         _session.mapClass<Movement>("track_movement");
         _session.mapClass<TrackBookmark>("track_bookmark");
@@ -341,14 +347,23 @@ namespace lms::db
             "CREATE INDEX IF NOT EXISTS track_bookmark_user_idx ON track_bookmark(user_id)",
             "CREATE INDEX IF NOT EXISTS track_bookmark_user_track_idx ON track_bookmark(user_id,track_id)",
 
-            "CREATE INDEX IF NOT EXISTS starred_artist_user_backend_idx ON starred_artist(user_id,backend)",
-            "CREATE INDEX IF NOT EXISTS starred_artist_artist_user_backend_idx ON starred_artist(artist_id,user_id,backend)",
+            "CREATE INDEX IF NOT EXISTS artist_feedback_user_idx ON artist_feedback(user_id)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS artist_feedback_artist_user_idx ON artist_feedback(artist_id,user_id)",
 
-            "CREATE INDEX IF NOT EXISTS starred_release_user_backend_idx ON starred_release(user_id,backend)",
-            "CREATE INDEX IF NOT EXISTS starred_release_release_user_backend_idx ON starred_release(release_id,user_id,backend)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS artist_feedback_backend_sync_artist_feedback_backend_idx ON artist_feedback_backend_sync(artist_feedback_id,backend)",
+            "CREATE INDEX IF NOT EXISTS artist_feedback_backend_sync_backend_sync_state_idx ON artist_feedback_backend_sync(backend,sync_state)",
 
-            "CREATE INDEX IF NOT EXISTS starred_track_user_backend_idx ON starred_track(user_id,backend)",
-            "CREATE INDEX IF NOT EXISTS starred_track_track_user_backend_idx ON starred_track(track_id,user_id,backend)",
+            "CREATE INDEX IF NOT EXISTS release_feedback_user_idx ON release_feedback(user_id)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS release_feedback_release_user_idx ON release_feedback(release_id,user_id)",
+
+            "CREATE UNIQUE INDEX IF NOT EXISTS release_feedback_backend_sync_release_feedback_backend_idx ON release_feedback_backend_sync(release_feedback_id,backend)",
+            "CREATE INDEX IF NOT EXISTS release_feedback_backend_sync_backend_sync_state_idx ON release_feedback_backend_sync(backend,sync_state)",
+
+            "CREATE INDEX IF NOT EXISTS track_feedback_user_idx ON track_feedback(user_id)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS track_feedback_track_user_idx ON track_feedback(track_id,user_id)",
+
+            "CREATE UNIQUE INDEX IF NOT EXISTS track_feedback_backend_sync_track_feedback_backend_idx ON track_feedback_backend_sync(track_feedback_id,backend)",
+            "CREATE INDEX IF NOT EXISTS track_feedback_backend_sync_backend_sync_state_idx ON track_feedback_backend_sync(backend,sync_state)",
         };
 
         for (std::string_view sql : indexSqls)

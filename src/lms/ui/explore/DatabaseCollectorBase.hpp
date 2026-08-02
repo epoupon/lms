@@ -44,7 +44,7 @@ namespace lms::ui
         enum class Mode
         {
             Random,
-            Starred,
+            Feedback,
             RecentlyPlayed,
             RecentlyAdded,
             RecentlyModified,

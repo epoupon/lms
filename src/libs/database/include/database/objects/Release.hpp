@@ -170,7 +170,8 @@ namespace lms::db
             Wt::WDateTime writtenAfter;
             std::optional<YearRange> dateRange;
             std::optional<YearRange> originalDateRange;
-            UserId starringUser;                                     // only releases starred by this user (uses their current feedback backend)
+            UserId feedbackUser;                                     // if valid, only releases that have feedback from this user
+            std::optional<FeedbackValue> feedbackValue;              // if set, only releases with feedback matching this value (any user, unless feedbackUser is also set)
             ArtistId artist;                                         // only releases by this release artist
             ArtistId trackArtist;                                    // only releases that involved this track artist
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes; //    and for these link types, if set
@@ -219,9 +220,14 @@ namespace lms::db
                 originalDateRange = _originalDateRange;
                 return *this;
             }
-            FindParameters& setStarringUser(UserId _user)
+            FindParameters& setFeedbackUser(UserId _user)
             {
-                starringUser = _user;
+                feedbackUser = _user;
+                return *this;
+            }
+            FindParameters& setFeedbackValue(std::optional<FeedbackValue> _value)
+            {
+                feedbackValue = _value;
                 return *this;
             }
             FindParameters& setArtist(ArtistId _artist)

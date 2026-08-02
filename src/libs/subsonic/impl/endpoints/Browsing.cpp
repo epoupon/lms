@@ -33,9 +33,9 @@
 #include "database/objects/Genre.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Release.hpp"
+#include "database/objects/ReleaseFeedback.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
-#include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
@@ -322,8 +322,8 @@ namespace lms::api::subsonic
         if (const Release::pointer release{ getReleaseFromDirectory(context.getDbSession(), directoryId) })
         {
             directoryNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.getUser()->getId(), release->getId()));
-            if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.getUser()->getId(), release->getId()) }; dateTime.isValid())
-                directoryNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
+            if (const ReleaseFeedback::pointer feedback{ ReleaseFeedback::find(context.getDbSession(), release->getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == FeedbackValue::Loved)
+                directoryNode.setAttribute("starred", core::stringUtils::toISO8601String(feedback->getDateTime()));
         }
 
         directoryNode.setAttribute("id", idToString(directory->getId()));

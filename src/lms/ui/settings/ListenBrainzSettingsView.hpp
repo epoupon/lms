@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/WContainerWidget.h>
+#include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
 namespace lms::ui
@@ -36,5 +37,7 @@ namespace lms::ui
         void updateImportCardVisibility();
 
         Wt::WTemplate* _importCard{};
+        Wt::WPushButton* _importListensBtn{};
+        Wt::WPushButton* _importFeedbackBtn{};
     };
 } // namespace lms::ui

@@ -34,8 +34,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto starredArtist{ RatedArtist::find(session, artist->getId(), user->getId()) };
-            EXPECT_FALSE(starredArtist);
+            auto ratedArtist{ RatedArtist::find(session, artist->getId(), user->getId()) };
+            EXPECT_FALSE(ratedArtist);
             EXPECT_EQ(RatedArtist::getCount(session), 0);
 
             auto artists{ Artist::findIds(session, Artist::FindParameters{}) };

@@ -35,6 +35,7 @@
 #include "core/Service.hpp"
 #include "database/Session.hpp"
 #include "database/objects/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
 #include "LmsApplication.hpp"
@@ -53,6 +54,12 @@ namespace lms::ui
             static inline const Field EnableFeedbackField{ "enable-feedback" };
             static inline const Field TokenField{ "token" };
 
+            struct SaveResult
+            {
+                bool scrobblingTurnedOn{};
+                bool feedbackTurnedOn{};
+            };
+
             ListenBrainzSettingsModel()
             {
                 addField(EnableScrobblingField);
@@ -66,24 +73,53 @@ namespace lms::ui
                 loadData();
             }
 
-            void saveData()
+            SaveResult saveData()
             {
-                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-                db::User::pointer user{ LmsApp->getUser() };
+                db::UserId userId;
+                bool scrobblingTurnedOn{};
+                bool feedbackTurnedOn{};
 
-                core::EnumSet<db::ScrobblingBackend> scrobblingBackends{ user->getScrobblingBackends() };
+                {
+                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+                    db::User::pointer user{ LmsApp->getUser() };
+                    userId = user->getId();
 
-                if (Wt::asNumber(value(EnableScrobblingField)) != 0)
-                    scrobblingBackends.insert(db::ScrobblingBackend::ListenBrainz);
-                else
-                    scrobblingBackends.erase(db::ScrobblingBackend::ListenBrainz);
+                    const bool wasScrobblingEnabled{ user->getScrobblingBackends().contains(db::ScrobblingBackend::ListenBrainz) };
+                    const bool wasFeedbackEnabled{ user->getFeedbackBackends().contains(db::FeedbackBackend::ListenBrainz) };
 
-                user.modify()->setScrobblingBackends(scrobblingBackends);
+                    const bool scrobblingEnabled{ Wt::asNumber(value(EnableScrobblingField)) != 0 };
+                    const bool feedbackEnabled{ Wt::asNumber(value(EnableFeedbackField)) != 0 };
 
-                const bool enableFeedback{ Wt::asNumber(value(EnableFeedbackField)) != 0 };
-                user.modify()->setFeedbackBackend(enableFeedback ? db::FeedbackBackend::ListenBrainz : db::FeedbackBackend::Internal);
+                    core::EnumSet<db::ScrobblingBackend> scrobblingBackends{ user->getScrobblingBackends() };
+                    if (scrobblingEnabled)
+                        scrobblingBackends.insert(db::ScrobblingBackend::ListenBrainz);
+                    else
+                        scrobblingBackends.erase(db::ScrobblingBackend::ListenBrainz);
 
-                user.modify()->setListenBrainzToken(Wt::asString(value(TokenField)).toUTF8());
+                    user.modify()->setScrobblingBackends(scrobblingBackends);
+
+                    core::EnumSet<db::FeedbackBackend> feedbackBackends{ user->getFeedbackBackends() };
+                    if (feedbackEnabled)
+                        feedbackBackends.insert(db::FeedbackBackend::ListenBrainz);
+                    else
+                        feedbackBackends.erase(db::FeedbackBackend::ListenBrainz);
+
+                    user.modify()->setFeedbackBackends(feedbackBackends);
+
+                    const std::string token{ Wt::asString(value(TokenField)).toUTF8() };
+                    user.modify()->setListenBrainzToken(token);
+
+                    scrobblingTurnedOn = !wasScrobblingEnabled && scrobblingEnabled && !token.empty();
+                    feedbackTurnedOn = !wasFeedbackEnabled && feedbackEnabled && !token.empty();
+                }
+
+                if (scrobblingTurnedOn)
+                    core::Service<scrobbling::IScrobblingService>::get()->requestImmediateExport(userId, db::ScrobblingBackend::ListenBrainz);
+
+                if (feedbackTurnedOn)
+                    core::Service<feedback::IFeedbackService>::get()->requestImmediateExport(userId, db::FeedbackBackend::ListenBrainz);
+
+                return { scrobblingTurnedOn, feedbackTurnedOn };
             }
 
             void loadData()
@@ -92,7 +128,7 @@ namespace lms::ui
                 const db::User::pointer user{ LmsApp->getUser() };
 
                 const bool enableScrobbling{ user->getScrobblingBackends().contains(db::ScrobblingBackend::ListenBrainz) };
-                const bool enableFeedback{ user->getFeedbackBackend() == db::FeedbackBackend::ListenBrainz };
+                const bool enableFeedback{ user->getFeedbackBackends().contains(db::FeedbackBackend::ListenBrainz) };
 
                 setValue(EnableScrobblingField, enableScrobbling);
                 setValue(EnableFeedbackField, enableFeedback);
@@ -153,7 +189,10 @@ namespace lms::ui
         }
 
         utils::bindSaveDiscardButtons(t, model.get(), [model, this] {
-             model->saveData(); updateImportCardVisibility(); }, [model] { model->loadData(); });
+            const auto result{ model->saveData() };
+            updateImportCardVisibility();
+            if (result.scrobblingTurnedOn || result.feedbackTurnedOn)
+                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.listenbrainz-export-started")); }, [model] { model->loadData(); });
         t->updateView(model.get());
     }
 
@@ -162,19 +201,33 @@ namespace lms::ui
         _importCard = addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Settings.listenbrainz.template.import-card"));
         _importCard->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-        updateImportCardVisibility();
-
-        auto* importBtn{ _importCard->bindNew<Wt::WPushButton>("import-btn", Wt::WString::tr("Lms.Settings.listenbrainz-import")) };
-        importBtn->addStyleClass("btn btn-secondary");
-        importBtn->clicked().connect(this, [] {
+        _importListensBtn = _importCard->bindNew<Wt::WPushButton>("import-listens-btn", Wt::WString::tr("Lms.Settings.listenbrainz-import-listens"));
+        _importListensBtn->addStyleClass("btn btn-secondary");
+        _importListensBtn->clicked().connect(this, [] {
             core::Service<scrobbling::IScrobblingService>::get()->requestImmediateImport(LmsApp->getUserId(), db::ScrobblingBackend::ListenBrainz);
             LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.listenbrainz-import-started"));
         });
+
+        _importFeedbackBtn = _importCard->bindNew<Wt::WPushButton>("import-feedback-btn", Wt::WString::tr("Lms.Settings.listenbrainz-import-feedback"));
+        _importFeedbackBtn->addStyleClass("btn btn-secondary");
+        _importFeedbackBtn->clicked().connect(this, [] {
+            core::Service<feedback::IFeedbackService>::get()->requestImmediateImport(LmsApp->getUserId(), db::FeedbackBackend::ListenBrainz);
+            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.listenbrainz-import-started"));
+        });
+
+        updateImportCardVisibility();
     }
 
     void ListenBrainzSettingsView::updateImportCardVisibility()
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-        _importCard->setHidden(!LmsApp->getUser()->getScrobblingBackends().contains(db::ScrobblingBackend::ListenBrainz));
+        const db::User::pointer user{ LmsApp->getUser() };
+
+        const bool scrobblingEnabled{ user->getScrobblingBackends().contains(db::ScrobblingBackend::ListenBrainz) };
+        const bool feedbackEnabled{ user->getFeedbackBackends().contains(db::FeedbackBackend::ListenBrainz) };
+
+        _importListensBtn->setHidden(!scrobblingEnabled);
+        _importFeedbackBtn->setHidden(!feedbackEnabled);
+        _importCard->setHidden(!scrobblingEnabled && !feedbackEnabled);
     }
 } // namespace lms::ui

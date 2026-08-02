@@ -135,15 +135,13 @@ namespace lms::db
                 query.where("(" + core::stringUtils::joinStrings(clauses, " AND ") + ") OR (" + core::stringUtils::joinStrings(sortClauses, " AND ") + ")");
             }
 
-            if (params.starringUser.isValid())
+            if (params.feedbackUser.isValid() || params.feedbackValue)
             {
-                query.join("starred_artist s_a ON s_a.artist_id = a.id")
-                    .join("user u ON u.id = s_a.user_id")
-                    .where("s_a.user_id = ?")
-                    .bind(params.starringUser)
-                    .where("s_a.sync_state <> ?")
-                    .bind(SyncState::PendingRemove)
-                    .where("s_a.backend = u.feedback_backend");
+                query.join("artist_feedback a_f ON a_f.artist_id = a.id");
+                if (params.feedbackUser.isValid())
+                    query.where("a_f.user_id = ?").bind(params.feedbackUser);
+                if (params.feedbackValue)
+                    query.where("a_f.value = ?").bind(static_cast<int>(*params.feedbackValue));
             }
 
             if (params.filters.clusters.size() == 1)
@@ -224,9 +222,9 @@ namespace lms::db
             case ArtistSortMethod::AddedDesc:
                 query.orderBy("MIN(t.file_added) DESC, a.sort_name");
                 break;
-            case ArtistSortMethod::StarredDateDesc:
-                assert(params.starringUser.isValid());
-                query.orderBy("s_a.date_time DESC");
+            case ArtistSortMethod::FeedbackDateDesc:
+                assert(params.feedbackUser.isValid());
+                query.orderBy("a_f.date_time DESC");
                 break;
             }
 

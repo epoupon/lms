@@ -41,6 +41,7 @@ namespace lms::scrobbling::listenBrainz
         ~ListenBrainzBackend() override;
 
         void requestImmediateImport(db::UserId userId);
+        void requestImmediateExport(db::UserId userId);
 
     private:
         ListenBrainzBackend(const ListenBrainzBackend&) = delete;

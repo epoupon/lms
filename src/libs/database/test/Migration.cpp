@@ -23,6 +23,8 @@
 #include "core/UUID.hpp"
 
 #include "database/objects/Artist.hpp"
+#include "database/objects/ArtistFeedback.hpp"
+#include "database/objects/ArtistFeedbackBackendSync.hpp"
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/AuthToken.hpp"
 #include "database/objects/Directory.hpp"
@@ -37,14 +39,15 @@
 #include "database/objects/RatedRelease.hpp"
 #include "database/objects/RatedTrack.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
+#include "database/objects/ReleaseFeedback.hpp"
+#include "database/objects/ReleaseFeedbackBackendSync.hpp"
 #include "database/objects/ScanSettings.hpp"
 #include "database/objects/ServerInfo.hpp"
-#include "database/objects/StarredArtist.hpp"
-#include "database/objects/StarredRelease.hpp"
-#include "database/objects/StarredTrack.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
+#include "database/objects/TrackFeedback.hpp"
+#include "database/objects/TrackFeedbackBackendSync.hpp"
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/UIState.hpp"
 #include "database/objects/User.hpp"
@@ -345,7 +348,24 @@ INSERT INTO listen (version, date_time, scrobbler, scrobbling_state, track_id, u
 VALUES
 (1, '2024-05-08T12:00:00', 0, 1, 1, 1),
 (1, '2024-05-08T12:00:00', 1, 0, 1, 1),
-(1, '2024-05-08T13:00:00', 1, 1, 1, 1);)" };
+(1, '2024-05-08T13:00:00', 1, 1, 1, 1);
+
+-- Inserting starred artist/release/track for MyUser (id=1): one row per backend (Internal=0, ListenBrainz=1)
+-- sharing the same (user, object), which must collapse into a single canonical row + one backend_sync row
+INSERT INTO starred_artist (version, scrobbler, date_time, artist_id, user_id)
+VALUES
+(1, 0, '2024-05-08T12:00:00', 1, 1),
+(1, 1, '2024-05-08T12:00:00', 1, 1);
+
+INSERT INTO starred_release (version, scrobbler, date_time, release_id, user_id)
+VALUES
+(1, 0, '2024-05-08T12:00:00', 1, 1),
+(1, 1, '2024-05-08T12:00:00', 1, 1);
+
+INSERT INTO starred_track (version, scrobbler, date_time, track_id, user_id)
+VALUES
+(1, 0, '2024-05-08T12:00:00', 1, 1),
+(1, 1, '2024-05-08T12:00:00', 1, 1);)" };
 
         Session session{ db };
 
@@ -393,9 +413,9 @@ VALUES
             EXPECT_FALSE(ReleaseType::find(session, ReleaseTypeId{}));
             EXPECT_FALSE(ScanSettings::find(session, ScanSettingsId{}));
             EXPECT_NE(ServerInfo::get(session)->getInstanceId(), core::UUID{});
-            EXPECT_FALSE(StarredArtist::find(session, StarredArtistId{}));
-            EXPECT_FALSE(StarredRelease::find(session, StarredReleaseId{}));
-            EXPECT_FALSE(StarredTrack::find(session, StarredTrackId{}));
+            EXPECT_FALSE(ArtistFeedback::find(session, ArtistFeedbackId{}));
+            EXPECT_FALSE(ReleaseFeedback::find(session, ReleaseFeedbackId{}));
+            EXPECT_FALSE(TrackFeedback::find(session, TrackFeedbackId{}));
             EXPECT_FALSE(Track::find(session, TrackId{}));
             EXPECT_FALSE(TrackArtistLink::find(session, TrackArtistLinkId{}));
             EXPECT_FALSE(TrackList::find(session, TrackListId{}));
@@ -445,6 +465,35 @@ VALUES
                 else
                     ADD_FAILURE() << "Unexpected listen date_time: " << listen->getDateTime().toString();
             }
+
+            // migrateFromV111: user.feedback_backend backfills to a bitmask, same as scrobbling_backends
+            EXPECT_EQ(myUser->getFeedbackBackends().size(), 1);
+            EXPECT_TRUE(myUser->getFeedbackBackends().contains(FeedbackBackend::ListenBrainz));
+            EXPECT_TRUE(internalUser->getFeedbackBackends().empty());
+
+            // migrateFromV111: the two rows sharing (user, artist/release/track) across Internal/ListenBrainz collapse
+            // into one canonical row (Internal dropped) + one *FeedbackBackendSync row; no "hated"/"pending removal"
+            // concept existed before this migration, so every collapsed row lands as Loved.
+            const auto artistFeedback{ ArtistFeedback::find(session, ArtistId{ 1 }, myUser->getId()) };
+            ASSERT_TRUE(artistFeedback);
+            EXPECT_EQ(artistFeedback->getValue(), FeedbackValue::Loved);
+            EXPECT_EQ(ArtistFeedback::getCount(session), 1);
+            EXPECT_EQ(ArtistFeedbackBackendSync::getCount(session), 1);
+            EXPECT_TRUE(ArtistFeedbackBackendSync::find(session, artistFeedback->getId(), FeedbackBackend::ListenBrainz));
+
+            const auto releaseFeedback{ ReleaseFeedback::find(session, ReleaseId{ 1 }, myUser->getId()) };
+            ASSERT_TRUE(releaseFeedback);
+            EXPECT_EQ(releaseFeedback->getValue(), FeedbackValue::Loved);
+            EXPECT_EQ(ReleaseFeedback::getCount(session), 1);
+            EXPECT_EQ(ReleaseFeedbackBackendSync::getCount(session), 1);
+            EXPECT_TRUE(ReleaseFeedbackBackendSync::find(session, releaseFeedback->getId(), FeedbackBackend::ListenBrainz));
+
+            const auto trackFeedback{ TrackFeedback::find(session, TrackId{ 1 }, myUser->getId()) };
+            ASSERT_TRUE(trackFeedback);
+            EXPECT_EQ(trackFeedback->getValue(), FeedbackValue::Loved);
+            EXPECT_EQ(TrackFeedback::getCount(session), 1);
+            EXPECT_EQ(TrackFeedbackBackendSync::getCount(session), 1);
+            EXPECT_TRUE(TrackFeedbackBackendSync::find(session, trackFeedback->getId(), FeedbackBackend::ListenBrainz));
         }
     }
 } // namespace lms::db::tests

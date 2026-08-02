@@ -156,31 +156,36 @@ namespace lms::scrobbling::listenBrainz
         {
             std::string bodyText;
             std::vector<TimedListen> validListens;
+            std::vector<TimedListen> skippedListens;
         };
 
         BatchPayload buildImportPayload(db::Session& session, std::span<const TimedListen> listens)
         {
             Wt::Json::Array payloadArray;
             std::vector<TimedListen> validListens;
+            std::vector<TimedListen> skippedListens;
 
             for (const TimedListen& listen : listens)
             {
                 std::optional<Wt::Json::Object> item{ listenToJsonPayload(session, listen, listen.listenedAt) };
                 if (!item)
+                {
+                    skippedListens.push_back(listen);
                     continue;
+                }
 
                 payloadArray.push_back(std::move(*item));
                 validListens.push_back(listen);
             }
 
             if (validListens.empty())
-                return {};
+                return { .bodyText = {}, .validListens = {}, .skippedListens = std::move(skippedListens) };
 
             Wt::Json::Object root;
             root["listen_type"] = Wt::Json::Value{ std::string{ "import" } };
             root["payload"] = std::move(payloadArray);
 
-            return { Wt::Json::serialize(root), std::move(validListens) };
+            return { Wt::Json::serialize(root), std::move(validListens), std::move(skippedListens) };
         }
 
         std::optional<std::size_t> parseListenCount(std::string_view msgBody)
@@ -279,6 +284,8 @@ namespace lms::scrobbling::listenBrainz
         scheduleDeliveryFlush(std::chrono::seconds{ 30 });
     }
 
+    ListensSynchronizer::~ListensSynchronizer() = default;
+
     void ListensSynchronizer::enqueListen(const TimedListen& listen)
     {
         assert(listen.listenedAt.isValid());
@@ -301,6 +308,14 @@ namespace lms::scrobbling::listenBrainz
             }
 
             startImport(context);
+        }));
+    }
+
+    void ListensSynchronizer::requestImmediateExport(db::UserId userId)
+    {
+        boost::asio::post(boost::asio::bind_executor(_strand, [this, userId] {
+            markPendingExports(userId);
+            scheduleDeliveryFlush(std::chrono::seconds{ 0 });
         }));
     }
 
@@ -339,6 +354,8 @@ namespace lms::scrobbling::listenBrainz
         if (bodyText.empty())
         {
             LMS_LOG_LISTENBRAINZ(DEBUG, "Cannot convert listen to json: skipping");
+            if (timePoint.isValid())
+                skipListen(TimedListen{ listen, timePoint });
             return;
         }
 
@@ -390,6 +407,22 @@ namespace lms::scrobbling::listenBrainz
         return true;
     }
 
+    void ListensSynchronizer::skipListen(const TimedListen& listen)
+    {
+        db::Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createWriteTransaction() };
+
+        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
+        if (!dbListen)
+            return;
+
+        if (db::ListenBackendSync::pointer sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::ListenBrainz) })
+        {
+            LMS_LOG_LISTENBRAINZ(DEBUG, "Listen cannot be scrobbled (no match / no artist tag): dropping sync entry");
+            sync.remove();
+        }
+    }
+
     void ListensSynchronizer::enquePendingListens()
     {
         std::unordered_map<db::UserId, std::vector<TimedListen>> pendingByUser;
@@ -436,6 +469,10 @@ namespace lms::scrobbling::listenBrainz
     void ListensSynchronizer::sendListenBatch(const std::string& listenBrainzToken, std::span<const TimedListen> listens)
     {
         BatchPayload batch{ buildImportPayload(_db.getTLSSession(), listens) };
+
+        for (const TimedListen& listen : batch.skippedListens)
+            skipListen(listen);
+
         if (batch.validListens.empty())
             return;
 
@@ -463,6 +500,45 @@ namespace lms::scrobbling::listenBrainz
         // on failure, these listens stay PendingAdd and are retried on the next periodic flush
 
         _client.sendPOSTRequest(std::move(request));
+    }
+
+    void ListensSynchronizer::markPendingExports(db::UserId userId)
+    {
+        constexpr std::size_t chunkSize{ 500 };
+        for (std::size_t offset{};; offset += chunkSize)
+        {
+            std::vector<db::ListenId> ids;
+            {
+                db::Session& session{ _db.getTLSSession() };
+                auto transaction{ session.createReadTransaction() };
+
+                db::Listen::FindParameters params;
+                params.setUser(userId).setRange(db::Range{ offset, chunkSize });
+                ids = db::Listen::find(session, params);
+            }
+
+            if (ids.empty())
+                break;
+
+            {
+                db::Session& session{ _db.getTLSSession() };
+                auto transaction{ session.createWriteTransaction() };
+
+                for (const db::ListenId id : ids)
+                {
+                    if (db::ListenBackendSync::find(session, id, db::ScrobblingBackend::ListenBrainz))
+                        continue; // already pending or synchronized: leave untouched
+
+                    if (db::Listen::pointer listen{ db::Listen::find(session, id) })
+                        session.create<db::ListenBackendSync>(listen, db::ScrobblingBackend::ListenBrainz);
+                }
+            }
+
+            if (ids.size() < chunkSize)
+                break;
+        }
+
+        LMS_LOG_LISTENBRAINZ(DEBUG, "Marked pending exports for user");
     }
 
     ListensSynchronizer::UserContext& ListensSynchronizer::getUserContext(db::UserId userId)

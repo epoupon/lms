@@ -384,6 +384,9 @@
 <message id="Lms.Settings.lastfm-unlink-confirm-body">Êtes-vous sûr de vouloir délier votre compte Last.fm ? Le scrobbling s'arrêtera jusqu'à ce que vous le reliiez.</message>
 <message id="Lms.Settings.lastfm-unlink-confirm-title">Délier le compte Last.fm</message>
 <message id="Lms.Settings.listenbrainz">ListenBrainz</message>
+<message id="Lms.Settings.listenbrainz-import-card-title">Importation ListenBrainz</message>
+<message id="Lms.Settings.listenbrainz-import-feedback">Importer les favoris</message>
+<message id="Lms.Settings.listenbrainz-import-listens">Importer les écoutes</message>
 <message id="Lms.Settings.listenbrainz-token">Jeton d'API ListenBrainz</message>
 <message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.change-password">Changement de mot de passe</message>

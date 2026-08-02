@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,23 +19,6 @@
 
 #pragma once
 
-#include <memory>
+#include "database/IdType.hpp"
 
-#include "database/objects/ArtistFeedbackId.hpp"
-#include "database/objects/ReleaseFeedbackId.hpp"
-#include "database/objects/TrackFeedbackId.hpp"
-
-namespace lms::feedback
-{
-    class IFeedbackBackend
-    {
-    public:
-        virtual ~IFeedbackBackend() = default;
-
-        virtual void onFeedbackChanged(db::ArtistFeedbackId id) = 0;
-        virtual void onFeedbackChanged(db::ReleaseFeedbackId id) = 0;
-        virtual void onFeedbackChanged(db::TrackFeedbackId id) = 0;
-    };
-
-    std::unique_ptr<IFeedbackBackend> createFeedbackBackend(std::string_view backendName);
-} // namespace lms::feedback
+LMS_DECLARE_IDTYPE(ReleaseFeedbackId)

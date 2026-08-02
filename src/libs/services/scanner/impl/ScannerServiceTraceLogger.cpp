@@ -20,18 +20,18 @@
 #include "ScannerService.hpp"
 
 #include "database/objects/Artist.hpp"
+#include "database/objects/ArtistFeedback.hpp"
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/Listen.hpp"
-#include "database/objects/StarredArtist.hpp"
-#include "database/objects/StarredRelease.hpp"
-#include "database/objects/StarredTrack.hpp"
+#include "database/objects/ReleaseFeedback.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackBookmark.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
+#include "database/objects/TrackFeedback.hpp"
 
 namespace lms::scanner
 {
@@ -51,9 +51,9 @@ namespace lms::scanner
         traceLogger->setMetadata("db_image_count", std::to_string(db::Image::getCount(session)));
         traceLogger->setMetadata("db_listen_count", std::to_string(db::Listen::getCount(session)));
         traceLogger->setMetadata("db_release_count", std::to_string(db::Release::getCount(session)));
-        traceLogger->setMetadata("db_starred_artist_count", std::to_string(db::StarredArtist::getCount(session)));
-        traceLogger->setMetadata("db_starred_release_count", std::to_string(db::StarredRelease::getCount(session)));
-        traceLogger->setMetadata("db_starred_track_count", std::to_string(db::StarredTrack::getCount(session)));
+        traceLogger->setMetadata("db_artist_feedback_count", std::to_string(db::ArtistFeedback::getCount(session)));
+        traceLogger->setMetadata("db_release_feedback_count", std::to_string(db::ReleaseFeedback::getCount(session)));
+        traceLogger->setMetadata("db_track_feedback_count", std::to_string(db::TrackFeedback::getCount(session)));
         traceLogger->setMetadata("db_track_bookmark_count", std::to_string(db::TrackBookmark::getCount(session)));
         traceLogger->setMetadata("db_track_count", std::to_string(db::Track::getCount(session)));
         traceLogger->setMetadata("db_track_artist_link_count", std::to_string(db::TrackArtistLink::getCount(session)));

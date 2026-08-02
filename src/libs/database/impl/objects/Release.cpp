@@ -172,15 +172,13 @@ namespace lms::db
                 query.where("(" + core::stringUtils::joinStrings(nameClauses, " AND ") + ") OR (" + core::stringUtils::joinStrings(mediumNameClauses, " AND ") + ")");
             }
 
-            if (params.starringUser.isValid())
+            if (params.feedbackUser.isValid() || params.feedbackValue)
             {
-                query.join("starred_release s_r ON s_r.release_id = r.id")
-                    .join("user u ON u.id = s_r.user_id")
-                    .where("s_r.user_id = ?")
-                    .bind(params.starringUser)
-                    .where("s_r.sync_state <> ?")
-                    .bind(SyncState::PendingRemove)
-                    .where("s_r.backend = u.feedback_backend");
+                query.join("release_feedback r_f ON r_f.release_id = r.id");
+                if (params.feedbackUser.isValid())
+                    query.where("r_f.user_id = ?").bind(params.feedbackUser);
+                if (params.feedbackValue)
+                    query.where("r_f.value = ?").bind(static_cast<int>(*params.feedbackValue));
             }
 
             if (params.artist.isValid())
@@ -317,9 +315,9 @@ namespace lms::db
             case ReleaseSortMethod::OriginalDateDesc:
                 query.orderBy("COALESCE(t.original_date, t.date) DESC, r.name COLLATE NOCASE");
                 break;
-            case ReleaseSortMethod::StarredDateDesc:
-                assert(params.starringUser.isValid());
-                query.orderBy("s_r.date_time DESC");
+            case ReleaseSortMethod::FeedbackDateDesc:
+                assert(params.feedbackUser.isValid());
+                query.orderBy("r_f.date_time DESC");
                 break;
             }
 

@@ -387,11 +387,13 @@
 <message id="Lms.Settings.lastfm-unlink-confirm-body">Are you sure you want to unlink your Last.fm account? Scrobbling will stop until you link again.</message>
 <message id="Lms.Settings.lastfm-unlink-confirm-title">Unlink Last.fm account</message>
 <message id="Lms.Settings.listenbrainz">ListenBrainz</message>
-<message id="Lms.Settings.listenbrainz-enable-feedback">Sync feedback (loved tracks)</message>
+<message id="Lms.Settings.listenbrainz-enable-feedback">Sync feedbacks</message>
 <message id="Lms.Settings.listenbrainz-enable-scrobbling">Scrobble listens</message>
-<message id="Lms.Settings.listenbrainz-import">Import now</message>
-<message id="Lms.Settings.listenbrainz-import-card-title">ListenBrainz history import</message>
-<message id="Lms.Settings.listenbrainz-import-started">Import started, this may take a while.</message>
+<message id="Lms.Settings.listenbrainz-import-card-title">ListenBrainz import</message>
+<message id="Lms.Settings.listenbrainz-import-feedback">Import feedbacks</message>
+<message id="Lms.Settings.listenbrainz-import-listens">Import listens</message>
+<message id="Lms.Settings.listenbrainz-import-started">Import started, this may take a while</message>
+<message id="Lms.Settings.listenbrainz-export-started">Export started, this may take a while</message>
 <message id="Lms.Settings.listenbrainz-token">ListenBrainz API token</message>
 <message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.change-password">Change password</message>

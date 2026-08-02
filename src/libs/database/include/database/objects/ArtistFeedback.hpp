@@ -24,8 +24,8 @@
 
 #include "database/Object.hpp"
 #include "database/Types.hpp"
+#include "database/objects/ArtistFeedbackId.hpp"
 #include "database/objects/ArtistId.hpp"
-#include "database/objects/StarredArtistId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
 
@@ -35,34 +35,31 @@ namespace lms::db
     class Session;
     class User;
 
-    class StarredArtist final : public Object<StarredArtist, StarredArtistId>
+    class ArtistFeedback final : public Object<ArtistFeedback, ArtistFeedbackId>
     {
     public:
-        StarredArtist() = default;
+        ArtistFeedback() = default;
 
         // Search utility
         static std::size_t getCount(Session& session);
-        static pointer find(Session& session, StarredArtistId id);
-        static pointer find(Session& session, ArtistId artistId, UserId userId); // current backend
-        static pointer find(Session& session, ArtistId artistId, UserId userId, FeedbackBackend backend);
+        static pointer find(Session& session, ArtistFeedbackId id);
+        static pointer find(Session& session, ArtistId artistId, UserId userId);
 
         // Accessors
         ObjectPtr<Artist> getArtist() const { return _artist; }
         ObjectPtr<User> getUser() const { return _user; }
-        FeedbackBackend getFeedbackBackend() const { return _backend; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
-        SyncState getSyncState() const { return _syncState; }
+        FeedbackValue getValue() const { return _value; }
 
         // Setters
         void setDateTime(const Wt::WDateTime& dateTime);
-        void setSyncState(SyncState state) { _syncState = state; }
+        void setValue(FeedbackValue value) { _value = value; }
 
         template<class Action>
         void persist(Action& a)
         {
-            Wt::Dbo::field(a, _backend, "backend");
-            Wt::Dbo::field(a, _syncState, "sync_state");
             Wt::Dbo::field(a, _dateTime, "date_time");
+            Wt::Dbo::field(a, _value, "value");
 
             Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
@@ -70,12 +67,11 @@ namespace lms::db
 
     private:
         friend class Session;
-        StarredArtist(ObjectPtr<Artist> artist, ObjectPtr<User> user, FeedbackBackend scrobblingbackend);
-        static pointer create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user, FeedbackBackend scrobblingbackend);
+        ArtistFeedback(ObjectPtr<Artist> artist, ObjectPtr<User> user);
+        static pointer create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user);
 
-        FeedbackBackend _backend; // for which backend
-        SyncState _syncState{ SyncState::PendingAdd };
-        Wt::WDateTime _dateTime; // when it was starred
+        Wt::WDateTime _dateTime; // when the value was last changed to non-None
+        FeedbackValue _value{ FeedbackValue::None };
 
         Wt::Dbo::ptr<Artist> _artist;
         Wt::Dbo::ptr<User> _user;

@@ -384,6 +384,9 @@
 <message id="Lms.Settings.lastfm-unlink-confirm-body">Sei sicuro di voler scollegare il tuo account Last.fm? Lo scrobbling si interromperà finché non lo ricolleghi.</message>
 <message id="Lms.Settings.lastfm-unlink-confirm-title">Scollega account Last.fm</message>
 <message id="Lms.Settings.listenbrainz">ListenBrainz</message>
+<message id="Lms.Settings.listenbrainz-import-card-title">Importazione ListenBrainz</message>
+<message id="Lms.Settings.listenbrainz-import-feedback">Importa preferiti</message>
+<message id="Lms.Settings.listenbrainz-import-listens">Importa ascolti</message>
 <message id="Lms.Settings.listenbrainz-token">Token API ListenBrainz</message>
 <message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.change-password">Cambia password</message>

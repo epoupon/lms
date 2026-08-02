@@ -31,6 +31,7 @@
 #include "database/objects/Mood.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
+#include "database/objects/ReleaseFeedback.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
@@ -138,8 +139,8 @@ namespace lms::api::subsonic
         if (!genres.empty())
             albumNode.setAttribute("genre", genres.front()->getName());
 
-        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.getUser()->getId(), release->getId()) }; dateTime.isValid())
-            albumNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
+        if (const ReleaseFeedback::pointer feedback{ ReleaseFeedback::find(context.getDbSession(), release->getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == FeedbackValue::Loved)
+            albumNode.setAttribute("starred", core::stringUtils::toISO8601String(feedback->getDateTime()));
 
         // Always report user rating, even if legacy API only specified it for directories
         if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.getUser()->getId(), release->getId()) })

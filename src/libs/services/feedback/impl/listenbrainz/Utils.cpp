@@ -62,4 +62,34 @@ namespace lms::feedback::listenBrainz::utils
         listenBrainzUserName = root.get("user_name").orIfNull("");
         return listenBrainzUserName;
     }
+
+    int toLBScore(db::FeedbackValue value)
+    {
+        switch (value)
+        {
+        case db::FeedbackValue::Loved:
+            return 1;
+        case db::FeedbackValue::Hated:
+            return -1;
+        case db::FeedbackValue::None:
+            break;
+        }
+
+        return 0;
+    }
+
+    std::optional<db::FeedbackValue> fromLBScore(int score)
+    {
+        switch (score)
+        {
+        case 1:
+            return db::FeedbackValue::Loved;
+        case -1:
+            return db::FeedbackValue::Hated;
+        case 0:
+            return db::FeedbackValue::None;
+        default:
+            return std::nullopt;
+        }
+    }
 } // namespace lms::feedback::listenBrainz::utils

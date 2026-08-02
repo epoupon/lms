@@ -227,19 +227,19 @@ namespace lms::ui
         }
 
         {
-            auto isStarred{ [this] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), _artistId); } };
+            auto hasFeedback{ [this] { return core::Service<feedback::IFeedbackService>::get()->getFeedback(LmsApp->getUserId(), _artistId) == db::FeedbackValue::Loved; } };
 
-            Wt::WPushButton* starBtn{ bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
-            starBtn->clicked().connect([=, this] {
-                if (isStarred())
+            Wt::WPushButton* feedbackBtn{ bindNew<Wt::WPushButton>("star", Wt::WString::tr(hasFeedback() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
+            feedbackBtn->clicked().connect([=, this] {
+                if (hasFeedback())
                 {
-                    core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), _artistId);
-                    starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+                    core::Service<feedback::IFeedbackService>::get()->setFeedback(LmsApp->getUserId(), _artistId, db::FeedbackValue::None);
+                    feedbackBtn->setText(Wt::WString::tr("Lms.Explore.star"));
                 }
                 else
                 {
-                    core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), _artistId);
-                    starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+                    core::Service<feedback::IFeedbackService>::get()->setFeedback(LmsApp->getUserId(), _artistId, db::FeedbackValue::Loved);
+                    feedbackBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
                 }
             });
         }

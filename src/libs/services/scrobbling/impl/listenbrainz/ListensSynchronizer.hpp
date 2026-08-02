@@ -50,27 +50,33 @@ namespace lms::scrobbling::listenBrainz
     {
     public:
         ListensSynchronizer(boost::asio::io_context& ioContext, db::IDb& db, core::http::IClient& client);
+        ~ListensSynchronizer();
+
+        ListensSynchronizer(const ListensSynchronizer&) = delete;
+        ListensSynchronizer& operator=(const ListensSynchronizer&) = delete;
 
         void enqueListen(const TimedListen& listen);
         void enqueListenNow(const Listen& listen);
         void requestImmediateImport(db::UserId userId);
+        void requestImmediateExport(db::UserId userId);
 
     private:
         void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
         bool saveListen(const TimedListen& listen, db::SyncState scrobblingState);
+        void skipListen(const TimedListen& listen);
 
         void enquePendingListens();
         void sendListenBatch(const std::string& listenBrainzToken, std::span<const TimedListen> listens);
+        void markPendingExports(db::UserId userId);
 
         struct UserContext
         {
             UserContext(db::UserId id)
                 : userId{ id } {}
+            ~UserContext() = default;
 
             UserContext(const UserContext&) = delete;
-            UserContext(UserContext&&) = delete;
             UserContext& operator=(const UserContext&) = delete;
-            UserContext& operator=(UserContext&&) = delete;
 
             const db::UserId userId;
 

@@ -19,6 +19,8 @@
 
 #include "Migration.hpp"
 
+#include <array>
+
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/Exception.hpp"
@@ -36,7 +38,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 111 };
+        static constexpr Version LMS_DATABASE_VERSION{ 112 };
     }
 
     VersionInfo::VersionInfo()
@@ -2033,6 +2035,96 @@ DELETE FROM listen WHERE id NOT IN (
         utils::executeCommand(dboSession, R"(ALTER TABLE "user" DROP COLUMN "scrobbling_backend")");
     }
 
+    void migrateFromV111(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        LMS_LOG(DB, INFO, "Extracting feedback delivery state into dedicated tables...");
+
+        struct StarredTableInfo
+        {
+            std::string_view oldTable;
+            std::string_view newTable;
+            std::string_view sourceIdColumn;
+        };
+
+        constexpr std::array starredTables{
+            StarredTableInfo{ .oldTable = "starred_track", .newTable = "track_feedback", .sourceIdColumn = "track_id" },
+            StarredTableInfo{ .oldTable = "starred_artist", .newTable = "artist_feedback", .sourceIdColumn = "artist_id" },
+            StarredTableInfo{ .oldTable = "starred_release", .newTable = "release_feedback", .sourceIdColumn = "release_id" },
+        };
+
+        for (const StarredTableInfo& info : starredTables)
+        {
+            const std::string oldTable{ info.oldTable };
+            const std::string newTable{ info.newTable };
+            const std::string sourceIdColumn{ info.sourceIdColumn };
+            const std::string backendSyncTable{ newTable + "_backend_sync" };
+            const std::string syncFkColumn{ newTable + "_id" };
+
+            utils::executeCommand(dboSession, "DROP INDEX IF EXISTS " + oldTable + "_user_backend_idx");
+            utils::executeCommand(dboSession, "DROP INDEX IF EXISTS " + oldTable + "_" + sourceIdColumn.substr(0, sourceIdColumn.find('_')) + "_user_backend_idx");
+
+            // Rename first: everything below operates on the final table name directly
+            utils::executeCommand(dboSession, "ALTER TABLE " + oldTable + " RENAME TO " + newTable);
+
+            utils::executeCommand(dboSession, R"(
+CREATE TABLE IF NOT EXISTS ")" + backendSyncTable + R"(" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "backend" integer not null,
+  "sync_state" integer not null,
+  ")" + syncFkColumn + R"(" bigint,
+  constraint "fk_)" + backendSyncTable + "_" + newTable
+                                                  + R"(" foreign key (")" + syncFkColumn + R"(") references ")" + newTable + R"(" ("id") on delete cascade deferrable initially deferred
+))");
+
+            const int rowCountBefore{ utils::fetchQuerySingleResult(dboSession.query<int>("SELECT COUNT(*) FROM " + newTable)) };
+
+            // Collapse rows that used to represent the same star once per backend into a single canonical row,
+            // recording one *_backend_sync entry per non-Internal backend that had a row in the group
+            // sync_state priority when a group has more than one row for the same backend (shouldn't normally happen): Synchronized > PendingAdd > PendingRemove
+            utils::executeCommand(dboSession, R"(
+INSERT INTO )" + backendSyncTable + R"( (version, )"
+                                                  + syncFkColumn + R"(, backend, sync_state)
+SELECT 0, c.canonical_id, s.backend,
+       CASE MIN(CASE s.sync_state WHEN 1 THEN 0 WHEN 0 THEN 1 ELSE 2 END)
+            WHEN 0 THEN 1
+            WHEN 1 THEN 0
+            ELSE 2
+       END
+FROM )" + newTable + R"( s
+JOIN (
+  SELECT user_id, )" + sourceIdColumn + R"(, MIN(id) AS canonical_id
+  FROM )" + newTable + R"(
+  GROUP BY user_id, )" + sourceIdColumn + R"(
+) c ON c.user_id = s.user_id AND c.)" + sourceIdColumn
+                                                  + R"( = s.)" + sourceIdColumn + R"(
+WHERE s.backend != 0
+GROUP BY c.canonical_id, s.backend)");
+
+            // PendingRemove no longer exists as a distinct concept going forward (removal is just value=None, sent through the same path as any other value)
+            // -> collapse it into PendingAdd so these rows still get resynced
+            utils::executeCommand(dboSession, "UPDATE " + backendSyncTable + " SET sync_state = 0 WHERE sync_state = 2");
+            utils::executeCommand(dboSession, R"(DELETE FROM )" + newTable + R"( WHERE id NOT IN (SELECT MIN(id) FROM )" + newTable + R"( GROUP BY user_id, )" + sourceIdColumn + R"())");
+
+            const int rowCountAfter{ utils::fetchQuerySingleResult(dboSession.query<int>("SELECT COUNT(*) FROM " + newTable)) };
+            const int deliveryCount{ utils::fetchQuerySingleResult(dboSession.query<int>("SELECT COUNT(*) FROM " + backendSyncTable)) };
+            LMS_LOG(DB, INFO, "Collapsed " << rowCountBefore << " " << oldTable << " rows into " << rowCountAfter << " " << newTable << " rows, created " << deliveryCount << " " << backendSyncTable << " rows");
+
+            utils::executeCommand(dboSession, R"(ALTER TABLE ")" + newTable + R"(" DROP COLUMN "backend")");
+            utils::executeCommand(dboSession, R"(ALTER TABLE ")" + newTable + R"(" DROP COLUMN "sync_state")");
+            // No "hated" or "pending removal" concept existed before this migration: every remaining row is a loved star (value 1).
+            utils::executeCommand(dboSession, R"(ALTER TABLE ")" + newTable + R"(" ADD COLUMN "value" integer not null default 1)");
+        }
+
+        // A user can now enable zero, one or more feedback backends at once (bitmask). "Internal" is no longer a togglable backend:
+        // recording a *_feedback row is itself the "Internal" behavior, so a user whose old single backend was Internal ends up with an empty set
+        utils::executeCommand(dboSession, R"(ALTER TABLE "user" ADD COLUMN "feedback_backends" bigint not null default 0)");
+        utils::executeCommand(dboSession, R"(UPDATE "user" SET "feedback_backends" = (1 << "feedback_backend") WHERE "feedback_backend" != 0)");
+        utils::executeCommand(dboSession, R"(ALTER TABLE "user" DROP COLUMN "feedback_backend")");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -2120,6 +2212,7 @@ DELETE FROM listen WHERE id NOT IN (
             { 108, migrateFromV108 },
             { 109, migrateFromV109 },
             { 110, migrateFromV110 },
+            { 111, migrateFromV111 },
         };
 
         LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");

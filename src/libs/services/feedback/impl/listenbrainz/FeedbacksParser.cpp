@@ -37,10 +37,14 @@ namespace lms::feedback::listenBrainz
             if (!recordingMBID)
                 throw Exception{ "MBID not found!" };
 
+            const std::optional<db::FeedbackValue> score{ utils::fromLBScore(static_cast<int>(feedbackObj.get("score"))) };
+            if (!score)
+                throw Exception{ "Invalid score!" };
+
             return Feedback{
                 .created = Wt::WDateTime::fromTime_t(static_cast<int>(feedbackObj.get("created"))),
                 .recordingMBID = *recordingMBID,
-                .score = static_cast<FeedbackType>(static_cast<int>(feedbackObj.get("score")))
+                .score = *score
             };
         }
     } // namespace

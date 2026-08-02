@@ -343,6 +343,9 @@
 <message id="Lms.Settings.lastfm-unlink-confirm-body">您确定要取消关联 Last.fm 账户吗？在重新关联之前，scrobbling 将停止。</message>
 <message id="Lms.Settings.lastfm-unlink-confirm-title">取消关联 Last.fm 账户</message>
 <message id="Lms.Settings.listenbrainz">ListenBrainz</message>
+<message id="Lms.Settings.listenbrainz-import-card-title">ListenBrainz 导入</message>
+<message id="Lms.Settings.listenbrainz-import-feedback">导入喜爱曲目</message>
+<message id="Lms.Settings.listenbrainz-import-listens">导入收听记录</message>
 <message id="Lms.Settings.listenbrainz-token">ListenBrainz API 令牌</message>
 <message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.change-password">更改密码</message>

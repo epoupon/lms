@@ -1,6 +1,5 @@
 
 add_library(lmsfeedback STATIC
-	impl/internal/InternalBackend.cpp
 	impl/listenbrainz/FeedbacksParser.cpp
 	impl/listenbrainz/FeedbacksSynchronizer.cpp
 	impl/listenbrainz/FeedbackTypes.cpp

@@ -41,7 +41,8 @@
 			${tr:Lms.Settings.listenbrainz-import-card-title}
 		</div>
 		<div class="card-body d-flex align-items-center gap-2">
-			${import-btn}
+			${import-listens-btn}
+			${import-feedback-btn}
 		</div>
 	</div>
 </message>

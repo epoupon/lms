@@ -199,6 +199,16 @@ namespace lms::scrobbling
             _listenBrainzBackend->requestImmediateImport(userId);
     }
 
+    void ScrobblingService::requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend)
+    {
+        if (backend != ScrobblingBackend::ListenBrainz)
+            return; // no export support for other backends
+
+        assert(_listenBrainzBackend);
+        if (getUserEnabledBackends(userId).contains(backend))
+            _listenBrainzBackend->requestImmediateExport(userId);
+    }
+
     ScrobblingService::ArtistContainer ScrobblingService::getRecentArtists(const ArtistFindParameters& params)
     {
         ArtistContainer res;

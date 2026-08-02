@@ -24,8 +24,10 @@
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/objects/StarredArtist.hpp"
-#include "database/objects/StarredRelease.hpp"
+#include "database/objects/ArtistFeedback.hpp"
+#include "database/objects/ArtistFeedbackBackendSync.hpp"
+#include "database/objects/ReleaseFeedback.hpp"
+#include "database/objects/ReleaseFeedbackBackendSync.hpp"
 #include "database/objects/Track.hpp"
 
 #include "Utils.hpp"
@@ -34,25 +36,18 @@ namespace lms::feedback::listenBrainz
 {
     namespace detail
     {
-        template<typename StarredObjType>
-        void onStarred(db::Session& session, typename StarredObjType::IdType id)
+        // ListenBrainz's feedback API only supports recordings: artist/release feedback never actually gets
+        // delivered. Keep a PendingAdd sync placeholder in case this becomes supported in the future.
+        template<typename FeedbackObjType, typename FeedbackObjBackendSyncType>
+        void onFeedbackChanged(db::Session& session, typename FeedbackObjType::IdType id)
         {
             auto transaction{ session.createWriteTransaction() };
 
-            if (auto starredObj{ StarredObjType::find(session, id) })
+            if (auto feedbackObj{ FeedbackObjType::find(session, id) })
             {
-                // maybe in the future this will be supported by ListenBrainz so set it to PendingAdd for all types
-                starredObj.modify()->setSyncState(db::SyncState::PendingAdd);
+                if (!FeedbackObjBackendSyncType::find(session, id, db::FeedbackBackend::ListenBrainz))
+                    session.create<FeedbackObjBackendSyncType>(feedbackObj, db::FeedbackBackend::ListenBrainz);
             }
-        }
-
-        template<typename StarredObjType>
-        void onUnstarred(db::Session& session, typename StarredObjType::IdType id)
-        {
-            auto transaction{ session.createWriteTransaction() };
-
-            if (auto starredObj{ StarredObjType::find(session, id) })
-                starredObj.remove();
         }
     } // namespace detail
 
@@ -71,33 +66,28 @@ namespace lms::feedback::listenBrainz
         LOG(INFO, "Stopped ListenBrainz feedback backend!");
     }
 
-    void ListenBrainzBackend::onStarred(db::StarredArtistId starredArtistId)
+    void ListenBrainzBackend::requestImmediateImport(db::UserId userId)
     {
-        detail::onStarred<db::StarredArtist>(_db.getTLSSession(), starredArtistId);
+        _feedbacksSynchronizer.requestImmediateImport(userId);
     }
 
-    void ListenBrainzBackend::onUnstarred(db::StarredArtistId starredArtistId)
+    void ListenBrainzBackend::requestImmediateExport(db::UserId userId)
     {
-        detail::onUnstarred<db::StarredArtist>(_db.getTLSSession(), starredArtistId);
+        _feedbacksSynchronizer.requestImmediateExport(userId);
     }
 
-    void ListenBrainzBackend::onStarred(db::StarredReleaseId starredReleaseId)
+    void ListenBrainzBackend::onFeedbackChanged(db::ArtistFeedbackId id)
     {
-        detail::onStarred<db::StarredRelease>(_db.getTLSSession(), starredReleaseId);
+        detail::onFeedbackChanged<db::ArtistFeedback, db::ArtistFeedbackBackendSync>(_db.getTLSSession(), id);
     }
 
-    void ListenBrainzBackend::onUnstarred(db::StarredReleaseId starredReleaseId)
+    void ListenBrainzBackend::onFeedbackChanged(db::ReleaseFeedbackId id)
     {
-        detail::onUnstarred<db::StarredRelease>(_db.getTLSSession(), starredReleaseId);
+        detail::onFeedbackChanged<db::ReleaseFeedback, db::ReleaseFeedbackBackendSync>(_db.getTLSSession(), id);
     }
 
-    void ListenBrainzBackend::onStarred(db::StarredTrackId starredTrackId)
+    void ListenBrainzBackend::onFeedbackChanged(db::TrackFeedbackId id)
     {
-        _feedbacksSynchronizer.enqueFeedback(FeedbackType::Love, starredTrackId);
-    }
-
-    void ListenBrainzBackend::onUnstarred(db::StarredTrackId starredtrackId)
-    {
-        _feedbacksSynchronizer.enqueFeedback(FeedbackType::Erase, starredtrackId);
+        _feedbacksSynchronizer.enqueFeedback(id);
     }
 } // namespace lms::feedback::listenBrainz
