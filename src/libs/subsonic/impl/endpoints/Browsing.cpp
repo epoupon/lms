@@ -31,6 +31,7 @@
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Genre.hpp"
+#include "database/objects/Listen.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseFeedback.hpp"
@@ -654,12 +655,12 @@ namespace lms::api::subsonic
         const auto artists{ Artist::find(context.getDbSession(), artistName) };
         if (artists.size() == 1)
         {
-            scrobbling::IScrobblingService::FindParameters params;
+            Listen::StatsFindParameters params;
             params.setUser(context.getUser()->getId());
             params.setRange(db::Range{ 0, count });
             params.setArtist(artists.front()->getId());
 
-            const auto trackIds{ core::Service<scrobbling::IScrobblingService>::get()->getTopTracks(params) };
+            const auto trackIds{ Listen::getTopTracks(context.getDbSession(), params) };
             for (const TrackId trackId : trackIds)
             {
                 if (Track::pointer track{ Track::find(context.getDbSession(), trackId) })

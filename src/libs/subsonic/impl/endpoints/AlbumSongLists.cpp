@@ -26,6 +26,7 @@
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Genre.hpp"
+#include "database/objects/Listen.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
@@ -58,7 +59,6 @@ namespace lms::api::subsonic
             const Range range{ offset, size };
 
             std::vector<ReleaseId> releases;
-            scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };
 
             auto transaction{ context.getDbSession().createReadTransaction() };
 
@@ -111,12 +111,12 @@ namespace lms::api::subsonic
             }
             else if (type == "frequent")
             {
-                scrobbling::IScrobblingService::FindParameters params;
+                Listen::StatsFindParameters params;
                 params.setUser(context.getUser()->getId());
                 params.setRange(range);
                 params.filters.setMediaLibrary(mediaLibraryId);
 
-                releases = scrobblingService.getTopReleases(params);
+                releases = Listen::getTopReleases(context.getDbSession(), params);
             }
             else if (type == "newest")
             {
@@ -140,12 +140,12 @@ namespace lms::api::subsonic
             }
             else if (type == "recent")
             {
-                scrobbling::IScrobblingService::FindParameters params;
+                Listen::StatsFindParameters params;
                 params.setUser(context.getUser()->getId());
                 params.setRange(range);
                 params.filters.setMediaLibrary(mediaLibraryId);
 
-                releases = scrobblingService.getRecentReleases(params);
+                releases = Listen::getRecentReleases(context.getDbSession(), params);
             }
             else if (type == "starred")
             {

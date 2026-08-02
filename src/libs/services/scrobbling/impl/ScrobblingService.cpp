@@ -22,10 +22,8 @@
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/objects/Artist.hpp"
 #include "database/objects/Listen.hpp"
 #include "database/objects/ListenBackendSync.hpp"
-#include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 
@@ -35,27 +33,6 @@
 namespace lms::scrobbling
 {
     using namespace db;
-
-    namespace
-    {
-        db::Listen::StatsFindParameters convertToListenFindParameters(const ScrobblingService::FindParameters& params)
-        {
-            db::Listen::StatsFindParameters listenFindParams;
-            listenFindParams.setUser(params.user);
-            listenFindParams.setFilters(params.filters);
-            listenFindParams.setKeywords(params.keywords);
-            listenFindParams.setRange(params.range);
-            listenFindParams.setArtist(params.artist);
-
-            return listenFindParams;
-        }
-
-        db::Listen::ArtistStatsFindParameters convertToListenFindParameters(const ScrobblingService::ArtistFindParameters& params)
-        {
-            db::Listen::ArtistStatsFindParameters listenFindParams{ convertToListenFindParameters(static_cast<const ScrobblingService::FindParameters&>(params)), params.linkType, params.releaseArtistsOnly };
-            return listenFindParams;
-        }
-    } // namespace
 
     std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, db::IDb& db)
     {
@@ -255,36 +232,6 @@ namespace lms::scrobbling
         }
     }
 
-    ScrobblingService::ArtistContainer ScrobblingService::getRecentArtists(const ArtistFindParameters& params)
-    {
-        ArtistContainer res;
-        db::Listen::ArtistStatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-        res = db::Listen::getRecentArtists(session, listenFindParams);
-        return res;
-    }
-
-    ScrobblingService::ReleaseContainer ScrobblingService::getRecentReleases(const FindParameters& params)
-    {
-        ReleaseContainer res;
-        db::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-        res = db::Listen::getRecentReleases(session, listenFindParams);
-        return res;
-    }
-
-    ScrobblingService::TrackContainer ScrobblingService::getRecentTracks(const FindParameters& params)
-    {
-        TrackContainer res;
-        db::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-        res = db::Listen::getRecentTracks(session, listenFindParams);
-        return res;
-    }
-
     std::size_t ScrobblingService::getCount(db::UserId userId, db::ReleaseId releaseId)
     {
         Session& session{ _db.getTLSSession() };
@@ -315,37 +262,6 @@ namespace lms::scrobbling
 
         const db::Listen::pointer listen{ db::Listen::getMostRecentListen(session, userId, trackId) };
         return listen ? listen->getDateTime() : Wt::WDateTime{};
-    }
-
-    // Top
-    ScrobblingService::ArtistContainer ScrobblingService::getTopArtists(const ArtistFindParameters& params)
-    {
-        ArtistContainer res;
-        db::Listen::ArtistStatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-        res = db::Listen::getTopArtists(session, listenFindParams);
-        return res;
-    }
-
-    ScrobblingService::ReleaseContainer ScrobblingService::getTopReleases(const FindParameters& params)
-    {
-        ReleaseContainer res;
-        db::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-        res = db::Listen::getTopReleases(session, listenFindParams);
-        return res;
-    }
-
-    ScrobblingService::TrackContainer ScrobblingService::getTopTracks(const FindParameters& params)
-    {
-        TrackContainer res;
-        db::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-        res = db::Listen::getTopTracks(session, listenFindParams);
-        return res;
     }
 
     void ScrobblingService::insertNowPlayingEntry(const Listen& listen)
