@@ -346,6 +346,7 @@
 <message id="Lms.Settings.listenbrainz-import-card-title">ListenBrainz 导入</message>
 <message id="Lms.Settings.listenbrainz-import-feedback">导入喜爱曲目</message>
 <message id="Lms.Settings.listenbrainz-import-listens">导入收听记录</message>
+<message id="Lms.Settings.listenbrainz-import-started">导入已开始，可能需要一些时间</message>
 <message id="Lms.Settings.listenbrainz-token">ListenBrainz API 令牌</message>
 <message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.change-password">更改密码</message>
@@ -356,6 +357,7 @@
 <message id="Lms.Settings.demo-cannot-save">使用演示账号时不能保存！</message>
 <message id="Lms.Settings.enable-inline-artist-relationships">在专辑中内联显示艺术家关系</message>
 <message id="Lms.Settings.enable-transcoding-by-default">默认启用转码</message>
+<message id="Lms.Settings.export-started">导出已开始，可能需要一些时间</message>
 <message id="Lms.Settings.inline-artist-relationships">要显示的艺术家关系类型</message>
 <message id="Lms.Settings.menu-ui"><i class="fa fa-fw fa-paint-brush" aria-hidden="true"></i> 用户界面</message>
 <message id="Lms.Settings.menu-audio"><i class="fa fa-fw fa-music" aria-hidden="true"></i> 音频</message>

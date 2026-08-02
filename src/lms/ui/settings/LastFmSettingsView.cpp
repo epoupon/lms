@@ -243,11 +243,13 @@ namespace lms::ui
 
             core::Service<scrobbling::IScrobblingService>::get()->continueLastFmLink(
                 userId,
-                [sessionId, modalPtr, this] {
+                [sessionId, userId, modalPtr, this] {
+                    core::Service<scrobbling::IScrobblingService>::get()->requestImmediateExport(userId, db::ScrobblingBackend::LastFm);
                     LmsApplication::post(sessionId, [sessionId, modalPtr, this] {
                         LmsApp->getModalManager().dispose(modalPtr);
                         refreshView();
                         wApp->triggerUpdate();
+                        LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.export-started"));
                     });
                 },
                 [sessionId] {

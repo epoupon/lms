@@ -387,6 +387,7 @@
 <message id="Lms.Settings.listenbrainz-import-card-title">Importazione ListenBrainz</message>
 <message id="Lms.Settings.listenbrainz-import-feedback">Importa preferiti</message>
 <message id="Lms.Settings.listenbrainz-import-listens">Importa ascolti</message>
+<message id="Lms.Settings.listenbrainz-import-started">Importazione avviata, potrebbe richiedere del tempo</message>
 <message id="Lms.Settings.listenbrainz-token">Token API ListenBrainz</message>
 <message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.change-password">Cambia password</message>
@@ -397,6 +398,7 @@
 <message id="Lms.Settings.demo-cannot-save">Non posso salvare le impostazioni utilizzando l'account demo!</message>
 <message id="Lms.Settings.enable-inline-artist-relationships">Mostra le relazioni degli artisti in linea negli album</message>
 <message id="Lms.Settings.enable-transcoding-by-default">Abilita transcodifica di default</message>
+<message id="Lms.Settings.export-started">Esportazione avviata, potrebbe richiedere del tempo</message>
 <message id="Lms.Settings.inline-artist-relationships">Tipi di relazioni artistiche da visualizzare</message>
 <message id="Lms.Settings.menu-ui"><i class="fa fa-fw fa-paint-brush" aria-hidden="true"></i> Interfaccia utente</message>
 <message id="Lms.Settings.menu-audio"><i class="fa fa-fw fa-music" aria-hidden="true"></i> Audio</message>

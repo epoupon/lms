@@ -33,24 +33,6 @@
 
 namespace lms::scrobbling::lastFm
 {
-    namespace
-    {
-        bool canBeScrobbled(db::Session& session, db::TrackId trackId, std::chrono::seconds playedDuration)
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            const db::Track::pointer track{ db::Track::find(session, trackId) };
-            if (!track)
-                return false;
-
-            const bool res{ track->getDuration() >= std::chrono::seconds{ 30 } && (playedDuration >= std::chrono::minutes{ 4 } || playedDuration >= track->getDuration() / 2) };
-            if (!res)
-                LMS_LOG_LASTFM(DEBUG, "Track cannot be scrobbled: played duration too short (" << playedDuration.count() << "s, total = " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << "s)");
-
-            return res;
-        }
-    } // namespace
-
     LastFmBackend::LastFmBackend(boost::asio::io_context& ioContext, db::IDb& db)
         : _db{ db }
         , _authBaseUrl{ core::Service<core::IConfig>::get()->getString("lastfm-auth-base-url", "https://www.last.fm") }
@@ -70,17 +52,43 @@ namespace lms::scrobbling::lastFm
         _synchronizer.enqueListenNow(listen);
     }
 
-    void LastFmBackend::listenFinished(const TimedListen& listen, std::optional<std::chrono::seconds> playedDuration)
+    void LastFmBackend::listenFinished(const TimedListen& listen, std::optional<std::chrono::seconds> /*playedDuration*/)
     {
-        if (playedDuration && !canBeScrobbled(_db.getTLSSession(), listen.trackId, *playedDuration))
-            return;
-
         _synchronizer.enqueListen(listen);
     }
 
     void LastFmBackend::addTimedListen(const TimedListen& timedListen)
     {
         _synchronizer.enqueListen(timedListen);
+    }
+
+    bool LastFmBackend::canBeScrobbled(db::TrackId trackId, std::optional<std::chrono::seconds> duration) const
+    {
+        db::Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+
+        const db::Track::pointer track{ db::Track::find(session, trackId) };
+        if (!track)
+            return false;
+
+        if (!duration)
+            return true;
+
+        const bool res{ track->getDuration() >= std::chrono::seconds{ 30 } && (*duration >= std::chrono::minutes{ 4 } || *duration >= track->getDuration() / 2) };
+        if (!res)
+            LMS_LOG_LASTFM(DEBUG, "Track cannot be scrobbled: played duration too short (" << duration->count() << "s, total = " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << "s)");
+
+        return res;
+    }
+
+    void LastFmBackend::requestImmediateImport(db::UserId /*userId*/)
+    {
+        // not implemented
+    }
+
+    void LastFmBackend::requestImmediateExport()
+    {
+        _synchronizer.requestImmediateExport();
     }
 
     void LastFmBackend::initiateLastFmLink(db::UserId userId,

@@ -82,6 +82,7 @@ namespace lms::scrobbling
         void requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend) override;
 
         core::EnumSet<db::ScrobblingBackend> getUserEnabledBackends(db::UserId userId);
+        void markPendingExports(db::UserId userId, db::ScrobblingBackend backend);
 
         // Independent of which backends are enabled, since recording is now backend-agnostic (was previously InternalBackend's job)
         std::optional<TimedListen> recordListen(const Listen& listen, const Wt::WDateTime& listenedAt, std::optional<std::chrono::seconds> duration);

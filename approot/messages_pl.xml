@@ -417,6 +417,7 @@
 <message id="Lms.Settings.listenbrainz-import-card-title">Import z ListenBrainz</message>
 <message id="Lms.Settings.listenbrainz-import-feedback">Importuj ulubione</message>
 <message id="Lms.Settings.listenbrainz-import-listens">Importuj odsłuchy</message>
+<message id="Lms.Settings.listenbrainz-import-started">Import rozpoczęty, może to chwilę potrwać</message>
 <message id="Lms.Settings.listenbrainz-token">ListenBrainz API token</message>
 <message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.change-password">Zmień hasło</message>
@@ -427,7 +428,8 @@
 <message id="Lms.Settings.demo-cannot-save">Nie można zapisywać na koncie demonstracyjnym!</message>
 <message id="Lms.Settings.enable-inline-artist-relationships">Wyświetlaj powiązania artystów w albumach</message>  
 <message id="Lms.Settings.enable-transcoding-by-default">Aktywuj domyślnie transkodowanie</message>
-<message id="Lms.Settings.inline-artist-relationships">Typy powiązań artystów do wyświetlenia</message>  
+<message id="Lms.Settings.export-started">Eksport rozpoczęty, może to chwilę potrwać</message>
+<message id="Lms.Settings.inline-artist-relationships">Typy powiązań artystów do wyświetlenia</message>
 <message id="Lms.Settings.menu-ui"><i class="fa fa-fw fa-paint-brush" aria-hidden="true"></i> Interfejs użytkownika</message>
 <message id="Lms.Settings.menu-audio"><i class="fa fa-fw fa-music" aria-hidden="true"></i> Dźwięk</message>
 <message id="Lms.Settings.menu-lastfm"><i class="fa fa-fw fa-lastfm" aria-hidden="true"></i> Last.fm</message>

@@ -39,9 +39,6 @@ namespace lms::feedback::listenBrainz
         ListenBrainzBackend(boost::asio::io_context& ioContext, db::IDb& db);
         ~ListenBrainzBackend() override;
 
-        void requestImmediateImport(db::UserId userId);
-        void requestImmediateExport(db::UserId userId);
-
     private:
         ListenBrainzBackend(const ListenBrainzBackend&) = delete;
         ListenBrainzBackend& operator=(const ListenBrainzBackend&) = delete;
@@ -49,6 +46,11 @@ namespace lms::feedback::listenBrainz
         void onFeedbackChanged(db::ArtistFeedbackId id) override;
         void onFeedbackChanged(db::ReleaseFeedbackId id) override;
         void onFeedbackChanged(db::TrackFeedbackId id) override;
+        bool canBeFeedbacked(db::ArtistId artistId) const override;
+        bool canBeFeedbacked(db::ReleaseId releaseId) const override;
+        bool canBeFeedbacked(db::TrackId trackId) const override;
+        void requestImmediateImport(db::UserId userId) override;
+        void requestImmediateExport() override;
 
         boost::asio::io_context& _ioContext;
         db::IDb& _db;

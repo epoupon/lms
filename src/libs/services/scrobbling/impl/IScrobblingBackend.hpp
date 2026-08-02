@@ -22,11 +22,13 @@
 #include <chrono>
 #include <optional>
 
+#include "database/objects/TrackId.hpp"
+#include "database/objects/UserId.hpp"
+
 #include "services/scrobbling/Listen.hpp"
 
 namespace lms::db
 {
-    class Session;
     class TrackList;
     class User;
 } // namespace lms::db
@@ -42,5 +44,10 @@ namespace lms::scrobbling
         virtual void listenStarted(const Listen& listen) = 0;
         virtual void listenFinished(const TimedListen& listen, std::optional<std::chrono::seconds> duration) = 0;
         virtual void addTimedListen(const TimedListen& listen) = 0;
+
+        virtual bool canBeScrobbled(db::TrackId trackId, std::optional<std::chrono::seconds> duration) const = 0;
+
+        virtual void requestImmediateImport(db::UserId userId) = 0;
+        virtual void requestImmediateExport() = 0;
     };
 } // namespace lms::scrobbling

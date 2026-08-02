@@ -19,8 +19,6 @@
 
 #include "FeedbackService.impl.hpp"
 
-#include <cassert>
-
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
@@ -33,6 +31,7 @@
 #include "database/objects/ReleaseFeedback.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackFeedback.hpp"
+#include "database/objects/TrackFeedbackBackendSync.hpp"
 #include "database/objects/User.hpp"
 
 #include "listenbrainz/ListenBrainzBackend.hpp"
@@ -49,9 +48,7 @@ namespace lms::feedback
     {
         LMS_LOG(SCROBBLING, INFO, "Starting service...");
 
-        auto listenBrainzBackend{ std::make_unique<listenBrainz::ListenBrainzBackend>(ioContext, _db) };
-        _listenBrainzBackend = listenBrainzBackend.get();
-        _backends.emplace(db::FeedbackBackend::ListenBrainz, std::move(listenBrainzBackend));
+        _backends.emplace(db::FeedbackBackend::ListenBrainz, std::make_unique<listenBrainz::ListenBrainzBackend>(ioContext, _db));
 
         LMS_LOG(SCROBBLING, INFO, "Service started!");
     }
@@ -75,22 +72,71 @@ namespace lms::feedback
 
     void FeedbackService::requestImmediateImport(db::UserId userId, db::FeedbackBackend backend)
     {
-        if (backend != db::FeedbackBackend::ListenBrainz)
-            return; // no import support for other backends
+        if (!getUserFeedbackBackends(userId).contains(backend))
+            return;
 
-        assert(_listenBrainzBackend);
-        if (getUserFeedbackBackends(userId).contains(backend))
-            _listenBrainzBackend->requestImmediateImport(userId);
+        _backends[backend]->requestImmediateImport(userId);
     }
 
     void FeedbackService::requestImmediateExport(db::UserId userId, db::FeedbackBackend backend)
     {
-        if (backend != db::FeedbackBackend::ListenBrainz)
-            return; // no export support for other backends
+        if (!getUserFeedbackBackends(userId).contains(backend))
+            return;
 
-        assert(_listenBrainzBackend);
-        if (getUserFeedbackBackends(userId).contains(backend))
-            _listenBrainzBackend->requestImmediateExport(userId);
+        markPendingExports(userId, backend);
+        _backends[backend]->requestImmediateExport();
+    }
+
+    void FeedbackService::markPendingExports(db::UserId userId, db::FeedbackBackend backend)
+    {
+        IFeedbackBackend& backendImpl{ *_backends[backend] };
+
+        constexpr std::size_t chunkSize{ 500 };
+        db::TrackFeedbackId lastRetrievedId;
+        for (;;)
+        {
+            std::vector<db::TrackFeedbackId> ids;
+            std::size_t rawCount{};
+            {
+                db::Session& session{ _db.getTLSSession() };
+                auto transaction{ session.createReadTransaction() };
+
+                db::TrackFeedback::FindParameters params;
+                params.setUser(userId);
+                params.setLastRetrievedId(lastRetrievedId);
+                params.setRange(db::Range{ 0, chunkSize });
+                params.setSortMethod(db::TrackFeedbackSortMethod::Id);
+                db::TrackFeedback::find(session, params, [&](const db::TrackFeedback::pointer& feedback) {
+                    ++rawCount;
+                    lastRetrievedId = feedback->getId();
+                    if (feedback->getValue() != db::FeedbackValue::None)
+                        ids.push_back(feedback->getId());
+                });
+            }
+
+            if (rawCount == 0)
+                break;
+
+            {
+                db::Session& session{ _db.getTLSSession() };
+                auto transaction{ session.createWriteTransaction() };
+
+                for (const db::TrackFeedbackId id : ids)
+                {
+                    if (db::TrackFeedbackBackendSync::find(session, id, backend))
+                        continue;
+
+                    const db::TrackFeedback::pointer trackFeedback{ db::TrackFeedback::find(session, id) };
+                    if (!trackFeedback || !backendImpl.canBeFeedbacked(trackFeedback->getTrack()->getId()))
+                        continue;
+
+                    session.create<db::TrackFeedbackBackendSync>(trackFeedback, backend);
+                }
+            }
+
+            if (rawCount < chunkSize)
+                break;
+        }
     }
 
     void FeedbackService::setFeedback(db::UserId userId, db::ArtistId artistId, db::FeedbackValue value)

@@ -137,6 +137,16 @@ namespace lms::scrobbling::lastFm
         enqueListen(listen, {});
     }
 
+    void ScrobblingsSynchronizer::requestImmediateExport()
+    {
+        if (_submitPeriod.count() == 0)
+            return;
+
+        boost::asio::post(boost::asio::bind_executor(_strand, [this] {
+            scheduleSubmit(std::chrono::seconds{ 0 });
+        }));
+    }
+
     void ScrobblingsSynchronizer::enqueListen(const scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
     {
         const utils::LastFmCredentials creds{ utils::getLastFmCredentials(_db.getTLSSession(), listen.userId) };

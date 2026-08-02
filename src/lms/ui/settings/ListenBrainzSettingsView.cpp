@@ -192,7 +192,7 @@ namespace lms::ui
             const auto result{ model->saveData() };
             updateImportCardVisibility();
             if (result.scrobblingTurnedOn || result.feedbackTurnedOn)
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.listenbrainz-export-started")); }, [model] { model->loadData(); });
+                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.export-started")); }, [model] { model->loadData(); });
         t->updateView(model.get());
     }
 

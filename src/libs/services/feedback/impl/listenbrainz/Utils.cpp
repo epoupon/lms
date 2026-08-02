@@ -23,6 +23,7 @@
 #include <Wt/Json/Parser.h>
 
 #include "database/Session.hpp"
+#include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 
 namespace lms::feedback::listenBrainz::utils
@@ -91,5 +92,22 @@ namespace lms::feedback::listenBrainz::utils
         default:
             return std::nullopt;
         }
+    }
+
+    bool canBeFeedbacked(db::Session& session, db::TrackId trackId)
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        const db::Track::pointer track{ db::Track::find(session, trackId) };
+        if (!track)
+            return false;
+
+        if (!track->getRecordingMBID())
+        {
+            LOG(DEBUG, "Track cannot be fed back: no recording MBID");
+            return false;
+        }
+
+        return true;
     }
 } // namespace lms::feedback::listenBrainz::utils

@@ -19,6 +19,8 @@
 
 #include "FeedbacksSynchronizer.hpp"
 
+#include <unordered_map>
+
 #include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
 #include <Wt/Json/Parser.h>
@@ -45,6 +47,22 @@ namespace lms::feedback::listenBrainz
 {
     namespace
     {
+        Wt::Json::Object feedbackToJsonPayload(const core::UUID& recordingMBID, db::FeedbackValue value)
+        {
+            Wt::Json::Object root;
+            root["recording_mbid"] = Wt::Json::Value{ recordingMBID.toString() };
+            root["score"] = Wt::Json::Value{ utils::toLBScore(value) };
+            return root;
+        }
+
+        // Drops the sync row for a feedback that can never be delivered (no recording MBID),
+        // so it stops being retried on every flush. Assumes an already-open transaction on `session`.
+        void dropFeedbackBackendSync(db::Session& session, db::TrackFeedbackId id)
+        {
+            if (db::TrackFeedbackBackendSync::pointer sync{ db::TrackFeedbackBackendSync::find(session, id, db::FeedbackBackend::ListenBrainz) })
+                sync.remove();
+        }
+
         std::optional<std::size_t> parseTotalFeedbackCount(std::string_view msgBody)
         {
             try
@@ -76,39 +94,52 @@ namespace lms::feedback::listenBrainz
 
     void FeedbacksSynchronizer::enqueFeedback(db::TrackFeedbackId id)
     {
-        db::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createWriteTransaction() };
-
-        db::TrackFeedback::pointer trackFeedback{ db::TrackFeedback::find(session, id) };
-        if (!trackFeedback)
-            return;
-
-        const std::optional<core::UUID> recordingMBID{ trackFeedback->getTrack()->getRecordingMBID() };
-        if (!recordingMBID)
+        std::optional<core::UUID> recordingMBID;
+        db::FeedbackValue value{};
+        std::string listenBrainzToken;
         {
-            LOG(DEBUG, "Track has no recording MBID: skipping");
-            return;
+            db::Session& session{ _db.getTLSSession() };
+            auto transaction{ session.createWriteTransaction() };
+
+            db::TrackFeedback::pointer trackFeedback{ db::TrackFeedback::find(session, id) };
+            if (!trackFeedback)
+                return;
+
+            // The caller already checked canBeFeedbacked before notifying us; this is just a defensive
+            // re-check against a narrow TOCTOU race (e.g. the recording MBID got cleared in between).
+            recordingMBID = trackFeedback->getTrack()->getRecordingMBID();
+            if (!recordingMBID)
+                return;
+
+            listenBrainzToken = trackFeedback->getUser()->getListenBrainzToken();
+            if (listenBrainzToken.empty())
+                return;
+
+            value = trackFeedback->getValue();
+
+            db::TrackFeedbackBackendSync::pointer sync{ db::TrackFeedbackBackendSync::find(session, id, db::FeedbackBackend::ListenBrainz) };
+            if (!sync)
+                sync = session.create<db::TrackFeedbackBackendSync>(trackFeedback, db::FeedbackBackend::ListenBrainz);
+            else if (sync->getSyncState() != db::SyncState::PendingAdd)
+                sync.modify()->setSyncState(db::SyncState::PendingAdd);
         }
 
-        const std::string listenBrainzToken{ trackFeedback->getUser()->getListenBrainzToken() };
-        if (listenBrainzToken.empty())
-            return;
+        sendFeedback(listenBrainzToken, id, *recordingMBID, value);
+    }
 
-        db::TrackFeedbackBackendSync::pointer sync{ db::TrackFeedbackBackendSync::find(session, id, db::FeedbackBackend::ListenBrainz) };
-        if (!sync)
-            sync = session.create<db::TrackFeedbackBackendSync>(trackFeedback, db::FeedbackBackend::ListenBrainz);
-        else if (sync->getSyncState() != db::SyncState::PendingAdd)
-            sync.modify()->setSyncState(db::SyncState::PendingAdd);
+    void FeedbacksSynchronizer::skipFeedback(db::TrackFeedbackId id)
+    {
+        db::Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createWriteTransaction() };
+        dropFeedbackBackendSync(session, id);
+    }
 
+    void FeedbacksSynchronizer::sendFeedback(const std::string& listenBrainzToken, db::TrackFeedbackId id, const core::UUID& recordingMBID, db::FeedbackValue value)
+    {
         core::http::ClientPOSTRequestParameters request;
         request.relativeUrl = "/1/feedback/recording-feedback";
         request.message.addHeader("Authorization", "Token " + listenBrainzToken);
-
-        Wt::Json::Object root;
-        root["recording_mbid"] = Wt::Json::Value{ recordingMBID->toString() };
-        root["score"] = Wt::Json::Value{ utils::toLBScore(trackFeedback->getValue()) };
-
-        request.message.addBodyText(Wt::Json::serialize(root));
+        request.message.addBodyText(Wt::Json::serialize(feedbackToJsonPayload(recordingMBID, value)));
         request.message.addHeader("Content-Type", "application/json");
 
         request.onSuccessFunc = [this, id](const Wt::Http::Message&) {
@@ -116,6 +147,7 @@ namespace lms::feedback::listenBrainz
                 onFeedbackSent(id);
             }));
         };
+        // on failure, the sync row stays PendingAdd and is retried on the next periodic flush
         _client.sendPOSTRequest(std::move(request));
     }
 
@@ -143,7 +175,16 @@ namespace lms::feedback::listenBrainz
     {
         using namespace db;
 
-        std::vector<TrackFeedbackId> pendingFeedbacks;
+        struct PendingFeedback
+        {
+            TrackFeedbackId id;
+            core::UUID recordingMBID;
+            FeedbackValue value;
+        };
+
+        std::unordered_map<UserId, std::vector<PendingFeedback>> pendingByUser;
+        std::vector<TrackFeedbackId> toSkip;
+
         {
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
@@ -151,65 +192,42 @@ namespace lms::feedback::listenBrainz
             TrackFeedbackBackendSync::FindParameters params;
             params.setBackend(db::FeedbackBackend::ListenBrainz)
                 .setSyncState(SyncState::PendingAdd)
-                .setRange(db::Range{ 0, 100 }); // don't flood too much?
+                .setRange(db::Range{ 0, _maxSyncFeedbackCount });
 
             TrackFeedbackBackendSync::find(session, params, [&](const TrackFeedbackBackendSync::pointer& sync) {
-                pendingFeedbacks.push_back(sync->getTrackFeedback()->getId());
+                const TrackFeedback::pointer trackFeedback{ sync->getTrackFeedback() };
+                const TrackFeedbackId id{ trackFeedback->getId() };
+
+                if (!utils::canBeFeedbacked(session, trackFeedback->getTrack()->getId()))
+                {
+                    toSkip.push_back(id);
+                    return;
+                }
+
+                const std::optional<core::UUID> recordingMBID{ trackFeedback->getTrack()->getRecordingMBID() };
+                if (!recordingMBID) // defensive; canBeFeedbacked already checked this
+                    return;
+
+                pendingByUser[trackFeedback->getUser()->getId()].push_back(PendingFeedback{ id, *recordingMBID, trackFeedback->getValue() });
             });
         }
 
-        LOG(DEBUG, "Queing " << pendingFeedbacks.size() << " pending feedbacks");
+        for (const TrackFeedbackId id : toSkip)
+            skipFeedback(id);
 
-        for (const TrackFeedbackId id : pendingFeedbacks)
-            enqueFeedback(id);
-    }
+        LOG(DEBUG, "Queing pending feedbacks for " << pendingByUser.size() << " user(s)");
 
-    void FeedbacksSynchronizer::markPendingExports(db::UserId userId)
-    {
-        using namespace db;
-
-        constexpr std::size_t chunkSize{ 500 };
-        TrackFeedbackId lastRetrievedId;
-        for (;;)
+        for (const auto& [userId, feedbacks] : pendingByUser)
         {
-            std::vector<TrackFeedbackId> ids;
-            std::size_t rawCount{};
+            const std::string listenBrainzToken{ utils::getListenBrainzToken(_db.getTLSSession(), userId) };
+            if (listenBrainzToken.empty())
             {
-                Session& session{ _db.getTLSSession() };
-                auto transaction{ session.createReadTransaction() };
-
-                TrackFeedback::FindParameters params;
-                params.setUser(userId);
-                params.setLastRetrievedId(lastRetrievedId);
-                params.setRange(Range{ 0, chunkSize });
-                params.setSortMethod(TrackFeedbackSortMethod::Id);
-                TrackFeedback::find(session, params, [&](const TrackFeedback::pointer& feedback) {
-                    ++rawCount;
-                    lastRetrievedId = feedback->getId();
-                    if (feedback->getValue() != FeedbackValue::None)
-                        ids.push_back(feedback->getId());
-                });
+                LOG(DEBUG, "No listenbrainz token found for user: skipping");
+                continue;
             }
 
-            if (rawCount == 0)
-                break;
-
-            {
-                Session& session{ _db.getTLSSession() };
-                auto transaction{ session.createWriteTransaction() };
-
-                for (const TrackFeedbackId id : ids)
-                {
-                    if (TrackFeedbackBackendSync::find(session, id, FeedbackBackend::ListenBrainz))
-                        continue;
-
-                    if (TrackFeedback::pointer trackFeedback{ TrackFeedback::find(session, id) })
-                        session.create<TrackFeedbackBackendSync>(trackFeedback, FeedbackBackend::ListenBrainz);
-                }
-            }
-
-            if (rawCount < chunkSize)
-                break;
+            for (const PendingFeedback& feedback : feedbacks)
+                sendFeedback(listenBrainzToken, feedback.id, feedback.recordingMBID, feedback.value);
         }
     }
 
@@ -227,10 +245,9 @@ namespace lms::feedback::listenBrainz
         }));
     }
 
-    void FeedbacksSynchronizer::requestImmediateExport(db::UserId userId)
+    void FeedbacksSynchronizer::requestImmediateExport()
     {
-        boost::asio::post(boost::asio::bind_executor(_strand, [this, userId] {
-            markPendingExports(userId);
+        boost::asio::post(boost::asio::bind_executor(_strand, [this] {
             scheduleDeliveryFlush(std::chrono::seconds{ 0 });
         }));
     }

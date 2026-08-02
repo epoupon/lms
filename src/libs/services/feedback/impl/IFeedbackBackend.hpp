@@ -22,8 +22,12 @@
 #include <memory>
 
 #include "database/objects/ArtistFeedbackId.hpp"
+#include "database/objects/ArtistId.hpp"
 #include "database/objects/ReleaseFeedbackId.hpp"
+#include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackFeedbackId.hpp"
+#include "database/objects/TrackId.hpp"
+#include "database/objects/UserId.hpp"
 
 namespace lms::feedback
 {
@@ -35,6 +39,13 @@ namespace lms::feedback
         virtual void onFeedbackChanged(db::ArtistFeedbackId id) = 0;
         virtual void onFeedbackChanged(db::ReleaseFeedbackId id) = 0;
         virtual void onFeedbackChanged(db::TrackFeedbackId id) = 0;
+
+        virtual bool canBeFeedbacked(db::ArtistId artistId) const = 0;
+        virtual bool canBeFeedbacked(db::ReleaseId releaseId) const = 0;
+        virtual bool canBeFeedbacked(db::TrackId trackId) const = 0;
+
+        virtual void requestImmediateImport(db::UserId userId) = 0;
+        virtual void requestImmediateExport() = 0;
     };
 
     std::unique_ptr<IFeedbackBackend> createFeedbackBackend(std::string_view backendName);

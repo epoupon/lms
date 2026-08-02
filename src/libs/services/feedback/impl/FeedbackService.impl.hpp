@@ -40,8 +40,7 @@ namespace lms::feedback
             if (!user)
                 return;
 
-            // Recording feedback locally is backend-independent: it happens regardless of which
-            // (if any) external feedback backend is enabled for this user.
+            // Recording feedback locally is backend-independent
             typename FeedbackObjType::pointer feedbackObj{ FeedbackObjType::find(session, id, userId) };
             if (!feedbackObj)
             {
@@ -64,7 +63,12 @@ namespace lms::feedback
         }
 
         for (const db::FeedbackBackend backend : backends)
+        {
+            if (!_backends[backend]->canBeFeedbacked(id))
+                continue;
+
             _backends[backend]->onFeedbackChanged(feedbackObjId);
+        }
     }
 
     template<typename ObjType, typename ObjIdType, typename FeedbackObjType>

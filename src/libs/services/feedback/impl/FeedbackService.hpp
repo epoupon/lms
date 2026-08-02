@@ -76,6 +76,7 @@ namespace lms::feedback
         void requestImmediateExport(db::UserId userId, db::FeedbackBackend backend) override;
 
         core::EnumSet<db::FeedbackBackend> getUserFeedbackBackends(db::UserId userId);
+        void markPendingExports(db::UserId userId, db::FeedbackBackend backend);
 
         template<typename ObjType, typename ObjIdType, typename FeedbackObjType>
         void setFeedback(db::UserId userId, ObjIdType id, db::FeedbackValue value);
@@ -92,7 +93,6 @@ namespace lms::feedback
 
         db::IDb& _db;
         std::unordered_map<db::FeedbackBackend, std::unique_ptr<IFeedbackBackend>> _backends;
-        listenBrainz::ListenBrainzBackend* _listenBrainzBackend{};
     };
 
 } // namespace lms::feedback

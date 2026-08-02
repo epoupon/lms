@@ -55,12 +55,13 @@ namespace lms::feedback::listenBrainz
 
         void enqueFeedback(db::TrackFeedbackId id);
         void requestImmediateImport(db::UserId userId);
-        void requestImmediateExport(db::UserId userId);
+        void requestImmediateExport();
 
     private:
         void onFeedbackSent(db::TrackFeedbackId id);
         void enquePendingFeedbacks();
-        void markPendingExports(db::UserId userId);
+        void skipFeedback(db::TrackFeedbackId id);
+        void sendFeedback(const std::string& listenBrainzToken, db::TrackFeedbackId id, const core::UUID& recordingMBID, db::FeedbackValue value);
 
         struct UserContext
         {

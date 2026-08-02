@@ -24,33 +24,12 @@
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/objects/ArtistFeedback.hpp"
-#include "database/objects/ArtistFeedbackBackendSync.hpp"
-#include "database/objects/ReleaseFeedback.hpp"
-#include "database/objects/ReleaseFeedbackBackendSync.hpp"
 #include "database/objects/Track.hpp"
 
 #include "Utils.hpp"
 
 namespace lms::feedback::listenBrainz
 {
-    namespace detail
-    {
-        // ListenBrainz's feedback API only supports recordings: artist/release feedback never actually gets
-        // delivered. Keep a PendingAdd sync placeholder in case this becomes supported in the future.
-        template<typename FeedbackObjType, typename FeedbackObjBackendSyncType>
-        void onFeedbackChanged(db::Session& session, typename FeedbackObjType::IdType id)
-        {
-            auto transaction{ session.createWriteTransaction() };
-
-            if (auto feedbackObj{ FeedbackObjType::find(session, id) })
-            {
-                if (!FeedbackObjBackendSyncType::find(session, id, db::FeedbackBackend::ListenBrainz))
-                    session.create<FeedbackObjBackendSyncType>(feedbackObj, db::FeedbackBackend::ListenBrainz);
-            }
-        }
-    } // namespace detail
-
     ListenBrainzBackend::ListenBrainzBackend(boost::asio::io_context& ioContext, db::IDb& db)
         : _ioContext{ ioContext }
         , _db{ db }
@@ -71,19 +50,37 @@ namespace lms::feedback::listenBrainz
         _feedbacksSynchronizer.requestImmediateImport(userId);
     }
 
-    void ListenBrainzBackend::requestImmediateExport(db::UserId userId)
+    void ListenBrainzBackend::requestImmediateExport()
     {
-        _feedbacksSynchronizer.requestImmediateExport(userId);
+        _feedbacksSynchronizer.requestImmediateExport();
     }
 
-    void ListenBrainzBackend::onFeedbackChanged(db::ArtistFeedbackId id)
+    bool ListenBrainzBackend::canBeFeedbacked(db::ArtistId /*artistId*/) const
     {
-        detail::onFeedbackChanged<db::ArtistFeedback, db::ArtistFeedbackBackendSync>(_db.getTLSSession(), id);
+        // not supported by LB
+        return false;
     }
 
-    void ListenBrainzBackend::onFeedbackChanged(db::ReleaseFeedbackId id)
+    bool ListenBrainzBackend::canBeFeedbacked(db::ReleaseId /*releaseId*/) const
     {
-        detail::onFeedbackChanged<db::ReleaseFeedback, db::ReleaseFeedbackBackendSync>(_db.getTLSSession(), id);
+        // not supported by LB
+        return false;
+    }
+
+    bool ListenBrainzBackend::canBeFeedbacked(db::TrackId trackId) const
+    {
+        db::Session& session{ _db.getTLSSession() };
+        return utils::canBeFeedbacked(session, trackId);
+    }
+
+    void ListenBrainzBackend::onFeedbackChanged(db::ArtistFeedbackId /*id*/)
+    {
+        // nothing to do
+    }
+
+    void ListenBrainzBackend::onFeedbackChanged(db::ReleaseFeedbackId /*id*/)
+    {
+        // nothing to do
     }
 
     void ListenBrainzBackend::onFeedbackChanged(db::TrackFeedbackId id)

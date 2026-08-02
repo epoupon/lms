@@ -58,7 +58,7 @@ namespace lms::scrobbling::listenBrainz
         void enqueListen(const TimedListen& listen);
         void enqueListenNow(const Listen& listen);
         void requestImmediateImport(db::UserId userId);
-        void requestImmediateExport(db::UserId userId);
+        void requestImmediateExport();
 
     private:
         void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
@@ -67,7 +67,6 @@ namespace lms::scrobbling::listenBrainz
 
         void enquePendingListens();
         void sendListenBatch(const std::string& listenBrainzToken, std::span<const TimedListen> listens);
-        void markPendingExports(db::UserId userId);
 
         struct UserContext
         {

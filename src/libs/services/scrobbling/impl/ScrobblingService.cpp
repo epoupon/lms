@@ -24,6 +24,7 @@
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Listen.hpp"
+#include "database/objects/ListenBackendSync.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
@@ -98,7 +99,10 @@ namespace lms::scrobbling
             return;
 
         for (const ScrobblingBackend backend : getUserEnabledBackends(listen.userId))
-            _scrobblingBackends[backend]->listenFinished(*recordedListen, duration);
+        {
+            if (_scrobblingBackends[backend]->canBeScrobbled(listen.trackId, duration))
+                _scrobblingBackends[backend]->listenFinished(*recordedListen, duration);
+        }
     }
 
     void ScrobblingService::addTimedListen(const TimedListen& listen)
@@ -108,7 +112,10 @@ namespace lms::scrobbling
             return;
 
         for (const ScrobblingBackend backend : getUserEnabledBackends(listen.userId))
-            _scrobblingBackends[backend]->addTimedListen(*recordedListen);
+        {
+            if (_scrobblingBackends[backend]->canBeScrobbled(listen.trackId, std::nullopt))
+                _scrobblingBackends[backend]->addTimedListen(*recordedListen);
+        }
     }
 
     std::optional<TimedListen> ScrobblingService::recordListen(const Listen& listen, const Wt::WDateTime& listenedAt, std::optional<std::chrono::seconds> duration)
@@ -191,22 +198,61 @@ namespace lms::scrobbling
 
     void ScrobblingService::requestImmediateImport(db::UserId userId, db::ScrobblingBackend backend)
     {
-        if (backend != ScrobblingBackend::ListenBrainz)
-            return; // no import support for other backends
+        if (!getUserEnabledBackends(userId).contains(backend))
+            return;
 
-        assert(_listenBrainzBackend);
-        if (getUserEnabledBackends(userId).contains(backend))
-            _listenBrainzBackend->requestImmediateImport(userId);
+        _scrobblingBackends[backend]->requestImmediateImport(userId);
     }
 
     void ScrobblingService::requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend)
     {
-        if (backend != ScrobblingBackend::ListenBrainz)
-            return; // no export support for other backends
+        if (!getUserEnabledBackends(userId).contains(backend))
+            return;
 
-        assert(_listenBrainzBackend);
-        if (getUserEnabledBackends(userId).contains(backend))
-            _listenBrainzBackend->requestImmediateExport(userId);
+        markPendingExports(userId, backend);
+        _scrobblingBackends[backend]->requestImmediateExport();
+    }
+
+    void ScrobblingService::markPendingExports(db::UserId userId, db::ScrobblingBackend backend)
+    {
+        IScrobblingBackend& backendImpl{ *_scrobblingBackends[backend] };
+
+        constexpr std::size_t chunkSize{ 500 };
+        for (std::size_t offset{};; offset += chunkSize)
+        {
+            std::vector<db::ListenId> ids;
+            {
+                Session& session{ _db.getTLSSession() };
+                auto transaction{ session.createReadTransaction() };
+
+                db::Listen::FindParameters params;
+                params.setUser(userId).setRange(db::Range{ offset, chunkSize });
+                ids = db::Listen::find(session, params);
+            }
+
+            if (ids.empty())
+                break;
+
+            {
+                Session& session{ _db.getTLSSession() };
+                auto transaction{ session.createWriteTransaction() };
+
+                for (const db::ListenId id : ids)
+                {
+                    if (db::ListenBackendSync::find(session, id, backend))
+                        continue; // already pending or synchronized: leave untouched
+
+                    const db::Listen::pointer listen{ db::Listen::find(session, id) };
+                    if (!listen || !backendImpl.canBeScrobbled(listen->getTrack()->getId(), std::nullopt))
+                        continue;
+
+                    session.create<db::ListenBackendSync>(listen, backend);
+                }
+            }
+
+            if (ids.size() < chunkSize)
+                break;
+        }
     }
 
     ScrobblingService::ArtistContainer ScrobblingService::getRecentArtists(const ArtistFindParameters& params)

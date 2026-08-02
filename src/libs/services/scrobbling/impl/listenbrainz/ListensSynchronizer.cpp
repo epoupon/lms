@@ -311,10 +311,9 @@ namespace lms::scrobbling::listenBrainz
         }));
     }
 
-    void ListensSynchronizer::requestImmediateExport(db::UserId userId)
+    void ListensSynchronizer::requestImmediateExport()
     {
-        boost::asio::post(boost::asio::bind_executor(_strand, [this, userId] {
-            markPendingExports(userId);
+        boost::asio::post(boost::asio::bind_executor(_strand, [this] {
             scheduleDeliveryFlush(std::chrono::seconds{ 0 });
         }));
     }
@@ -500,45 +499,6 @@ namespace lms::scrobbling::listenBrainz
         // on failure, these listens stay PendingAdd and are retried on the next periodic flush
 
         _client.sendPOSTRequest(std::move(request));
-    }
-
-    void ListensSynchronizer::markPendingExports(db::UserId userId)
-    {
-        constexpr std::size_t chunkSize{ 500 };
-        for (std::size_t offset{};; offset += chunkSize)
-        {
-            std::vector<db::ListenId> ids;
-            {
-                db::Session& session{ _db.getTLSSession() };
-                auto transaction{ session.createReadTransaction() };
-
-                db::Listen::FindParameters params;
-                params.setUser(userId).setRange(db::Range{ offset, chunkSize });
-                ids = db::Listen::find(session, params);
-            }
-
-            if (ids.empty())
-                break;
-
-            {
-                db::Session& session{ _db.getTLSSession() };
-                auto transaction{ session.createWriteTransaction() };
-
-                for (const db::ListenId id : ids)
-                {
-                    if (db::ListenBackendSync::find(session, id, db::ScrobblingBackend::ListenBrainz))
-                        continue; // already pending or synchronized: leave untouched
-
-                    if (db::Listen::pointer listen{ db::Listen::find(session, id) })
-                        session.create<db::ListenBackendSync>(listen, db::ScrobblingBackend::ListenBrainz);
-                }
-            }
-
-            if (ids.size() < chunkSize)
-                break;
-        }
-
-        LMS_LOG_LISTENBRAINZ(DEBUG, "Marked pending exports for user");
     }
 
     ListensSynchronizer::UserContext& ListensSynchronizer::getUserContext(db::UserId userId)

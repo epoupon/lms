@@ -23,6 +23,7 @@
 
 #include "core/ILogger.hpp"
 
+#include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
 
@@ -41,4 +42,7 @@ namespace lms::feedback::listenBrainz::utils
     // See https://listenbrainz.readthedocs.io/en/latest/users/api/recordings.html
     int toLBScore(db::FeedbackValue value);
     std::optional<db::FeedbackValue> fromLBScore(int score);
+
+    // ListenBrainz's recording-feedback endpoint only supports recordings that have a recording MBID
+    bool canBeFeedbacked(db::Session& session, db::TrackId trackId);
 } // namespace lms::feedback::listenBrainz::utils

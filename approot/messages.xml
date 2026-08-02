@@ -393,7 +393,6 @@
 <message id="Lms.Settings.listenbrainz-import-feedback">Import feedbacks</message>
 <message id="Lms.Settings.listenbrainz-import-listens">Import listens</message>
 <message id="Lms.Settings.listenbrainz-import-started">Import started, this may take a while</message>
-<message id="Lms.Settings.listenbrainz-export-started">Export started, this may take a while</message>
 <message id="Lms.Settings.listenbrainz-token">ListenBrainz API token</message>
 <message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.change-password">Change password</message>
@@ -404,6 +403,7 @@
 <message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
 <message id="Lms.Settings.enable-inline-artist-relationships">Display artist relationships inline within albums</message>
 <message id="Lms.Settings.enable-transcoding-by-default">Enable transcoding by default</message>
+<message id="Lms.Settings.export-started">Export started, this may take a while</message>
 <message id="Lms.Settings.inline-artist-relationships">Types of artist relationships to display</message>
 <message id="Lms.Settings.menu-ui"><i class="fa fa-fw fa-paint-brush" aria-hidden="true"></i> User Interface</message>
 <message id="Lms.Settings.menu-audio"><i class="fa fa-fw fa-music" aria-hidden="true"></i> Audio</message>

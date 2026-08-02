@@ -40,9 +40,6 @@ namespace lms::scrobbling::listenBrainz
         ListenBrainzBackend(boost::asio::io_context& ioContext, db::IDb& db);
         ~ListenBrainzBackend() override;
 
-        void requestImmediateImport(db::UserId userId);
-        void requestImmediateExport(db::UserId userId);
-
     private:
         ListenBrainzBackend(const ListenBrainzBackend&) = delete;
         ListenBrainzBackend& operator=(const ListenBrainzBackend&) = delete;
@@ -50,6 +47,9 @@ namespace lms::scrobbling::listenBrainz
         void listenStarted(const Listen& listen) override;
         void listenFinished(const TimedListen& listen, std::optional<std::chrono::seconds> duration) override;
         void addTimedListen(const TimedListen& listen) override;
+        bool canBeScrobbled(db::TrackId trackId, std::optional<std::chrono::seconds> duration) const override;
+        void requestImmediateImport(db::UserId userId) override;
+        void requestImmediateExport() override;
 
         // Submit listens
         void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);

@@ -58,6 +58,7 @@ namespace lms::scrobbling::lastFm
 
         void enqueListen(const TimedListen& listen);
         void enqueListenNow(const Listen& listen);
+        void requestImmediateExport();
 
     private:
         void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
