@@ -154,23 +154,6 @@ namespace lms::feedback
         return getFeedbackDateTime<db::Artist, db::ArtistId, db::ArtistFeedback>(userId, artistId);
     }
 
-    FeedbackService::ArtistContainer FeedbackService::findArtistsByFeedback(const ArtistFindParameters& params)
-    {
-        db::Artist::FindParameters searchParams;
-        searchParams.setFilters(params.filters);
-        searchParams.setFeedbackUser(params.user);
-        searchParams.setFeedbackValue(params.feedbackValue);
-        searchParams.setKeywords(params.keywords);
-        searchParams.setTrackArtistLinkType(params.trackArtistLinkType);
-        searchParams.setSortMethod(params.sortMethod);
-        searchParams.setRange(params.range);
-
-        db::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-
-        return db::Artist::findIds(session, searchParams);
-    }
-
     void FeedbackService::setRating(db::UserId userId, db::ArtistId artistId, std::optional<db::Rating> rating)
     {
         setRating<db::Artist, db::ArtistId, db::RatedArtist>(userId, artistId, rating);
@@ -196,22 +179,6 @@ namespace lms::feedback
         return getFeedbackDateTime<db::Release, db::ReleaseId, db::ReleaseFeedback>(userId, releaseId);
     }
 
-    FeedbackService::ReleaseContainer FeedbackService::findReleasesByFeedback(const FindParameters& params)
-    {
-        db::Release::FindParameters searchParams;
-        searchParams.setFeedbackUser(params.user);
-        searchParams.setFeedbackValue(params.feedbackValue);
-        searchParams.setFilters(params.filters);
-        searchParams.setKeywords(params.keywords);
-        searchParams.setSortMethod(db::ReleaseSortMethod::FeedbackDateDesc);
-        searchParams.setRange(params.range);
-
-        db::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-
-        return db::Release::findIds(session, searchParams);
-    }
-
     void FeedbackService::setRating(db::UserId userId, db::ReleaseId releaseId, std::optional<db::Rating> rating)
     {
         setRating<db::Release, db::ReleaseId, db::RatedRelease>(userId, releaseId, rating);
@@ -235,22 +202,6 @@ namespace lms::feedback
     Wt::WDateTime FeedbackService::getFeedbackDateTime(db::UserId userId, db::TrackId trackId)
     {
         return getFeedbackDateTime<db::Track, db::TrackId, db::TrackFeedback>(userId, trackId);
-    }
-
-    FeedbackService::TrackContainer FeedbackService::findTracksByFeedback(const FindParameters& params)
-    {
-        db::Track::FindParameters searchParams;
-        searchParams.setFeedbackUser(params.user);
-        searchParams.setFeedbackValue(params.feedbackValue);
-        searchParams.setFilters(params.filters);
-        searchParams.setKeywords(params.keywords);
-        searchParams.setSortMethod(db::TrackSortMethod::FeedbackDateDesc);
-        searchParams.setRange(params.range);
-
-        db::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-
-        return db::Track::findIds(session, searchParams);
     }
 
     void FeedbackService::setRating(db::UserId userId, db::TrackId trackId, std::optional<db::Rating> rating)

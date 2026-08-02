@@ -51,7 +51,6 @@ namespace lms::feedback
         void setFeedback(db::UserId userId, db::ArtistId artistId, db::FeedbackValue value) override;
         db::FeedbackValue getFeedback(db::UserId userId, db::ArtistId artistId) override;
         Wt::WDateTime getFeedbackDateTime(db::UserId userId, db::ArtistId artistId) override;
-        ArtistContainer findArtistsByFeedback(const ArtistFindParameters& params) override;
 
         void setRating(db::UserId userId, db::ArtistId artistId, std::optional<db::Rating> rating) override;
         std::optional<db::Rating> getRating(db::UserId userId, db::ArtistId artistId) override;
@@ -59,7 +58,6 @@ namespace lms::feedback
         void setFeedback(db::UserId userId, db::ReleaseId releaseId, db::FeedbackValue value) override;
         db::FeedbackValue getFeedback(db::UserId userId, db::ReleaseId releaseId) override;
         Wt::WDateTime getFeedbackDateTime(db::UserId userId, db::ReleaseId releaseId) override;
-        ReleaseContainer findReleasesByFeedback(const FindParameters& params) override;
 
         void setRating(db::UserId userId, db::ReleaseId releaseId, std::optional<db::Rating> rating) override;
         std::optional<db::Rating> getRating(db::UserId userId, db::ReleaseId releaseId) override;
@@ -67,7 +65,6 @@ namespace lms::feedback
         void setFeedback(db::UserId userId, db::TrackId trackId, db::FeedbackValue value) override;
         db::FeedbackValue getFeedback(db::UserId userId, db::TrackId trackId) override;
         Wt::WDateTime getFeedbackDateTime(db::UserId userId, db::TrackId trackId) override;
-        TrackContainer findTracksByFeedback(const FindParameters& params) override;
 
         void setRating(db::UserId userId, db::TrackId trackId, std::optional<db::Rating> rating) override;
         std::optional<db::Rating> getRating(db::UserId userId, db::TrackId trackId) override;
