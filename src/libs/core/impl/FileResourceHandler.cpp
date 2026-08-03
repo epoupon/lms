@@ -128,4 +128,10 @@ namespace lms::core
         LMS_LOG(UTILS, DEBUG, "Job complete!");
         return nullptr;
     }
+
+    void FileResourceHandler::abort()
+    {
+        if (_ifs.is_open())
+            _ifs.close();
+    }
 } // namespace lms::core

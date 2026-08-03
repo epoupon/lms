@@ -25,6 +25,7 @@
 #include "core/EnumSet.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
+#include "core/IResourceHandler.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/LiteralString.hpp"
 #include "core/Service.hpp"
@@ -300,6 +301,15 @@ namespace lms::api::subsonic
         catch (const Error& e)
         {
             LMS_LOG(API_SUBSONIC, ERROR, "Error while processing request " << requestId << " to '" << requestPath << "' with params = " << parameterMapToDebugString(request.getParameterMap()) << ": code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'");
+        }
+    }
+
+    void SubsonicResource::handleAbort(const Wt::Http::Request& request)
+    {
+        if (Wt::Http::ResponseContinuation* continuation{ request.continuation() })
+        {
+            if (auto handler{ Wt::cpp17::any_cast<std::shared_ptr<core::IResourceHandler>>(continuation->data()) })
+                handler->abort();
         }
     }
 

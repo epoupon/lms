@@ -42,6 +42,8 @@ namespace lms::ui
         void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
 
     private:
+        void handleAbort(const Wt::Http::Request& request) override;
+
         static constexpr std::size_t _chunkSize{ 262144 };
     };
 } // namespace lms::ui
