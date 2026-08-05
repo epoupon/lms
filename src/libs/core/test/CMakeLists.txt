@@ -2,6 +2,7 @@ include(GoogleTest)
 
 add_executable(test-core
 	EnumSet.cpp
+	Hash.cpp
 	HttpUrlValidation.cpp
 	JobScheduler.cpp
 	LiteralString.cpp
