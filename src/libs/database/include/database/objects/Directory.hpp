@@ -43,6 +43,7 @@ namespace lms::db
 {
     class Session;
     class MediaLibrary;
+    class Release;
 
     class Directory final : public Object<Directory, DirectoryId>
     {
@@ -127,6 +128,16 @@ namespace lms::db
         static std::vector<DirectoryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
         static std::vector<DirectoryId> findMismatchedLibrary(Session& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId);
         static std::vector<pointer> findRootDirectories(Session& session, std::optional<Range> range = std::nullopt);
+
+        struct ChildRelease
+        {
+            DirectoryId directory;
+            ObjectPtr<Release> release; // arbitrary one if the directory holds several
+            std::size_t releaseCount;
+        };
+        // Releases held by the direct children of a directory. Resolves a whole listing in one query,
+        // for callers that would otherwise look up each child separately.
+        static std::vector<ChildRelease> findChildReleases(Session& session, DirectoryId parentDirectory);
 
         // getters
         const std::filesystem::path& getAbsolutePath() const { return _absolutePath; }
