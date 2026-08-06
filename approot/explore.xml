@@ -47,7 +47,7 @@
 			${type}
 		</div>
 		<div class="col">
-			${artist-container data-bs-dismiss="modal"}
+			${artist-container data-bs-dismiss="modal" class="text-break"}
 		</div>
 	</div>
 </message>

@@ -55,7 +55,7 @@
 							<i class="fa fa-user" aria-hidden="true"></i>
 						</a>
 						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-							<li class="dropdown-header">${username}</li>
+							<li class="dropdown-header text-break">${username}</li>
 							<li>${settings-ui class="dropdown-item"}</li>
 							<li>${settings-audio class="dropdown-item"}</li>
 							${<if-has-subsonic-api-menu>}

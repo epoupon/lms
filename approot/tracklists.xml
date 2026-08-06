@@ -38,7 +38,7 @@
 </message>
 
 <message id="Lms.Explore.TrackLists.template.entry">
-	${name class="text-decoration-none link-secondary"}
+	${name class="text-decoration-none link-secondary text-break"}
 </message>
 
 <message id="Lms.Explore.TrackLists.template.container">
