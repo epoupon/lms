@@ -34,6 +34,7 @@
 
 #include "core/EnumSet.hpp"
 #include "core/Service.hpp"
+#include "core/String.hpp"
 #include "database/Session.hpp"
 #include "database/objects/User.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
@@ -219,7 +220,7 @@ namespace lms::ui
                 userId, apiKey, apiSecret,
                 [sessionId, authAnchorContainer, authorizeBtn, doneBtn](std::string_view authUrl) {
                     LmsApplication::post(sessionId, [=, url = std::string{ authUrl }] {
-                        wApp->doJavaScript("window.open('" + url + "', '_blank');");
+                        wApp->doJavaScript("window.open('" + core::stringUtils::jsEscape(url) + "', '_blank');");
                         Wt::WLink link{ url };
                         link.setTarget(Wt::LinkTarget::NewWindow);
                         authAnchorContainer->addNew<Wt::WAnchor>(link, Wt::WString::tr("Lms.Settings.lastfm-auth-url"));

@@ -32,6 +32,7 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
+#include "core/String.hpp"
 
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
@@ -534,7 +535,7 @@ namespace lms::ui
 
         internalPathChanged().connect([this] {
             LMS_LOG(UI, DEBUG, "Internal path changed to '" << wApp->internalPath() << "'");
-            doJavaScript(javaScriptClass() + ".updateActiveNav('" + wApp->internalPath() + "')");
+            doJavaScript(javaScriptClass() + ".updateActiveNav('" + core::stringUtils::jsEscape(wApp->internalPath()) + "')");
         });
 
         mainRouter->noMatch().connect([] {
@@ -542,7 +543,7 @@ namespace lms::ui
         });
 
         mainRouter->activate();
-        doJavaScript(javaScriptClass() + ".updateActiveNav('" + wApp->internalPath() + "')");
+        doJavaScript(javaScriptClass() + ".updateActiveNav('" + core::stringUtils::jsEscape(wApp->internalPath()) + "')");
     }
 
     void LmsApplication::notify(const Wt::WEvent& event)
