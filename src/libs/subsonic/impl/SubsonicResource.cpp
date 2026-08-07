@@ -306,7 +306,7 @@ namespace lms::api::subsonic
 
     void SubsonicResource::handleAbort(const Wt::Http::Request& request)
     {
-        if (Wt::Http::ResponseContinuation* continuation{ request.continuation() })
+        if (Wt::Http::ResponseContinuation * continuation{ request.continuation() })
         {
             if (auto handler{ Wt::cpp17::any_cast<std::shared_ptr<core::IResourceHandler>>(continuation->data()) })
                 handler->abort();
