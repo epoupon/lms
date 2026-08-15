@@ -62,15 +62,29 @@ namespace lms::ui
 
             void saveData()
             {
-                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-                db::User::pointer user{ LmsApp->getUser() };
+                db::UserId userId;
+                bool scrobblingTurnedOn{};
 
-                core::EnumSet<db::ScrobblingBackend> scrobblingBackends{ user->getScrobblingBackends() };
-                if (Wt::asNumber(value(EnableScrobblingField)) != 0)
-                    scrobblingBackends.insert(db::ScrobblingBackend::LastFm);
-                else
-                    scrobblingBackends.erase(db::ScrobblingBackend::LastFm);
-                user.modify()->setScrobblingBackends(scrobblingBackends);
+                {
+                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+                    db::User::pointer user{ LmsApp->getUser() };
+                    userId = user->getId();
+
+                    const bool wasScrobblingEnabled{ user->getScrobblingBackends().contains(db::ScrobblingBackend::LastFm) };
+                    const bool scrobblingEnabled{ Wt::asNumber(value(EnableScrobblingField)) != 0 };
+
+                    core::EnumSet<db::ScrobblingBackend> scrobblingBackends{ user->getScrobblingBackends() };
+                    if (scrobblingEnabled)
+                        scrobblingBackends.insert(db::ScrobblingBackend::LastFm);
+                    else
+                        scrobblingBackends.erase(db::ScrobblingBackend::LastFm);
+                    user.modify()->setScrobblingBackends(scrobblingBackends);
+
+                    scrobblingTurnedOn = !wasScrobblingEnabled && scrobblingEnabled;
+                }
+
+                if (scrobblingTurnedOn)
+                    core::Service<scrobbling::IScrobblingService>::get()->requestImmediateExport(userId, db::ScrobblingBackend::LastFm);
             }
 
             void loadData()

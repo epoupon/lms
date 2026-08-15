@@ -111,6 +111,7 @@ namespace lms::scrobbling::lastFm
 
             return params;
         }
+
     } // namespace
 
     ScrobblingsSynchronizer::ScrobblingsSynchronizer(boost::asio::io_context& ioContext, db::IDb& db, core::http::IClient& client)
@@ -149,17 +150,20 @@ namespace lms::scrobbling::lastFm
 
     void ScrobblingsSynchronizer::enqueListen(const scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
     {
-        const utils::LastFmCredentials creds{ utils::getLastFmCredentials(_db.getTLSSession(), listen.userId) };
-        if (creds.apiKey.empty() || creds.apiSecret.empty() || creds.sessionKey.empty())
-        {
-            LMS_LOG_LASTFM(DEBUG, "Missing Last.fm credentials for user, skipping");
-            return;
-        }
-
         const std::optional<TrackInfo> info{ getTrackInfo(_db.getTLSSession(), listen) };
         if (!info)
         {
             LMS_LOG_LASTFM(DEBUG, "Cannot build scrobble params: skipping");
+            return;
+        }
+
+        if (timePoint.isValid())
+            saveListen(TimedListen{ listen, timePoint }, db::SyncState::PendingAdd);
+
+        const utils::LastFmCredentials creds{ utils::getLastFmCredentials(_db.getTLSSession(), listen.userId) };
+        if (creds.apiKey.empty() || creds.apiSecret.empty() || creds.sessionKey.empty())
+        {
+            LMS_LOG_LASTFM(DEBUG, "Missing Last.fm credentials for user, skipping submission");
             return;
         }
 
@@ -176,8 +180,6 @@ namespace lms::scrobbling::lastFm
         if (timePoint.isValid())
         {
             const TimedListen timedListen{ listen, timePoint };
-            saveListen(timedListen, db::SyncState::PendingAdd);
-
             request.priority = core::http::ClientRequestParameters::Priority::Normal;
             request.onSuccessFunc = [this, timedListen](const Wt::Http::Message&) {
                 boost::asio::post(boost::asio::bind_executor(_strand, [this, timedListen] {
@@ -228,6 +230,22 @@ namespace lms::scrobbling::lastFm
 
         sync.modify()->setSyncState(syncState);
         return true;
+    }
+
+    void ScrobblingsSynchronizer::skipListen(const TimedListen& listen)
+    {
+        db::Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createWriteTransaction() };
+
+        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
+        if (!dbListen)
+            return;
+
+        if (db::ListenBackendSync::pointer sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::LastFm) })
+        {
+            LMS_LOG_LASTFM(DEBUG, "Listen cannot be scrobbled (no artist tag): dropping sync entry");
+            sync.remove();
+        }
     }
 
     void ScrobblingsSynchronizer::enquePendingListens()
@@ -284,7 +302,10 @@ namespace lms::scrobbling::lastFm
         {
             const std::optional<TrackInfo> info{ getTrackInfo(session, listen) };
             if (!info)
+            {
+                skipListen(listen);
                 continue;
+            }
 
             auto trackParams{ buildScrobbleParams(*info, listen.listenedAt, validListens.size()) };
             trackParams.erase("method");
