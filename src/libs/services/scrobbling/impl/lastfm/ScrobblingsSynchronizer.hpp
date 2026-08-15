@@ -64,6 +64,7 @@ namespace lms::scrobbling::lastFm
         void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
         bool saveListen(const TimedListen& listen, db::SyncState syncState);
         void skipListen(const TimedListen& listen);
+        void handleScrobbleResult(const TimedListen& listen, const utils::ScrobbleResult& result);
 
         void enquePendingListens();
         void sendScrobbleBatch(const utils::LastFmCredentials& creds, std::span<const TimedListen> listens);

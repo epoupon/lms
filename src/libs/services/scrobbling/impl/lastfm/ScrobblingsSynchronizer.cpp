@@ -181,9 +181,12 @@ namespace lms::scrobbling::lastFm
         {
             const TimedListen timedListen{ listen, timePoint };
             request.priority = core::http::ClientRequestParameters::Priority::Normal;
-            request.onSuccessFunc = [this, timedListen](const Wt::Http::Message&) {
-                boost::asio::post(boost::asio::bind_executor(_strand, [this, timedListen] {
-                    saveListen(timedListen, db::SyncState::Synchronized);
+            request.onSuccessFunc = [this, timedListen](const Wt::Http::Message& msg) {
+                const auto results{ utils::parseScrobbleResults(msg.body(), 1) };
+                const utils::ScrobbleResult result{ results.size() == 1 ? results[0] : utils::ScrobbleResult{} };
+
+                boost::asio::post(boost::asio::bind_executor(_strand, [this, timedListen, result] {
+                    handleScrobbleResult(timedListen, result);
                 }));
             };
         }
@@ -230,6 +233,31 @@ namespace lms::scrobbling::lastFm
 
         sync.modify()->setSyncState(syncState);
         return true;
+    }
+
+    void ScrobblingsSynchronizer::handleScrobbleResult(const TimedListen& listen, const utils::ScrobbleResult& result)
+    {
+        const std::string detail{ result.ignoredMessage.empty() ? std::string{} : (": " + result.ignoredMessage) };
+
+        switch (result.ignoredCode)
+        {
+        case utils::ScrobbleIgnoredCode::None:
+            saveListen(listen, db::SyncState::Synchronized);
+            return;
+
+        case utils::ScrobbleIgnoredCode::DailyLimitExceeded:
+            LMS_LOG_LASTFM(WARNING, "Scrobble deferred, will retry later" << detail);
+            return;
+
+        case utils::ScrobbleIgnoredCode::ArtistIgnored:
+        case utils::ScrobbleIgnoredCode::TrackIgnored:
+        case utils::ScrobbleIgnoredCode::TimestampTooOld:
+        case utils::ScrobbleIgnoredCode::TimestampTooNew:
+            break;
+        }
+
+        LMS_LOG_LASTFM(WARNING, "Scrobble ignored by Last.fm: " << utils::toString(result.ignoredCode) << detail);
+        saveListen(listen, db::SyncState::Synchronized);
     }
 
     void ScrobblingsSynchronizer::skipListen(const TimedListen& listen)
@@ -328,10 +356,12 @@ namespace lms::scrobbling::lastFm
         request.priority = core::http::ClientRequestParameters::Priority::Normal;
         request.message.addBodyText(utils::buildFormBody(params));
         request.message.addHeader("Content-Type", "application/x-www-form-urlencoded");
-        request.onSuccessFunc = [this, validListens](const Wt::Http::Message&) {
-            boost::asio::post(boost::asio::bind_executor(_strand, [this, validListens] {
-                for (const TimedListen& listen : validListens)
-                    saveListen(listen, db::SyncState::Synchronized);
+        request.onSuccessFunc = [this, validListens](const Wt::Http::Message& msg) {
+            const auto results{ utils::parseScrobbleResults(msg.body(), validListens.size()) };
+
+            boost::asio::post(boost::asio::bind_executor(_strand, [this, validListens, results] {
+                for (std::size_t i{ 0 }; i < validListens.size(); ++i)
+                    handleScrobbleResult(validListens[i], i < results.size() ? results[i] : utils::ScrobbleResult{});
             }));
         };
 

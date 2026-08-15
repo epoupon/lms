@@ -22,6 +22,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
 #include <Wt/Json/Parser.h>
 
@@ -32,6 +33,25 @@
 
 namespace lms::scrobbling::lastFm::utils
 {
+    namespace
+    {
+        ScrobbleResult parseScrobbleResult(const Wt::Json::Object& scrobble)
+        {
+            ScrobbleResult res;
+
+            if (scrobble.type("ignoredMessage") != Wt::Json::Type::Object)
+                return res;
+
+            const Wt::Json::Object& ignoredMessage{ static_cast<const Wt::Json::Object&>(scrobble.get("ignoredMessage")) };
+            const std::string codeStr{ static_cast<std::string>(ignoredMessage.get("code").orIfNull("0")) };
+
+            res.ignoredCode = core::stringUtils::readAs<ScrobbleIgnoredCode>(codeStr).value_or(ScrobbleIgnoredCode::None);
+            res.ignoredMessage = static_cast<std::string>(ignoredMessage.get("#text").orIfNull(""));
+
+            return res;
+        }
+    } // namespace
+
     LastFmCredentials getLastFmCredentials(db::Session& session, db::UserId userId)
     {
         LastFmCredentials creds;
@@ -118,6 +138,73 @@ namespace lms::scrobbling::lastFm::utils
         catch (const Wt::WException& e)
         {
             LMS_LOG_LASTFM(ERROR, "Cannot extract session key: " << e.what());
+            return {};
+        }
+    }
+
+    core::LiteralString toString(ScrobbleIgnoredCode code)
+    {
+        switch (code)
+        {
+        case ScrobbleIgnoredCode::None:
+            return "none";
+        case ScrobbleIgnoredCode::ArtistIgnored:
+            return "artist ignored";
+        case ScrobbleIgnoredCode::TrackIgnored:
+            return "track ignored";
+        case ScrobbleIgnoredCode::TimestampTooOld:
+            return "timestamp too old";
+        case ScrobbleIgnoredCode::TimestampTooNew:
+            return "timestamp too new";
+        case ScrobbleIgnoredCode::DailyLimitExceeded:
+            return "daily limit exceeded";
+        }
+
+        return "unknown";
+    }
+
+    std::vector<ScrobbleResult> parseScrobbleResults(std::string_view msgBody, std::size_t expectedCount)
+    {
+        Wt::Json::ParseError error;
+        Wt::Json::Object root;
+        if (!Wt::Json::parse(std::string{ msgBody }, root, error))
+        {
+            LMS_LOG_LASTFM(ERROR, "Cannot parse track.scrobble response: " << error.what());
+            return {};
+        }
+
+        try
+        {
+            const Wt::Json::Object& scrobbles{ static_cast<const Wt::Json::Object&>(root.get("scrobbles")) };
+
+            std::vector<ScrobbleResult> res;
+            const Wt::Json::Type scrobbleType{ scrobbles.type("scrobble") };
+            if (scrobbleType == Wt::Json::Type::Array)
+            {
+                for (const Wt::Json::Value& item : static_cast<const Wt::Json::Array&>(scrobbles.get("scrobble")))
+                    res.push_back(parseScrobbleResult(static_cast<const Wt::Json::Object&>(item)));
+            }
+            else if (scrobbleType == Wt::Json::Type::Object)
+            {
+                res.push_back(parseScrobbleResult(static_cast<const Wt::Json::Object&>(scrobbles.get("scrobble"))));
+            }
+            else
+            {
+                LMS_LOG_LASTFM(ERROR, "Unexpected 'scrobble' field in track.scrobble response");
+                return {};
+            }
+
+            if (res.size() != expectedCount)
+            {
+                LMS_LOG_LASTFM(ERROR, "track.scrobble response has " << res.size() << " scrobble(s), expected " << expectedCount);
+                return {};
+            }
+
+            return res;
+        }
+        catch (const Wt::WException& e)
+        {
+            LMS_LOG_LASTFM(ERROR, "Cannot parse track.scrobble response: " << e.what());
             return {};
         }
     }

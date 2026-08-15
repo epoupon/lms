@@ -144,4 +144,64 @@ namespace lms::scrobbling::lastFm::utils::tests
     {
         EXPECT_EQ(parseSessionKey(R"({"session":{"name":"user"}})"), "");
     }
+
+    TEST(LastFmUtils, parseScrobbleResults_single_accepted)
+    {
+        const auto res{ parseScrobbleResults(R"({"scrobbles":{"@attr":{"accepted":1,"ignored":0},"scrobble":{"ignoredMessage":{"code":"0","#text":""}}}})", 1) };
+        ASSERT_EQ(res.size(), 1);
+        EXPECT_EQ(res[0].ignoredCode, ScrobbleIgnoredCode::None);
+    }
+
+    TEST(LastFmUtils, parseScrobbleResults_single_ignored)
+    {
+        const auto res{ parseScrobbleResults(R"({"scrobbles":{"@attr":{"accepted":0,"ignored":1},"scrobble":{"ignoredMessage":{"code":"3","#text":"Timestamp was too old"}}}})", 1) };
+        ASSERT_EQ(res.size(), 1);
+        EXPECT_EQ(res[0].ignoredCode, ScrobbleIgnoredCode::TimestampTooOld);
+        EXPECT_EQ(res[0].ignoredMessage, "Timestamp was too old");
+    }
+
+    TEST(LastFmUtils, parseScrobbleResults_single_ignored_empty_text)
+    {
+        const auto res{ parseScrobbleResults(R"({"scrobbles":{"@attr":{"accepted":0,"ignored":1},"scrobble":{"ignoredMessage":{"code":"1","#text":""}}}})", 1) };
+        ASSERT_EQ(res.size(), 1);
+        EXPECT_EQ(res[0].ignoredCode, ScrobbleIgnoredCode::ArtistIgnored);
+        EXPECT_EQ(res[0].ignoredMessage, "");
+    }
+
+    TEST(LastFmUtils, parseScrobbleResults_batch_mixed)
+    {
+        const auto res{ parseScrobbleResults(R"({"scrobbles":{"@attr":{"accepted":2,"ignored":1},"scrobble":[)"
+                                             R"({"ignoredMessage":{"code":"0","#text":""}},)"
+                                             R"({"ignoredMessage":{"code":"5","#text":"daily limit exceeded"}},)"
+                                             R"({"ignoredMessage":{"code":"0","#text":""}}]}})",
+                                             3) };
+        ASSERT_EQ(res.size(), 3);
+        EXPECT_EQ(res[0].ignoredCode, ScrobbleIgnoredCode::None);
+        EXPECT_EQ(res[1].ignoredCode, ScrobbleIgnoredCode::DailyLimitExceeded);
+        EXPECT_EQ(res[1].ignoredMessage, "daily limit exceeded");
+        EXPECT_EQ(res[2].ignoredCode, ScrobbleIgnoredCode::None);
+    }
+
+    TEST(LastFmUtils, parseScrobbleResults_invalid_json)
+    {
+        EXPECT_TRUE(parseScrobbleResults("not json", 1).empty());
+    }
+
+    TEST(LastFmUtils, parseScrobbleResults_count_mismatch)
+    {
+        const auto res{ parseScrobbleResults(R"({"scrobbles":{"@attr":{"accepted":1,"ignored":0},"scrobble":{"ignoredMessage":{"code":"0","#text":""}}}})", 2) };
+        EXPECT_TRUE(res.empty());
+    }
+
+    TEST(LastFmUtils, parseScrobbleResults_missing_scrobbles_key)
+    {
+        EXPECT_TRUE(parseScrobbleResults(R"({"other":"value"})", 1).empty());
+    }
+
+    TEST(LastFmUtils, scrobbleIgnoredCode_toString)
+    {
+        EXPECT_EQ(toString(ScrobbleIgnoredCode::None), "none");
+        EXPECT_EQ(toString(ScrobbleIgnoredCode::ArtistIgnored), "artist ignored");
+        EXPECT_EQ(toString(ScrobbleIgnoredCode::DailyLimitExceeded), "daily limit exceeded");
+    }
 } // namespace lms::scrobbling::lastFm::utils::tests
