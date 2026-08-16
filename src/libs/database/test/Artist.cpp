@@ -1096,7 +1096,7 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Artist_findWithMBIDNameVariants)
+    TEST_F(DatabaseFixture, Artist_findWithMBIDMatchedNameOrSortNameVariants_name)
     {
         ScopedArtist artistA{ session, "ArtistA" };
         ScopedArtist artistB{ session, "ArtistB" };
@@ -1127,7 +1127,135 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             ArtistId lastRetrievedArtist;
-            const auto results{ Artist::findWithMBIDNameVariants(session, lastRetrievedArtist) };
+            const auto results{ Artist::findWithMBIDMatchedNameOrSortNameVariants(session, lastRetrievedArtist) };
+
+            ASSERT_EQ(results.size(), 1);
+            EXPECT_EQ(results[0]->getId(), artistA.getId());
+            EXPECT_EQ(lastRetrievedArtist, artistA.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_findWithMBIDMatchedNameOrSortNameVariants_sortName)
+    {
+        ScopedArtist artistA{ session, "ArtistA" };
+        ScopedArtist artistB{ session, "ArtistB" };
+
+        ScopedTrack trackA1{ session };
+        ScopedTrack trackA2{ session };
+        ScopedTrack trackB1{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            {
+                auto link{ session.create<TrackArtistLink>(trackA1.get(), artistA.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistA");
+                link.modify()->setArtistSortName("ArtistA");
+            }
+            {
+                auto link{ session.create<TrackArtistLink>(trackA2.get(), artistA.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistA");
+                link.modify()->setArtistSortName("AlternateSortArtistA");
+            }
+
+            {
+                auto link{ session.create<TrackArtistLink>(trackB1.get(), artistB.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistB");
+                link.modify()->setArtistSortName("ArtistB");
+            }
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedArtist;
+            const auto results{ Artist::findWithMBIDMatchedNameOrSortNameVariants(session, lastRetrievedArtist) };
+
+            ASSERT_EQ(results.size(), 1);
+            EXPECT_EQ(results[0]->getId(), artistA.getId());
+            EXPECT_EQ(lastRetrievedArtist, artistA.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_findWithMBIDMatchedNameOrSortNameVariants_emptySortNameIgnored)
+    {
+        ScopedArtist artist{ session, "ArtistA" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            {
+                auto link{ session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistA");
+                link.modify()->setArtistSortName("ArtistA, Sort");
+            }
+            {
+                // no sort name tag on this track: must not count as a variant against the one above
+                auto link{ session.create<TrackArtistLink>(track2.get(), artist.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistA");
+            }
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedArtist;
+            const auto results{ Artist::findWithMBIDMatchedNameOrSortNameVariants(session, lastRetrievedArtist) };
+
+            ASSERT_EQ(results.size(), 0);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_findWithNonMBIDSortNameVariants)
+    {
+        ScopedArtist artistA{ session, "ArtistA" };
+        ScopedArtist artistB{ session, "ArtistB" };
+        ScopedArtist artistC{ session, "ArtistC", core::UUID::fromString("38811c52-85e3-4e2e-3319-ab7d9f2cfa5b") };
+
+        ScopedTrack trackA1{ session };
+        ScopedTrack trackA2{ session };
+        ScopedTrack trackB1{ session };
+        ScopedTrack trackC1{ session };
+        ScopedTrack trackC2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            {
+                auto link{ session.create<TrackArtistLink>(trackA1.get(), artistA.get(), TrackArtistLinkType::Artist, false) };
+                link.modify()->setArtistName("ArtistA");
+                link.modify()->setArtistSortName("ArtistA, Sort1");
+            }
+            {
+                auto link{ session.create<TrackArtistLink>(trackA2.get(), artistA.get(), TrackArtistLinkType::Artist, false) };
+                link.modify()->setArtistName("ArtistA");
+                link.modify()->setArtistSortName("ArtistA, Sort2");
+            }
+            {
+                auto link{ session.create<TrackArtistLink>(trackB1.get(), artistB.get(), TrackArtistLinkType::Artist, false) };
+                link.modify()->setArtistName("ArtistB");
+                link.modify()->setArtistSortName("ArtistB, Sort");
+            }
+            // artistC has an MBID: even with conflicting sort names, it must not be selected by this non-MBID query
+            {
+                auto link{ session.create<TrackArtistLink>(trackC1.get(), artistC.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistC");
+                link.modify()->setArtistSortName("ArtistC, Sort1");
+            }
+            {
+                auto link{ session.create<TrackArtistLink>(trackC2.get(), artistC.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistC");
+                link.modify()->setArtistSortName("ArtistC, Sort2");
+            }
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedArtist;
+            const auto results{ Artist::findWithNonMBIDSortNameVariants(session, lastRetrievedArtist) };
 
             ASSERT_EQ(results.size(), 1);
             EXPECT_EQ(results[0]->getId(), artistA.getId());

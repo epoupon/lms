@@ -35,6 +35,7 @@ namespace lms::scanner
         void process(ScanContext& context) override;
 
         void updateArtistPreferredName(ScanContext& context);
+        void updateNonMBIDArtistSortName(ScanContext& context);
 
         void updateLinksForArtistNameNoLongerMatch(ScanContext& context);
         void updateLinksWithArtistNameAmbiguity(ScanContext& context);

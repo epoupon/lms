@@ -20,9 +20,9 @@
 #include "ScanStepArtistReconciliation.hpp"
 
 #include <cassert>
-#include <ostream>
 
 #include "core/ILogger.hpp"
+#include "core/TaggedType.hpp"
 
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
@@ -42,15 +42,6 @@ namespace lms::scanner
 {
     namespace
     {
-        std::ostream& operator<<(std::ostream& os, const db::Artist::pointer& artist)
-        {
-            os << "'" << artist->getName() << "'";
-            if (const auto mbid{ artist->getMBID() })
-                os << " [" << mbid->toString() << "]";
-
-            return os;
-        }
-
         void recomputeArtist(db::Session& session, db::TrackArtistLink::pointer link, bool allowArtistMBIDFallback)
         {
             assert(!link->isArtistMBIDMatched());
@@ -76,19 +67,23 @@ namespace lms::scanner
             artistInfo.modify()->setArtist(newArtist);
         }
 
+        using MBIDMatched = core::TaggedBool<struct MBIDMatchedTag>;
+        using SortNameNotEmpty = core::TaggedBool<struct SortNameNotEmptyTag>;
+
         struct ArtistReference
         {
             std::string name;
             std::string sortName;
         };
-        std::optional<ArtistReference> getMostRecentReleaseArtistReference(db::Session& session, db::ArtistId artistId)
+        std::optional<ArtistReference> getMostRecentReleaseArtistReference(db::Session& session, db::ArtistId artistId, MBIDMatched mbidMatched, SortNameNotEmpty sortNameNotEmpty)
         {
             std::optional<ArtistReference> ref;
 
             db::ReleaseArtistLink::FindParameters params;
             params.setArtist(artistId);
             params.setSortMethod(db::ReleaseArtistLinkSortMethod::OriginalDateDesc);
-            params.setMBIDMatched(true);
+            params.setMBIDMatched(mbidMatched.value());
+            params.setSortNameNotEmpty(sortNameNotEmpty.value());
             params.setRange(db::Range{ .offset = 0, .size = 1 });
 
             db::ReleaseArtistLink::pointer foundLink;
@@ -99,14 +94,15 @@ namespace lms::scanner
             return ref;
         }
 
-        std::optional<ArtistReference> getMostRecentTrackArtistReference(db::Session& session, db::ArtistId artistId)
+        std::optional<ArtistReference> getMostRecentTrackArtistReference(db::Session& session, db::ArtistId artistId, MBIDMatched mbidMatched, SortNameNotEmpty sortNameNotEmpty)
         {
             std::optional<ArtistReference> ref;
 
             db::TrackArtistLink::FindParameters params;
             params.setArtist(artistId);
             params.setSortMethod(db::TrackArtistLinkSortMethod::OriginalDateDesc);
-            params.setMBIDMatched(true);
+            params.setMBIDMatched(mbidMatched.value());
+            params.setSortNameNotEmpty(sortNameNotEmpty.value());
             params.setRange(db::Range{ .offset = 0, .size = 1 });
 
             db::TrackArtistLink::pointer foundLink;
@@ -129,6 +125,9 @@ namespace lms::scanner
         // Reconcile artist name differences when MBID was used to match
         updateArtistPreferredName(context);
 
+        // Reconcile artist sort name differences when MBID was not used to match
+        updateNonMBIDArtistSortName(context);
+
         // Reconcile artist links when MBID not used to match
         {
             // Order is important
@@ -150,14 +149,14 @@ namespace lms::scanner
 
         db::Session& session{ _db.getTLSSession() };
 
-        // List artists that have different names when mbid matched.
+        // List artists that have different names or sort names when mbid matched.
         // Possible reasons:
-        // - artist name changed over time (ex: Rhapsody then Rhapsody of Fire), legit use case
-        // - user renamed the artist
-        // Name to pick in order of priority:
-        // - name specified in artist info
-        // - name as referenced in the latest release of the artist
-        // - name as referenced in the latest link (any type)
+        // - artist name/sort name changed over time (ex: Rhapsody then Rhapsody of Fire), legit use case
+        // - user renamed the artist, or tags disagree on the sort name
+        // Name/sort name to pick in order of priority:
+        // - specified in artist info
+        // - referenced in the latest release of the artist
+        // - referenced in the latest link (any type)
 
         struct ArtistToUpdate
         {
@@ -182,7 +181,7 @@ namespace lms::scanner
             {
                 auto transaction{ session.createReadTransaction() };
 
-                const auto artists{ db::Artist::findWithMBIDNameVariants(session, lastRetrievedArtist, db::Range{ .offset = 0, .size = batchSize }) };
+                const auto artists{ db::Artist::findWithMBIDMatchedNameOrSortNameVariants(session, lastRetrievedArtist, db::Range{ .offset = 0, .size = batchSize }) };
                 if (artists.empty())
                     break;
 
@@ -197,24 +196,108 @@ namespace lms::scanner
                     if (hasArtistInfo)
                         continue;
 
-                    std::optional<ArtistReference> mostRecentArtistRef{ getMostRecentReleaseArtistReference(session, artist->getId()) };
-                    if (!mostRecentArtistRef)
-                        mostRecentArtistRef = getMostRecentTrackArtistReference(session, artist->getId());
+                    // Resolve name and sort name independently: a link with no sort name carries no sort name information and must not be considered
+                    std::optional<ArtistReference> mostRecentNameRef{ getMostRecentReleaseArtistReference(session, artist->getId(), MBIDMatched{ true }, SortNameNotEmpty{ false }) };
+                    if (!mostRecentNameRef)
+                        mostRecentNameRef = getMostRecentTrackArtistReference(session, artist->getId(), MBIDMatched{ true }, SortNameNotEmpty{ false });
 
-                    if (!mostRecentArtistRef)
+                    std::optional<ArtistReference> mostRecentSortNameRef{ getMostRecentReleaseArtistReference(session, artist->getId(), MBIDMatched{ true }, SortNameNotEmpty{ true }) };
+                    if (!mostRecentSortNameRef)
+                        mostRecentSortNameRef = getMostRecentTrackArtistReference(session, artist->getId(), MBIDMatched{ true }, SortNameNotEmpty{ true });
+
+                    if (!mostRecentNameRef && !mostRecentSortNameRef)
                     {
-                        LMS_LOG(DBUPDATER, DEBUG, "Unable to fix name discrepancy for artist " << artist << ": no link found!");
+                        LMS_LOG(DBUPDATER, DEBUG, "Unable to fix name/sort name discrepancy for artist " << artist << ": no link found!");
                         continue;
                     }
 
-                    if (mostRecentArtistRef->name != artist->getName())
+                    const std::string newName{ mostRecentNameRef ? mostRecentNameRef->name : std::string{ artist->getName() } };
+                    const std::string newSortName{ mostRecentSortNameRef ? mostRecentSortNameRef->sortName : std::string{ artist->getSortName() } };
+
+                    if (newName != artist->getName() || newSortName != artist->getSortName())
                     {
                         ArtistToUpdate& artistToUpdate{ artistsToUpdate.emplace_back() };
                         artistToUpdate.artist = artist;
-                        artistToUpdate.newName = mostRecentArtistRef->name;
-                        artistToUpdate.newSortName = mostRecentArtistRef->sortName;
+                        artistToUpdate.newName = newName;
+                        artistToUpdate.newSortName = newSortName;
 
-                        LMS_LOG(DBUPDATER, DEBUG, "Updating artist " << artist << " name to '" << artistToUpdate.newName << "' using most recent artist link reference");
+                        LMS_LOG(DBUPDATER, DEBUG, "Updating artist " << artist << " name to '" << newName << "', sort name to '" << newSortName << "' using most recent artist link reference");
+                    }
+                }
+
+                if (artists.size() < batchSize)
+                    break;
+            }
+
+            if (artistsToUpdate.size() > batchSize)
+            {
+                updateArtists();
+                artistsToUpdate.clear();
+            }
+        }
+
+        updateArtists();
+
+        _progressCallback(context.currentStepStats);
+    }
+
+    void ScanStepArtistReconciliation::updateNonMBIDArtistSortName(ScanContext& context)
+    {
+        static constexpr std::size_t batchSize{ 50 };
+
+        db::Session& session{ _db.getTLSSession() };
+
+        // List non-MBID artists whose links disagree on the sort name (name is not reconciled here: for
+        // non-MBID artists, name is the lookup key itself, and stale/ambiguous matches are handled separately)
+
+        struct ArtistToUpdate
+        {
+            db::Artist::pointer artist;
+            std::string newSortName;
+        };
+        std::vector<ArtistToUpdate> artistsToUpdate;
+        auto updateArtists{ [&] {
+            auto transaction{ session.createWriteTransaction() };
+
+            for (auto& artistToUpdate : artistsToUpdate)
+                artistToUpdate.artist.modify()->setSortName(artistToUpdate.newSortName);
+        } };
+
+        db::ArtistId lastRetrievedArtist;
+        while (!_abortScan)
+        {
+            {
+                auto transaction{ session.createReadTransaction() };
+
+                const auto artists{ db::Artist::findWithNonMBIDSortNameVariants(session, lastRetrievedArtist, db::Range{ .offset = 0, .size = batchSize }) };
+                if (artists.empty())
+                    break;
+
+                for (const db::Artist::pointer& artist : artists)
+                {
+                    bool hasArtistInfo{};
+                    db::ArtistInfo::find(session, artist->getId(), db::Range{ .offset = 0, .size = 1 }, [&](const db::ArtistInfo::pointer&) {
+                        hasArtistInfo = true;
+                    });
+
+                    // Scanning artist info should have updated the sort name of the artist
+                    if (hasArtistInfo)
+                        continue;
+
+                    std::optional<ArtistReference> mostRecentSortNameRef{ getMostRecentReleaseArtistReference(session, artist->getId(), MBIDMatched{ false }, SortNameNotEmpty{ true }) };
+                    if (!mostRecentSortNameRef)
+                        mostRecentSortNameRef = getMostRecentTrackArtistReference(session, artist->getId(), MBIDMatched{ false }, SortNameNotEmpty{ true });
+
+                    if (!mostRecentSortNameRef)
+                        continue;
+
+                    if (mostRecentSortNameRef->sortName != artist->getSortName())
+                    {
+                        ArtistToUpdate& artistToUpdate{ artistsToUpdate.emplace_back() };
+                        artistToUpdate.artist = artist;
+                        artistToUpdate.newSortName = mostRecentSortNameRef->sortName;
+
+                        LMS_LOG(DBUPDATER, DEBUG, "Updating artist " << artist << " sort name to '" << artistToUpdate.newSortName << "' using most recent artist link reference");
                     }
                 }
 
