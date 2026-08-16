@@ -134,10 +134,10 @@ namespace lms::scanner
                 artist.modify()->setName(artistMetadata.name);
             }
 
-            if (artist->getSortName() != artistMetadata.sortName)
+            if (const std::string newSortName{ artistMetadata.sortName.value_or(std::string{}) }; artist->getSortName() != newSortName)
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Updated artist sort name from '" << artist->getSortName() << "' to '" << (artistMetadata.sortName ? *artistMetadata.sortName : "") << "' using artist info file");
-                artist.modify()->setSortName(artistMetadata.sortName ? *artistMetadata.sortName : "");
+                LMS_LOG(DBUPDATER, DEBUG, "Updated artist sort name from '" << artist->getSortName() << "' to '" << newSortName << "' using artist info file");
+                artist.modify()->setSortName(newSortName);
             }
 
             artistInfo.modify()->setArtist(artist);
