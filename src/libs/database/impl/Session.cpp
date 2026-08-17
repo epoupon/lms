@@ -255,7 +255,7 @@ namespace lms::db
             "CREATE INDEX IF NOT EXISTS image_path_idx ON image(absolute_file_path)",
             "CREATE INDEX IF NOT EXISTS image_stem_idx ON image(stem COLLATE NOCASE)",
 
-            "CREATE INDEX IF NOT EXISTS label_name_idx ON label(name)",
+            "CREATE INDEX IF NOT EXISTS label_name_idx ON label(name COLLATE NOCASE)",
 
             "CREATE UNIQUE INDEX IF NOT EXISTS language_name_idx ON language(name)",
 
@@ -309,7 +309,7 @@ namespace lms::db
             "CREATE UNIQUE INDEX IF NOT EXISTS release_feedback_backend_sync_release_feedback_backend_idx ON release_feedback_backend_sync(release_feedback_id,backend)",
             "CREATE INDEX IF NOT EXISTS release_feedback_backend_sync_backend_sync_state_idx ON release_feedback_backend_sync(backend,sync_state)",
 
-            "CREATE INDEX IF NOT EXISTS release_type_name_idx ON release_type(name)",
+            "CREATE INDEX IF NOT EXISTS release_type_name_idx ON release_type(name COLLATE NOCASE)",
 
             "CREATE INDEX IF NOT EXISTS track_absolute_path_idx ON track(absolute_file_path)",
             "CREATE INDEX IF NOT EXISTS track_date_idx ON track(date)",
@@ -323,6 +323,7 @@ namespace lms::db
             "CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)",
             "CREATE INDEX IF NOT EXISTS track_recording_mbid_idx ON track(recording_mbid)",
             "CREATE INDEX IF NOT EXISTS track_release_date_idx ON track(release_id, date)",
+            "CREATE INDEX IF NOT EXISTS track_release_original_date_idx ON track(release_id, original_date)",
             "CREATE INDEX IF NOT EXISTS track_release_file_last_write_idx ON track(release_id, file_last_write)",
             "CREATE INDEX IF NOT EXISTS track_release_file_added_idx ON track(release_id, file_added)",
             "CREATE INDEX IF NOT EXISTS track_preferred_artwork_idx ON track(preferred_artwork_id) WHERE preferred_artwork_id IS NOT NULL",

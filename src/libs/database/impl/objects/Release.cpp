@@ -24,6 +24,7 @@
 
 #include "core/PartialDateTime.hpp"
 #include "core/String.hpp"
+#include "core/TaggedType.hpp"
 
 #include "database/Session.hpp"
 #include "database/Types.hpp"
@@ -65,16 +66,17 @@ namespace lms::db
 {
     namespace
     {
+        using GroupByRelease = core::TaggedBool<struct GroupByReleaseTag>;
+
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Release::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Release::FindParameters& params, GroupByRelease groupByRelease)
         {
             assert(params.keywords.empty() || params.name.empty());
             assert(!params.directory.isValid() || !params.parentDirectory.isValid());
 
             auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " from release r") };
 
-            if (params.sortMethod == ReleaseSortMethod::ArtistNameThenName
-                || params.sortMethod == ReleaseSortMethod::LastWrittenDesc
+            if (params.sortMethod == ReleaseSortMethod::LastWrittenDesc
                 || params.sortMethod == ReleaseSortMethod::AddedDesc
                 || params.sortMethod == ReleaseSortMethod::DateAsc
                 || params.sortMethod == ReleaseSortMethod::DateDesc
@@ -188,18 +190,13 @@ namespace lms::db
                 query.where("r_a_l.artist_id = ?").bind(params.artist);
             }
 
-            if (params.trackArtist.isValid()
-                || params.sortMethod == ReleaseSortMethod::ArtistNameThenName)
+            if (params.trackArtist.isValid())
             {
                 assert(!params.artist.isValid());
 
                 query.join("track_artist_link t_a_l ON t_a_l.track_id = t.id");
 
-                if (params.trackArtist.isValid())
-                    query.where("t_a_l.artist_id = ?").bind(params.trackArtist);
-
-                if (params.sortMethod == ReleaseSortMethod::ArtistNameThenName)
-                    query.join("artist a ON a.id = t_a_l.artist_id");
+                query.where("t_a_l.artist_id = ?").bind(params.trackArtist);
 
                 if (!params.trackArtistLinkTypes.empty())
                 {
@@ -292,34 +289,37 @@ namespace lms::db
                 query.orderBy("COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::ArtistNameThenName:
-                query.orderBy("a.name COLLATE NOCASE, r.name COLLATE NOCASE");
+                query.orderBy("COALESCE(NULLIF(r.artist_display_name, ''), r.name) COLLATE NOCASE, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::Random:
                 query.orderBy("RANDOM()");
                 break;
             case ReleaseSortMethod::LastWrittenDesc:
-                query.orderBy("t.file_last_write DESC");
+                query.orderBy("MAX(t.file_last_write) DESC, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::AddedDesc:
-                query.orderBy("t.file_added DESC");
+                query.orderBy("MIN(t.file_added) DESC, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::DateAsc:
-                query.orderBy("t.date ASC, r.name COLLATE NOCASE");
+                query.orderBy("MIN(t.date) ASC, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::DateDesc:
-                query.orderBy("t.date DESC, r.name COLLATE NOCASE");
+                query.orderBy("MIN(t.date) DESC, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::OriginalDate:
-                query.orderBy("COALESCE(t.original_date, t.date), r.name COLLATE NOCASE");
+                query.orderBy("MIN(COALESCE(t.original_date, t.date)) ASC, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::OriginalDateDesc:
-                query.orderBy("COALESCE(t.original_date, t.date) DESC, r.name COLLATE NOCASE");
+                query.orderBy("MIN(COALESCE(t.original_date, t.date)) DESC, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::FeedbackDateDesc:
                 assert(params.feedbackUser.isValid());
                 query.orderBy("r_f.date_time DESC");
                 break;
             }
+
+            if (groupByRelease.value())
+                query.groupBy("r.id");
 
             return query;
         }
@@ -599,7 +599,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "DISTINCT r", params) };
+        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "r", params, GroupByRelease{ true }) };
         return utils::execRangeQuery<pointer>(query, params.range);
     }
 
@@ -607,7 +607,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "DISTINCT r", params) };
+        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "r", params, GroupByRelease{ true }) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
@@ -615,7 +615,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery<ReleaseId>(session, "DISTINCT r.id", params) };
+        auto query{ createQuery<ReleaseId>(session, "r.id", params, GroupByRelease{ true }) };
         return utils::execRangeQuery<ReleaseId>(query, params.range);
     }
 
@@ -633,7 +633,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(DISTINCT r.id)", params));
+        return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(DISTINCT r.id)", params, GroupByRelease{ false }));
     }
 
     core::PartialDateTime Release::getDate() const

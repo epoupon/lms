@@ -217,10 +217,10 @@ namespace lms::db
                 query.orderBy("RANDOM()");
                 break;
             case ArtistSortMethod::LastWrittenDesc:
-                query.orderBy("MAX(t.file_last_write) DESC, COALESCE(NULLIF(a.sort_name, ''), a.name)");
+                query.orderBy("MAX(t.file_last_write) DESC, COALESCE(NULLIF(a.sort_name, ''), a.name) COLLATE NOCASE");
                 break;
             case ArtistSortMethod::AddedDesc:
-                query.orderBy("MIN(t.file_added) DESC, COALESCE(NULLIF(a.sort_name, ''), a.name)");
+                query.orderBy("MIN(t.file_added) DESC, COALESCE(NULLIF(a.sort_name, ''), a.name) COLLATE NOCASE");
                 break;
             case ArtistSortMethod::FeedbackDateDesc:
                 assert(params.feedbackUser.isValid());

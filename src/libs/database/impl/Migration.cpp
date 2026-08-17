@@ -38,7 +38,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 113 };
+        static constexpr Version LMS_DATABASE_VERSION{ 114 };
     }
 
     VersionInfo::VersionInfo()
@@ -2141,6 +2141,15 @@ GROUP BY c.canonical_id, s.backend)");
         utils::executeCommand(dboSession, "UPDATE scan_settings SET artist_info_scan_version = artist_info_scan_version + 1");
     }
 
+    void migrateFromV113(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        // Index definitions changed but not their names: createIndexesIfNeeded uses IF NOT EXISTS and would not rebuild them
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS label_name_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS release_type_name_idx");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -2230,6 +2239,7 @@ GROUP BY c.canonical_id, s.backend)");
             { 110, migrateFromV110 },
             { 111, migrateFromV111 },
             { 112, migrateFromV112 },
+            { 113, migrateFromV113 },
         };
 
         LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");
