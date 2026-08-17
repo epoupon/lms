@@ -641,8 +641,12 @@ namespace lms::api::subsonic
 
     Response handleGetTopSongs(RequestContext& context)
     {
-        // Mandatory params
-        std::string_view artistName{ getMandatoryParameterAs<std::string_view>(context.getParameters(), "artist") };
+        // "id" (topSongsByArtistId extension) takes precedence over "artist" when both are provided
+        const std::optional<ArtistId> artistId{ getParameterAs<ArtistId>(context.getParameters(), "id") };
+        std::optional<std::string_view> artistName;
+        if (!artistId)
+            artistName = getMandatoryParameterAs<std::string_view>(context.getParameters(), "artist");
+
         std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(50) };
         if (count > defaultMaxCountSize)
             throw ParameterValueTooHighGenericError{ "count", defaultMaxCountSize };
@@ -652,13 +656,24 @@ namespace lms::api::subsonic
         Response response{ Response::createOkResponse() };
         Response::Node& topSongs{ response.createNode("topSongs") };
 
-        const auto artists{ Artist::find(context.getDbSession(), artistName) };
-        if (artists.size() == 1)
+        Artist::pointer artist;
+        if (artistId)
+        {
+            artist = Artist::find(context.getDbSession(), *artistId);
+        }
+        else
+        {
+            const auto artists{ Artist::find(context.getDbSession(), *artistName) };
+            if (artists.size() == 1)
+                artist = artists.front();
+        }
+
+        if (artist)
         {
             Listen::StatsFindParameters params;
             params.setUser(context.getUser()->getId());
             params.setRange(db::Range{ 0, count });
-            params.setArtist(artists.front()->getId());
+            params.setArtist(artist->getId());
 
             const auto trackIds{ Listen::getTopTracks(context.getDbSession(), params) };
             for (const TrackId trackId : trackIds)
