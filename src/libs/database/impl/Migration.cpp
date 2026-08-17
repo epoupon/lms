@@ -38,7 +38,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 112 };
+        static constexpr Version LMS_DATABASE_VERSION{ 113 };
     }
 
     VersionInfo::VersionInfo()
@@ -96,7 +96,7 @@ namespace lms::db::Migration
             LMS_LOG(DB, INFO, "Droping all indexes...");
 
             // Make sure we remove all the previoulsy created index, the createIndexesIfNeeded will recreate them all
-            std::vector<std::string> indexeNames{ utils::fetchQueryResults(session.getDboSession()->query<std::string>(R"(SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE '%_idx')")) };
+            std::vector<std::string> indexeNames{ utils::fetchQueryResults(session.getDboSession()->query<std::string>(R"(SELECT name FROM sqlite_master WHERE type = 'index' AND name NOT LIKE 'sqlite_autoindex%')")) };
             for (const auto& indexName : indexeNames)
                 utils::executeCommand(*session.getDboSession(), "DROP INDEX " + indexName);
 
@@ -2125,6 +2125,12 @@ GROUP BY c.canonical_id, s.backend)");
         utils::executeCommand(dboSession, R"(ALTER TABLE "user" DROP COLUMN "feedback_backend")");
     }
 
+    void migrateFromV112(Session& session)
+    {
+        // Index set rework
+        dropIndexes(session);
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -2213,6 +2219,7 @@ GROUP BY c.canonical_id, s.backend)");
             { 109, migrateFromV109 },
             { 110, migrateFromV110 },
             { 111, migrateFromV111 },
+            { 112, migrateFromV112 },
         };
 
         LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");

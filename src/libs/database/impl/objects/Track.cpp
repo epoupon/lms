@@ -860,12 +860,12 @@ namespace lms::db
 
     std::vector<TrackArtistLink::pointer> Track::getArtistLinks() const
     {
-        return utils::fetchQueryResults<TrackArtistLink::pointer>(_trackArtistLinks.find());
+        return utils::fetchQueryResults<TrackArtistLink::pointer>(_trackArtistLinks.find().orderBy("id"));
     }
 
     void Track::visitArtistLinks(const std::function<void(const ObjectPtr<TrackArtistLink>& artistLink)>& visitor) const
     {
-        utils::forEachQueryResult(_trackArtistLinks.find(), visitor);
+        utils::forEachQueryResult(_trackArtistLinks.find().orderBy("id"), visitor);
     }
 
     std::vector<ObjectPtr<TrackArtistLink>> Track::getArtistLinks(TrackArtistLinkType type) const
@@ -880,6 +880,7 @@ namespace lms::db
         auto query{ session()->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l from track_artist_link t_a_l") };
         query.where("t_a_l.track_id = ?").bind(getId());
         query.where("t_a_l.type = ?").bind(type);
+        query.orderBy("t_a_l.id");
 
         return utils::forEachQueryResult(query, visitor);
     }

@@ -214,17 +214,17 @@ namespace lms::db
         LMS_LOG(DB, INFO, "Creating indexes... This may take a while...");
 
         constexpr std::string_view indexSqls[]{
-            "CREATE INDEX IF NOT EXISTS artist_id_idx ON artist(id)",
             "CREATE INDEX IF NOT EXISTS artist_name_mbid_idx ON artist(name, mbid)",
+            "CREATE INDEX IF NOT EXISTS artist_name_nocase_idx ON artist(name COLLATE NOCASE)",
             "CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)",
             "CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)",
+            "CREATE INDEX IF NOT EXISTS artist_preferred_artwork_idx ON artist(preferred_artwork_id) WHERE preferred_artwork_id IS NOT NULL",
 
             "CREATE INDEX IF NOT EXISTS artist_info_path_idx ON artist_info(absolute_file_path)",
             "CREATE INDEX IF NOT EXISTS artist_info_directory_id_idx ON artist_info(directory_id)",
             "CREATE INDEX IF NOT EXISTS artist_info_artist_id_idx ON artist_info(artist_id)",
             "CREATE INDEX IF NOT EXISTS artist_info_mbid_matched_artist_idx ON artist_info(mbid_matched, artist_id)",
 
-            "CREATE INDEX IF NOT EXISTS artwork_id_idx ON artwork(id)",
             "CREATE INDEX IF NOT EXISTS artwork_image_idx ON artwork(image_id)",
             "CREATE INDEX IF NOT EXISTS artwork_track_embedded_image_idx ON artwork(track_embedded_image_id)",
 
@@ -232,8 +232,7 @@ namespace lms::db
             "CREATE INDEX IF NOT EXISTS auth_token_domain_expiry_idx ON auth_token(domain, expiry)",
             "CREATE INDEX IF NOT EXISTS auth_token_domain_value_idx ON auth_token(domain, value)",
 
-            "CREATE INDEX IF NOT EXISTS cluster_id_idx ON cluster(id)",
-            "CREATE INDEX IF NOT EXISTS cluster_cluster_type_idx ON cluster(cluster_type_id)",
+            "CREATE INDEX IF NOT EXISTS cluster_cluster_type_name_idx ON cluster(cluster_type_id, name)",
             "CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)",
 
             "CREATE UNIQUE INDEX IF NOT EXISTS genre_name_idx ON genre(name)",
@@ -241,101 +240,88 @@ namespace lms::db
             "CREATE UNIQUE INDEX IF NOT EXISTS language_name_idx ON language(name)",
             "CREATE UNIQUE INDEX IF NOT EXISTS mood_name_idx ON mood(name)",
 
-            "CREATE INDEX IF NOT EXISTS country_id_idx ON country(id)",
-            "CREATE INDEX IF NOT EXISTS country_name_idx ON country(name COLLATE NOCASE)",
+            "CREATE INDEX IF NOT EXISTS country_name_idx ON country(name)",
 
-            "CREATE INDEX IF NOT EXISTS directory_id_idx ON directory(id)",
             "CREATE INDEX IF NOT EXISTS directory_parent_directory_idx ON directory(parent_directory_id)",
             "CREATE INDEX IF NOT EXISTS directory_path_idx ON directory(absolute_path)",
             "CREATE INDEX IF NOT EXISTS directory_media_library_idx ON directory(media_library_id)",
             "CREATE INDEX IF NOT EXISTS directory_name_idx ON directory(name COLLATE NOCASE)",
 
-            "CREATE INDEX IF NOT EXISTS track_embedded_image_id_idx ON track_embedded_image(id)",
             "CREATE INDEX IF NOT EXISTS track_embedded_image_hash_idx ON track_embedded_image(hash)",
 
-            "CREATE INDEX IF NOT EXISTS track_embedded_image_link_id_idx ON track_embedded_image_link(id)",
-            "CREATE INDEX IF NOT EXISTS track_embedded_image_link_track_id_idx ON track_embedded_image_link(track_id)",
             "CREATE INDEX IF NOT EXISTS track_embedded_image_link_track_embedded_image_id_track_id_idx ON track_embedded_image_link(track_embedded_image_id, track_id)",
             "CREATE INDEX IF NOT EXISTS track_embedded_image_link_track_track_embedded_image_id_idx ON track_embedded_image_link(track_id, track_embedded_image_id)",
 
             "CREATE INDEX IF NOT EXISTS image_directory_stem_idx ON image(directory_id, stem COLLATE NOCASE)",
-            "CREATE INDEX IF NOT EXISTS image_id_idx ON image(id)",
             "CREATE INDEX IF NOT EXISTS image_path_idx ON image(absolute_file_path)",
             "CREATE INDEX IF NOT EXISTS image_stem_idx ON image(stem COLLATE NOCASE)",
 
-            "CREATE INDEX IF NOT EXISTS label_id_idx ON label(id)",
-            "CREATE INDEX IF NOT EXISTS label_name_idx ON label(name COLLATE NOCASE)",
+            "CREATE INDEX IF NOT EXISTS label_name_idx ON label(name)",
 
-            "CREATE INDEX IF NOT EXISTS listen_id_idx ON listen(id)",
             "CREATE INDEX IF NOT EXISTS listen_user_track_date_time_idx ON listen(user_id, track_id, date_time)",
+            "CREATE INDEX IF NOT EXISTS listen_track_idx ON listen(track_id)",
 
             "CREATE UNIQUE INDEX IF NOT EXISTS listen_backend_sync_listen_backend_idx ON listen_backend_sync(listen_id, backend)",
             "CREATE INDEX IF NOT EXISTS listen_backend_sync_backend_sync_state_idx ON listen_backend_sync(backend, sync_state)",
 
-            "CREATE INDEX IF NOT EXISTS media_library_id_idx ON media_library(id)",
-
             "CREATE INDEX IF NOT EXISTS medium_release_position_idx ON medium(release_id, position)",
+            "CREATE INDEX IF NOT EXISTS medium_preferred_artwork_idx ON medium(preferred_artwork_id) WHERE preferred_artwork_id IS NOT NULL",
 
-            "CREATE INDEX IF NOT EXISTS playlist_file_id_idx ON playlist_file(id)",
             "CREATE INDEX IF NOT EXISTS playlist_file_directory_idx ON playlist_file(directory_id)",
             "CREATE INDEX IF NOT EXISTS playlist_file_absolute_file_path_idx ON playlist_file(absolute_file_path)",
+            "CREATE INDEX IF NOT EXISTS playlist_file_media_library_idx ON playlist_file(media_library_id)",
+            "CREATE INDEX IF NOT EXISTS playlist_file_preferred_artwork_idx ON playlist_file(preferred_artwork_id) WHERE preferred_artwork_id IS NOT NULL",
 
             "CREATE INDEX IF NOT EXISTS rated_artist_user_artist_idx ON rated_artist(user_id,artist_id)",
+            "CREATE INDEX IF NOT EXISTS rated_artist_artist_idx ON rated_artist(artist_id)",
             "CREATE INDEX IF NOT EXISTS rated_release_user_release_idx ON rated_release(user_id,release_id)",
+            "CREATE INDEX IF NOT EXISTS rated_release_release_idx ON rated_release(release_id)",
             "CREATE INDEX IF NOT EXISTS rated_track_user_track_idx ON rated_track(user_id,track_id)",
+            "CREATE INDEX IF NOT EXISTS rated_track_track_idx ON rated_track(track_id)",
 
-            "CREATE INDEX IF NOT EXISTS release_id_idx ON release(id)",
             "CREATE INDEX IF NOT EXISTS release_group_mbid_idx ON release(group_mbid)",
             "CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)",
             "CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)",
             "CREATE INDEX IF NOT EXISTS release_name_nocase_idx ON release(name COLLATE NOCASE)",
-            "CREATE INDEX IF NOT EXISTS release_sort_name_idx ON release(sort_name)",
             "CREATE INDEX IF NOT EXISTS release_sort_name_nocase_idx ON release(sort_name COLLATE NOCASE)",
+            "CREATE INDEX IF NOT EXISTS release_preferred_artwork_idx ON release(preferred_artwork_id) WHERE preferred_artwork_id IS NOT NULL",
 
-            "CREATE INDEX IF NOT EXISTS release_artist_link_id_idx ON release_artist_link(id)",
             "CREATE INDEX IF NOT EXISTS release_artist_link_artist_idx ON release_artist_link(artist_id)",
             "CREATE INDEX IF NOT EXISTS release_artist_link_release_idx ON release_artist_link(release_id)",
+            "CREATE INDEX IF NOT EXISTS release_artist_link_artist_mbid_matched_artist_idx ON release_artist_link(artist_mbid_matched, artist_id)",
 
-            "CREATE INDEX IF NOT EXISTS release_type_id_idx ON release_type(id)",
-            "CREATE INDEX IF NOT EXISTS release_type_name_idx ON release_type(name COLLATE NOCASE)",
+            "CREATE INDEX IF NOT EXISTS release_type_name_idx ON release_type(name)",
 
-            "CREATE INDEX IF NOT EXISTS track_id_idx ON track(id)",
             "CREATE INDEX IF NOT EXISTS track_absolute_path_idx ON track(absolute_file_path)",
             "CREATE INDEX IF NOT EXISTS track_date_idx ON track(date)",
             "CREATE INDEX IF NOT EXISTS track_directory_release_idx ON track(directory_id, release_id)",
             "CREATE INDEX IF NOT EXISTS track_file_added_idx ON track(file_added)",
             "CREATE INDEX IF NOT EXISTS track_file_last_write_idx ON track(file_last_write)",
-            "CREATE INDEX IF NOT EXISTS track_media_library_idx ON track(media_library_id)",
             "CREATE INDEX IF NOT EXISTS track_media_library_release_idx ON track(media_library_id, release_id)",
             "CREATE INDEX IF NOT EXISTS track_medium_idx ON track(medium_id)",
             "CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)",
             "CREATE INDEX IF NOT EXISTS track_name_file_size_idx ON track(name, file_size)",
             "CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)",
-            "CREATE INDEX IF NOT EXISTS track_original_date_idx ON track(original_date)",
             "CREATE INDEX IF NOT EXISTS track_recording_mbid_idx ON track(recording_mbid)",
             "CREATE INDEX IF NOT EXISTS track_release_date_idx ON track(release_id, date)",
             "CREATE INDEX IF NOT EXISTS track_release_file_last_write_idx ON track(release_id, file_last_write)",
             "CREATE INDEX IF NOT EXISTS track_release_file_added_idx ON track(release_id, file_added)",
+            "CREATE INDEX IF NOT EXISTS track_preferred_artwork_idx ON track(preferred_artwork_id) WHERE preferred_artwork_id IS NOT NULL",
+            "CREATE INDEX IF NOT EXISTS track_preferred_media_artwork_idx ON track(preferred_media_artwork_id) WHERE preferred_media_artwork_id IS NOT NULL",
 
-            "CREATE INDEX IF NOT EXISTS tracklist_id_idx ON tracklist(id)",
-            "CREATE INDEX IF NOT EXISTS tracklist_name_idx ON tracklist(name)",
             "CREATE INDEX IF NOT EXISTS tracklist_user_type_idx ON tracklist(user_id, type)",
             "CREATE INDEX IF NOT EXISTS tracklist_last_modified_date_time_idx ON tracklist(last_modified_date_time)",
+            "CREATE INDEX IF NOT EXISTS tracklist_playlist_file_idx ON tracklist(playlist_file_id)",
 
-            "CREATE INDEX IF NOT EXISTS tracklist_entry_idx ON tracklist_entry(id)",
             "CREATE INDEX IF NOT EXISTS tracklist_entry_tracklist_track_idx ON tracklist_entry(tracklist_id, track_id)",
+            "CREATE INDEX IF NOT EXISTS tracklist_entry_track_idx ON tracklist_entry(track_id)",
 
-            "CREATE INDEX IF NOT EXISTS track_artist_link_id_idx ON track_artist_link(id)",
-            "CREATE INDEX IF NOT EXISTS track_artist_link_artist_idx ON track_artist_link(artist_id)",
             "CREATE INDEX IF NOT EXISTS track_artist_link_artist_mbid_matched_artist_idx ON track_artist_link(artist_mbid_matched, artist_id)",
-            "CREATE INDEX IF NOT EXISTS track_artist_link_artist_track_idx ON track_artist_link(artist_id, track_id)",
             "CREATE INDEX IF NOT EXISTS track_artist_link_artist_type_track_idx ON track_artist_link(artist_id, type, track_id)",
-            "CREATE INDEX IF NOT EXISTS track_artist_link_track_artist_idx ON track_artist_link(track_id, artist_id)",
-            "CREATE INDEX IF NOT EXISTS track_artist_link_track_type_idx ON track_artist_link(track_id, type)",
+            "CREATE INDEX IF NOT EXISTS track_artist_link_track_type_artist_idx ON track_artist_link(track_id, type, artist_id)",
 
             "CREATE INDEX IF NOT EXISTS track_musicnn_embeddings_track_idx ON track_musicnn_embeddings(track_id)",
 
-            "CREATE INDEX IF NOT EXISTS track_lyrics_id_idx ON track_lyrics(id)",
             "CREATE INDEX IF NOT EXISTS track_lyrics_absolute_file_path_idx ON track_lyrics(absolute_file_path)",
             "CREATE INDEX IF NOT EXISTS track_lyrics_directory_idx ON track_lyrics(directory_id)",
             "CREATE INDEX IF NOT EXISTS track_lyrics_track_idx ON track_lyrics(track_id)",
@@ -344,8 +330,8 @@ namespace lms::db
 
             "CREATE INDEX IF NOT EXISTS work_mbid_idx ON work(mbid)",
 
-            "CREATE INDEX IF NOT EXISTS track_bookmark_user_idx ON track_bookmark(user_id)",
             "CREATE INDEX IF NOT EXISTS track_bookmark_user_track_idx ON track_bookmark(user_id,track_id)",
+            "CREATE INDEX IF NOT EXISTS track_bookmark_track_idx ON track_bookmark(track_id)",
 
             "CREATE INDEX IF NOT EXISTS artist_feedback_user_idx ON artist_feedback(user_id)",
             "CREATE UNIQUE INDEX IF NOT EXISTS artist_feedback_artist_user_idx ON artist_feedback(artist_id,user_id)",
@@ -364,6 +350,16 @@ namespace lms::db
 
             "CREATE UNIQUE INDEX IF NOT EXISTS track_feedback_backend_sync_track_feedback_backend_idx ON track_feedback_backend_sync(track_feedback_id,backend)",
             "CREATE INDEX IF NOT EXISTS track_feedback_backend_sync_backend_sync_state_idx ON track_feedback_backend_sync(backend,sync_state)",
+
+            "CREATE INDEX IF NOT EXISTS ui_state_user_item_idx ON ui_state(user_id, item)",
+
+            "CREATE INDEX IF NOT EXISTS playqueue_user_name_idx ON playqueue(user_id, name)",
+
+            "CREATE INDEX IF NOT EXISTS podcast_url_idx ON podcast(url)",
+            "CREATE INDEX IF NOT EXISTS podcast_artwork_idx ON podcast(artwork_id) WHERE artwork_id IS NOT NULL",
+
+            "CREATE INDEX IF NOT EXISTS podcast_episode_podcast_pub_date_idx ON podcast_episode(podcast_id, pub_date)",
+            "CREATE INDEX IF NOT EXISTS podcast_episode_artwork_idx ON podcast_episode(artwork_id) WHERE artwork_id IS NOT NULL",
         };
 
         for (std::string_view sql : indexSqls)
