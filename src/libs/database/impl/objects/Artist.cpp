@@ -393,11 +393,13 @@ AND NOT EXISTS (
         auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Artist>>(R"(
         SELECT a FROM artist a
         WHERE a.id IN (
-            SELECT t_a_l.artist_id
-            FROM track_artist_link t_a_l
-            WHERE t_a_l.artist_mbid_matched = 1
-            GROUP BY t_a_l.artist_id
-            HAVING COUNT(DISTINCT t_a_l.artist_name) > 1 OR COUNT(DISTINCT NULLIF(t_a_l.artist_sort_name, '')) > 1
+            SELECT artist_id FROM (
+                SELECT artist_id, artist_name, artist_sort_name FROM track_artist_link WHERE artist_mbid_matched = 1
+                UNION ALL
+                SELECT artist_id, artist_name, artist_sort_name FROM release_artist_link WHERE artist_mbid_matched = 1
+            ) links
+            GROUP BY artist_id
+            HAVING COUNT(DISTINCT artist_name) > 1 OR COUNT(DISTINCT NULLIF(artist_sort_name, '')) > 1
         )
         AND a.id > ?
     )")
@@ -419,11 +421,13 @@ AND NOT EXISTS (
         SELECT a FROM artist a
         WHERE a.mbid IS NULL
         AND a.id IN (
-            SELECT t_a_l.artist_id
-            FROM track_artist_link t_a_l
-            WHERE t_a_l.artist_sort_name <> ''
-            GROUP BY t_a_l.artist_id
-            HAVING COUNT(DISTINCT t_a_l.artist_sort_name) > 1
+            SELECT artist_id FROM (
+                SELECT artist_id, artist_sort_name FROM track_artist_link WHERE artist_sort_name <> ''
+                UNION ALL
+                SELECT artist_id, artist_sort_name FROM release_artist_link WHERE artist_sort_name <> ''
+            ) links
+            GROUP BY artist_id
+            HAVING COUNT(DISTINCT artist_sort_name) > 1
         )
         AND a.id > ?
     )")
