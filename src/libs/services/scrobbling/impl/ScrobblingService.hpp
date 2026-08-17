@@ -56,12 +56,6 @@ namespace lms::scrobbling
         void addTimedListen(const TimedListen& listen) override;
         void visitNowPlayingListens(const std::function<void(Clock::time_point startedAt, const Listen&)>& visitor, db::UserId userId) override;
 
-        std::size_t getCount(db::UserId userId, db::ReleaseId releaseId) override;
-        std::size_t getCount(db::UserId userId, db::TrackId trackId) override;
-
-        Wt::WDateTime getLastListenDateTime(db::UserId userId, db::ReleaseId releaseId) override;
-        Wt::WDateTime getLastListenDateTime(db::UserId userId, db::TrackId trackId) override;
-
         void initiateLastFmLink(db::UserId userId, std::string_view apiKey, std::string_view apiSecret,
                                 std::function<void(std::string_view authUrl)> onSuccess,
                                 std::function<void()> onFailure) override;

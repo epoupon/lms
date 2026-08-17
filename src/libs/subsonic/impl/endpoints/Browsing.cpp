@@ -38,7 +38,6 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
 
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
@@ -322,7 +321,7 @@ namespace lms::api::subsonic
 
         if (const Release::pointer release{ getReleaseFromDirectory(context.getDbSession(), directoryId) })
         {
-            directoryNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.getUser()->getId(), release->getId()));
+            directoryNode.setAttribute("playCount", Listen::getCount(context.getDbSession(), context.getUser()->getId(), release->getId()));
             if (const ReleaseFeedback::pointer feedback{ ReleaseFeedback::find(context.getDbSession(), release->getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == FeedbackValue::Loved)
                 directoryNode.setAttribute("starred", core::stringUtils::toISO8601String(feedback->getDateTime()));
         }

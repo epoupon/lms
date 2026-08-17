@@ -28,8 +28,6 @@
 #include <Wt/WDateTime.h>
 #include <boost/asio/io_context.hpp>
 
-#include "database/objects/ReleaseId.hpp"
-#include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
 #include "services/scrobbling/Listen.hpp"
@@ -79,13 +77,6 @@ namespace lms::scrobbling
 
         // Manually trigger an on-demand export of all existing local listens to the given backend for this user (if supported)
         virtual void requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend) = 0;
-
-        // Stats
-        virtual std::size_t getCount(db::UserId userId, db::ReleaseId releaseId) = 0;
-        virtual std::size_t getCount(db::UserId userId, db::TrackId trackId) = 0;
-
-        virtual Wt::WDateTime getLastListenDateTime(db::UserId userId, db::ReleaseId releaseId) = 0;
-        virtual Wt::WDateTime getLastListenDateTime(db::UserId userId, db::TrackId trackId) = 0;
     };
 
     std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, db::IDb& db);

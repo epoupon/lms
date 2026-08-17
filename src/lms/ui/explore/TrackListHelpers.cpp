@@ -31,6 +31,7 @@
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
 #include "database/objects/Language.hpp"
+#include "database/objects/Listen.hpp"
 #include "database/objects/Mood.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
@@ -38,7 +39,6 @@
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
 
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
@@ -93,7 +93,7 @@ namespace lms::ui::TrackListHelpers
             trackInfo->bindString("bitrate", std::to_string(track->getBitrate() / 1000) + " kbps");
         }
 
-        trackInfo->bindInt("playcount", core::Service<scrobbling::IScrobblingService>::get()->getCount(LmsApp->getUserId(), track->getId()));
+        trackInfo->bindInt("playcount", db::Listen::getCount(LmsApp->getDbSession(), LmsApp->getUserId(), track->getId()));
 
         if (std::string_view comment{ track->getComment() }; !comment.empty())
         {

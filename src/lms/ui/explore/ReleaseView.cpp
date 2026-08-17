@@ -41,6 +41,7 @@
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
 #include "database/objects/Language.hpp"
+#include "database/objects/Listen.hpp"
 #include "database/objects/Medium.hpp"
 #include "database/objects/Mood.hpp"
 #include "database/objects/Movement.hpp"
@@ -52,7 +53,6 @@
 #include "database/objects/Work.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
 
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
@@ -133,7 +133,7 @@ namespace lms::ui
                 releaseInfo->bindString("bitrate", std::to_string(meanBitrate / 1000) + " kbps");
             }
 
-            releaseInfo->bindInt("playcount", core::Service<scrobbling::IScrobblingService>::get()->getCount(LmsApp->getUserId(), release->getId()));
+            releaseInfo->bindInt("playcount", db::Listen::getCount(LmsApp->getDbSession(), LmsApp->getUserId(), release->getId()));
 
             Wt::WPushButton* okBtn{ releaseInfo->bindNew<Wt::WPushButton>("ok-btn", Wt::WString::tr("Lms.ok")) };
             okBtn->clicked().connect([=] {

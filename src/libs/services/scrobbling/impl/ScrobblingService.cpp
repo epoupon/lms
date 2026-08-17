@@ -232,38 +232,6 @@ namespace lms::scrobbling
         }
     }
 
-    std::size_t ScrobblingService::getCount(db::UserId userId, db::ReleaseId releaseId)
-    {
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-        return db::Listen::getCount(session, userId, releaseId);
-    }
-
-    std::size_t ScrobblingService::getCount(db::UserId userId, db::TrackId trackId)
-    {
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-        return db::Listen::getCount(session, userId, trackId);
-    }
-
-    Wt::WDateTime ScrobblingService::getLastListenDateTime(db::UserId userId, db::ReleaseId releaseId)
-    {
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-
-        const db::Listen::pointer listen{ db::Listen::getMostRecentListen(session, userId, releaseId) };
-        return listen ? listen->getDateTime() : Wt::WDateTime{};
-    }
-
-    Wt::WDateTime ScrobblingService::getLastListenDateTime(db::UserId userId, db::TrackId trackId)
-    {
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-
-        const db::Listen::pointer listen{ db::Listen::getMostRecentListen(session, userId, trackId) };
-        return listen ? listen->getDateTime() : Wt::WDateTime{};
-    }
-
     void ScrobblingService::insertNowPlayingEntry(const Listen& listen)
     {
         Session& session{ _db.getTLSSession() };

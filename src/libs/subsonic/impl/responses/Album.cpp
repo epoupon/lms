@@ -27,6 +27,7 @@
 #include "database/objects/Directory.hpp"
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
+#include "database/objects/Listen.hpp"
 #include "database/objects/Medium.hpp"
 #include "database/objects/Mood.hpp"
 #include "database/objects/Release.hpp"
@@ -35,7 +36,6 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
 
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
@@ -130,7 +130,7 @@ namespace lms::api::subsonic
                 albumNode.setAttribute("artistId", artist->id);
         }
 
-        albumNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.getUser()->getId(), release->getId()));
+        albumNode.setAttribute("playCount", Listen::getCount(context.getDbSession(), context.getUser()->getId(), release->getId()));
 
         Genre::FindParameters genreParams;
         genreParams.setRelease(release->getId());
@@ -155,8 +155,8 @@ namespace lms::api::subsonic
         albumNode.setAttribute("mediaType", "album");
 
         {
-            const Wt::WDateTime dateTime{ core::Service<scrobbling::IScrobblingService>::get()->getLastListenDateTime(context.getUser()->getId(), release->getId()) };
-            albumNode.setAttribute("played", dateTime.isValid() ? core::stringUtils::toISO8601String(dateTime) : std::string{ "" });
+            const Listen::pointer listen{ Listen::getMostRecentListen(context.getDbSession(), context.getUser()->getId(), release->getId()) };
+            albumNode.setAttribute("played", listen ? core::stringUtils::toISO8601String(listen->getDateTime()) : std::string{ "" });
         }
 
         {
