@@ -211,16 +211,16 @@ namespace lms::db
                 query.orderBy("a.name COLLATE NOCASE");
                 break;
             case ArtistSortMethod::SortName:
-                query.orderBy("a.sort_name COLLATE NOCASE");
+                query.orderBy("COALESCE(NULLIF(a.sort_name, ''), a.name) COLLATE NOCASE");
                 break;
             case ArtistSortMethod::Random:
                 query.orderBy("RANDOM()");
                 break;
             case ArtistSortMethod::LastWrittenDesc:
-                query.orderBy("MAX(t.file_last_write) DESC, a.sort_name");
+                query.orderBy("MAX(t.file_last_write) DESC, COALESCE(NULLIF(a.sort_name, ''), a.name)");
                 break;
             case ArtistSortMethod::AddedDesc:
-                query.orderBy("MIN(t.file_added) DESC, a.sort_name");
+                query.orderBy("MIN(t.file_added) DESC, COALESCE(NULLIF(a.sort_name, ''), a.name)");
                 break;
             case ArtistSortMethod::FeedbackDateDesc:
                 assert(params.feedbackUser.isValid());

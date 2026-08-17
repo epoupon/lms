@@ -216,7 +216,6 @@ namespace lms::db
         constexpr std::string_view indexSqls[]{
             "CREATE INDEX IF NOT EXISTS artist_name_mbid_idx ON artist(name, mbid)",
             "CREATE INDEX IF NOT EXISTS artist_name_nocase_idx ON artist(name COLLATE NOCASE)",
-            "CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)",
             "CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)",
             "CREATE INDEX IF NOT EXISTS artist_preferred_artwork_idx ON artist(preferred_artwork_id) WHERE preferred_artwork_id IS NOT NULL",
 
@@ -297,7 +296,7 @@ namespace lms::db
             "CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)",
             "CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)",
             "CREATE INDEX IF NOT EXISTS release_name_nocase_idx ON release(name COLLATE NOCASE)",
-            "CREATE INDEX IF NOT EXISTS release_sort_name_nocase_idx ON release(sort_name COLLATE NOCASE)",
+            "CREATE INDEX IF NOT EXISTS release_sort_name_nocase_idx ON release(COALESCE(NULLIF(sort_name, ''), name) COLLATE NOCASE)",
             "CREATE INDEX IF NOT EXISTS release_preferred_artwork_idx ON release(preferred_artwork_id) WHERE preferred_artwork_id IS NOT NULL",
 
             "CREATE INDEX IF NOT EXISTS release_artist_link_artist_idx ON release_artist_link(artist_id)",

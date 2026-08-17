@@ -843,7 +843,7 @@ namespace lms::scanner::tests
         }
     }
 
-    TEST(TrackMetadataParser, release_sortNameFallback)
+    TEST(TrackMetadataParser, release_noSortName)
     {
         const TestTagReader testTags{
             {
@@ -855,7 +855,7 @@ namespace lms::scanner::tests
 
         ASSERT_TRUE(track.medium.has_value());
         ASSERT_TRUE(track.medium->release.has_value());
-        EXPECT_EQ(track.medium->release->sortName, "MyAlbum");
+        EXPECT_EQ(track.medium->release->sortName, "");
     }
 
     TEST(TrackMetadataParser, artist_sortNameFallback)

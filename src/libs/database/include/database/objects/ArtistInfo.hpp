@@ -63,7 +63,7 @@ namespace lms::db
         ObjectPtr<Artist> getArtist() const;
         DirectoryId getDirectoryId() const { return _directory.id(); }
         std::string_view getName() const { return _name; }
-        std::string_view getSortName() const { return _name; }
+        std::string_view getSortName() const { return _sortName; }
         std::string_view getType() const { return _type; }
         std::string_view getGender() const { return _gender; }
         std::string_view getDisambiguation() const { return _disambiguation; }

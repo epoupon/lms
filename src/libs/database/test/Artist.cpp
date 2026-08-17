@@ -929,6 +929,30 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Artist_sortMethod_emptySortNameFallsBackOnName)
+    {
+        ScopedArtist artistBravo{ session, "Bravo" };     // no sort name -> falls back on "Bravo"
+        ScopedArtist artistAlpha{ session, "Alpha" };     // explicit sort name -> "Zulu"
+        ScopedArtist artistCharlie{ session, "Charlie" }; // no sort name -> falls back on "Charlie"
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            artistAlpha.get().modify()->setSortName("Zulu");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto allArtistsBySortName{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::SortName)) };
+
+            ASSERT_EQ(allArtistsBySortName.size(), 3);
+            EXPECT_EQ(allArtistsBySortName[0], artistBravo.getId());
+            EXPECT_EQ(allArtistsBySortName[1], artistCharlie.getId());
+            EXPECT_EQ(allArtistsBySortName[2], artistAlpha.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, Artist_nonReleaseTracks)
     {
         ScopedArtist artist{ session, "artist" };
@@ -1026,6 +1050,37 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Artist_sortDateAdded_tieBreakOnEffectiveSortName)
+    {
+        ScopedArtist artistZulu{ session, "Zulu" };   // no sort name -> falls back on "Zulu"
+        ScopedArtist artistAlpha{ session, "Alpha" }; // explicit sort name -> "Aardvark"
+
+        ScopedTrack trackZulu{ session };
+        ScopedTrack trackAlpha{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            artistAlpha.get().modify()->setSortName("Aardvark");
+
+            const Wt::WDateTime addedTime{ Wt::WDate{ 2021, 1, 2 } };
+            trackZulu.get().modify()->setAddedTime(addedTime);
+            trackAlpha.get().modify()->setAddedTime(addedTime);
+
+            session.create<TrackArtistLink>(trackZulu.get(), artistZulu.get(), TrackArtistLinkType::Artist);
+            session.create<TrackArtistLink>(trackAlpha.get(), artistAlpha.get(), TrackArtistLinkType::Artist);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::AddedDesc)) };
+            ASSERT_EQ(artists.size(), 2);
+            EXPECT_EQ(artists[0], artistAlpha.getId());
+            EXPECT_EQ(artists[1], artistZulu.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, Artist_sortLastWritten)
     {
         ScopedArtist artistA{ session, "artistA" };
@@ -1063,6 +1118,37 @@ namespace lms::db::tests
             EXPECT_EQ(artists[1], artistD.getId());
             EXPECT_EQ(artists[2], artistB.getId());
             EXPECT_EQ(artists[3], artistC.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_sortLastWritten_tieBreakOnEffectiveSortName)
+    {
+        ScopedArtist artistZulu{ session, "Zulu" };   // no sort name -> falls back on "Zulu"
+        ScopedArtist artistAlpha{ session, "Alpha" }; // explicit sort name -> "Aardvark"
+
+        ScopedTrack trackZulu{ session };
+        ScopedTrack trackAlpha{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            artistAlpha.get().modify()->setSortName("Aardvark");
+
+            const Wt::WDateTime lastWriteTime{ Wt::WDate{ 2021, 1, 2 } };
+            trackZulu.get().modify()->setLastWriteTime(lastWriteTime);
+            trackAlpha.get().modify()->setLastWriteTime(lastWriteTime);
+
+            session.create<TrackArtistLink>(trackZulu.get(), artistZulu.get(), TrackArtistLinkType::Artist);
+            session.create<TrackArtistLink>(trackAlpha.get(), artistAlpha.get(), TrackArtistLinkType::Artist);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::LastWrittenDesc)) };
+            ASSERT_EQ(artists.size(), 2);
+            EXPECT_EQ(artists[0], artistAlpha.getId());
+            EXPECT_EQ(artists[1], artistZulu.getId());
         }
     }
 

@@ -2127,8 +2127,18 @@ GROUP BY c.canonical_id, s.backend)");
 
     void migrateFromV112(Session& session)
     {
+        auto& dboSession{ *session.getDboSession() };
+
         // Index set rework
         dropIndexes(session);
+
+        // Sort names are no longer synthesized from the name: clear them and let the next scan write back only what the tags actually carry
+        utils::executeCommand(dboSession, "UPDATE artist SET sort_name = ''");
+        utils::executeCommand(dboSession, "UPDATE release SET sort_name = ''");
+
+        // Just increment the scan versions to make the next scan rescan everything
+        utils::executeCommand(dboSession, "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
+        utils::executeCommand(dboSession, "UPDATE scan_settings SET artist_info_scan_version = artist_info_scan_version + 1");
     }
 
     bool doDbMigration(Session& session)

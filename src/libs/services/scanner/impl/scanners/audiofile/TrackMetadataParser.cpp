@@ -468,7 +468,7 @@ namespace lms::scanner
 
         release.emplace();
         release->name = std::move(*releaseName);
-        release->sortName = getTagValueAs<std::string>(tagReader, TagType::AlbumSortOrder).value_or(release->name);
+        release->sortName = getTagValueAs<std::string>(tagReader, TagType::AlbumSortOrder).value_or("");
         release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _params);
         release->artistDisplayName = computeArtistDisplayName(release->artists, getTagValueAs<std::string>(tagReader, TagType::AlbumArtist), _params.artistTagDelimiters);
         release->mbid = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseID);

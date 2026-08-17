@@ -102,7 +102,6 @@ Otherwise, _LMS_ will only consider albums within the current directory.
 
 For an album to be considered a match, the following conditions must be met:
 * Same name
-* Same sort name
 * Same total number of discs
 * Identical 'compilation' flag value
 * Same record labels

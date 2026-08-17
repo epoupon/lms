@@ -80,9 +80,9 @@ namespace lms::api::subsonic
         {
             constexpr bool operator()(char lhs, char rhs) const
             {
-                if (lhs == '#' && std::isalpha(rhs))
+                if (lhs == '#' && std::isalpha(static_cast<unsigned char>(rhs)))
                     return false;
-                if (rhs == '#' && std::isalpha(lhs))
+                if (rhs == '#' && std::isalpha(static_cast<unsigned char>(lhs)))
                     return true;
 
                 return lhs < rhs;
@@ -101,10 +101,10 @@ namespace lms::api::subsonic
                 assert(!name.empty());
 
                 char sortChar;
-                if (name.empty() || !std::isalpha(name[0]))
+                if (name.empty() || !std::isalpha(static_cast<unsigned char>(name[0])))
                     sortChar = '#';
                 else
-                    sortChar = std::toupper(name[0]);
+                    sortChar = static_cast<char>(std::toupper(static_cast<unsigned char>(name[0])));
 
                 res[sortChar].push_back(directory);
             });
@@ -434,9 +434,10 @@ namespace lms::api::subsonic
             const auto artists{ Artist::find(context.getDbSession(), parameters) };
             for (const Artist::pointer& artist : artists)
             {
-                std::string_view sortName{ artist->getSortName() };
+                const std::string_view sortName{ artist->getSortName() };
+                const std::string_view effectiveSortName{ sortName.empty() ? artist->getName() : sortName };
 
-                const char sortChar{ (sortName.empty() || !std::isalpha(sortName[0])) ? '#' : static_cast<char>(std::toupper(sortName[0])) };
+                const char sortChar{ (effectiveSortName.empty() || !std::isalpha(static_cast<unsigned char>(effectiveSortName[0]))) ? '#' : static_cast<char>(std::toupper(static_cast<unsigned char>(effectiveSortName[0]))) };
                 artistsSortedByFirstChar[sortChar].push_back(artist->getId());
             }
 

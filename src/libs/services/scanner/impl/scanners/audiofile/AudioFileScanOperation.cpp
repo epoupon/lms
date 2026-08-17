@@ -145,7 +145,8 @@ namespace lms::scanner
                 if (dbArtistLink->getArtistName() != artist.name)
                     return true;
 
-                if (dbArtistLink->getArtistSortName() != artist.sortName)
+                const std::string_view artistSortName{ artist.sortName ? std::string_view{ *artist.sortName } : std::string_view{} };
+                if (dbArtistLink->getArtistSortName() != artistSortName)
                     return true;
 
                 if (!dbArtistLink->isArtistMBIDMatched() && artist.mbid)
@@ -216,7 +217,6 @@ namespace lms::scanner
         {
             // TODO: add more criterias?
             return dbCandidateRelease->getName() == release.name
-                && dbCandidateRelease->getSortName() == release.sortName
                 && dbCandidateRelease->getTotalDisc() == release.mediumCount
                 && dbCandidateRelease->isCompilation() == release.isCompilation
                 && dbCandidateRelease->getLabelNames() == release.labels

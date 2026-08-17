@@ -1723,6 +1723,30 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Release_sortName_emptyFallsBackOnName)
+    {
+        ScopedRelease releaseBravo{ session, "Bravo" };     // no sort name -> falls back on "Bravo"
+        ScopedRelease releaseAlpha{ session, "Alpha" };     // explicit sort name -> "Zulu"
+        ScopedRelease releaseCharlie{ session, "Charlie" }; // no sort name -> falls back on "Charlie"
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            releaseAlpha.get().modify()->setSortName("Zulu");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto releases{ Release::find(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::SortName)) };
+
+            ASSERT_EQ(releases.size(), 3);
+            EXPECT_EQ(releases[0]->getId(), releaseBravo.getId());
+            EXPECT_EQ(releases[1]->getId(), releaseCharlie.getId());
+            EXPECT_EQ(releases[2]->getId(), releaseAlpha.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, Release_updateArtwork)
     {
         ScopedRelease release{ session, "MyRelease" };

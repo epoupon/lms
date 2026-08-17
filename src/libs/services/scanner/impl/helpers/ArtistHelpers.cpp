@@ -50,7 +50,8 @@ namespace lms::scanner::helpers
             if (artistInfo.mbid)
                 artist.modify()->setMBID(artistInfo.mbid);
 
-            artist.modify()->setSortName(artistInfo.sortName ? *artistInfo.sortName : artistInfo.name);
+            if (artistInfo.sortName)
+                artist.modify()->setSortName(*artistInfo.sortName);
 
             return artist;
         }
@@ -134,8 +135,8 @@ namespace lms::scanner::helpers
                 artist = createArtist(session, artistInfo);
         }
 
-        // don't override a sort name coming from a higher-confidence MBID-matched artist
-        if (!artist->hasMBID())
+        // don't override a sort name coming from a higher-confidence MBID-matched artist, but do fill in a missing one
+        if (!artist->hasMBID() || artist->getSortName().empty())
             updateSortNameIfNeeded(session, artist, artistInfo);
 
         return artist;

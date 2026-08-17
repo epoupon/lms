@@ -428,12 +428,15 @@ VALUES
             const auto artist{ Artist::find(session, *artistMBID) };
             ASSERT_TRUE(artist);
             EXPECT_EQ(artist->getMBID(), artistMBID);
+            // migrateFromV112: sort names are no longer synthesized from the display name, existing ones are cleared
+            EXPECT_TRUE(artist->getSortName().empty());
 
             const auto releaseMBID{ core::UUID::fromString("6ba7b810-9dad-11d1-80b4-00c04fd430c8") };
             ASSERT_TRUE(releaseMBID);
             const auto release{ Release::find(session, *releaseMBID) };
             ASSERT_TRUE(release);
             EXPECT_EQ(release->getMBID(), releaseMBID);
+            EXPECT_TRUE(release->getSortName().empty());
 
             // migrateFromV110: user.scrobbler backfills to a bitmask, Internal (0) becoming an empty set
             const auto myUser{ User::find(session, "MyUser") };
