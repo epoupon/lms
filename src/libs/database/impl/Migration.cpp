@@ -96,7 +96,7 @@ namespace lms::db::Migration
             LMS_LOG(DB, INFO, "Droping all indexes...");
 
             // Make sure we remove all the previoulsy created index, the createIndexesIfNeeded will recreate them all
-            std::vector<std::string> indexeNames{ utils::fetchQueryResults(session.getDboSession()->query<std::string>(R"(SELECT name FROM sqlite_master WHERE type = 'index' AND name NOT LIKE 'sqlite_autoindex%')")) };
+            std::vector<std::string> indexeNames{ utils::fetchQueryResults(session.getDboSession()->query<std::string>(R"(SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE '%_idx')")) };
             for (const auto& indexName : indexeNames)
                 utils::executeCommand(*session.getDboSession(), "DROP INDEX " + indexName);
 
