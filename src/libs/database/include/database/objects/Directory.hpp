@@ -132,11 +132,9 @@ namespace lms::db
         struct ChildRelease
         {
             DirectoryId directory;
-            ObjectPtr<Release> release; // arbitrary one if the directory holds several
+            ObjectPtr<Release> release; 
             std::size_t releaseCount;
         };
-        // Releases held by the direct children of a directory. Resolves a whole listing in one query,
-        // for callers that would otherwise look up each child separately.
         static std::vector<ChildRelease> findChildReleases(Session& session, DirectoryId parentDirectory);
 
         // getters

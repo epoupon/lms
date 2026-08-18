@@ -340,9 +340,8 @@ namespace lms::api::subsonic
 
             const std::vector<Directory::pointer> subDirectories{ Directory::find(context.getDbSession(), params) };
 
-            // resolve every child's release up front: one query for the whole listing. Skipped
-            // entirely for leaf directories, which are the common case, as there is nothing to resolve
             std::unordered_map<DirectoryId::ValueType, Release::pointer> releaseByDirectory;
+            // skip leaf directories, which are the common case
             if (!subDirectories.empty())
             {
                 for (const Directory::ChildRelease& childRelease : Directory::findChildReleases(context.getDbSession(), directory->getId()))
