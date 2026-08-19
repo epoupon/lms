@@ -17,9 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "image/Image.hpp"
-
-#include <array>
+#include "Backend.hpp"
 
 #include "Exception.hpp"
 #include "StbImage.hpp"
@@ -31,19 +29,13 @@
 #include "EncodedImage.hpp"
 #include "RawImage.hpp"
 
-namespace lms::image
+namespace lms::image::backend
 {
     void init(const std::filesystem::path& /*unused*/)
     {
     }
 
-    std::span<const std::filesystem::path> getSupportedFileExtensions()
-    {
-        static const std::array<std::filesystem::path, 4> fileExtensions{ ".jpg", ".jpeg", ".png", ".bmp" };
-        return fileExtensions;
-    }
-
-    ImageProperties probeImage(const std::filesystem::path& path)
+    ImageDimensions probeImage(const std::filesystem::path& path)
     {
         LMS_SCOPED_TRACE_DETAILED("Image", "ProbeFile");
 
@@ -54,14 +46,14 @@ namespace lms::image
         if (::stbi_info(path.c_str(), &x, &y, &comp) == 0)
             throw StbiException{ "Probe failed" };
 
-        ImageProperties properties;
-        properties.width = x;
-        properties.height = y;
+        ImageDimensions dimensions;
+        dimensions.width = x;
+        dimensions.height = y;
 
-        return properties;
+        return dimensions;
     }
 
-    ImageProperties probeImage(std::span<const std::byte> encodedData)
+    ImageDimensions probeImage(std::span<const std::byte> encodedData)
     {
         LMS_SCOPED_TRACE_DETAILED("Image", "ProbeBuffer");
 
@@ -72,11 +64,11 @@ namespace lms::image
         if (::stbi_info_from_memory(reinterpret_cast<const stbi_uc*>(encodedData.data()), static_cast<int>(encodedData.size()), &x, &y, &comp) == 0)
             throw StbiException{ "Probe failed" };
 
-        ImageProperties properties;
-        properties.width = x;
-        properties.height = y;
+        ImageDimensions dimensions;
+        dimensions.width = x;
+        dimensions.height = y;
 
-        return properties;
+        return dimensions;
     }
 
     std::unique_ptr<IRawImage> decodeImage(std::span<const std::byte> encodedData)
@@ -107,6 +99,6 @@ namespace lms::image
         if (::stbi_write_jpg_to_func(writeCb, &encodedData, rawImage.getWidth(), rawImage.getHeight(), 3, static_cast<const STB::RawImage&>(rawImage).getData(), quality) == 0)
             throw Exception{ "Failed to export in jpeg format!" };
 
-        return std::make_unique<EncodedImage>(std::move(encodedData), "image/jpeg");
+        return std::make_unique<EncodedImage>(std::move(encodedData), core::media::ImageFormat::JPEG);
     }
-} // namespace lms::image
+} // namespace lms::image::backend

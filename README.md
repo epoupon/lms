@@ -107,16 +107,30 @@ For an album to be considered a match, the following conditions must be met:
 * Same record labels
 * Same barcode
 
-## Artist image lookup
+## Artwork
+_LMS_ scans and serves artwork in `jpg`/`jpeg`, `png`, `bmp`, `webp` and `gif` formats, both as standalone files and embedded in track tags. `webp` and `gif` images are always served at their original size: they are never resized, even when a client requests a specific size.
+
+### Release image lookup
+The recommended method is to name the release image file using the release's MusicBrainz ReleaseID. This file can be placed anywhere within one of the scanned libraries.
+
+If no file with the MusicBrainz ReleaseID is found, _LMS_ will search for a file named `cover`, `front`, `folder` or `default` (or other names configured in `lms.conf`, see the `cover-preferred-file-names` setting), using this logic:
+1. Identify the release's directory: for multi-disc releases, _LMS_ determines the longest common path among all the disc directories (e.g. a `cover.jpg` placed alongside the `CD1`/`CD2` folders).
+2. Fallback search: if no image is found there, _LMS_ will then search within each individual disc folder.
+
+If still no image is found, _LMS_ falls back to images embedded in the release's tracks, preferring an embedded "Front Cover" image, then "Media", then "Other" (as some tracks may be badly tagged), using the earliest disc/track that has one, and the largest image as a tiebreaker.
+
+### Artist image lookup
 The recommended method is to name the artist image file using the artist's MusicBrainz ArtistID. This file can be placed anywhere within one of the scanned libraries.
 
-If no file with the MusicBrainz ArtistID is found, _LMS_ will first look for files named `folder` and then `thumb` in the artist information directory, where the corresponding `artist.nfo` file is located.
-If neither exists, it will then search for a file named `artist` (or another name configured in `lms.conf`) in the artist's directories, using this logic:
+If no file with the MusicBrainz ArtistID is found, _LMS_ will look for a file named `thumb`, `folder` or `fanart` (or other names configured in `lms.conf`, see the `artist-info-image-file-names` setting) in the artist information directory, where the corresponding `artist.nfo` file is located.
+If neither exists, it will then search for a file named `artist` (or another name configured in `lms.conf`, see the `artist-image-file-names` setting) in the artist's directories, using this logic:
 1. Identify the artist's directory: _LMS_ selects all albums by the artist using the "AlbumArtist" link and determines the longest common path among them.
 2. Scan for the image: the directory is scanned starting from this common path, moving upwards if needed, until the artist image file is found.
 3. Fallback search: if no image is found, _LMS_ will then search within each individual album folder.
 
-## Disc image lookup
+If still no image is found, _LMS_ falls back to the preferred artwork of the artist's earliest release (by original release date). This behavior is enabled by default and can be disabled in the admin Scan Settings.
+
+### Disc image lookup
 _LMS_ automatically associates images with each disc in your collection. Name the image file after the disc's subtitle or another identifier configured in `lms.conf` (see the `medium-image-file-names` setting), and place it in the same directory as the disc's tracks. If no suitable image is found, LMS will also look for embedded images within the tracks of the disc.
 
 ## Playlist support

@@ -22,8 +22,10 @@
 #include "core/LiteralString.hpp"
 #include "core/media/Codec.hpp"
 #include "core/media/Container.hpp"
+#include "core/media/ImageFormat.hpp"
 
 namespace lms::core::media
 {
     core::LiteralString getMimeType(Container container, Codec codec);
-}
+    core::LiteralString getMimeType(ImageFormat format);
+} // namespace lms::core::media

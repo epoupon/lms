@@ -50,18 +50,23 @@ namespace lms::scanner
             void scan() override;
             OperationResult processResult() override;
 
-            std::optional<image::ImageProperties> _parsedImageProperties;
+            std::optional<image::ImageProperties> _parsedImage;
         };
 
         void ImageFileScanOperation::scan()
         {
             try
             {
-                _parsedImageProperties = image::probeImage(getFilePath());
+                _parsedImage = image::probeImage(getFilePath());
+            }
+            catch (const image::IOFileException& e)
+            {
+                _parsedImage.reset();
+                addError<IOScanError>(e.getPath(), e.getErrorCode());
             }
             catch (const image::Exception& e)
             {
-                _parsedImageProperties.reset();
+                _parsedImage.reset();
                 addError<ImageFileScanError>(getFilePath(), e.what());
             }
         }
@@ -71,7 +76,7 @@ namespace lms::scanner
             db::Session& dbSession{ getDb().getTLSSession() };
             db::Image::pointer image{ db::Image::find(dbSession, getFilePath()) };
 
-            if (!_parsedImageProperties)
+            if (!_parsedImage)
             {
                 if (image)
                 {
@@ -91,19 +96,19 @@ namespace lms::scanner
                 dbSession.create<db::Artwork>(image);
             }
             else if (image->getLastWriteTime() != getLastWriteTime()
-                     || image->getFileSize() != getFileSize()
-                     || image->getHeight() != _parsedImageProperties->height
-                     || image->getWidth() != _parsedImageProperties->width)
+                     || image->getFileSize() != getFileSize())
             {
                 if (auto artwork{ db::Artwork::find(dbSession, image->getId()) })
                     artwork.remove();
                 dbSession.create<db::Artwork>(image);
             }
 
+            const image::ImageDimensions dimensions{ _parsedImage->dimensions.value_or(image::ImageDimensions{}) };
             image.modify()->setLastWriteTime(getLastWriteTime());
             image.modify()->setFileSize(getFileSize());
-            image.modify()->setHeight(_parsedImageProperties->height);
-            image.modify()->setWidth(_parsedImageProperties->width);
+            image.modify()->setHeight(dimensions.height);
+            image.modify()->setWidth(dimensions.width);
+            image.modify()->setFormat(_parsedImage->format);
             db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
             image.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary));
 

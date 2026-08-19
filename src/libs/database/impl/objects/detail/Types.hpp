@@ -23,6 +23,7 @@
 
 #include "core/media/Codec.hpp"
 #include "core/media/Container.hpp"
+#include "core/media/ImageFormat.hpp"
 #include "core/media/ImageType.hpp"
 
 #include "database/objects/detail/Types.hpp"
@@ -37,4 +38,7 @@ namespace lms::db::detail
 
     core::media::ImageType getMediaImageType(db::detail::ImageType type);
     db::detail::ImageType getDbImageType(core::media::ImageType type);
+
+    std::optional<core::media::ImageFormat> getMediaImageFormat(db::detail::ImageFormat format);
+    db::detail::ImageFormat getDbImageFormat(core::media::ImageFormat format);
 } // namespace lms::db::detail

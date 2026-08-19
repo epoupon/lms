@@ -17,6 +17,7 @@ add_library(lmscore STATIC
 	impl/http/WtHttpClient.cpp
 	impl/media/Codec.cpp
 	impl/media/Container.cpp
+	impl/media/ImageFormat.cpp
 	impl/media/ImageType.cpp
 	impl/media/MimeType.cpp
 	impl/ArchiveZipper.cpp

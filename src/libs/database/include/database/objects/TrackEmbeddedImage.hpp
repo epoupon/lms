@@ -20,12 +20,11 @@
 #pragma once
 
 #include <optional>
-#include <string>
-#include <string_view>
 
 #include <Wt/Dbo/Field.h>
 #include <Wt/Dbo/collection.h>
 
+#include "core/media/ImageFormat.hpp"
 #include "core/media/ImageType.hpp"
 
 #include "database/Object.hpp"
@@ -36,6 +35,7 @@
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Types.hpp"
 
 namespace lms::db
 {
@@ -107,14 +107,14 @@ namespace lms::db
         std::size_t getSize() const { return _size; }
         std::size_t getWidth() const { return _width; }
         std::size_t getHeight() const { return _height; }
-        std::string_view getMimeType() const { return _mimeType; }
+        std::optional<core::media::ImageFormat> getFormat() const;
 
         // setters
         void setHash(ImageHashType hash) { _hash = hash; }
         void setSize(std::size_t size) { _size = static_cast<int>(size); }
         void setWidth(std::size_t width) { _width = static_cast<int>(width); }
         void setHeight(std::size_t height) { _height = static_cast<int>(height); }
-        void setMimeType(std::string_view mimeType) { _mimeType = mimeType; }
+        void setFormat(core::media::ImageFormat format);
 
         template<class Action>
         void persist(Action& a)
@@ -123,7 +123,7 @@ namespace lms::db
             Wt::Dbo::field(a, _size, "size");
             Wt::Dbo::field(a, _width, "width");
             Wt::Dbo::field(a, _height, "height");
-            Wt::Dbo::field(a, _mimeType, "mime_type");
+            Wt::Dbo::field(a, _format, "format");
 
             Wt::Dbo::hasMany(a, _links, Wt::Dbo::ManyToOne, "track_embedded_image");
         }
@@ -137,7 +137,7 @@ namespace lms::db
         int _size{};
         int _width{};
         int _height{};
-        std::string _mimeType;
+        detail::ImageFormat _format{ detail::ImageFormat::Unknown };
 
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackEmbeddedImageLink>> _links;
     };

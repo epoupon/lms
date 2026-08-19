@@ -21,6 +21,7 @@
 
 #include <vector>
 
+#include "core/media/ImageFormat.hpp"
 #include "core/media/ImageType.hpp"
 
 #include "audio/AudioProperties.hpp"
@@ -48,8 +49,8 @@ namespace lms::scanner
         core::media::ImageType type{ core::media::ImageType::Unknown };
         std::uint64_t hash{};
         std::size_t size{};
-        image::ImageProperties properties;
-        std::string mimeType;
+        image::ImageDimensions dimensions;
+        core::media::ImageFormat format;
         std::string description;
     };
 

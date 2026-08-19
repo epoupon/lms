@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -23,26 +23,19 @@
 #include <memory>
 #include <span>
 
-#include "core/media/ImageFormat.hpp"
 #include "image/IEncodedImage.hpp"
 #include "image/IRawImage.hpp"
 
-namespace lms::image
+namespace lms::image::backend
 {
-    void init(const std::filesystem::path& path);
-    std::span<const std::filesystem::path> getSupportedFileExtensions();
-
     // All these methods may throw Exception
-    ImageProperties probeImage(const std::filesystem::path& path);
-    ImageProperties probeImage(std::span<const std::byte> encodedData);
+    void init(const std::filesystem::path& path);
+
+    ImageDimensions probeImage(const std::filesystem::path& path);
+    ImageDimensions probeImage(std::span<const std::byte> encodedData);
 
     std::unique_ptr<IRawImage> decodeImage(std::span<const std::byte> encodedData);
     std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path);
 
-    std::unique_ptr<IEncodedImage> readImage(std::span<const std::byte> encodedData, core::media::ImageFormat format);
-    std::unique_ptr<IEncodedImage> readImage(const std::filesystem::path& path, core::media::ImageFormat format);
-
     std::unique_ptr<IEncodedImage> encodeToJPEG(const IRawImage& rawImage, unsigned quality);
-
-    bool canFormatBeDecoded(core::media::ImageFormat format);
-} // namespace lms::image
+} // namespace lms::image::backend

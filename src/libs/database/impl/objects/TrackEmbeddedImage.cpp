@@ -160,4 +160,14 @@ namespace lms::db
         return utils::execRangeQuery<TrackEmbeddedImageId>(query, range);
     }
 
+    std::optional<core::media::ImageFormat> TrackEmbeddedImage::getFormat() const
+    {
+        return detail::getMediaImageFormat(_format);
+    }
+
+    void TrackEmbeddedImage::setFormat(core::media::ImageFormat format)
+    {
+        _format = detail::getDbImageFormat(format);
+    }
+
 } // namespace lms::db

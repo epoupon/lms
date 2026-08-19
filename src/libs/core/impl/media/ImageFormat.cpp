@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,23 +17,28 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <cstddef>
-#include <span>
-
 #include "core/media/ImageFormat.hpp"
 
-namespace lms::image
+namespace lms::core::media
 {
-    using ImageSize = std::size_t;
-
-    class IEncodedImage
+    core::LiteralString imageFormatToString(ImageFormat format)
     {
-    public:
-        virtual ~IEncodedImage() = default;
+        switch (format)
+        {
+        case ImageFormat::BMP:
+            return "BMP";
+        case ImageFormat::GIF:
+            return "GIF";
+        case ImageFormat::JPEG:
+            return "JPEG";
+        case ImageFormat::PNG:
+            return "PNG";
+        case ImageFormat::SVG:
+            return "SVG";
+        case ImageFormat::WebP:
+            return "WebP";
+        }
 
-        virtual std::span<const std::byte> getData() const = 0;
-        virtual core::media::ImageFormat getFormat() const = 0;
-    };
-} // namespace lms::image
+        return "Unknown";
+    }
+} // namespace lms::core::media

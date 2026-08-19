@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,21 +19,19 @@
 
 #pragma once
 
-#include <cstddef>
-#include <span>
+#include "core/LiteralString.hpp"
 
-#include "core/media/ImageFormat.hpp"
-
-namespace lms::image
+namespace lms::core::media
 {
-    using ImageSize = std::size_t;
-
-    class IEncodedImage
+    enum class ImageFormat
     {
-    public:
-        virtual ~IEncodedImage() = default;
-
-        virtual std::span<const std::byte> getData() const = 0;
-        virtual core::media::ImageFormat getFormat() const = 0;
+        BMP,
+        GIF,
+        JPEG,
+        PNG,
+        SVG,
+        WebP,
     };
-} // namespace lms::image
+
+    core::LiteralString imageFormatToString(ImageFormat format);
+} // namespace lms::core::media

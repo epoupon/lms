@@ -29,18 +29,18 @@ namespace lms::image
     class EncodedImage : public IEncodedImage
     {
     public:
-        EncodedImage(const std::filesystem::path& path, std::string_view mimeType = "");
-        EncodedImage(std::vector<std::byte>&& data, std::string_view mimeType);
-        EncodedImage(std::span<const std::byte> data, std::string_view mimeType);
+        EncodedImage(const std::filesystem::path& path, core::media::ImageFormat format);
+        EncodedImage(std::vector<std::byte>&& data, core::media::ImageFormat format);
+        EncodedImage(std::span<const std::byte> data, core::media::ImageFormat format);
         ~EncodedImage() override = default;
         EncodedImage(const EncodedImage&) = delete;
         EncodedImage& operator=(const EncodedImage&) = delete;
 
         std::span<const std::byte> getData() const override { return _data; }
-        std::string_view getMimeType() const override { return _mimeType; }
+        core::media::ImageFormat getFormat() const override { return _format; }
 
     private:
         const std::vector<std::byte> _data;
-        const std::string _mimeType;
+        const core::media::ImageFormat _format;
     };
 } // namespace lms::image

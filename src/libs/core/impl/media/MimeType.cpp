@@ -77,4 +77,25 @@ namespace lms::core::media
 
         return "application/octet-stream";
     }
+
+    core::LiteralString getMimeType(ImageFormat format)
+    {
+        switch (format)
+        {
+        case ImageFormat::BMP:
+            return "image/bmp";
+        case ImageFormat::GIF:
+            return "image/gif";
+        case ImageFormat::JPEG:
+            return "image/jpeg";
+        case ImageFormat::PNG:
+            return "image/png";
+        case ImageFormat::SVG:
+            return "image/svg+xml";
+        case ImageFormat::WebP:
+            return "image/webp";
+        }
+
+        return "application/octet-stream";
+    }
 } // namespace lms::core::media

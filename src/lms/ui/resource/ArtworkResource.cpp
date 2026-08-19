@@ -26,6 +26,8 @@
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
+#include "core/media/MimeType.hpp"
+
 #include "services/artwork/IArtworkService.hpp"
 
 #include "LmsApplication.hpp"
@@ -145,7 +147,7 @@ namespace lms::ui
 
         if (image)
         {
-            response.setMimeType(std::string{ image->getMimeType() });
+            response.setMimeType(std::string{ core::media::getMimeType(image->getFormat()).str() });
             response.out().write(reinterpret_cast<const char*>(image->getData().data()), image->getData().size());
         }
         else

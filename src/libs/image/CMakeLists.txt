@@ -1,6 +1,9 @@
 
 add_library(lmsimage STATIC
 	impl/EncodedImage.cpp
+	impl/FormatDesc.cpp
+	impl/FormatSignature.cpp
+	impl/Image.cpp
 	)
 
 target_include_directories(lmsimage INTERFACE
@@ -24,7 +27,7 @@ if (${LMS_IMAGE_BACKEND} STREQUAL "stb")
 	message(STATUS "Using stb (resize version ${STB_IMAGE_RESIZE_VERSION})")
 
 	target_sources(lmsimage PRIVATE
-		impl/stb/Image.cpp
+		impl/stb/Backend.cpp
 		impl/stb/Exception.cpp
 		impl/stb/RawImage.cpp
 		impl/stb/StbImage.cpp
@@ -44,7 +47,7 @@ elseif (${LMS_IMAGE_BACKEND} STREQUAL "graphicsmagick")
 	message(STATUS "Using graphicsmagick")
 
 	target_sources(lmsimage PRIVATE
-		impl/graphicsmagick/Image.cpp
+		impl/graphicsmagick/Backend.cpp
 		impl/graphicsmagick/RawImage.cpp
 	)
 	target_link_libraries(lmsimage PRIVATE PkgConfig::GraphicsMagick++)
@@ -52,3 +55,7 @@ elseif (${LMS_IMAGE_BACKEND} STREQUAL "graphicsmagick")
 else ()
 	message(FATAL_ERROR "Invalid image library")
 endif ()
+
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()

@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "image/Image.hpp"
+#include "Backend.hpp"
 
 #include <memory>
 
@@ -30,7 +30,7 @@
 #include "EncodedImage.hpp"
 #include "RawImage.hpp"
 
-namespace lms::image
+namespace lms::image::backend
 {
     void init(const std::filesystem::path& path)
     {
@@ -49,13 +49,7 @@ namespace lms::image
         LMS_LOG(COVER, INFO, "Magick Disk resource limit = " << GetMagickResourceLimit(MagickLib::DiskResource));
     }
 
-    std::span<const std::filesystem::path> getSupportedFileExtensions()
-    {
-        static const std::array<std::filesystem::path, 4> fileExtensions{ ".jpg", ".jpeg", ".png", ".bmp" };
-        return fileExtensions;
-    }
-
-    ImageProperties probeImage(const std::filesystem::path& path)
+    ImageDimensions probeImage(const std::filesystem::path& path)
     {
         LMS_SCOPED_TRACE_DETAILED("Image", "ProbeFile");
 
@@ -64,11 +58,11 @@ namespace lms::image
             Magick::Image image;
             image.ping(path.c_str());
 
-            ImageProperties properties;
-            properties.width = image.size().width();
-            properties.height = image.size().height();
+            ImageDimensions dimensions;
+            dimensions.width = image.size().width();
+            dimensions.height = image.size().height();
 
-            return properties;
+            return dimensions;
         }
         catch (Magick::Exception& e)
         {
@@ -77,7 +71,7 @@ namespace lms::image
         }
     }
 
-    ImageProperties probeImage(std::span<const std::byte> encodedData)
+    ImageDimensions probeImage(std::span<const std::byte> encodedData)
     {
         LMS_SCOPED_TRACE_DETAILED("Image", "ProbeBuffer");
 
@@ -87,11 +81,11 @@ namespace lms::image
             Magick::Blob blob{ encodedData.data(), encodedData.size() };
             image.ping(blob);
 
-            ImageProperties properties;
-            properties.width = image.size().width();
-            properties.height = image.size().height();
+            ImageDimensions dimensions;
+            dimensions.width = image.size().width();
+            dimensions.height = image.size().height();
 
-            return properties;
+            return dimensions;
         }
         catch (Magick::Exception& e)
         {
@@ -125,7 +119,7 @@ namespace lms::image
             Magick::Blob blob;
             image.write(&blob);
 
-            return std::make_unique<EncodedImage>(std::span{ static_cast<const std::byte*>(blob.data()), blob.length() }, "image/jpeg");
+            return std::make_unique<EncodedImage>(std::span{ static_cast<const std::byte*>(blob.data()), blob.length() }, core::media::ImageFormat::JPEG);
         }
         catch (Magick::Exception& e)
         {
@@ -134,4 +128,4 @@ namespace lms::image
         }
     }
 
-} // namespace lms::image
+} // namespace lms::image::backend

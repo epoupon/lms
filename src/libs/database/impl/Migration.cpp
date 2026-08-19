@@ -38,7 +38,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 114 };
+        static constexpr Version LMS_DATABASE_VERSION{ 115 };
     }
 
     VersionInfo::VersionInfo()
@@ -2150,6 +2150,33 @@ GROUP BY c.canonical_id, s.backend)");
         utils::executeCommand(dboSession, "DROP INDEX IF EXISTS release_type_name_idx");
     }
 
+    void migrateFromV114(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        // passthrough image support (webp, gif) -> replace mimetype by our own format, need to rescan everything
+        utils::executeCommand(dboSession, "UPDATE track SET preferred_artwork_id = NULL, preferred_media_artwork_id = NULL");
+        utils::executeCommand(dboSession, "UPDATE release SET preferred_artwork_id = NULL");
+        utils::executeCommand(dboSession, "UPDATE artist SET preferred_artwork_id = NULL");
+        utils::executeCommand(dboSession, "UPDATE medium SET preferred_artwork_id = NULL");
+        utils::executeCommand(dboSession, "UPDATE playlist_file SET preferred_artwork_id = NULL");
+        utils::executeCommand(dboSession, "UPDATE podcast SET artwork_id = NULL");
+        utils::executeCommand(dboSession, "UPDATE podcast_episode SET artwork_id = NULL");
+
+        utils::executeCommand(dboSession, "DELETE FROM track_embedded_image_link");
+        utils::executeCommand(dboSession, "DELETE FROM artwork");
+        utils::executeCommand(dboSession, "DELETE FROM image");
+        utils::executeCommand(dboSession, "DELETE FROM track_embedded_image");
+        utils::executeCommand(dboSession, "ALTER TABLE image ADD COLUMN format INTEGER NOT NULL");
+        utils::executeCommand(dboSession, "ALTER TABLE image DROP COLUMN mime_type");
+        utils::executeCommand(dboSession, "ALTER TABLE track_embedded_image ADD COLUMN format INTEGER NOT NULL");
+        utils::executeCommand(dboSession, "ALTER TABLE track_embedded_image DROP COLUMN mime_type");
+
+        // Just increment the scan versions to make the next scan rescan everything
+        // Podcasts will download the missing images automatically
+        utils::executeCommand(dboSession, "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -2240,6 +2267,7 @@ GROUP BY c.canonical_id, s.backend)");
             { 111, migrateFromV111 },
             { 112, migrateFromV112 },
             { 113, migrateFromV113 },
+            { 114, migrateFromV114 },
         };
 
         LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");

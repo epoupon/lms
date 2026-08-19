@@ -20,14 +20,23 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
+
+#include "core/media/ImageFormat.hpp"
 
 namespace lms::image
 {
     using ImageSize = std::size_t;
 
-    struct ImageProperties
+    struct ImageDimensions
     {
         ImageSize width{};
         ImageSize height{};
+    };
+
+    struct ImageProperties
+    {
+        core::media::ImageFormat format;
+        std::optional<ImageDimensions> dimensions; // nullopt for passthrough formats: not computed
     };
 } // namespace lms::image

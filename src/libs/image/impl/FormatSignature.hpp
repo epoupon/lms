@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,20 +20,15 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <span>
 
 #include "core/media/ImageFormat.hpp"
 
 namespace lms::image
 {
-    using ImageSize = std::size_t;
+    // Every signature this file recognises is fully contained within this many leading bytes
+    inline constexpr std::size_t maxSignatureHeaderSize{ 16 };
 
-    class IEncodedImage
-    {
-    public:
-        virtual ~IEncodedImage() = default;
-
-        virtual std::span<const std::byte> getData() const = 0;
-        virtual core::media::ImageFormat getFormat() const = 0;
-    };
+    std::optional<core::media::ImageFormat> identifyFormat(std::span<const std::byte> header);
 } // namespace lms::image
