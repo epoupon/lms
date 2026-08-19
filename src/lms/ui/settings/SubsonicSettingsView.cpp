@@ -27,7 +27,6 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
 
-#include "core/IConfig.hpp"
 #include "core/Service.hpp"
 #include "core/UUID.hpp"
 
@@ -185,8 +184,6 @@ namespace lms::ui
         auto* t{ addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Settings.subsonic.template.key")) };
         t->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-        t->setCondition("if-has-subsonic-token-usage", core::Service<core::IConfig>::get()->getBool("api-subsonic-support-user-password-auth", true));
-
         std::string currentToken;
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
@@ -225,7 +222,7 @@ namespace lms::ui
             }
 
             auto doGenerate{ [subsonicTokenPtr, updateKeyButtonStates] {
-                const std::string newToken{ core::UUID::generate().getAsString() };
+                const std::string newToken{ core::UUID::generate().toString() };
                 {
                     auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
                     auto& authService{ *core::Service<auth::IAuthTokenService>::get() };

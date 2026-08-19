@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <span>
 #include <vector>
 
 #include "database/objects/ArtistId.hpp"
-#include "database/objects/MediumId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
@@ -37,6 +37,9 @@ namespace lms::ui
     {
     public:
         PlayQueueController(Filters& filters, PlayQueue& playQueue);
+        ~PlayQueueController() = default;
+        PlayQueueController(const PlayQueueController&) = delete;
+        PlayQueueController& operator=(const PlayQueueController&) = delete;
 
         enum class Command
         {
@@ -46,13 +49,12 @@ namespace lms::ui
             PlayShuffled,
         };
 
-        void processCommand(Command command, const std::vector<db::ArtistId>& artists);
-        void processCommand(Command command, const std::vector<db::ReleaseId>& releases);
-        void processCommand(Command command, const std::vector<db::TrackId>& tracks);
+        void processCommand(Command command, std::span<const db::ArtistId> artists);
+        void processCommand(Command command, std::span<const db::ReleaseId> releases);
+        void processCommand(Command command, std::span<const db::TrackId> tracks);
 
-        void processCommand(Command command, db::MediumId medium);
         void processCommand(Command command, db::TrackListId trackList);
-        void playTrackInRelease(db::TrackId track);
+        void playAtIndex(std::span<const db::TrackId> trackIds, std::size_t index);
 
         void setMaxTrackCountToEnqueue(std::size_t maxTrackCount) { _maxTrackCountToEnqueue = maxTrackCount; }
 

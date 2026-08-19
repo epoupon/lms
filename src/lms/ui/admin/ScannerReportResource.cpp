@@ -150,7 +150,7 @@ namespace lms::ui
 
                 response.out() << track->getAbsoluteFilePath().string();
                 if (auto mbid{ track->getTrackMBID() })
-                    response.out() << " (Track MBID " << mbid->getAsString() << ")";
+                    response.out() << " (Track MBID " << mbid->toString() << ")";
 
                 response.out() << " - " << duplicateReasonToWString(duplicate.reason).toUTF8() << '\n';
             }

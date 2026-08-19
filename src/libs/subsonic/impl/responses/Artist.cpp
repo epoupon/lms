@@ -24,14 +24,12 @@
 #include "core/String.hpp"
 
 #include "database/objects/Artist.hpp"
-#include "database/objects/Artwork.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 
-#include "CoverArtId.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 
@@ -41,17 +39,17 @@ namespace lms::api::subsonic
 
     namespace utils
     {
-        std::string joinArtistNames(const std::vector<Artist::pointer>& artists)
+        std::string joinArtistNames(const std::vector<TrackArtistLink::pointer>& links)
         {
-            if (artists.size() == 1)
-                return artists.front()->getName();
+            if (links.size() == 1)
+                return std::string{ links.front()->getArtistName() };
 
             std::vector<std::string> names;
-            names.resize(artists.size());
+            names.resize(links.size());
 
-            std::transform(std::cbegin(artists), std::cend(artists), std::begin(names),
-                           [](const Artist::pointer& artist) {
-                               return artist->getName();
+            std::transform(std::cbegin(links), std::cend(links), std::begin(names),
+                           [](const TrackArtistLink::pointer& link) {
+                               return std::string{ link->getArtistName() };
                            });
 
             return core::stringUtils::joinStrings(names, ", ");
@@ -69,11 +67,8 @@ namespace lms::api::subsonic
 
         Response::Node artistNode{ createMinimalArtistNode(artist) };
 
-        if (const auto artwork{ artist->getPreferredArtwork() })
-        {
-            CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
-            artistNode.setAttribute("coverArt", idToString(coverArtId));
-        }
+        if (const db::ArtworkId artworkId{ artist->getPreferredArtworkId() }; artworkId.isValid())
+            artistNode.setAttribute("coverArt", idToString(artworkId));
 
         bool hasAlbums{};
         {
@@ -102,7 +97,7 @@ namespace lms::api::subsonic
 
             {
                 std::optional<core::UUID> mbid{ artist->getMBID() };
-                artistNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
+                artistNode.setAttribute("musicBrainzId", mbid ? mbid->toString() : "");
             }
 
             artistNode.setAttribute("sortName", artist->getSortName());

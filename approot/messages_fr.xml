@@ -14,6 +14,8 @@
 <message id="Lms.discard">Annuler</message>
 <message id="Lms.edit">Editer</message>
 <message id="Lms.field-must-be-in-upper-case">Ce champ doit être en majuscule</message>
+<message id="Lms.infinite-scrolling-container.limit-reached">Limite d'affichage atteinte — affinez votre recherche pour voir plus de résultats</message>
+<message id="Lms.infinite-scrolling-container.no-results">Aucun résultat</message>
 <message id="Lms.loading">Chargement...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Quitter</message>
@@ -129,7 +131,7 @@
 <message id="Lms.Admin.ScannerController.get-report">Rapport</message>
 <message id="Lms.Admin.ScannerController.last-scan">Dernier scan</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Non disponible</message>
-<message id="Lms.Admin.ScannerController.last-scan-status">{1} fichiers analysés en {2} à {4} le {3} (UTC) - {5} erreurs, {6} duplicatas</message>
+<message id="Lms.Admin.ScannerController.last-scan-status">{1} fichiers analysés en {2} à {4} le {3} - {5} erreurs, {6} duplicatas</message>
 <message id="Lms.Admin.ScannerController.missing-artist-name">Nom de l'artiste manquant</message>
 <message id="Lms.Admin.ScannerController.playlist-all-pathes-missing">Impossible de trouver les chemins des pistes</message>
 <message id="Lms.Admin.ScannerController.playlist-path-missing">Impossible de trouver le chemin "{1}"</message>
@@ -141,7 +143,7 @@
 <message id="Lms.Admin.ScannerController.scanner">Scanner</message>
 <message id="Lms.Admin.ScannerController.status">Statut</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Non planifié</message>
-<message id="Lms.Admin.ScannerController.status-scheduled">Planifié à {2} le {1} (UTC)</message>
+<message id="Lms.Admin.ScannerController.status-scheduled">Planifié à {2} le {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">En cours de scan : étape {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Association des images des artistes: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Association des paroles externes: {1}%...</message>
@@ -152,7 +154,7 @@
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Vérification des fichiers dupliqués... {1} fichiers</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Vérification des fichiers supprimés... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compactage de la base de données...</message>
-<message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Calcul des statistiques... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-compute-genre-stats">Calcul des statistiques... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-extract-musicnn-embeddings">Extraction des embeddings MusicNN : {1} sur {2} fichiers ({3}%)</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optimisation de la base de données... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">Reconciliation des artistes: {1} entrées...</message>
@@ -168,6 +170,13 @@
 <!--Db-->
 <message id="Lms.Admin.DebugTools.Db.export-query-profiling">Exporter les données de profilage des requêtes</message>
 <message id="Lms.Admin.DebugTools.Db.db">Base de données</message>
+
+<!--PcmDecodingStats-->
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.pcm-decoding-stats">Statistiques de décodage PCM</message>
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.run">Lancer le bench</message>
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.download">Télécharger les résultats</message>
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.running">En cours…</message>
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.benchmark-completed">Benchmark de décodage PCM terminé en {1}</message>
 
 <!--Tracing-->
 <message id="Lms.Admin.DebugTools.Tracing.export-current-buffer">Exporter les traces</message>
@@ -221,7 +230,19 @@
 <message id="Lms.Explore.duration">Durée</message>
 <message id="Lms.Explore.filter-added">Filtre ajouté</message>
 <message id="Lms.Explore.filters">Filtres</message>
+<message id="Lms.Explore.genre">
+	<plural case="0">Genre</plural>
+	<plural case="1">Genres</plural>
+</message>
+<message id="Lms.Explore.grouping">
+	<plural case="0">Regroupement</plural>
+	<plural case="1">Regroupements</plural>
+</message>
 <message id="Lms.Explore.label">Label</message>
+<message id="Lms.Explore.language">
+	<plural case="0">Langue</plural>
+	<plural case="1">Langues</plural>
+</message>
 <message id="Lms.Explore.lyricist">
 	<plural case="0">Parolier</plural>
 	<plural case="1">Paroliers</plural>
@@ -230,6 +251,10 @@
 <message id="Lms.Explore.mixer">
 	<plural case="0">Mixeur</plural>
 	<plural case="1">Mixeurs</plural>
+</message>
+<message id="Lms.Explore.mood">
+	<plural case="0">Ambiance</plural>
+	<plural case="1">Ambiances</plural>
 </message>
 <message id="Lms.Explore.most-played">Plus joués</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz Artist</message>
@@ -345,6 +370,22 @@
 <message id="Lms.Settings.backend.internal">Interne</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">Jeton d'API ListenBrainz</message>
+<message id="Lms.Settings.backend.lastfm">Last.fm</message>
+<message id="Lms.Settings.services.lastfm-api-key">Clef API Last.fm</message>
+<message id="Lms.Settings.services.lastfm-api-secret">Secret API Last.fm</message>
+<message id="Lms.Settings.services.lastfm-card-title">Compte Last.fm</message>
+<message id="Lms.Settings.services.lastfm-linked">Lié</message>
+<message id="Lms.Settings.services.lastfm-link">Lier le compte</message>
+<message id="Lms.Settings.services.lastfm-unlink">Délier le compte</message>
+<message id="Lms.Settings.services.lastfm-link-modal-title">Lier le compte Last.fm</message>
+<message id="Lms.Settings.services.lastfm-link-modal-help">Entrez votre clef API et votre secret partagé Last.fm (obtenez-les sur <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a>), puis cliquez sur Autoriser.</message>
+<message id="Lms.Settings.services.lastfm-authorize">Autoriser sur Last.fm</message>
+<message id="Lms.Settings.services.lastfm-done">Terminé, j'ai autorisé</message>
+<message id="Lms.Settings.services.lastfm-auth-url">Pas ouvert ? Cliquez ici pour autoriser sur Last.fm</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-title">Délier le compte Last.fm</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-body">Êtes-vous sûr de vouloir délier votre compte Last.fm ? Le scrobbling s'arrêtera jusqu'à ce que vous le reliiez.</message>
+<message id="Lms.Settings.services.lastfm-missing-credentials">Veuillez entrer votre clef API et votre secret Last.fm.</message>
+<message id="Lms.Settings.services.lastfm-auth-error">Échec de l'authentification Last.fm. Vérifiez votre clef API et votre secret.</message>
 <message id="Lms.Settings.change-password">Changement de mot de passe</message>
 <message id="Lms.Settings.date-asc">Date de sortie (Croissant)</message>
 <message id="Lms.Settings.date-desc">Date de sortie (Décroissant)</message>
@@ -366,13 +407,13 @@
 <message id="Lms.Settings.password-bad">Mauvais mot de passe</message>
 <message id="Lms.Settings.password-must-fill-old-password">L'ancien mot de passe doit être renseigné</message>
 <message id="Lms.Settings.generate-token">Regénérer</message>
-<message id="Lms.Settings.subsonic-token-copied">Clé API copiée dans le presse-papiers !</message>
+<message id="Lms.Settings.subsonic-token-copied">Clef API copiée dans le presse-papiers !</message>
 <message id="Lms.Settings.subsonic-token-del-confirm">Supprimer</message>
-<message id="Lms.Settings.subsonic-token-del-confirm-body">Supprimer la clé déconnectera tous les clients qui l'utilisent actuellement.</message>
-<message id="Lms.Settings.subsonic-token-del-confirm-title">Supprimer la clé API ?</message>
+<message id="Lms.Settings.subsonic-token-del-confirm-body">Supprimer la clef déconnectera tous les clients qui l'utilisent actuellement.</message>
+<message id="Lms.Settings.subsonic-token-del-confirm-title">Supprimer la clef API ?</message>
 <message id="Lms.Settings.subsonic-token-regen-confirm">Regénérer</message>
-<message id="Lms.Settings.subsonic-token-regen-confirm-body">Générer une nouvelle clé invalidera tous les clients utilisant actuellement la clé existante.</message>
-<message id="Lms.Settings.subsonic-token-regen-confirm-title">Regénérer la clé API ?</message>
+<message id="Lms.Settings.subsonic-token-regen-confirm-body">Générer une nouvelle clef invalidera tous les clients utilisant actuellement la clef existante.</message>
+<message id="Lms.Settings.subsonic-token-regen-confirm-title">Regénérer la clef API ?</message>
 <message id="Lms.Settings.replaygain-mode">Mode ReplayGain</message>
 <message id="Lms.Settings.replaygain-mode.none">Pas de ReplayGain</message>
 <message id="Lms.Settings.replaygain-mode.auto">Automatique</message>
@@ -390,7 +431,7 @@
 <message id="Lms.Settings.subsonic-artist-list-mode.track-artists">Tous les artistes de piste</message>
 <message id="Lms.Settings.subsonic-api">API Subsonic</message>
 <message id="Lms.Settings.subsonic-token">Clef pour l'API OpenSubsonic</message>
-<message id="Lms.Settings.subsonic-token-usage">Utilisez cette clé d'API comme mot de passe pour les clients qui ne prennent pas en charge l'extension 'API Key Authentication'</message>
+<message id="Lms.Settings.subsonic-token-usage">Utilisez cette clef d'API comme mot de passe pour les clients qui ne prennent pas en charge l'extension 'API Key Authentication'</message>
 <message id="Lms.Settings.transcoding">Transcodage</message>
 <message id="Lms.Settings.transcoding-mode">Appliquer le transcodage</message>
 <message id="Lms.Settings.transcoding-mode.always">Toujours</message>

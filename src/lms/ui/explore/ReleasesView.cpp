@@ -114,25 +114,27 @@ namespace lms::ui
 
     void Releases::addSome()
     {
-        const auto releaseIds{ _releaseCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }) };
-
+        bool moreResults{};
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-            for (const db::ReleaseId releaseId : releaseIds.results)
-            {
-                if (const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseId) })
-                    _container->add(releaseListHelpers::createEntry(release, { releaseListHelpers::DisplayOptions::ShowArtist }));
-            }
+            _releaseCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }, moreResults, [&](const db::Release::pointer& release) {
+                _container->add(releaseListHelpers::createEntry(release, { releaseListHelpers::DisplayOptions::ShowArtist }));
+            });
         }
-
-        _container->setHasMore(releaseIds.moreResults);
+        _container->setHasMore(moreResults);
     }
 
     std::vector<db::ReleaseId> Releases::getAllReleases()
     {
-        db::RangeResults<db::ReleaseId> releaseIds{ _releaseCollector.get() };
-        return std::move(releaseIds.results);
+        std::vector<db::ReleaseId> ids;
+        bool moreResults{};
+        {
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+            _releaseCollector.get(db::Range{ 0, _maxCount }, moreResults, [&](const db::Release::pointer& release) {
+                ids.push_back(release->getId());
+            });
+        }
+        return ids;
     }
 
 } // namespace lms::ui

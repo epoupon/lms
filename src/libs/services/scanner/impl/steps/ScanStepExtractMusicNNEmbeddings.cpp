@@ -92,6 +92,7 @@ namespace lms::scanner
             ExtractMusicNNEmbeddingsJob& operator=(const ExtractMusicNNEmbeddingsJob&) = delete;
 
             const TrackLocation& getTrackLocation() const { return _trackLocation; }
+            bool isSuccess() const { return _success; }
             const audio::TrackMusicNNEmbeddings* getEmbeddings() const { return _embeddings ? &_embeddings.value() : nullptr; }
             std::string_view getErrorMessage() const { return _errorMessage; }
 
@@ -107,6 +108,8 @@ namespace lms::scanner
                     if (result.patchCount > 0)
                         _embeddings.emplace(result.embeddings);
                     LMS_LOG(DBUPDATER, DEBUG, "MusicNN extraction complete for " << _trackLocation.trackPath << " (" << result.patchCount << " patches)");
+
+                    _success = true;
                 }
                 catch (const audio::Exception& e)
                 {
@@ -116,6 +119,7 @@ namespace lms::scanner
 
             const audio::IMusicNNEmbeddingExtractor& _extractor;
             const TrackLocation _trackLocation;
+            bool _success{};
             std::optional<audio::TrackMusicNNEmbeddings> _embeddings;
             std::string _errorMessage;
         };
@@ -125,10 +129,13 @@ namespace lms::scanner
             db::Track::pointer track{ db::Track::find(session, assoc.trackId) };
             assert(track);
 
-            std::vector<std::byte> blob(sizeof(audio::TrackMusicNNEmbeddings));
-            audio::trackMusicNNEmbeddingsToBlob(*assoc.embeddings, blob);
             db::TrackMusicNNEmbeddings::pointer entry{ session.create<db::TrackMusicNNEmbeddings>(track) };
-            entry.modify()->setData(blob);
+            if (assoc.embeddings)
+            {
+                std::vector<std::byte> blob(sizeof(audio::TrackMusicNNEmbeddings));
+                audio::trackMusicNNEmbeddingsToBlob(*assoc.embeddings, blob);
+                entry.modify()->setData(blob);
+            }
         }
 
         void writeEmbeddings(ScanContext& context, db::Session& session, TrackEmbeddingAssociationContainer& pendingAssocs, bool forceFullBatch)
@@ -202,10 +209,22 @@ namespace lms::scanner
             {
                 const auto& extractJob{ static_cast<const ExtractMusicNNEmbeddingsJob&>(*job) };
 
-                if (const audio::TrackMusicNNEmbeddings * embeddings{ extractJob.getEmbeddings() })
-                    pendingAssocs.push_back(TrackEmbeddingAssociation{ .trackId = extractJob.getTrackLocation().track, .embeddings = *embeddings });
+                if (extractJob.isSuccess())
+                {
+                    if (const audio::TrackMusicNNEmbeddings * embeddings{ extractJob.getEmbeddings() })
+                    {
+                        pendingAssocs.push_back(TrackEmbeddingAssociation{ .trackId = extractJob.getTrackLocation().track, .embeddings = *embeddings });
+                    }
+                    else
+                    {
+                        LMS_LOG(DBUPDATER, INFO, "No patch extracted from " << extractJob.getTrackLocation().trackPath);
+                        pendingAssocs.push_back(TrackEmbeddingAssociation{ .trackId = extractJob.getTrackLocation().track, .embeddings = std::nullopt });
+                    }
+                }
                 else
+                {
                     addError<MusicNNEmbeddingsExtractError>(context, extractJob.getTrackLocation().trackPath, extractJob.getErrorMessage());
+                }
             }
 
             context.currentStepStats.processedElems += jobs.size();

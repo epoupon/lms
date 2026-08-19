@@ -4,6 +4,7 @@ add_executable(lms-db-generator
 	)
 
 target_link_libraries(lms-db-generator PRIVATE
+	lmsaudio
 	lmsdatabase
 	lmscore
 	Boost::program_options

@@ -19,28 +19,28 @@
 
 #include "responses/Genre.hpp"
 
-#include "database/objects/Cluster.hpp"
+#include "database/objects/Genre.hpp"
 
 #include "RequestContext.hpp"
 
 namespace lms::api::subsonic
 {
-    Response::Node createGenreNode(RequestContext& context, const db::Cluster::pointer& cluster)
+    Response::Node createGenreNode(RequestContext& context, const db::Genre::pointer& genre)
     {
-        Response::Node clusterNode;
+        Response::Node genreNode;
 
         switch (context.getResponseFormat())
         {
         case ResponseFormat::json:
-            clusterNode.setAttribute("value", cluster->getName());
+            genreNode.setAttribute("value", genre->getName());
             break;
         case ResponseFormat::xml:
-            clusterNode.setValue(cluster->getName());
+            genreNode.setValue(genre->getName());
             break;
         }
-        clusterNode.setAttribute("songCount", cluster->getTrackCount());
-        clusterNode.setAttribute("albumCount", cluster->getReleasesCount());
+        genreNode.setAttribute("songCount", genre->getTrackCount());
+        genreNode.setAttribute("albumCount", genre->getReleaseCount());
 
-        return clusterNode;
+        return genreNode;
     }
 } // namespace lms::api::subsonic

@@ -45,14 +45,20 @@
 #include "database/objects/ClusterId.hpp"
 #include "database/objects/DirectoryId.hpp"
 #include "database/objects/Filters.hpp"
+#include "database/objects/GenreId.hpp"
+#include "database/objects/GroupingId.hpp"
+#include "database/objects/LanguageId.hpp"
 #include "database/objects/MediaLibraryId.hpp"
 #include "database/objects/MediumId.hpp"
+#include "database/objects/MoodId.hpp"
+#include "database/objects/MovementId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackEmbeddedImageId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/WorkId.hpp"
 #include "database/objects/detail/Types.hpp"
 
 namespace lms::db
@@ -62,15 +68,21 @@ namespace lms::db
     class Cluster;
     class ClusterType;
     class Directory;
+    class Genre;
+    class Grouping;
+    class Language;
+    class Medium;
+    class Movement;
+    class Mood;
     class TrackEmbeddedImageLink;
     class MediaLibrary;
-    class Medium;
     class Release;
     class Session;
     class TrackArtistLink;
     class TrackLyrics;
     class TrackStats;
     class User;
+    class Work;
 
     class Track final : public Object<Track, TrackId>
     {
@@ -83,8 +95,7 @@ namespace lms::db
             TrackSortMethod sortMethod{ TrackSortMethod::None };
             std::optional<Range> range;
             Wt::WDateTime writtenAfter;
-            UserId starringUser;                                     // only tracks starred by this user
-            std::optional<FeedbackBackend> feedbackBackend;          // and for this feedback backend
+            UserId starringUser;                                     // only tracks starred by this user (uses their current feedback backend)
             ArtistId artist;                                         // only tracks that involve this artist
             std::string artistName;                                  // only tracks that involve this artist name
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes; //    and for these link types
@@ -130,10 +141,9 @@ namespace lms::db
                 writtenAfter = _after;
                 return *this;
             }
-            FindParameters& setStarringUser(UserId _user, FeedbackBackend _feedbackBackend)
+            FindParameters& setStarringUser(UserId _user)
             {
                 starringUser = _user;
-                feedbackBackend = _feedbackBackend;
                 return *this;
             }
             FindParameters& setArtist(ArtistId _artist, core::EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {})
@@ -223,12 +233,11 @@ namespace lms::db
         static bool exists(Session& session, TrackId id);
         static std::vector<pointer> findByRecordingMBID(Session& session, const core::UUID& MBID);
         static std::vector<pointer> findByMBID(Session& session, const core::UUID& MBID);
-        static RangeResults<TrackId> findIds(Session& session, const FindParameters& params);
-        static RangeResults<pointer> find(Session& session, const FindParameters& params);
+        static std::vector<TrackId> findIds(Session& session, const FindParameters& params);
+        static std::vector<pointer> find(Session& session, const FindParameters& params);
         static void find(Session& session, const FindParameters& params, const std::function<void(const Track::pointer&)>& func);
-        static void find(Session& session, const FindParameters& params, bool& moreResults, const std::function<void(const Track::pointer&)>& func);
         static std::size_t getCount(Session& session, const FindParameters& params);
-        static RangeResults<TrackId> findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range = std::nullopt);
+        static std::vector<TrackId> findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range = std::nullopt);
 
         // Update utility functions
         static void updatePreferredArtwork(Session& session, TrackId trackId, ArtworkId artworkId);
@@ -258,8 +267,8 @@ namespace lms::db
         void setName(std::string_view name);
         void setDate(const core::PartialDateTime& date) { _date = date; }
         void setOriginalDate(const core::PartialDateTime& date) { _originalDate = date; }
-        void setTrackMBID(const std::optional<core::UUID>& MBID) { _trackMBID = MBID ? MBID->getAsString() : ""; }
-        void setRecordingMBID(const std::optional<core::UUID>& MBID) { _recordingMBID = MBID ? MBID->getAsString() : ""; }
+        void setTrackMBID(const std::optional<core::UUID>& MBID) { _trackMBID = MBID; }
+        void setRecordingMBID(const std::optional<core::UUID>& MBID) { _recordingMBID = MBID; }
         void setCopyright(std::string_view copyright);
         void setCopyrightURL(std::string_view copyrightURL);
         void setAdvisory(Advisory advisory) { _advisory = advisory; }
@@ -270,6 +279,12 @@ namespace lms::db
         void setRelease(ObjectPtr<Release> release) { _release = getDboPtr(release); }
         void setMedium(ObjectPtr<Medium> medium) { _medium = getDboPtr(medium); }
         void setClusters(const std::vector<ObjectPtr<Cluster>>& clusters);
+        void setGenres(std::span<const ObjectPtr<Genre>> genres);
+        void setGroupings(std::span<const ObjectPtr<Grouping>> groupings);
+        void setLanguages(std::span<const ObjectPtr<Language>> languages);
+        void setMoods(std::span<const ObjectPtr<Mood>> moods);
+        void setWorks(std::span<const ObjectPtr<Work>> works);
+        void clearMovements();
         void clearLyrics();
         void clearEmbeddedLyrics();
         void addLyrics(const ObjectPtr<TrackLyrics>& lyrics);
@@ -301,15 +316,15 @@ namespace lms::db
 
         // Metadata
         std::optional<std::size_t> getTrackNumber() const { return _trackNumber; }
-        std::string getName() const { return _name; }
+        std::string_view getName() const { return _name; }
         const core::PartialDateTime& getDate() const { return _date; }
         std::optional<int> getYear() const;
         const core::PartialDateTime& getOriginalDate() const { return _originalDate; }
         std::optional<int> getOriginalYear() const;
         const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
         bool hasLyrics() const;
-        std::optional<core::UUID> getTrackMBID() const { return core::UUID::fromString(_trackMBID); }
-        std::optional<core::UUID> getRecordingMBID() const { return core::UUID::fromString(_recordingMBID); }
+        std::optional<core::UUID> getTrackMBID() const { return _trackMBID; }
+        std::optional<core::UUID> getRecordingMBID() const { return _recordingMBID; }
         std::string_view getCopyright() const;
         std::string_view getCopyrightURL() const;
         std::string_view getArtistDisplayName() const { return _artistDisplayName; }
@@ -330,6 +345,18 @@ namespace lms::db
         ObjectPtr<Medium> getMedium() const { return _medium; }
         std::vector<ObjectPtr<Cluster>> getClusters() const;
         std::vector<ClusterId> getClusterIds() const;
+        std::vector<ObjectPtr<Genre>> getGenres() const;
+        std::vector<GenreId> getGenreIds() const;
+        std::vector<ObjectPtr<Grouping>> getGroupings() const;
+        std::vector<GroupingId> getGroupingIds() const;
+        std::vector<ObjectPtr<Language>> getLanguages() const;
+        std::vector<LanguageId> getLanguageIds() const;
+        std::vector<ObjectPtr<Mood>> getMoods() const;
+        std::vector<MoodId> getMoodIds() const;
+        std::vector<ObjectPtr<Work>> getWorks() const;
+        bool hasWork() const;
+        std::vector<ObjectPtr<Movement>> getMovements() const;
+        bool hasMovement() const;
         ObjectPtr<MediaLibrary> getMediaLibrary() const;
         ObjectPtr<Directory> getDirectory() const;
         ObjectPtr<Artwork> getPreferredArtwork() const;
@@ -376,8 +403,14 @@ namespace lms::db
             Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
             Wt::Dbo::belongsTo(a, _preferredMediaArtwork, "preferred_media_artwork", Wt::Dbo::OnDeleteSetNull);
+            Wt::Dbo::hasMany(a, _movements, Wt::Dbo::ManyToOne, "track");
             Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "track");
             Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::hasMany(a, _genres, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::hasMany(a, _groupings, Wt::Dbo::ManyToMany, "track_grouping", "", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::hasMany(a, _languages, Wt::Dbo::ManyToMany, "track_language", "", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::hasMany(a, _moods, Wt::Dbo::ManyToMany, "track_mood", "", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::hasMany(a, _works, Wt::Dbo::ManyToMany, "track_work", "", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::hasMany(a, _trackLyrics, Wt::Dbo::ManyToOne, "track");
             Wt::Dbo::hasMany(a, _embeddedImageLinks, Wt::Dbo::ManyToOne, "track");
         }
@@ -413,14 +446,13 @@ namespace lms::db
         std::string _name;
         core::PartialDateTime _date;
         core::PartialDateTime _originalDate;
-        std::string _trackMBID;
-        std::string _recordingMBID;
+        std::optional<core::UUID> _trackMBID;
+        std::optional<core::UUID> _recordingMBID;
         std::string _copyright;
         std::string _copyrightURL;
         std::string _artistDisplayName;
         std::string _comment;
         Advisory _advisory{ Advisory::UnSet };
-
         Wt::Dbo::ptr<Medium> _medium;
         Wt::Dbo::ptr<Release> _release;
         Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
@@ -429,6 +461,12 @@ namespace lms::db
         Wt::Dbo::ptr<Artwork> _preferredMediaArtwork;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks;
         Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Genre>> _genres;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Grouping>> _groupings;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Language>> _languages;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Mood>> _moods;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Work>> _works;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Movement>> _movements;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackLyrics>> _trackLyrics;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackEmbeddedImageLink>> _embeddedImageLinks;
     };

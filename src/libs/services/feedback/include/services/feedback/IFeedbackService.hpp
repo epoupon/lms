@@ -45,9 +45,9 @@ namespace lms::feedback
     public:
         virtual ~IFeedbackService() = default;
 
-        using ArtistContainer = db::RangeResults<db::ArtistId>;
-        using ReleaseContainer = db::RangeResults<db::ReleaseId>;
-        using TrackContainer = db::RangeResults<db::TrackId>;
+        using ArtistContainer = std::vector<db::ArtistId>;
+        using ReleaseContainer = std::vector<db::ReleaseId>;
+        using TrackContainer = std::vector<db::TrackId>;
 
         struct FindParameters
         {

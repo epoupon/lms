@@ -24,6 +24,7 @@
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
+#include "core/String.hpp"
 
 #include "database/Session.hpp"
 #include "database/objects/ScanSettings.hpp"
@@ -35,7 +36,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 105 };
+        static constexpr Version LMS_DATABASE_VERSION{ 110 };
     }
 
     VersionInfo::VersionInfo()
@@ -90,10 +91,14 @@ namespace lms::db::Migration
     {
         void dropIndexes(Session& session)
         {
+            LMS_LOG(DB, INFO, "Droping all indexes...");
+
             // Make sure we remove all the previoulsy created index, the createIndexesIfNeeded will recreate them all
             std::vector<std::string> indexeNames{ utils::fetchQueryResults(session.getDboSession()->query<std::string>(R"(SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE '%_idx')")) };
             for (const auto& indexName : indexeNames)
                 utils::executeCommand(*session.getDboSession(), "DROP INDEX " + indexName);
+
+            LMS_LOG(DB, INFO, "Indexes dropped!");
         }
 
         void migrateFromV33(Session& session)
@@ -1729,6 +1734,238 @@ FROM track)");
         utils::executeCommand(*session.getDboSession(), R"(ALTER TABLE "playlist_file" ADD COLUMN "cover_image_file" text NOT NULL DEFAULT '')");
     }
 
+    void migrateFromV105(Session& session)
+    {
+        utils::executeCommand(*session.getDboSession(), R"(ALTER TABLE "user" ADD COLUMN "lastfm_api_key" TEXT NOT NULL DEFAULT '')");
+        utils::executeCommand(*session.getDboSession(), R"(ALTER TABLE "user" ADD COLUMN "lastfm_api_secret" TEXT NOT NULL DEFAULT '')");
+        utils::executeCommand(*session.getDboSession(), R"(ALTER TABLE "user" ADD COLUMN "lastfm_session_key" TEXT NOT NULL DEFAULT '')");
+    }
+
+    void migrateFromV106(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS artist_name_mbid_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS artist_mbid_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS release_mbid_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS release_group_mbid_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS track_mbid_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS track_recording_mbid_idx");
+
+        auto convertMBIDColumn = [&](std::string_view table, std::string_view column) {
+            LMS_LOG(DB, INFO, "Migrating '" << column << "' from table '" << table << "'...");
+
+            utils::executeCommand(dboSession, "ALTER TABLE " + std::string{ table } + " ADD COLUMN " + std::string{ column } + "_new BLOB");
+
+            // Fetch all non-empty MBIDs and convert to blobs
+            using Row = std::tuple<long long, std::string>;
+            std::vector<std::pair<long long, std::vector<unsigned char>>> rows;
+            const auto queryResults{ dboSession.query<Row>("SELECT id, " + std::string{ column } + " FROM " + std::string{ table } + " WHERE " + std::string{ column } + " != ''") };
+            std::string hexStr;
+            hexStr.reserve(32);
+            utils::forEachQueryResult(queryResults, [&](const Row& row) {
+                hexStr.clear();
+                const auto& uuid{ std::get<1>(row) };
+                for (char c : uuid)
+                {
+                    if (c != '-')
+                        hexStr.push_back(c);
+                }
+                const auto blob{ core::stringUtils::stringFromHex(hexStr) };
+                if (blob && blob->size() == 16)
+                    rows.emplace_back(std::get<0>(row), std::vector<unsigned char>{ blob->begin(), blob->end() });
+            });
+
+            // Update with prepared statement loop
+            Wt::Dbo::Transaction transaction{ dboSession };
+            auto update{ transaction.connection()->prepareStatement("UPDATE " + std::string{ table } + " SET " + std::string{ column } + "_new = ? WHERE id = ?") };
+            for (const auto& [id, blob] : rows)
+            {
+                update->bind(0, blob);
+                update->bind(1, id);
+                update->execute();
+                update->reset();
+            }
+
+            utils::executeCommand(dboSession, "ALTER TABLE " + std::string{ table } + " DROP COLUMN " + std::string{ column });
+            utils::executeCommand(dboSession, "ALTER TABLE " + std::string{ table } + " RENAME COLUMN " + std::string{ column } + "_new TO " + std::string{ column });
+        };
+
+        convertMBIDColumn("artist", "mbid");
+        convertMBIDColumn("release", "mbid");
+        convertMBIDColumn("release", "group_mbid");
+        convertMBIDColumn("track", "mbid");
+        convertMBIDColumn("track", "recording_mbid");
+    }
+
+    void migrateFromV107(Session& session)
+    {
+        // Extract Genre, Mood, Language and Grouping from Cluster (keep it for user tags)
+        LMS_LOG(DB, INFO, "Migrating genre...");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "genre" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null,
+  "track_count" integer not null default 0,
+  "release_count" integer not null default 0
+))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "track_genre" (
+  "track_id" bigint,
+  "genre_id" bigint,
+  primary key ("track_id", "genre_id"),
+  constraint "fk_track_genre_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_track_genre_genre" foreign key ("genre_id") references "genre" ("id") on delete cascade deferrable initially deferred
+))");
+
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO genre (version, name, track_count, release_count)
+SELECT 0, c.name, SUM(c.track_count), SUM(c.release_count) FROM cluster c
+INNER JOIN cluster_type ct ON ct.id = c.cluster_type_id
+WHERE ct.name = 'GENRE'
+GROUP BY c.name)");
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO track_genre (track_id, genre_id)
+SELECT DISTINCT tc.track_id, g.id FROM track_cluster tc
+INNER JOIN cluster c ON c.id = tc.cluster_id
+INNER JOIN cluster_type ct ON ct.id = c.cluster_type_id
+INNER JOIN genre g ON g.name = c.name
+WHERE ct.name = 'GENRE')");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "track_genre_genre" ON "track_genre" ("genre_id"))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "track_genre_track" ON "track_genre" ("track_id"))");
+
+        LMS_LOG(DB, INFO, "Migrating mood...");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "mood" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null
+))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "track_mood" (
+  "track_id" bigint,
+  "mood_id" bigint,
+  primary key ("track_id", "mood_id"),
+  constraint "fk_track_mood_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_track_mood_mood" foreign key ("mood_id") references "mood" ("id") on delete cascade deferrable initially deferred
+))");
+
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO mood (version, name)
+SELECT DISTINCT 0, c.name FROM cluster c
+INNER JOIN cluster_type ct ON ct.id = c.cluster_type_id
+WHERE ct.name = 'MOOD')");
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO track_mood (track_id, mood_id)
+SELECT DISTINCT tc.track_id, m.id FROM track_cluster tc
+INNER JOIN cluster c ON c.id = tc.cluster_id
+INNER JOIN cluster_type ct ON ct.id = c.cluster_type_id
+INNER JOIN mood m ON m.name = c.name
+WHERE ct.name = 'MOOD')");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "track_mood_mood" ON "track_mood" ("mood_id"))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "track_mood_track" ON "track_mood" ("track_id"))");
+
+        LMS_LOG(DB, INFO, "Migrating language...");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "language" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null
+))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "track_language" (
+  "track_id" bigint,
+  "language_id" bigint,
+  primary key ("track_id", "language_id"),
+  constraint "fk_track_language_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_track_language_language" foreign key ("language_id") references "language" ("id") on delete cascade deferrable initially deferred
+))");
+
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO language (version, name)
+SELECT DISTINCT 0, c.name FROM cluster c
+INNER JOIN cluster_type ct ON ct.id = c.cluster_type_id
+WHERE ct.name = 'LANGUAGE')");
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO track_language (track_id, language_id)
+SELECT DISTINCT tc.track_id, l.id FROM track_cluster tc
+INNER JOIN cluster c ON c.id = tc.cluster_id
+INNER JOIN cluster_type ct ON ct.id = c.cluster_type_id
+INNER JOIN language l ON l.name = c.name
+WHERE ct.name = 'LANGUAGE')");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "track_language_language" ON "track_language" ("language_id"))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "track_language_track" ON "track_language" ("track_id"))");
+
+        LMS_LOG(DB, INFO, "Migrating grouping...");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "grouping" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null
+))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "track_grouping" (
+  "track_id" bigint,
+  "grouping_id" bigint,
+  primary key ("track_id", "grouping_id"),
+  constraint "fk_track_grouping_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_track_grouping_grouping" foreign key ("grouping_id") references "grouping" ("id") on delete cascade deferrable initially deferred
+))");
+
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO grouping (version, name)
+SELECT DISTINCT 0, c.name FROM cluster c
+INNER JOIN cluster_type ct ON ct.id = c.cluster_type_id
+WHERE ct.name = 'GROUPING')");
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO track_grouping (track_id, grouping_id)
+SELECT DISTINCT tc.track_id, g.id FROM track_cluster tc
+INNER JOIN cluster c ON c.id = tc.cluster_id
+INNER JOIN cluster_type ct ON ct.id = c.cluster_type_id
+INNER JOIN grouping g ON g.name = c.name
+WHERE ct.name = 'GROUPING')");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "track_grouping_grouping" ON "track_grouping" ("grouping_id"))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "track_grouping_track" ON "track_grouping" ("track_id"))");
+
+        utils::executeCommand(*session.getDboSession(), R"(DELETE FROM track_cluster WHERE cluster_id IN (SELECT c.id FROM cluster c INNER JOIN cluster_type ct ON ct.id = c.cluster_type_id WHERE ct.name IN ('GENRE', 'MOOD', 'LANGUAGE', 'GROUPING')))");
+        utils::executeCommand(*session.getDboSession(), R"(ALTER TABLE cluster DROP COLUMN track_count)");
+        utils::executeCommand(*session.getDboSession(), R"(ALTER TABLE cluster DROP COLUMN release_count)");
+        utils::executeCommand(*session.getDboSession(), R"(DELETE FROM cluster WHERE cluster_type_id IN (SELECT id FROM cluster_type WHERE name IN ('GENRE', 'MOOD', 'LANGUAGE', 'GROUPING')))");
+        utils::executeCommand(*session.getDboSession(), R"(DELETE FROM cluster_type WHERE name IN ('GENRE', 'MOOD', 'LANGUAGE', 'GROUPING'))");
+    }
+
+    void migrateFromV108(Session& session)
+    {
+        utils::executeCommand(*session.getDboSession(), R"(
+CREATE TABLE IF NOT EXISTS "work" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null,
+  "mbid" blob
+))");
+        utils::executeCommand(*session.getDboSession(), R"(
+CREATE TABLE IF NOT EXISTS "track_work" (
+  "work_id" bigint,
+  "track_id" bigint,
+  primary key ("work_id", "track_id"),
+  constraint "fk_track_work_key1" foreign key ("work_id") references "work" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_track_work_key2" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred
+))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "track_work_work" on "track_work" ("work_id"))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "track_work_track" on "track_work" ("track_id"))");
+        utils::executeCommand(*session.getDboSession(), R"(
+CREATE TABLE IF NOT EXISTS "track_movement" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null,
+  "number" integer,
+  "count" integer,
+  "track_id" bigint,
+  constraint "fk_track_movement_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred
+))");
+
+        // Just increment the scan version of the settings to make the next scan rescan all audio files
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
+    }
+
+    void migrateFromV109(Session& session)
+    {
+        utils::executeCommand(*session.getDboSession(), R"(
+CREATE TABLE IF NOT EXISTS "server_info" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "instance_id" blob not null
+))");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1810,14 +2047,18 @@ FROM track)");
             { 102, migrateFromV102 },
             { 103, migrateFromV103 },
             { 104, migrateFromV104 },
+            { 105, migrateFromV105 },
+            { 106, migrateFromV106 },
+            { 107, migrateFromV107 },
+            { 108, migrateFromV108 },
+            { 109, migrateFromV109 },
         };
 
-        bool migrationPerformed{};
-        {
-            LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");
-            auto transaction{ session.createWriteTransaction() };
+        LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");
 
-            Version version;
+        Version version{};
+        {
+            auto transaction{ session.createWriteTransaction() };
             try
             {
                 version = VersionInfo::getOrCreate(session)->getVersion();
@@ -1834,23 +2075,27 @@ FROM track)");
 
             if (version < migrationFunctions.begin()->first)
                 throw core::LmsException{ outdatedMsg };
+        }
 
-            while (version < LMS_DATABASE_VERSION)
+        bool migrationPerformed{};
+        while (version < LMS_DATABASE_VERSION)
+        {
+            LMS_SCOPED_TRACE_DETAILED("Database", "MigrationStep");
+            LMS_LOG(DB, INFO, "Migrating database from version " << version << " to " << version + 1 << "...");
+
+            auto itMigrationFunc{ migrationFunctions.find(version) };
+            if (itMigrationFunc == std::cend(migrationFunctions))
+                throw core::LmsException{ "No code found to upgrade database!" };
+
             {
-                LMS_SCOPED_TRACE_DETAILED("Database", "MigrationStep");
-                LMS_LOG(DB, INFO, "Migrating database from version " << version << " to " << version + 1 << "...");
-
-                auto itMigrationFunc{ migrationFunctions.find(version) };
-                if (itMigrationFunc == std::cend(migrationFunctions))
-                    throw core::LmsException{ "No code found to upgrade database!" };
-
+                auto transaction{ session.createWriteTransaction() };
                 itMigrationFunc->second(session);
-
-                VersionInfo::get(session).modify()->setVersion(++version);
-
-                LMS_LOG(DB, INFO, "Migration complete to version " << version);
-                migrationPerformed = true;
+                VersionInfo::get(session).modify()->setVersion(version + 1);
             }
+            ++version;
+
+            LMS_LOG(DB, INFO, "Migration complete to version " << version);
+            migrationPerformed = true;
         }
 
         return migrationPerformed;

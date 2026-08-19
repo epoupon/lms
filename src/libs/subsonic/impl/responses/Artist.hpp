@@ -42,7 +42,7 @@ namespace lms::api::subsonic
 
     namespace utils
     {
-        std::string joinArtistNames(const std::vector<db::ObjectPtr<db::Artist>>& artists);
+        std::string joinArtistNames(const std::vector<db::ObjectPtr<db::TrackArtistLink>>& links);
         std::string_view toString(db::TrackArtistLinkType type);
     } // namespace utils
 

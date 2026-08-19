@@ -29,6 +29,7 @@
 #include "database/objects/User.hpp"
 
 #include "internal/InternalBackend.hpp"
+#include "lastfm/LastFmBackend.hpp"
 #include "listenbrainz/ListenBrainzBackend.hpp"
 
 namespace lms::scrobbling
@@ -67,6 +68,11 @@ namespace lms::scrobbling
         LMS_LOG(SCROBBLING, INFO, "Starting service...");
         _scrobblingBackends.emplace(ScrobblingBackend::Internal, std::make_unique<InternalBackend>(_db));
         _scrobblingBackends.emplace(ScrobblingBackend::ListenBrainz, std::make_unique<listenBrainz::ListenBrainzBackend>(ioContext, _db));
+        {
+            auto backend{ std::make_unique<lastFm::LastFmBackend>(ioContext, _db) };
+            _lastFmBackend = backend.get();
+            _scrobblingBackends.emplace(ScrobblingBackend::LastFm, std::move(backend));
+        }
         LMS_LOG(SCROBBLING, INFO, "Service started!");
     }
 
@@ -93,6 +99,28 @@ namespace lms::scrobbling
     {
         if (std::optional<ScrobblingBackend> backend{ getUserBackend(listen.userId) })
             _scrobblingBackends[*backend]->addTimedListen(listen);
+    }
+
+    void ScrobblingService::initiateLastFmLink(db::UserId userId,
+                                               std::string_view apiKey,
+                                               std::string_view apiSecret,
+                                               std::function<void(std::string_view authUrl)> onSuccess,
+                                               std::function<void()> onFailure)
+    {
+        if (_lastFmBackend)
+            _lastFmBackend->initiateLastFmLink(userId, apiKey, apiSecret, std::move(onSuccess), std::move(onFailure));
+        else
+            onFailure();
+    }
+
+    void ScrobblingService::continueLastFmLink(db::UserId userId,
+                                               std::function<void()> onSuccess,
+                                               std::function<void()> onFailure)
+    {
+        if (_lastFmBackend)
+            _lastFmBackend->continueLastFmLink(userId, std::move(onSuccess), std::move(onFailure));
+        else
+            onFailure();
     }
 
     void ScrobblingService::visitNowPlayingListens(const std::function<void(Clock::time_point startedAt, const Listen&)>& visitor, db::UserId userId)
@@ -128,17 +156,9 @@ namespace lms::scrobbling
     ScrobblingService::ArtistContainer ScrobblingService::getRecentArtists(const ArtistFindParameters& params)
     {
         ArtistContainer res;
-
-        const auto backend{ getUserBackend(params.user) };
-        if (!backend)
-            return res;
-
         db::Listen::ArtistStatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
-        listenFindParams.setScrobblingBackend(backend);
-
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
-
         res = db::Listen::getRecentArtists(session, listenFindParams);
         return res;
     }
@@ -146,17 +166,9 @@ namespace lms::scrobbling
     ScrobblingService::ReleaseContainer ScrobblingService::getRecentReleases(const FindParameters& params)
     {
         ReleaseContainer res;
-
-        const auto backend{ getUserBackend(params.user) };
-        if (!backend)
-            return res;
-
         db::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
-        listenFindParams.setScrobblingBackend(backend);
-
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
-
         res = db::Listen::getRecentReleases(session, listenFindParams);
         return res;
     }
@@ -164,17 +176,9 @@ namespace lms::scrobbling
     ScrobblingService::TrackContainer ScrobblingService::getRecentTracks(const FindParameters& params)
     {
         TrackContainer res;
-
-        const auto backend{ getUserBackend(params.user) };
-        if (!backend)
-            return res;
-
         db::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
-        listenFindParams.setScrobblingBackend(backend);
-
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
-
         res = db::Listen::getRecentTracks(session, listenFindParams);
         return res;
     }
@@ -195,27 +199,19 @@ namespace lms::scrobbling
 
     Wt::WDateTime ScrobblingService::getLastListenDateTime(db::UserId userId, db::ReleaseId releaseId)
     {
-        const auto backend{ getUserBackend(userId) };
-        if (!backend)
-            return {};
-
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        const db::Listen::pointer listen{ db::Listen::getMostRecentListen(session, userId, *backend, releaseId) };
+        const db::Listen::pointer listen{ db::Listen::getMostRecentListen(session, userId, releaseId) };
         return listen ? listen->getDateTime() : Wt::WDateTime{};
     }
 
     Wt::WDateTime ScrobblingService::getLastListenDateTime(db::UserId userId, db::TrackId trackId)
     {
-        const auto backend{ getUserBackend(userId) };
-        if (!backend)
-            return {};
-
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        const db::Listen::pointer listen{ db::Listen::getMostRecentListen(session, userId, *backend, trackId) };
+        const db::Listen::pointer listen{ db::Listen::getMostRecentListen(session, userId, trackId) };
         return listen ? listen->getDateTime() : Wt::WDateTime{};
     }
 
@@ -223,17 +219,9 @@ namespace lms::scrobbling
     ScrobblingService::ArtistContainer ScrobblingService::getTopArtists(const ArtistFindParameters& params)
     {
         ArtistContainer res;
-
-        const auto backend{ getUserBackend(params.user) };
-        if (!backend)
-            return res;
-
         db::Listen::ArtistStatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
-        listenFindParams.setScrobblingBackend(backend);
-
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
-
         res = db::Listen::getTopArtists(session, listenFindParams);
         return res;
     }
@@ -241,17 +229,9 @@ namespace lms::scrobbling
     ScrobblingService::ReleaseContainer ScrobblingService::getTopReleases(const FindParameters& params)
     {
         ReleaseContainer res;
-
-        const auto backend{ getUserBackend(params.user) };
-        if (!backend)
-            return res;
-
         db::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
-        listenFindParams.setScrobblingBackend(backend);
-
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
-
         res = db::Listen::getTopReleases(session, listenFindParams);
         return res;
     }
@@ -259,17 +239,9 @@ namespace lms::scrobbling
     ScrobblingService::TrackContainer ScrobblingService::getTopTracks(const FindParameters& params)
     {
         TrackContainer res;
-
-        const auto backend{ getUserBackend(params.user) };
-        if (!backend)
-            return res;
-
         db::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
-        listenFindParams.setScrobblingBackend(backend);
-
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
-
         res = db::Listen::getTopTracks(session, listenFindParams);
         return res;
     }

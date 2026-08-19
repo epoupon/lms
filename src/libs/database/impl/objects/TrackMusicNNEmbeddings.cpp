@@ -22,6 +22,10 @@
 #include <Wt/Dbo/Impl.h>
 
 #include "database/Session.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
+#include "database/objects/Mood.hpp"
 #include "database/objects/Track.hpp"
 
 #include "Utils.hpp"
@@ -62,7 +66,7 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackMusicNNEmbeddings>().where("track_id = ?").bind(trackId));
     }
 
-    RangeResults<TrackMusicNNEmbeddingsId> TrackMusicNNEmbeddings::find(Session& session, std::optional<Range> range)
+    std::vector<TrackMusicNNEmbeddingsId> TrackMusicNNEmbeddings::find(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 

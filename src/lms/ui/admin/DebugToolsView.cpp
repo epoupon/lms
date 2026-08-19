@@ -21,6 +21,7 @@
 
 #include "admin/debug/Database.hpp"
 #include "debug/Database.hpp"
+#include "debug/PcmDecodingStats.hpp"
 #include "debug/Tracing.hpp"
 
 namespace lms::ui
@@ -32,5 +33,6 @@ namespace lms::ui
 
         bindNew<Tracing>("tracing");
         bindNew<Database>("db");
+        bindNew<PcmDecodingStats>("pcm-decoding-stats");
     }
 } // namespace lms::ui

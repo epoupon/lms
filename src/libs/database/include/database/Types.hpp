@@ -38,8 +38,6 @@ namespace lms::db
 
     // Request:
     // 	  size = 0 => means we don't want data
-    // Response (via RangeResults)
-    //    size => results size
     struct Range
     {
         std::size_t offset{};
@@ -64,40 +62,6 @@ namespace lms::db
             subRange.size = std::min(subRangeSize, range.size - (subRange.offset - range.offset));
         }
     }
-
-    template<typename T>
-    struct RangeResults
-    {
-        Range range;
-        std::vector<T> results;
-        bool moreResults{};
-
-        RangeResults getSubRange(Range subRange)
-        {
-            assert(subRange.offset >= range.offset);
-
-            if (!subRange.size)
-                subRange.size = range.size - (subRange.offset - range.offset);
-
-            subRange.offset = std::min(subRange.offset, range.offset + range.size);
-            subRange.size = std::min(subRange.size, range.offset + range.size - subRange.offset);
-
-            RangeResults subResults;
-
-            auto itBegin{ std::cbegin(results) + subRange.offset - range.offset };
-            auto itEnd{ itBegin + subRange.size };
-            subResults.results.reserve(std::distance(itBegin, itEnd));
-            std::copy(itBegin, itEnd, std::back_inserter(subResults.results));
-
-            subResults.range = subRange;
-            if (subRange.offset + subRange.size == range.offset + range.size)
-                subResults.moreResults = moreResults;
-            else
-                subResults.moreResults = true;
-
-            return subResults;
-        }
-    };
 
     struct FileStats
     {

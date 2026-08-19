@@ -42,19 +42,19 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
-            EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
+            EXPECT_TRUE(Release::findOrphanIds(session).empty());
+            EXPECT_TRUE(Artist::findOrphanIds(session).empty());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             auto releases{ Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist.getId())) };
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release.getId());
 
             const auto releaseTracks{ Track::find(session, Track::FindParameters{}.setRelease(release.getId())) };
-            EXPECT_EQ(releaseTracks.results.size(), nbTracks);
+            EXPECT_EQ(releaseTracks.size(), nbTracks);
         }
     }
 
@@ -75,8 +75,8 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
 
             auto releases{ Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist.getId())) };
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release.getId());
 
             auto artists{ release->getTrackArtists() };
             ASSERT_EQ(artists.size(), 1);
@@ -88,7 +88,7 @@ namespace lms::db::tests
     {
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_TRUE(User::find(session, User::FindParameters{}).results.empty());
+            EXPECT_TRUE(User::find(session, User::FindParameters{}).empty());
             EXPECT_EQ(User::getCount(session), 0);
         }
 
@@ -97,7 +97,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            EXPECT_EQ(User::find(session, User::FindParameters{}).results.size(), 1);
+            EXPECT_EQ(User::find(session, User::FindParameters{}).size(), 1);
             EXPECT_EQ(User::getCount(session), 1);
         }
     }

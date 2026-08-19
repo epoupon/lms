@@ -144,7 +144,7 @@ namespace lms::ui
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                 db::TrackList::pointer queue{ getQueue() };
-                auto entries{ queue->getEntries().results };
+                auto entries{ queue->getEntries() };
                 core::random::shuffleContainer(entries);
 
                 queue.modify()->clear();
@@ -152,6 +152,7 @@ namespace lms::ui
                     LmsApp->getDbSession().create<db::TrackListEntry>(entry->getTrack(), queue);
             }
             _entriesContainer->reset();
+            _nextPlayPos.reset();
             addSome();
         });
 
@@ -234,6 +235,7 @@ namespace lms::ui
 
         _entriesContainer->reset();
         _trackPos.reset();
+        _nextPlayPos.reset();
         updateInfo();
     }
 
@@ -241,11 +243,12 @@ namespace lms::ui
     {
         updateCurrentTrack(false);
         _trackPos.reset();
+        _nextPlayPos.reset();
         _isTrackSelected = false;
         trackUnselected.emit();
     }
 
-    void PlayQueue::loadTrack(std::size_t pos, bool play)
+    void PlayQueue::loadTrack(std::size_t pos, bool play, ResetNextPlayPos resetNextPlayPos)
     {
         updateCurrentTrack(false);
 
@@ -269,6 +272,8 @@ namespace lms::ui
             }
 
             _trackPos = pos;
+            if (resetNextPlayPos.value())
+                _nextPlayPos.reset();
 
             const db::Track::pointer track{ queue->getEntry(*_trackPos)->getTrack() };
             trackId = track->getId();
@@ -296,18 +301,23 @@ namespace lms::ui
 
     void PlayQueue::playNext()
     {
-        if (!_trackPos)
-        {
-            loadTrack(0, true);
-            return;
-        }
-
-        loadTrack(*_trackPos + 1, true);
+        advanceTrack(ResetNextPlayPos{ true });
     }
 
     void PlayQueue::onPlaybackEnded()
     {
-        playNext();
+        advanceTrack(ResetNextPlayPos{ false });
+    }
+
+    void PlayQueue::advanceTrack(ResetNextPlayPos resetNextPlayPos)
+    {
+        if (!_trackPos)
+        {
+            loadTrack(0, true, resetNextPlayPos);
+            return;
+        }
+
+        loadTrack(*_trackPos + 1, true, resetNextPlayPos);
     }
 
     std::size_t PlayQueue::getCount()
@@ -368,7 +378,7 @@ namespace lms::ui
         entry->toggleStyleClass("Lms-entry-playing", selected);
     }
 
-    void PlayQueue::enqueueTracks(const std::vector<db::TrackId>& trackIds)
+    void PlayQueue::enqueueTracks(std::span<const db::TrackId> trackIds)
     {
         {
             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
@@ -396,64 +406,73 @@ namespace lms::ui
         _entriesContainer->setHasMore();
     }
 
-    std::vector<db::TrackId> PlayQueue::getAndClearNextTracks()
+    std::vector<db::TrackId> PlayQueue::getAndClearTracksFrom(std::size_t pos)
     {
         std::vector<db::TrackId> tracks;
 
         auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
         db::TrackList::pointer queue{ getQueue() };
-        auto entries{ queue->getEntries(db::Range{ _trackPos ? *_trackPos + 1 : 0, getCapacity() }) };
-        tracks.reserve(entries.results.size());
-        for (db::TrackListEntry::pointer& entry : entries.results)
+        auto entries{ queue->getEntries(db::Range{ pos, getCapacity() }) };
+        tracks.reserve(entries.size());
+        for (db::TrackListEntry::pointer& entry : entries)
         {
             tracks.push_back(entry->getTrack()->getId());
             entry.remove();
         }
 
-        if (_trackPos)
-        {
-            // entries may have been cleared
-            if (*_trackPos + 1 < _entriesContainer->getCount())
-                _entriesContainer->remove(*_trackPos + 1, _entriesContainer->getCount() - 1);
-        }
-        else
+        if (pos == 0)
         {
             _entriesContainer->reset();
+        }
+        else if (pos < _entriesContainer->getCount())
+        {
+            // entries may have been cleared
+            _entriesContainer->remove(pos, _entriesContainer->getCount() - 1);
         }
 
         return tracks;
     }
 
-    void PlayQueue::play(const std::vector<db::TrackId>& trackIds)
+    void PlayQueue::play(std::span<const db::TrackId> trackIds)
     {
         playAtIndex(trackIds, 0);
     }
 
-    void PlayQueue::playNext(const std::vector<db::TrackId>& trackIds)
+    void PlayQueue::playNext(std::span<const db::TrackId> trackIds)
     {
-        std::vector<db::TrackId> nextTracks{ getAndClearNextTracks() };
-        nextTracks.insert(std::cbegin(nextTracks), std::cbegin(trackIds), std::cend(trackIds));
-        playOrAddLast(nextTracks);
+        const std::size_t defaultInsertPos{ _trackPos ? *_trackPos + 1 : 0 };
+        if (!_nextPlayPos || *_nextPlayPos < defaultInsertPos)
+            _nextPlayPos = defaultInsertPos;
+
+        const std::size_t insertPos{ *_nextPlayPos };
+
+        std::vector<db::TrackId> tracksToInsert{ getAndClearTracksFrom(insertPos) };
+        tracksToInsert.insert(std::cbegin(tracksToInsert), std::cbegin(trackIds), std::cend(trackIds));
+
+        playOrAddLast(tracksToInsert);
+
+        // set after playOrAddLast: it may call loadTrack() (queue was empty), which resets _nextPlayPos
+        _nextPlayPos = insertPos + trackIds.size();
     }
 
-    void PlayQueue::playShuffled(const std::vector<db::TrackId>& trackIds)
+    void PlayQueue::playShuffled(std::span<const db::TrackId> trackIds)
     {
         clearTracks();
-        std::vector<db::TrackId> shuffledTrackIds{ trackIds };
+        std::vector<db::TrackId> shuffledTrackIds{ std::cbegin(trackIds), std::cend(trackIds) };
         core::random::shuffleContainer(shuffledTrackIds);
         enqueueTracks(shuffledTrackIds);
         loadTrack(0, true);
     }
 
-    void PlayQueue::playOrAddLast(const std::vector<db::TrackId>& trackIds)
+    void PlayQueue::playOrAddLast(std::span<const db::TrackId> trackIds)
     {
         enqueueTracks(trackIds);
         if (!_isTrackSelected)
             loadTrack(0, true);
     }
 
-    void PlayQueue::playAtIndex(const std::vector<db::TrackId>& trackIds, std::size_t index)
+    void PlayQueue::playAtIndex(std::span<const db::TrackId> trackIds, std::size_t index)
     {
         clearTracks();
         enqueueTracks(trackIds);
@@ -466,10 +485,10 @@ namespace lms::ui
 
         const db::TrackList::pointer queue{ getQueue() };
         const auto entries{ queue->getEntries(db::Range{ _entriesContainer->getCount(), _batchSize }) };
-        for (const db::TrackListEntry::pointer& tracklistEntry : entries.results)
+        for (const db::TrackListEntry::pointer& tracklistEntry : entries)
             addEntry(tracklistEntry);
 
-        _entriesContainer->setHasMore(entries.moreResults);
+        _entriesContainer->setHasMore(entries.size() == _batchSize);
     }
 
     void PlayQueue::addEntry(const db::TrackListEntry::pointer& tracklistEntry)
@@ -478,10 +497,17 @@ namespace lms::ui
         const auto track{ tracklistEntry->getTrack() };
         const db::TrackId trackId{ track->getId() };
 
+        const utils::TrackDisplayInfo displayInfo{ utils::computeTrackDisplayInfo(track) };
+
         Template* entry{ _entriesContainer->addNew<Template>(Wt::WString::tr("Lms.PlayQueue.template.entry")) };
         entry->addFunction("id", &Wt::WTemplate::Functions::id);
 
-        entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
+        entry->bindString("name", Wt::WString::fromUTF8(displayInfo.title), Wt::TextFormat::Plain);
+        if (displayInfo.workName)
+        {
+            entry->setCondition("if-has-work", true);
+            entry->bindString("work", Wt::WString::fromUTF8(*displayInfo.workName), Wt::TextFormat::Plain);
+        }
 
         const auto artists{ track->getArtistIds({ db::TrackArtistLinkType::Artist }) };
         if (!artists.empty())
@@ -520,7 +546,7 @@ namespace lms::ui
         entry->bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
         Wt::WPushButton* playBtn{ entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML) };
-        playBtn->setAttributeValue("aria-label", Wt::WString::tr("Lms.play-item").arg(track->getName()));
+        playBtn->setAttributeValue("aria-label", Wt::WString::tr("Lms.play-item").arg(displayInfo.title));
         playBtn->clicked().connect([this, entry] {
             const std::optional<std::size_t> pos{ _entriesContainer->getIndexOf(*entry) };
             if (pos)
@@ -528,7 +554,7 @@ namespace lms::ui
         });
 
         Wt::WPushButton* delBtn{ entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.delete-btn"), Wt::TextFormat::XHTML) };
-        delBtn->setAttributeValue("aria-label", Wt::WString::tr("Lms.delete-item").arg(track->getName()));
+        delBtn->setAttributeValue("aria-label", Wt::WString::tr("Lms.delete-item").arg(displayInfo.title));
         delBtn->setToolTip(Wt::WString::tr("Lms.delete"));
         delBtn->clicked().connect([this, tracklistEntryId, entry] {
             // Remove the entry n both the widget tree and the playqueue
@@ -547,6 +573,7 @@ namespace lms::ui
                 else if (*_trackPos >= _entriesContainer->getCount())
                     _trackPos.reset();
             }
+            _nextPlayPos.reset();
 
             _entriesContainer->remove(*entry);
 

@@ -132,9 +132,9 @@ namespace lms::db
         _allowMBIDArtistMerge = value;
     }
 
-    void ScanSettings::setArtistImageFallbackToReleaseField(bool value)
+    void ScanSettings::setArtistImageFallbackToRelease(bool value)
     {
-        _artistImageFallbackToReleaseField = value;
+        _artistImageFallbackToRelease = value;
     }
 
     void ScanSettings::incAudioScanVersion()

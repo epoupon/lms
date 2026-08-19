@@ -101,7 +101,7 @@ namespace lms::ui
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
         {
-            const auto clusterTypeIds{ db::ClusterType::findIds(LmsApp->getDbSession()).results };
+            const auto clusterTypeIds{ db::ClusterType::findIds(LmsApp->getDbSession()) };
             const auto clusterGroups{ trackList->getClusterGroups(clusterTypeIds, 3) };
 
             for (const auto& clusters : clusterGroups)
@@ -194,11 +194,12 @@ namespace lms::ui
         params.setSortMethod(db::TrackSortMethod::TrackList);
         params.setRange(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize });
 
-        bool moreResults{};
-        db::Track::find(LmsApp->getDbSession(), params, moreResults, [this](const db::Track::pointer& track) {
+        std::size_t count{};
+        db::Track::find(LmsApp->getDbSession(), params, [&](const db::Track::pointer& track) {
             _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
+            ++count;
         });
 
-        _container->setHasMore(moreResults);
+        _container->setHasMore(count == _batchSize);
     }
 } // namespace lms::ui

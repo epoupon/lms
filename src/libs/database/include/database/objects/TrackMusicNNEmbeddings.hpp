@@ -45,7 +45,7 @@ namespace lms::db
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, TrackMusicNNEmbeddingsId id);
         static pointer find(Session& session, TrackId trackId);
-        static RangeResults<TrackMusicNNEmbeddingsId> find(Session& session, std::optional<Range> range = std::nullopt);
+        static std::vector<TrackMusicNNEmbeddingsId> find(Session& session, std::optional<Range> range = std::nullopt);
         static void find(Session& session, std::function<void(const pointer&)> func);
         static void removeAll(Session& session);
 

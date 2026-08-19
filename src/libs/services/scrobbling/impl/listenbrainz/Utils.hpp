@@ -23,7 +23,7 @@
 
 #include "database/objects/UserId.hpp"
 
-#define LOG(sev, message) LMS_LOG(SCROBBLING, sev, "[listenbrainz] " << message)
+#define LMS_LOG_LISTENBRAINZ(sev, message) LMS_LOG(SCROBBLING, sev, "[listenbrainz] " << message)
 
 namespace lms::db
 {

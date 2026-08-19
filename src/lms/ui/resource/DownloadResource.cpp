@@ -182,7 +182,7 @@ namespace lms::ui
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const auto trackResults{ db::Track::find(LmsApp->getDbSession(), db::Track::FindParameters{}.setArtist(_artistId).setSortMethod(db::TrackSortMethod::DateDescAndRelease)) };
-        return detail::createZipper(trackResults.results);
+        return detail::createZipper(trackResults);
     }
 
     DownloadReleaseResource::DownloadReleaseResource(db::ReleaseId releaseId)
@@ -200,7 +200,7 @@ namespace lms::ui
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         auto tracks{ db::Track::find(LmsApp->getDbSession(), db::Track::FindParameters{}.setRelease(_releaseId).setSortMethod(db::TrackSortMethod::Release)) };
-        return detail::createZipper(tracks.results);
+        return detail::createZipper(tracks);
     }
 
     DownloadTrackResource::DownloadTrackResource(db::TrackId trackId)
@@ -244,7 +244,7 @@ namespace lms::ui
         db::Track::FindParameters params;
         params.setTrackList(_trackListId);
         const auto tracks{ db::Track::find(LmsApp->getDbSession(), params) };
-        return detail::createZipper(tracks.results);
+        return detail::createZipper(tracks);
     }
 } // namespace lms::ui
 

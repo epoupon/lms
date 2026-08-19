@@ -31,6 +31,7 @@
 #include "Executor.hpp"
 #include "PodcastParsing.hpp"
 #include "PodcastTypes.hpp"
+#include "UrlValidation.hpp"
 
 namespace lms::podcast
 {
@@ -49,6 +50,40 @@ namespace lms::podcast
             image.remove();
         }
 
+        void addEpisode(db::Session& session, const db::Podcast::pointer& dbPodcast, const PodcastEpisode& episode)
+        {
+            LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode.title << "' to podcast '" << dbPodcast->getTitle() << "'");
+
+            auto dbEpisode{ session.create<db::PodcastEpisode>(dbPodcast) };
+
+            dbEpisode.modify()->setAuthor(episode.author);
+            dbEpisode.modify()->setCategory(episode.category);
+            dbEpisode.modify()->setDescription(episode.description);
+
+            if (isAllowedPodcastUrl(episode.enclosureUrl.url))
+            {
+                dbEpisode.modify()->setEnclosureUrl(episode.enclosureUrl.url);
+                dbEpisode.modify()->setEnclosureContentType(episode.enclosureUrl.type);
+                dbEpisode.modify()->setEnclosureLength(episode.enclosureUrl.length);
+            }
+            else
+            {
+                LMS_LOG(PODCAST, WARNING, "Episode '" << episode.title << "' : ignoring enclosure URL '" << episode.enclosureUrl.url << "' (bad URL)");
+            }
+
+            dbEpisode.modify()->setExplicit(episode.explicitContent ? *episode.explicitContent : false);
+            dbEpisode.modify()->setLink(episode.link);
+            dbEpisode.modify()->setPubDate(episode.pubDate);
+            dbEpisode.modify()->setTitle(episode.title);
+
+            if (isAllowedPodcastUrl(episode.imageUrl))
+                dbEpisode.modify()->setImageUrl(episode.imageUrl);
+            else if (!episode.imageUrl.empty())
+                LMS_LOG(PODCAST, WARNING, "Episode '" << episode.title << "' : ignoring image URL '" << episode.imageUrl << "' (bad URL)");
+
+            dbEpisode.modify()->setDuration(episode.duration);
+        }
+
         void updatePodcast(db::Session& session, db::PodcastId podcastId, const Podcast& podcast)
         {
             auto transaction{ session.createWriteTransaction() };
@@ -62,8 +97,15 @@ namespace lms::podcast
             // force update the podcast data
             if (!podcast.newUrl.empty() && podcast.newUrl != dbPodcast->getUrl())
             {
-                LMS_LOG(PODCAST, INFO, "Podcast '" << podcast.title << "' : URL changed from '" << dbPodcast->getUrl() << "' to '" << podcast.newUrl << "'");
-                dbPodcast.modify()->setUrl(podcast.newUrl);
+                if (isAllowedPodcastUrl(podcast.newUrl))
+                {
+                    LMS_LOG(PODCAST, INFO, "Podcast '" << podcast.title << "' : URL changed from '" << dbPodcast->getUrl() << "' to '" << podcast.newUrl << "'");
+                    dbPodcast.modify()->setUrl(podcast.newUrl);
+                }
+                else
+                {
+                    LMS_LOG(PODCAST, WARNING, "Podcast '" << podcast.title << "' : ignoring new podcast URL '" << podcast.newUrl << "' (bad URL)");
+                }
             }
             dbPodcast.modify()->setAuthor(podcast.author);
             dbPodcast.modify()->setCategory(podcast.category);
@@ -80,14 +122,21 @@ namespace lms::podcast
             dbPodcast.modify()->setTitle(podcast.title);
             if (std::string previousUrl{ dbPodcast->getImageUrl() }; !previousUrl.empty() && previousUrl != podcast.imageUrl)
             {
-                LMS_LOG(PODCAST, INFO, "Podcast '" << podcast.title << "' : image url changed from '" << previousUrl << "' to '" << podcast.imageUrl << "'");
-                if (db::Artwork::pointer currentArtwork{ dbPodcast->getArtwork() })
+                if (isAllowedPodcastUrl(podcast.imageUrl))
                 {
-                    removeArtwork(currentArtwork);
-                    dbPodcast.modify()->setArtwork({});
-                }
+                    LMS_LOG(PODCAST, INFO, "Podcast '" << podcast.title << "' : image url changed from '" << previousUrl << "' to '" << podcast.imageUrl << "'");
+                    if (db::Artwork::pointer currentArtwork{ dbPodcast->getArtwork() })
+                    {
+                        removeArtwork(currentArtwork);
+                        dbPodcast.modify()->setArtwork({});
+                    }
 
-                dbPodcast.modify()->setImageUrl(podcast.imageUrl);
+                    dbPodcast.modify()->setImageUrl(podcast.imageUrl);
+                }
+                else
+                {
+                    LMS_LOG(PODCAST, WARNING, "Podcast '" << podcast.title << "' : ignoring image URL '" << podcast.imageUrl << "' (disallowed scheme)");
+                }
             }
 
             // Only create episodes if they are new, do not modify/update existing entries for now
@@ -102,22 +151,7 @@ namespace lms::podcast
                 if (previousNewestEpisodeDateTime.isValid() && episode.pubDate <= previousNewestEpisodeDateTime)
                     continue; // consider already in db
 
-                LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode.title << "' to podcast '" << podcast.title << "'");
-
-                auto dbEpisode{ session.create<db::PodcastEpisode>(dbPodcast) };
-
-                dbEpisode.modify()->setAuthor(episode.author);
-                dbEpisode.modify()->setCategory(episode.category);
-                dbEpisode.modify()->setDescription(episode.description);
-                dbEpisode.modify()->setEnclosureUrl(episode.enclosureUrl.url);
-                dbEpisode.modify()->setEnclosureContentType(episode.enclosureUrl.type);
-                dbEpisode.modify()->setEnclosureLength(episode.enclosureUrl.length);
-                dbEpisode.modify()->setExplicit(episode.explicitContent ? *episode.explicitContent : false);
-                dbEpisode.modify()->setLink(episode.link);
-                dbEpisode.modify()->setPubDate(episode.pubDate);
-                dbEpisode.modify()->setTitle(episode.title);
-                dbEpisode.modify()->setImageUrl(episode.imageUrl);
-                dbEpisode.modify()->setDuration(episode.duration);
+                addEpisode(session, dbPodcast, episode);
             }
         }
     } // namespace

@@ -36,24 +36,15 @@ namespace lms::db::tests
         }
 
         ScopedImage image{ session, "/MyImage" };
+        {
+            auto transaction{ session.createWriteTransaction() };
+            image.get().modify()->setAbsoluteFilePath("/tmp/foo");
+        }
         ScopedArtwork artwork{ session, image.lockAndGet() };
-
-        const Wt::WDateTime dateTime{ Wt::WDate{ 2025, 1, 1 } };
 
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Artwork::getCount(session), 1);
-        }
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            image.get().modify()->setLastWriteTime(dateTime);
-            image.get().modify()->setAbsoluteFilePath("/tmp/foo");
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(artwork.get()->getLastWrittenTime(), dateTime);
             EXPECT_EQ(artwork.get()->getAbsoluteFilePath(), "/tmp/foo");
         }
     }
@@ -67,20 +58,15 @@ namespace lms::db::tests
 
         ScopedTrackEmbeddedImage image{ session };
         ScopedTrack track{ session };
-        ScopedArtwork artwork{ session, image.lockAndGet() };
-
-        const Wt::WDateTime dateTime{ Wt::WDate{ 2025, 1, 1 } };
-
         {
             auto transaction{ session.createWriteTransaction() };
             session.create<db::TrackEmbeddedImageLink>(track.get(), image.get());
-            track.get().modify()->setLastWriteTime(dateTime);
             track.get().modify()->setAbsoluteFilePath("/tmp/foo");
         }
+        ScopedArtwork artwork{ session, image.lockAndGet() };
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(artwork.get()->getLastWrittenTime(), dateTime);
             EXPECT_EQ(artwork.get()->getAbsoluteFilePath(), "/tmp/foo");
         }
     }

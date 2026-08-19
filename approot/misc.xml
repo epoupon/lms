@@ -9,6 +9,7 @@
 	</div>
 </message>
 
+
 <message id="Lms.infinite-scrolling-container.template">
 	${elements}
 	${loading-indicator}

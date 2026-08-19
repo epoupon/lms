@@ -364,8 +364,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             auto orphans{ TrackEmbeddedImage::findOrphanIds(session, std::nullopt) };
-            ASSERT_EQ(orphans.results.size(), 1);
-            EXPECT_EQ(orphans.results[0], image.getId());
+            ASSERT_EQ(orphans.size(), 1);
+            EXPECT_EQ(orphans[0], image.getId());
         }
 
         {
@@ -376,7 +376,7 @@ namespace lms::db::tests
                 auto transaction{ session.createReadTransaction() };
 
                 auto orphans{ TrackEmbeddedImage::findOrphanIds(session, std::nullopt) };
-                ASSERT_EQ(orphans.results.size(), 0);
+                ASSERT_EQ(orphans.size(), 0);
             }
         }
 
@@ -384,8 +384,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             auto orphans{ TrackEmbeddedImage::findOrphanIds(session, std::nullopt) };
-            ASSERT_EQ(orphans.results.size(), 1);
-            EXPECT_EQ(orphans.results[0], image.getId());
+            ASSERT_EQ(orphans.size(), 1);
+            EXPECT_EQ(orphans[0], image.getId());
         }
     }
 

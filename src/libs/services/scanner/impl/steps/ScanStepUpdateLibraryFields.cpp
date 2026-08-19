@@ -58,7 +58,7 @@ namespace lms::scanner
 
         constexpr std::size_t batchSize = 100;
 
-        db::RangeResults<db::DirectoryId> entries;
+        std::vector<db::DirectoryId> entries;
         while (!_abortScan)
         {
             {
@@ -67,7 +67,7 @@ namespace lms::scanner
                 entries = db::Directory::findMismatchedLibrary(session, db::Range{ 0, batchSize }, mediaLibrary.rootDirectory, mediaLibrary.id);
             };
 
-            if (entries.results.empty())
+            if (entries.empty())
                 break;
 
             {
@@ -77,7 +77,7 @@ namespace lms::scanner
                 if (!library) // may be legit
                     break;
 
-                for (const db::DirectoryId directoryId : entries.results)
+                for (const db::DirectoryId directoryId : entries)
                 {
                     if (_abortScan)
                         break;
@@ -87,7 +87,7 @@ namespace lms::scanner
                 }
             }
 
-            context.currentStepStats.processedElems += entries.results.size();
+            context.currentStepStats.processedElems += entries.size();
             _progressCallback(context.currentStepStats);
         }
     }

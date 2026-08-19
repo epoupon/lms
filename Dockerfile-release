@@ -1,4 +1,4 @@
-FROM	alpine:3.23 AS build
+FROM	alpine:3.24 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -81,7 +81,7 @@ RUN \
 	make -j$(nproc) install 
 
 # WT
-ARG	WT_VERSION=4.13.2
+ARG	WT_VERSION=4.13.3
 ARG WT_DEBUG=OFF
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
@@ -147,7 +147,7 @@ RUN \
 	rm -rf /tmp/fakeroot/share/Wt/resources/themes
 
 ## Release Stage
-FROM		alpine:3.23 AS release
+FROM		alpine:3.24 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 
 ARG	RUNTIME_PACKAGES=" \

@@ -34,10 +34,10 @@ namespace lms::api::subsonic
             switch (context.getResponseFormat())
             {
             case ResponseFormat::json:
-                albumInfo.setAttribute("musicBrainzId", releaseMBID->getAsString());
+                albumInfo.setAttribute("musicBrainzId", releaseMBID->toString());
                 break;
             case ResponseFormat::xml:
-                albumInfo.createChild("musicBrainzId").setValue(releaseMBID->getAsString());
+                albumInfo.createChild("musicBrainzId").setValue(releaseMBID->toString());
                 break;
             }
         }

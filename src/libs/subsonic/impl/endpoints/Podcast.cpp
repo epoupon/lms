@@ -37,7 +37,7 @@ namespace lms::api::subsonic
         const bool includeEpisodes{ getParameterAs<bool>(context.getParameters(), "includeEpisodes").value_or(true) };
         const std::optional<db::PodcastId> podcastId{ getParameterAs<db::PodcastId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& podcastsNode{ response.createNode("podcasts") };
         podcastsNode.createEmptyArrayChild("channel");
 
@@ -66,7 +66,7 @@ namespace lms::api::subsonic
         std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(20) };
         count = std::min<std::size_t>(count, 100);
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& newestPodcastsNode{ response.createNode("newestPodcasts") };
         newestPodcastsNode.createEmptyArrayChild("episode");
 
@@ -84,11 +84,11 @@ namespace lms::api::subsonic
         return response;
     }
 
-    Response handleRefreshPodcasts(RequestContext& context)
+    Response handleRefreshPodcasts(RequestContext& /*context*/)
     {
         core::Service<podcast::IPodcastService>::get()->refreshPodcasts();
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 
     Response handleCreatePodcastChannel(RequestContext& context)
@@ -102,7 +102,7 @@ namespace lms::api::subsonic
         // no effect if podcast already exists
         core::Service<podcast::IPodcastService>::get()->addPodcast(url);
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 
     Response handleDeletePodcastChannel(RequestContext& context)
@@ -113,7 +113,7 @@ namespace lms::api::subsonic
         if (!core::Service<podcast::IPodcastService>::get()->removePodcast(podcastId))
             throw RequestedDataNotFoundError{};
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 
     Response handleDeletePodcastEpisode(RequestContext& context)
@@ -124,7 +124,7 @@ namespace lms::api::subsonic
         if (!core::Service<podcast::IPodcastService>::get()->deletePodcastEpisode(episodeId))
             throw RequestedDataNotFoundError{};
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 
     Response handleDownloadPodcastEpisode(RequestContext& context)
@@ -135,7 +135,7 @@ namespace lms::api::subsonic
         if (!core::Service<podcast::IPodcastService>::get()->downloadPodcastEpisode(episodeId))
             throw RequestedDataNotFoundError{};
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 
     Response handleGetPodcastEpisode(RequestContext& context)
@@ -143,7 +143,7 @@ namespace lms::api::subsonic
         // Mandatory parameters
         const db::PodcastEpisodeId episodeId{ getMandatoryParameterAs<db::PodcastEpisodeId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 

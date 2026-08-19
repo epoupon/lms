@@ -40,7 +40,7 @@ namespace lms::core::media
             CodecDesc{ Codec::MPC7, "MPC7", "Musepack7", false },
             CodecDesc{ Codec::MPC8, "MPC8", "Musepack8", false },
             CodecDesc{ Codec::Opus, "Opus", "Opus", false },
-            CodecDesc{ Codec::PCM, "PCM", "Pulse-code modulation", false },
+            CodecDesc{ Codec::PCM, "PCM", "Pulse-code modulation", true },
             CodecDesc{ Codec::Shorten, "Shorten", "Shorten", true },
             CodecDesc{ Codec::TrueAudio, "TTA", "The True Audio", true },
             CodecDesc{ Codec::Vorbis, "Vorbis", "Vorbis", false },

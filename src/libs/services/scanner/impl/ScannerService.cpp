@@ -49,7 +49,7 @@
 #include "steps/ScanStepCheckForDuplicatedFiles.hpp"
 #include "steps/ScanStepCheckForRemovedFiles.hpp"
 #include "steps/ScanStepCompact.hpp"
-#include "steps/ScanStepComputeClusterStats.hpp"
+#include "steps/ScanStepComputeGenreStats.hpp"
 #include "steps/ScanStepExtractMusicNNEmbeddings.hpp"
 #include "steps/ScanStepOptimize.hpp"
 #include "steps/ScanStepRemoveOrphanedDbEntries.hpp"
@@ -124,9 +124,9 @@ namespace lms::scanner
 
             settings->skipSingleReleasePlayLists = scanSettings->getSkipSingleReleasePlayLists();
             settings->allowArtistMBIDFallback = scanSettings->getAllowMBIDArtistMerge();
-            settings->artistImageFallbackToRelease = scanSettings->getArtistImageFallbackToReleaseField();
+            settings->artistImageFallbackToRelease = scanSettings->getArtistImageFallbackToRelease();
 
-            settings->extractMusicNNEmbeddings = scanSettings->getRecommendationEngineType() == db::ScanSettings::RecommendationEngineType::AudioSimilarity;
+            settings->extractMusicNNEmbeddings = scanSettings->getRecommendationEngineType() == db::RecommendationEngineType::AudioSimilarity;
             settings->musicnnModelPath = core::Service<core::IConfig>::get()->getPath("musicnn-model-path", "/usr/share/lms/models/MSD_musicnn_embedding.onnx");
             settings->musicnnMaxPatchCountPerTrack = core::Service<core::IConfig>::get()->getULong("musicnn-max-patch-count-per-track", 20);
 
@@ -528,7 +528,7 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepRemoveOrphanedDbEntries>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCompact>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepOptimize>(params));
-        _scanSteps.emplace_back(std::make_unique<ScanStepComputeClusterStats>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepComputeGenreStats>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCheckForDuplicatedFiles>(params));
 
         // Audio extraction scan step must be last as it is the most long running

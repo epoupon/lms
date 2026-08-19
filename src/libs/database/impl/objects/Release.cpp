@@ -23,14 +23,21 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/PartialDateTime.hpp"
+#include "core/String.hpp"
+
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Medium.hpp"
+#include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
@@ -38,6 +45,7 @@
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/User.hpp"
+#include "database/objects/Work.hpp"
 
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
@@ -46,6 +54,7 @@
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PartialDateTimeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
+#include "traits/UUIDTraits.hpp"
 
 DBO_INSTANTIATE_TEMPLATES(lms::db::Country)
 DBO_INSTANTIATE_TEMPLATES(lms::db::Label)
@@ -76,13 +85,20 @@ namespace lms::db
                 || params.originalDateRange
                 || params.trackArtist.isValid()
                 || params.filters.clusters.size() == 1
+                || params.filters.genre.isValid()
+                || params.filters.grouping.isValid()
+                || params.filters.language.isValid()
                 || params.filters.mediaLibrary.isValid()
+                || params.filters.mood.isValid()
                 || params.filters.codec.has_value()
                 || params.directory.isValid()
                 || params.parentDirectory.isValid())
             {
                 query.join("track t ON t.release_id = r.id");
             }
+
+            if (!params.keywords.empty())
+                query.leftJoin("medium m ON m.release_id = r.id");
 
             if (params.parentDirectory.isValid())
             {
@@ -136,19 +152,35 @@ namespace lms::db
             if (!params.name.empty())
                 query.where("r.name = ?").bind(params.name);
 
-            for (std::string_view keyword : params.keywords)
-                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
+            if (!params.keywords.empty())
+            {
+                std::vector<std::string> nameClauses;
+                std::vector<std::string> mediumNameClauses;
+
+                for (const std::string_view keyword : params.keywords)
+                {
+                    nameClauses.push_back("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
+                    query.bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
+                }
+
+                for (const std::string_view keyword : params.keywords)
+                {
+                    mediumNameClauses.push_back("m.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
+                    query.bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
+                }
+
+                query.where("(" + core::stringUtils::joinStrings(nameClauses, " AND ") + ") OR (" + core::stringUtils::joinStrings(mediumNameClauses, " AND ") + ")");
+            }
 
             if (params.starringUser.isValid())
             {
-                assert(params.feedbackBackend);
                 query.join("starred_release s_r ON s_r.release_id = r.id")
+                    .join("user u ON u.id = s_r.user_id")
                     .where("s_r.user_id = ?")
                     .bind(params.starringUser)
-                    .where("s_r.backend = ?")
-                    .bind(*params.feedbackBackend)
                     .where("s_r.sync_state <> ?")
-                    .bind(SyncState::PendingRemove);
+                    .bind(SyncState::PendingRemove)
+                    .where("s_r.backend = u.feedback_backend");
             }
 
             if (params.artist.isValid())
@@ -204,7 +236,7 @@ namespace lms::db
                 WhereClause clusterClause;
                 for (const ClusterId clusterId : params.filters.clusters)
                 {
-                    clusterClause.Or(WhereClause("t_c.cluster_id = ?"));
+                    clusterClause.Or(WhereClause{ "t_c.cluster_id = ?" });
                     query.bind(clusterId);
                 }
 
@@ -214,11 +246,39 @@ namespace lms::db
                 query.where(oss.str());
             }
 
+            if (params.filters.genre.isValid())
+            {
+                query.join("track_genre t_g ON t_g.track_id = t.id")
+                    .where("t_g.genre_id = ?")
+                    .bind(params.filters.genre);
+            }
+
+            if (params.filters.grouping.isValid())
+            {
+                query.join("track_grouping t_gr ON t_gr.track_id = t.id")
+                    .where("t_gr.grouping_id = ?")
+                    .bind(params.filters.grouping);
+            }
+
+            if (params.filters.language.isValid())
+            {
+                query.join("track_language t_l ON t_l.track_id = t.id")
+                    .where("t_l.language_id = ?")
+                    .bind(params.filters.language);
+            }
+
+            if (params.filters.mood.isValid())
+            {
+                query.join("track_mood t_m ON t_m.track_id = t.id")
+                    .where("t_m.mood_id = ?")
+                    .bind(params.filters.mood);
+            }
+
             if (params.filters.codec.has_value())
                 query.where("t.codec = ?").bind(detail::getDbCodec(params.filters.codec.value()));
 
             if (params.releaseGroupMBID)
-                query.where("group_mbid = ?").bind(params.releaseGroupMBID->getAsString());
+                query.where("group_mbid = ?").bind(*params.releaseGroupMBID);
 
             switch (params.sortMethod)
             {
@@ -319,7 +379,7 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Country>>("SELECT c from country c").where("c.name = ?").bind(name));
     }
 
-    RangeResults<CountryId> Country::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<CountryId> Country::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 
@@ -381,7 +441,7 @@ namespace lms::db
         });
     }
 
-    RangeResults<LabelId> Label::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<LabelId> Label::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 
@@ -443,7 +503,7 @@ namespace lms::db
         });
     }
 
-    RangeResults<ReleaseTypeId> ReleaseType::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<ReleaseTypeId> ReleaseType::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 
@@ -453,8 +513,8 @@ namespace lms::db
     }
 
     Release::Release(const std::string& name, const std::optional<core::UUID>& MBID)
-        : _name{ std::string(name, 0, _maxNameLength) }
-        , _MBID{ MBID ? MBID->getAsString() : "" }
+        : _name{ core::stringUtils::utf8Truncate(name, _maxNameLength) }
+        , _MBID{ MBID }
     {
     }
 
@@ -467,7 +527,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Release>>("SELECT r from release r").where("r.mbid = ?").bind(mbid.getAsString()));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Release>>("SELECT r from release r").where("r.mbid = ?").bind(mbid));
     }
 
     Release::pointer Release::find(Session& session, ReleaseId id)
@@ -490,7 +550,7 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM release"));
     }
 
-    RangeResults<ReleaseId> Release::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<ReleaseId> Release::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 
@@ -537,7 +597,7 @@ namespace lms::db
         return IdRange<ReleaseId>{ .first = std::get<0>(res), .last = std::get<1>(res) };
     }
 
-    RangeResults<Release::pointer> Release::find(Session& session, const FindParameters& params)
+    std::vector<Release::pointer> Release::find(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
 
@@ -553,7 +613,7 @@ namespace lms::db
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
-    RangeResults<ReleaseId> Release::findIds(Session& session, const FindParameters& params)
+    std::vector<ReleaseId> Release::findIds(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
 
@@ -943,11 +1003,11 @@ namespace lms::db
 
         oss << "SELECT c from cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN track t ON t.id = t_c.track_id ";
 
-        where.And(WhereClause("t.release_id = ?")).bind(getId().toString());
+        where.And(WhereClause{ "t.release_id = ?" }).bind(getId().toString());
         {
             WhereClause clusterClause;
             for (const ClusterTypeId clusterTypeId : clusterTypeIds)
-                clusterClause.Or(WhereClause("c.cluster_type_id = ?")).bind(clusterTypeId.toString());
+                clusterClause.Or(WhereClause{ "c.cluster_type_id = ?" }).bind(clusterTypeId.toString());
             where.And(clusterClause);
         }
         oss << " " << where.get();

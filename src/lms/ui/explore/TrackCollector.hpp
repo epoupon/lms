@@ -19,8 +19,12 @@
 
 #pragma once
 
+#include <functional>
 #include <optional>
+#include <vector>
 
+#include "database/Object.hpp"
+#include "database/Types.hpp"
 #include "database/objects/TrackId.hpp"
 
 #include "DatabaseCollectorBase.hpp"
@@ -37,11 +41,10 @@ namespace lms::ui
     public:
         using DatabaseCollectorBase::DatabaseCollectorBase;
 
-        db::RangeResults<db::TrackId> get(std::optional<db::Range> range = std::nullopt);
+        void get(db::Range range, bool& moreResults, const std::function<void(const db::ObjectPtr<db::Track>&)>& func);
         void reset() { _randomTracks.reset(); }
 
     private:
-        db::RangeResults<db::TrackId> getRandomTracks(Range range);
-        std::optional<db::RangeResults<db::TrackId>> _randomTracks;
+        std::optional<std::vector<db::TrackId>> _randomTracks;
     };
 } // namespace lms::ui

@@ -30,6 +30,7 @@
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
+#include "database/objects/Genre.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
@@ -68,7 +69,7 @@ namespace lms::api::subsonic
             }
             else
             {
-                res = Directory::findRootDirectories(session).results;
+                res = Directory::findRootDirectories(session);
             }
 
             return res;
@@ -136,8 +137,8 @@ namespace lms::api::subsonic
 
                 const auto artistTracks{ Track::findIds(context.getDbSession(), params) };
                 tracks.insert(std::end(tracks),
-                              std::begin(artistTracks.results),
-                              std::end(artistTracks.results));
+                              std::begin(artistTracks),
+                              std::end(artistTracks));
             }
 
             return tracks;
@@ -172,8 +173,8 @@ namespace lms::api::subsonic
 
                 const auto releaseTracks{ Track::findIds(context.getDbSession(), params) };
                 tracks.insert(std::end(tracks),
-                              std::begin(releaseTracks.results),
-                              std::end(releaseTracks.results));
+                              std::begin(releaseTracks),
+                              std::end(releaseTracks));
             }
 
             return tracks;
@@ -213,7 +214,7 @@ namespace lms::api::subsonic
 
             auto transaction{ context.getDbSession().createReadTransaction() };
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             Response::Node& similarSongsNode{ response.createNode(id3 ? Response::Node::Key{ "similarSongs2" } : Response::Node::Key{ "similarSongs" }) };
             for (const TrackId trackId : tracks)
             {
@@ -243,7 +244,7 @@ namespace lms::api::subsonic
 
     Response handleGetMusicFoldersRequest(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& musicFoldersNode{ response.createNode("musicFolders") };
 
         auto transaction{ context.getDbSession().createReadTransaction() };
@@ -262,7 +263,7 @@ namespace lms::api::subsonic
         // Optional params
         const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.getParameters(), "musicFolderId").value_or(MediaLibraryId{}) };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& indexesNode{ response.createNode("indexes") };
         indexesNode.setAttribute("ignoredArticles", "");
         indexesNode.setAttribute("lastModified", reportedDummyDateULong); // TODO report last file write?
@@ -309,7 +310,7 @@ namespace lms::api::subsonic
         // Mandatory params
         const auto directoryId{ getMandatoryParameterAs<DirectoryId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& directoryNode{ response.createNode("directory") };
 
         auto transaction{ context.getDbSession().createReadTransaction() };
@@ -373,20 +374,15 @@ namespace lms::api::subsonic
 
     Response handleGetGenresRequest(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         Response::Node& genresNode{ response.createNode("genres") };
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const ClusterType::pointer clusterType{ ClusterType::find(context.getDbSession(), "GENRE") };
-        if (clusterType)
-        {
-            const auto clusters{ clusterType->getClusters() };
-
-            for (const Cluster::pointer& cluster : clusters)
-                genresNode.addArrayChild("genre", createGenreNode(context, cluster));
-        }
+        db::Genre::find(context.getDbSession(), db::Genre::FindParameters{}.setSortMethod(db::GenreSortMethod::Name), [&](const db::Genre::pointer& genre) {
+            genresNode.addArrayChild("genre", createGenreNode(context, genre));
+        });
 
         return response;
     }
@@ -396,7 +392,7 @@ namespace lms::api::subsonic
         // Optional params
         const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.getParameters(), "musicFolderId").value_or(MediaLibraryId{}) };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         Response::Node& artistsNode{ response.createNode("artists") };
         artistsNode.setAttribute("ignoredArticles", "");
@@ -435,7 +431,7 @@ namespace lms::api::subsonic
 
             parameters.setRange(Range{ currentArtistOffset, batchSize });
             const auto artists{ Artist::find(context.getDbSession(), parameters) };
-            for (const Artist::pointer& artist : artists.results)
+            for (const Artist::pointer& artist : artists)
             {
                 std::string_view sortName{ artist->getSortName() };
 
@@ -443,8 +439,8 @@ namespace lms::api::subsonic
                 artistsSortedByFirstChar[sortChar].push_back(artist->getId());
             }
 
-            hasMoreArtists = artists.moreResults;
-            currentArtistOffset += artists.results.size();
+            hasMoreArtists = (artists.size() == batchSize);
+            currentArtistOffset += artists.size();
         }
 
         // second pass: add each artist
@@ -477,7 +473,7 @@ namespace lms::api::subsonic
         if (!artist)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node artistNode{ createArtistNode(context, artist) };
 
         auto addRelease{ [&](const Release::pointer& release) {
@@ -509,11 +505,11 @@ namespace lms::api::subsonic
         if (!release)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node albumNode{ createAlbumNode(context, release, true /* id3 */) };
 
         const auto tracks{ Track::find(context.getDbSession(), Track::FindParameters{}.setRelease(id).setSortMethod(TrackSortMethod::Release)) };
-        for (const Track::pointer& track : tracks.results)
+        for (const Track::pointer& track : tracks)
             albumNode.addArrayChild("song", createSongNode(context, track, true /* id3 */));
 
         response.addNode("album", std::move(albumNode));
@@ -532,7 +528,7 @@ namespace lms::api::subsonic
         if (!track)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         response.addNode("song", createSongNode(context, track, context.getUser()));
 
         return response;
@@ -546,7 +542,7 @@ namespace lms::api::subsonic
         // Optional params
         std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(20) };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& artistInfoNode{ response.createNode(Response::Node::Key{ "artistInfo2" }) };
 
         {
@@ -561,10 +557,10 @@ namespace lms::api::subsonic
                 switch (context.getResponseFormat())
                 {
                 case ResponseFormat::json:
-                    artistInfoNode.setAttribute("musicBrainzId", artistMBID->getAsString());
+                    artistInfoNode.setAttribute("musicBrainzId", artistMBID->toString());
                     break;
                 case ResponseFormat::xml:
-                    artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
+                    artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->toString());
                     break;
                 }
             }
@@ -605,7 +601,7 @@ namespace lms::api::subsonic
     {
         const db::DirectoryId directoryId{ getMandatoryParameterAs<db::DirectoryId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         {
             auto transaction{ context.getDbSession().createReadTransaction() };
@@ -620,7 +616,7 @@ namespace lms::api::subsonic
     {
         const db::ReleaseId releaseId{ getMandatoryParameterAs<db::ReleaseId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         {
             auto transaction{ context.getDbSession().createReadTransaction() };
@@ -652,7 +648,7 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& topSongs{ response.createNode("topSongs") };
 
         const auto artists{ Artist::find(context.getDbSession(), artistName) };
@@ -664,7 +660,7 @@ namespace lms::api::subsonic
             params.setArtist(artists.front()->getId());
 
             const auto trackIds{ core::Service<scrobbling::IScrobblingService>::get()->getTopTracks(params) };
-            for (const TrackId trackId : trackIds.results)
+            for (const TrackId trackId : trackIds)
             {
                 if (Track::pointer track{ Track::find(context.getDbSession(), trackId) })
                     topSongs.addArrayChild("song", createSongNode(context, track, context.getUser()));
@@ -688,7 +684,7 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         for (const auto& similarTrack : similarTracks)
         {
@@ -696,7 +692,7 @@ namespace lms::api::subsonic
             if (track)
             {
                 Response::Node& sonicMatchNode{ response.createArrayNode("sonicMatch") };
-                sonicMatchNode.setAttribute("similarity", 1.0F - similarTrack.distance);
+                sonicMatchNode.setAttribute("similarity", 1.0F - similarTrack.distanceToFirst);
                 sonicMatchNode.addChild("entry", createSongNode(context, track, context.getUser()));
             }
         }
@@ -719,7 +715,7 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         for (const auto& pathTrack : pathTracks)
         {
@@ -727,7 +723,7 @@ namespace lms::api::subsonic
             if (track)
             {
                 Response::Node& sonicMatchNode{ response.createArrayNode("sonicMatch") };
-                sonicMatchNode.setAttribute("similarity", 1.0F - pathTrack.distance);
+                sonicMatchNode.setAttribute("similarity", 1.0F - pathTrack.distanceToFirst);
                 sonicMatchNode.addChild("entry", createSongNode(context, track, context.getUser()));
             }
         }

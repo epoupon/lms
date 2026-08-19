@@ -65,12 +65,40 @@ namespace lms::db
         Name,
     };
 
+    enum class GenreSortMethod
+    {
+        None,
+        Name,
+        TrackCountDesc,
+    };
+
+    enum class GroupingSortMethod
+    {
+        None,
+        Name,
+        TrackCountDesc,
+    };
+
     using ImageHashType = core::TaggedType<class ImageHash, std::uint64_t>;
 
     enum class LabelSortMethod
     {
         None,
         Name,
+    };
+
+    enum class LanguageSortMethod
+    {
+        None,
+        Name,
+        TrackCountDesc,
+    };
+
+    enum class MoodSortMethod
+    {
+        None,
+        Name,
+        TrackCountDesc,
     };
 
     enum class MediumSortMethod
@@ -84,6 +112,13 @@ namespace lms::db
         None,
         PubDateAsc,
         PubDateDesc,
+    };
+
+    enum class RecommendationEngineType
+    {
+        Clusters = 0,
+        None = 2,
+        AudioSimilarity = 3,
     };
 
     enum class ReleaseArtistLinkSortMethod
@@ -198,6 +233,7 @@ namespace lms::db
     {
         Internal = 0,
         ListenBrainz = 1,
+        LastFm = 2,
     };
 
     enum class FeedbackBackend

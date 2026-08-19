@@ -29,7 +29,7 @@ namespace lms::api::subsonic::benchs
     {
         Response generateFakeResponse()
         {
-            Response response{ Response::createOkResponse(defaultServerProtocolVersion) };
+            Response response{ Response::createOkResponse() };
 
             Response::Node& node{ response.createNode("MyNode") };
             node.setAttribute("Attr1", "value1");

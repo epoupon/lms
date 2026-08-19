@@ -40,7 +40,6 @@ namespace lms::recommendation
         static constexpr std::size_t DimCount{ 200 };
         using Vector = math::Vector<DimCount, FloatType>;
 
-        static std::size_t getCount(db::Session& session);
         static bool getVector(db::Session& session, db::TrackId trackId, Vector& vec);
         static void visitVectors(db::Session& session, const std::function<void(db::TrackId, Vector&)>& visitor);
     };

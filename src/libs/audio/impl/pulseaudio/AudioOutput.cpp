@@ -89,13 +89,13 @@ namespace lms::audio::pulseaudio
         {
             const int error{ ::pa_context_connect(_context.get(), nullptr, PA_CONTEXT_NOFLAGS, nullptr) };
             if (error < 0)
-                throw PaException("pa_context_connect failed", error);
+                throw PaException{ "pa_context_connect failed", error };
         }
 
         {
             const int error{ ::pa_threaded_mainloop_start(_mainLoop.get()) };
             if (error < 0)
-                throw PaException("pa_threaded_mainloop_start failed", error);
+                throw PaException{ "pa_threaded_mainloop_start failed", error };
         }
     }
 

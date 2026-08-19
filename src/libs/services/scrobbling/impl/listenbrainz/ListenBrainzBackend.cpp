@@ -45,7 +45,7 @@ namespace lms::scrobbling::listenBrainz
 
             const bool res{ duration >= std::chrono::minutes(4) || (duration >= track->getDuration() / 2) };
             if (!res)
-                LOG(DEBUG, "Track cannot be scrobbled since played duration is too short: " << duration.count() << "s, total duration = " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << "s");
+                LMS_LOG_LISTENBRAINZ(DEBUG, "Track cannot be scrobbled since played duration is too short: " << duration.count() << "s, total duration = " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << "s");
 
             return res;
         }
@@ -58,12 +58,12 @@ namespace lms::scrobbling::listenBrainz
         , _client{ core::http::createClient(_ioContext, _baseAPIUrl) }
         , _listensSynchronizer{ _ioContext, db, *_client }
     {
-        LOG(INFO, "Starting ListenBrainz backend... API endpoint = '" << _baseAPIUrl << "'");
+        LMS_LOG_LISTENBRAINZ(INFO, "Starting ListenBrainz backend... API endpoint = '" << _baseAPIUrl << "'");
     }
 
     ListenBrainzBackend::~ListenBrainzBackend()
     {
-        LOG(INFO, "Stopped ListenBrainz backend!");
+        LMS_LOG_LISTENBRAINZ(INFO, "Stopped ListenBrainz backend!");
     }
 
     void ListenBrainzBackend::listenStarted(const Listen& listen)

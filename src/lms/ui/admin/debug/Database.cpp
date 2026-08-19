@@ -19,6 +19,9 @@
 
 #include "Database.hpp"
 
+#include <algorithm>
+#include <vector>
+
 #include <Wt/Http/Response.h>
 #include <Wt/Utils.h>
 #include <Wt/WDateTime.h>
@@ -62,14 +65,24 @@ namespace lms::ui
                 const std::string cdp{ encodeHttpHeaderField("filename", "LMS_db_query_profiling_" + core::stringUtils::toISO8601String(Wt::WDateTime::currentDateTime()) + ".txt") };
                 response.addHeader("Content-Disposition", "attachment; " + cdp);
 
+                std::vector<db::IQueryProfiler::QueryStats> entries;
                 _recorder.visitQueries([&](const db::IQueryProfiler::QueryStats& stats) {
+                    entries.push_back(stats);
+                });
+
+                std::sort(entries.begin(), entries.end(), [](const db::IQueryProfiler::QueryStats& a, const db::IQueryProfiler::QueryStats& b) {
+                    return a.totalTime > b.totalTime;
+                });
+
+                for (const db::IQueryProfiler::QueryStats& stats : entries)
+                {
                     response.out() << stats.query << '\n';
                     response.out() << "Calls: " << stats.callCount
                                    << " | Total: " << stats.totalTime.count() << " µs"
                                    << " | Mean: " << stats.meanTime.count() << " µs"
                                    << " | StdDev: " << stats.stdDevTime.count() << " µs\n";
                     response.out() << stats.plan << "\n-------------------------\n";
-                });
+                }
             }
 
             const db::IQueryProfiler& _recorder;

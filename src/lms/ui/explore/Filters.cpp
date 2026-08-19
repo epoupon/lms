@@ -31,8 +31,12 @@
 #include "core/media/Codec.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Cluster.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
 #include "database/objects/LabelId.hpp"
+#include "database/objects/Language.hpp"
 #include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Mood.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseTypeId.hpp"
 
@@ -62,12 +66,33 @@ namespace lms::ui
         {
         };
 
-        using TypeVariant = std::variant<db::ClusterTypeId, MediaLibraryTag, LabelTag, ReleaseTypeTag, CodecTag>;
+        struct GenreTag
+        {
+        };
+
+        struct GroupingTag
+        {
+        };
+
+        struct LanguageTag
+        {
+        };
+
+        struct MoodTag
+        {
+        };
+
+        using TypeVariant = std::variant<db::ClusterTypeId, MediaLibraryTag, LabelTag, ReleaseTypeTag, CodecTag, GenreTag, GroupingTag, LanguageTag, MoodTag>;
         using TypeModel = ValueStringModel<TypeVariant>;
 
         std::unique_ptr<TypeModel> createTypeModel()
         {
             auto typeModel{ std::make_unique<TypeModel>() };
+
+            typeModel->add(Wt::WString::trn("Lms.Explore.genre", 1), GenreTag{});
+            typeModel->add(Wt::WString::trn("Lms.Explore.grouping", 1), GroupingTag{});
+            typeModel->add(Wt::WString::trn("Lms.Explore.language", 1), LanguageTag{});
+            typeModel->add(Wt::WString::trn("Lms.Explore.mood", 1), MoodTag{});
 
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
@@ -84,7 +109,7 @@ namespace lms::ui
             return typeModel;
         }
 
-        using ValueVariant = std::variant<db::ClusterId, db::MediaLibraryId, db::LabelId, db::ReleaseTypeId, core::media::Codec>;
+        using ValueVariant = std::variant<db::ClusterId, db::MediaLibraryId, db::LabelId, db::ReleaseTypeId, core::media::Codec, db::GenreId, db::GroupingId, db::LanguageId, db::MoodId>;
         using ValueModel = ValueStringModel<ValueVariant>;
 
         std::unique_ptr<ValueModel> createValueModel(TypeVariant type)
@@ -114,6 +139,26 @@ namespace lms::ui
                            [&](const CodecTag&) {
                                core::media::visitCodecs([&](const core::media::CodecDesc& desc) {
                                    valueModel->add(Wt::WString::fromUTF8(desc.longName.c_str()), desc.type);
+                               });
+                           },
+                           [&](const GenreTag&) {
+                               db::Genre::find(session, db::Genre::FindParameters{}.setSortMethod(db::GenreSortMethod::Name), [&](const db::Genre::pointer& genre) {
+                                   valueModel->add(Wt::WString::fromUTF8(std::string{ genre->getName() }), genre->getId());
+                               });
+                           },
+                           [&](const GroupingTag&) {
+                               db::Grouping::find(session, db::Grouping::FindParameters{}.setSortMethod(db::GroupingSortMethod::Name), [&](const db::Grouping::pointer& grouping) {
+                                   valueModel->add(Wt::WString::fromUTF8(std::string{ grouping->getName() }), grouping->getId());
+                               });
+                           },
+                           [&](const LanguageTag&) {
+                               db::Language::find(session, db::Language::FindParameters{}.setSortMethod(db::LanguageSortMethod::Name), [&](const db::Language::pointer& language) {
+                                   valueModel->add(Wt::WString::fromUTF8(std::string{ language->getName() }), language->getId());
+                               });
+                           },
+                           [&](const MoodTag&) {
+                               db::Mood::find(session, db::Mood::FindParameters{}.setSortMethod(db::MoodSortMethod::Name), [&](const db::Mood::pointer& mood) {
+                                   valueModel->add(Wt::WString::fromUTF8(std::string{ mood->getName() }), mood->getId());
                                });
                            },
                            [&](db::ClusterTypeId clusterTypeId) {
@@ -151,22 +196,30 @@ namespace lms::ui
             std::visit(core::utils::overloads{
                            [&](db::MediaLibraryId mediaLibraryId) {
                                set(mediaLibraryId);
-                               state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", mediaLibraryId.getValue());
                            },
                            [&](db::LabelId labelId) {
                                set(labelId);
-                               state::writeValue<db::LabelId::ValueType>("filters_label_id", labelId.getValue());
                            },
                            [&](db::ReleaseTypeId releaseTypeId) {
                                set(releaseTypeId);
-                               state::writeValue<db::ReleaseTypeId::ValueType>("filters_release_type_id", releaseTypeId.getValue());
                            },
                            [&](db::ClusterId clusterId) {
                                add(clusterId);
                            },
                            [&](core::media::Codec codec) {
                                set(codec);
-                               state::writeValue<core::media::Codec>("filters_codec", codec);
+                           },
+                           [&](db::GenreId genreId) {
+                               set(genreId);
+                           },
+                           [&](db::GroupingId groupingId) {
+                               set(groupingId);
+                           },
+                           [&](db::LanguageId languageId) {
+                               set(languageId);
+                           },
+                           [&](db::MoodId moodId) {
+                               set(moodId);
                            },
                        },
                        value);
@@ -212,6 +265,14 @@ namespace lms::ui
             set(db::ReleaseTypeId{ *releaseTypeId });
         if (const std::optional<core::media::Codec> codec{ state::readValue<core::media::Codec>("filters_codec") })
             set(*codec);
+        if (const std::optional<db::GenreId::ValueType> genreId{ state::readValue<db::GenreId::ValueType>("filters_genre_id") })
+            set(db::GenreId{ *genreId });
+        if (const std::optional<db::GroupingId::ValueType> groupingId{ state::readValue<db::GroupingId::ValueType>("filters_grouping_id") })
+            set(db::GroupingId{ *groupingId });
+        if (const std::optional<db::LanguageId::ValueType> languageId{ state::readValue<db::LanguageId::ValueType>("filters_language_id") })
+            set(db::LanguageId{ *languageId });
+        if (const std::optional<db::MoodId::ValueType> moodId{ state::readValue<db::MoodId::ValueType>("filters_mood_id") })
+            set(db::MoodId{ *moodId });
     }
 
     void Filters::add(db::ClusterId clusterId)
@@ -240,6 +301,142 @@ namespace lms::ui
         emitFilterAddedNotification();
     }
 
+    void Filters::set(db::GenreId genreId)
+    {
+        if (_dbFilters.genre == genreId)
+            return;
+
+        if (_genreFilter)
+        {
+            _filters->removeWidget(_genreFilter);
+            _genreFilter = nullptr;
+            _dbFilters.genre = db::GenreId{};
+        }
+
+        auto genre{ utils::createFilterGenre(genreId, true) };
+        if (!genre)
+        {
+            _sigUpdated.emit();
+            return;
+        }
+
+        _dbFilters.genre = genreId;
+        state::writeValue<db::GenreId::ValueType>("filters_genre_id", genreId.getValue());
+
+        _genreFilter = _filters->addWidget(std::move(genre));
+        _genreFilter->clicked().connect([this] {
+            _filters->removeWidget(_genreFilter);
+            _genreFilter = nullptr;
+            _dbFilters.genre = db::GenreId{};
+            state::writeValue<db::GenreId::ValueType>("filters_genre_id", std::nullopt);
+            _sigUpdated.emit();
+        });
+
+        emitFilterAddedNotification();
+    }
+
+    void Filters::set(db::GroupingId groupingId)
+    {
+        if (_dbFilters.grouping == groupingId)
+            return;
+
+        if (_groupingFilter)
+        {
+            _filters->removeWidget(_groupingFilter);
+            _groupingFilter = nullptr;
+            _dbFilters.grouping = db::GroupingId{};
+        }
+
+        auto grouping{ utils::createFilterGrouping(groupingId, true) };
+        if (!grouping)
+        {
+            _sigUpdated.emit();
+            return;
+        }
+
+        _dbFilters.grouping = groupingId;
+        state::writeValue<db::GroupingId::ValueType>("filters_grouping_id", groupingId.getValue());
+
+        _groupingFilter = _filters->addWidget(std::move(grouping));
+        _groupingFilter->clicked().connect([this] {
+            _filters->removeWidget(_groupingFilter);
+            _groupingFilter = nullptr;
+            _dbFilters.grouping = db::GroupingId{};
+            state::writeValue<db::GroupingId::ValueType>("filters_grouping_id", std::nullopt);
+            _sigUpdated.emit();
+        });
+
+        emitFilterAddedNotification();
+    }
+
+    void Filters::set(db::LanguageId languageId)
+    {
+        if (_dbFilters.language == languageId)
+            return;
+
+        if (_languageFilter)
+        {
+            _filters->removeWidget(_languageFilter);
+            _languageFilter = nullptr;
+            _dbFilters.language = db::LanguageId{};
+        }
+
+        auto language{ utils::createFilterLanguage(languageId, true) };
+        if (!language)
+        {
+            _sigUpdated.emit();
+            return;
+        }
+
+        _dbFilters.language = languageId;
+        state::writeValue<db::LanguageId::ValueType>("filters_language_id", languageId.getValue());
+
+        _languageFilter = _filters->addWidget(std::move(language));
+        _languageFilter->clicked().connect([this] {
+            _filters->removeWidget(_languageFilter);
+            _languageFilter = nullptr;
+            _dbFilters.language = db::LanguageId{};
+            state::writeValue<db::LanguageId::ValueType>("filters_language_id", std::nullopt);
+            _sigUpdated.emit();
+        });
+
+        emitFilterAddedNotification();
+    }
+
+    void Filters::set(db::MoodId moodId)
+    {
+        if (_dbFilters.mood == moodId)
+            return;
+
+        if (_moodFilter)
+        {
+            _filters->removeWidget(_moodFilter);
+            _moodFilter = nullptr;
+            _dbFilters.mood = db::MoodId{};
+        }
+
+        auto mood{ utils::createFilterMood(moodId, true) };
+        if (!mood)
+        {
+            _sigUpdated.emit();
+            return;
+        }
+
+        _dbFilters.mood = moodId;
+        state::writeValue<db::MoodId::ValueType>("filters_mood_id", moodId.getValue());
+
+        _moodFilter = _filters->addWidget(std::move(mood));
+        _moodFilter->clicked().connect([this] {
+            _filters->removeWidget(_moodFilter);
+            _moodFilter = nullptr;
+            _dbFilters.mood = db::MoodId{};
+            state::writeValue<db::MoodId::ValueType>("filters_mood_id", std::nullopt);
+            _sigUpdated.emit();
+        });
+
+        emitFilterAddedNotification();
+    }
+
     void Filters::set(db::MediaLibraryId mediaLibraryId)
     {
         if (_mediaLibraryFilter)
@@ -261,6 +458,8 @@ namespace lms::ui
         }
 
         _dbFilters.mediaLibrary = mediaLibraryId;
+        state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", mediaLibraryId.getValue());
+
         _mediaLibraryFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(libraryName), Wt::WString::tr("Lms.Explore.media-library"), "bg-primary", true));
         _mediaLibraryFilter->clicked().connect(_mediaLibraryFilter, [this] {
             _filters->removeWidget(_mediaLibraryFilter);
@@ -294,6 +493,8 @@ namespace lms::ui
         }
 
         _dbFilters.label = labelId;
+        state::writeValue<db::LabelId::ValueType>("filters_label_id", labelId.getValue());
+
         _labelFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(name), Wt::WString::tr("Lms.Explore.label"), "bg-secondary", true));
         _labelFilter->clicked().connect(_labelFilter, [this] {
             _filters->removeWidget(_labelFilter);
@@ -327,6 +528,8 @@ namespace lms::ui
         }
 
         _dbFilters.releaseType = releaseTypeId;
+        state::writeValue<db::ReleaseTypeId::ValueType>("filters_release_type_id", releaseTypeId.getValue());
+
         _releaseTypeFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(name), Wt::WString::tr("Lms.Explore.release-type"), "bg-dark", true));
         _releaseTypeFilter->clicked().connect(_releaseTypeFilter, [this] {
             _filters->removeWidget(_releaseTypeFilter);
@@ -349,6 +552,8 @@ namespace lms::ui
         }
 
         _dbFilters.codec = codec;
+        state::writeValue<core::media::Codec>("filters_codec", codec);
+
         _codecFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(core::media::getCodecDesc(codec).longName.c_str()), Wt::WString::tr("Lms.Explore.codec"), "bg-success", true));
         _codecFilter->clicked().connect(_codecFilter, [this] {
             _filters->removeWidget(_codecFilter);

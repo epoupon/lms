@@ -46,7 +46,7 @@ namespace lms::scrobbling::listenBrainz
             if (listenObject.type("listened_at") == Wt::Json::Type::Number)
                 listen.listenedAt = Wt::WDateTime::fromTime_t(static_cast<int>(listenObject.get("listened_at")));
             if (!listen.listenedAt.isValid())
-                LOG(ERROR, "Invalid or missing 'listened_at' field!");
+                LMS_LOG_LISTENBRAINZ(ERROR, "Invalid or missing 'listened_at' field!");
 
             if (metadata.type("additional_info") == Wt::Json::Type::Object)
             {
@@ -77,7 +77,7 @@ namespace lms::scrobbling::listenBrainz
             const Wt::Json::Object& payload = root.get("payload");
             const Wt::Json::Array& listens = payload.get("listens");
 
-            LOG(DEBUG, "Parsing " << listens.size() << " listens...");
+            LMS_LOG_LISTENBRAINZ(DEBUG, "Parsing " << listens.size() << " listens...");
             result.listenCount = listens.size();
 
             if (listens.empty())
@@ -92,13 +92,13 @@ namespace lms::scrobbling::listenBrainz
                 }
                 catch (const Wt::WException& error)
                 {
-                    LOG(ERROR, "Cannot parse 'listen': " << error.what());
+                    LMS_LOG_LISTENBRAINZ(ERROR, "Cannot parse 'listen': " << error.what());
                 }
             }
         }
         catch (const Wt::WException& error)
         {
-            LOG(ERROR, "Cannot parse 'listens': " << error.what());
+            LMS_LOG_LISTENBRAINZ(ERROR, "Cannot parse 'listens': " << error.what());
         }
 
         return result;

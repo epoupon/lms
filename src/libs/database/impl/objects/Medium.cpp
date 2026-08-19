@@ -26,13 +26,19 @@
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
 #include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 #include "database/objects/TrackLyrics.hpp"
+#include "database/objects/Work.hpp"
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
@@ -106,7 +112,7 @@ namespace lms::db
         return IdRange<MediumId>{ .first = std::get<0>(res), .last = std::get<1>(res) };
     }
 
-    RangeResults<MediumId> Medium::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<MediumId> Medium::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 

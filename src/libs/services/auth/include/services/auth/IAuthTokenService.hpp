@@ -72,6 +72,8 @@ namespace lms::auth
 
         virtual void registerDomain(core::LiteralString domain, const DomainParameters& params) = 0;
 
+        virtual bool isClientThrottled(const boost::asio::ip::address& clientAddress) const = 0;
+
         // Processing an auth token will make its useCount increase by 1. Token is then automatically deleted if its maxUsecount is reached
         virtual AuthTokenProcessResult processAuthToken(core::LiteralString domain, const boost::asio::ip::address& clientAddress, std::string_view tokenValue) = 0;
 

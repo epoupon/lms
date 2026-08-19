@@ -49,13 +49,13 @@ namespace lms::scrobbling::listenBrainz::utils
         Wt::Json::Object root;
         if (!Wt::Json::parse(std::string{ msgBody }, root, error))
         {
-            LOG(ERROR, "Cannot parse 'validate-token' result: " << error.what());
+            LMS_LOG_LISTENBRAINZ(ERROR, "Cannot parse 'validate-token' result: " << error.what());
             return listenBrainzUserName;
         }
 
         if (!root.get("valid").orIfNull(false))
         {
-            LOG(INFO, "Invalid listenbrainz user");
+            LMS_LOG_LISTENBRAINZ(INFO, "Invalid listenbrainz user");
             return listenBrainzUserName;
         }
 

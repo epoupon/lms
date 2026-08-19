@@ -23,6 +23,10 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "database/Session.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
+#include "database/objects/Mood.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 
@@ -74,7 +78,7 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT 1 from starred_track").where("track_id = ?").bind(trackId).where("user_id = ?").bind(userId).where("backend = ?").bind(backend));
     }
 
-    RangeResults<StarredTrackId> StarredTrack::find(Session& session, const FindParameters& params)
+    std::vector<StarredTrackId> StarredTrack::find(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
 

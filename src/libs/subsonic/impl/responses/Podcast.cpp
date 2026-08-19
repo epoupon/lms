@@ -24,11 +24,9 @@
 #include <Wt/WDate.h>
 
 #include "core/String.hpp"
-#include "database/objects/Artwork.hpp"
 #include "database/objects/Podcast.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 
-#include "CoverArtId.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 
@@ -69,11 +67,8 @@ namespace lms::api::subsonic
         // estimated bitrate
         if (episode->getEnclosureLength() > 0 && episode->getDuration() > std::chrono::milliseconds::zero())
             episodeNode.setAttribute("bitrate", episode->getEnclosureLength() * 8 / std::chrono::duration_cast<std::chrono::milliseconds>(episode->getDuration()).count());
-        if (const auto artwork{ episode->getArtwork() })
-        {
-            CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
-            episodeNode.setAttribute("coverArt", idToString(coverArtId));
-        }
+        if (const db::ArtworkId artworkId{ episode->getArtworkId() }; artworkId.isValid())
+            episodeNode.setAttribute("coverArt", idToString(artworkId));
 
         // Podcast specific attributes
         // Expose the streamId only if the episode is actually downloaded
@@ -111,11 +106,8 @@ namespace lms::api::subsonic
 
         podcastNode.setAttribute("status", getStatus(podcast));
 
-        if (const auto artwork{ podcast->getArtwork() })
-        {
-            CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
-            podcastNode.setAttribute("coverArt", idToString(coverArtId));
-        }
+        if (const db::ArtworkId artworkId{ podcast->getArtworkId() }; artworkId.isValid())
+            podcastNode.setAttribute("coverArt", idToString(artworkId));
 
         if (includeEpisodes)
         {

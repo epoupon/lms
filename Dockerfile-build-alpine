@@ -1,8 +1,9 @@
 FROM --platform=$BUILDPLATFORM tonistiigi/xx AS xx
-FROM --platform=$BUILDPLATFORM alpine:3.23
+FROM --platform=$BUILDPLATFORM alpine:3.24
 
 ARG BUILD_PACKAGES="\
 	clang \
+	llvm \
 	make \
 	cmake \
 	lld \

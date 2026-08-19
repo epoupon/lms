@@ -31,7 +31,8 @@ namespace lms::recommendation
     struct RecommendationResult
     {
         IdType id;
-        float distance{}; // normalized distance in [0, 1]: 0 = most similar, 1 = least similar
+        float distanceToFirst{};    // normalized [0, 1]: 0 = most similar, 1 = least similar (distance to seed/query)
+        float distanceToPrevious{}; // normalized [0, 1]: 0 = most similar, 1 = least similar (distance to preceding result)
     };
 
     template<typename IdType>

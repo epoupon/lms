@@ -85,9 +85,18 @@ namespace lms::scanner
             }
 
             const bool added{ !image };
-            if (!image)
+            if (added)
             {
                 image = dbSession.create<db::Image>(getFilePath());
+                dbSession.create<db::Artwork>(image);
+            }
+            else if (image->getLastWriteTime() != getLastWriteTime()
+                     || image->getFileSize() != getFileSize()
+                     || image->getHeight() != _parsedImageProperties->height
+                     || image->getWidth() != _parsedImageProperties->width)
+            {
+                if (auto artwork{ db::Artwork::find(dbSession, image->getId()) })
+                    artwork.remove();
                 dbSession.create<db::Artwork>(image);
             }
 

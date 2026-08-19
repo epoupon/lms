@@ -22,6 +22,7 @@
 #include <Wt/WCheckBox.h>
 #include <Wt/WComboBox.h>
 #include <Wt/WLineEdit.h>
+#include <Wt/WLocalDateTime.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplateFormView.h>
 
@@ -106,7 +107,7 @@ namespace lms::ui
                     user.modify()->setType(db::UserType::DEMO);
 
                     // For demo user, we create the subsonic API auth token now as we have no other mean to create it later
-                    core::Service<auth::IAuthTokenService>::get()->createAuthToken("subsonic", user->getId(), core::UUID::generate().getAsString());
+                    core::Service<auth::IAuthTokenService>::get()->createAuthToken("subsonic", user->getId(), core::UUID::generate().toString());
                 }
 
                 if (_authPasswordService)
@@ -229,7 +230,10 @@ namespace lms::ui
 
             t->bindString("title", title, Wt::TextFormat::Plain);
             t->setCondition("if-has-last-login", true);
-            t->bindString("last-login", user->getLastLogin().toString(), Wt::TextFormat::Plain);
+            const auto& locale{ Wt::WLocale::currentLocale() };
+            const Wt::WDateTime lastLogin{ user->getLastLogin() };
+            const Wt::WString lastLoginStr{ locale.timeZone() ? lastLogin.toLocalTime().toString() : lastLogin.toString(locale.dateTimeFormat()) + " (UTC)" };
+            t->bindString("last-login", lastLoginStr, Wt::TextFormat::Plain);
         }
         else
         {

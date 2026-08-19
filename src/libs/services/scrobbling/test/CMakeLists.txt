@@ -1,5 +1,6 @@
 
 add_executable(test-scrobbling
+	LastFmUtils.cpp
 	Listenbrainz.cpp
 	Scrobbling.cpp
 	)

@@ -65,7 +65,38 @@ namespace lms::audio::ffmpeg
                 return planar ? AV_SAMPLE_FMT_DBLP : AV_SAMPLE_FMT_DBL;
             }
 
-            throw Exception("Unsupported PcmSampleType");
+            throw Exception{ "Unsupported PcmSampleType" };
+        }
+
+        SwrContextPtr createResampler(const PcmParameters& params, const AVChannelLayout& inLayout, AVSampleFormat inFmt, int inSampleRate)
+        {
+            const ::AVSampleFormat outFmt{ toAvSampleFormat(params.sampleType, params.planar) };
+            AVChannelLayout outLayout;
+            ::av_channel_layout_default(&outLayout, static_cast<int>(params.channelCount));
+
+            ::SwrContext* context{};
+            const int err{ ::swr_alloc_set_opts2(
+                &context,
+                &outLayout,
+                outFmt,
+                static_cast<int>(params.sampleRate),
+                &inLayout,
+                inFmt,
+                inSampleRate,
+                0,
+                nullptr) };
+            ::av_channel_layout_uninit(&outLayout);
+
+            if (err < 0 || !context)
+                throw FFmpegException{ "Cannot allocate resampler context", err };
+
+            SwrContextPtr resampleContext{ context };
+
+            const int initErr{ ::swr_init(resampleContext.get()) };
+            if (initErr < 0)
+                throw FFmpegException{ "Cannot initialize resampler", initErr };
+
+            return resampleContext;
         }
     } // namespace
 
@@ -73,7 +104,7 @@ namespace lms::audio::ffmpeg
         : _parameters{ parameters }
     {
         if (_parameters.channelCount > AV_NUM_DATA_POINTERS)
-            throw Exception("Channel count exceeds maximum supported channels");
+            throw Exception{ "Channel count exceeds maximum supported channels" };
 
         utils::init();
 
@@ -148,7 +179,7 @@ namespace lms::audio::ffmpeg
         {
             int error{ ::avcodec_open2(_decoderContext.get(), decoder, nullptr) };
             if (error < 0)
-                throw FFmpegException("Cannot open decoder", error);
+                throw FFmpegException{ "Cannot open decoder", error };
         }
 
         _decodedFrame = AVFramePtr{ av_frame_alloc() };
@@ -159,36 +190,14 @@ namespace lms::audio::ffmpeg
         if (!_inputPacket)
             throw Exception{ "Cannot allocate input packet" };
 
-        // Resampler
-        const ::AVSampleFormat outFmt{ toAvSampleFormat(_parameters.sampleType, _parameters.planar) };
-        AVChannelLayout outLayout;
-        ::av_channel_layout_default(&outLayout, _parameters.channelCount);
-
-        {
-            ::SwrContext* context{};
-            ::swr_alloc_set_opts2(
-                &context,                                 // existing context
-                &outLayout,                               // out layout
-                outFmt,                                   // out format
-                static_cast<int>(_parameters.sampleRate), // out rate
-                &_decoderContext->ch_layout,              // in layout
-                _decoderContext->sample_fmt,              // in format
-                _decoderContext->sample_rate,             // in rate
-                0,                                        // log offset
-                nullptr);
-            ::av_channel_layout_uninit(&outLayout);
-
-            if (!context)
-                throw Exception{ "Cannot allocate resampler context" };
-
-            _resampleContext = SwrContextPtr{ context };
-        }
-
-        {
-            int error{ ::swr_init(_resampleContext.get()) };
-            if (error < 0)
-                throw FFmpegException{ "Cannot initialize resampler", error };
-        }
+        _resampleContext = createResampler(_parameters, _decoderContext->ch_layout, _decoderContext->sample_fmt, _decoderContext->sample_rate);
+        _resamplerInputConfig = {
+            _decoderContext->sample_rate,
+            static_cast<int>(_decoderContext->sample_fmt),
+            _decoderContext->ch_layout.nb_channels,
+            static_cast<int>(_decoderContext->ch_layout.order),
+            _decoderContext->ch_layout.u.mask,
+        };
     }
 
     PcmDecoder::~PcmDecoder() = default;
@@ -232,34 +241,28 @@ namespace lms::audio::ffmpeg
             }
             else
             {
-                std::array<uint8_t*, AV_NUM_DATA_POINTERS> outData{};
-                for (std::size_t i{}; i < outputChannelBuffers.size(); ++i)
-                    outData[i] = reinterpret_cast<uint8_t*>(outputChannelBuffers[i].data());
-
-                // Resample decoded audio
-                const int outSampleCount{ ::swr_convert(
-                    _resampleContext.get(),
-                    outData.data(),
-                    static_cast<int>(maxSamplesPerChannel),
-                    (const uint8_t**)_decodedFrame->data,
-                    _decodedFrame->nb_samples) };
+                const std::size_t outSampleCount{ resampleFrame(outputChannelBuffers, maxSamplesPerChannel, _decodedFrame.get()) };
                 ::av_frame_unref(_decodedFrame.get());
 
-                if (outSampleCount < 0)
-                    throw FFmpegException{ "swr_convert failed", outSampleCount };
-
                 if (outSampleCount > 0)
-                    return static_cast<std::size_t>(outSampleCount);
+                    return outSampleCount;
 
-                continue; // Rare but legal: frame produced no output (delay accumulation)
+                continue; // delay accumulation: resampler is buffering, no output yet
             }
 
             // Drain resampler once decoder is drained
             if (_draining)
             {
-                const std::size_t outSampleCount{ drainResampler(outputChannelBuffers, maxSamplesPerChannel) };
-                if (outSampleCount > 0)
-                    return outSampleCount;
+                try
+                {
+                    const std::size_t outSampleCount{ drainResampler(outputChannelBuffers, maxSamplesPerChannel) };
+                    if (outSampleCount > 0)
+                        return outSampleCount;
+                }
+                catch (const Exception& e)
+                {
+                    LMS_LOG(AUDIO, ERROR, "Failed to drain resampler: " << e.what());
+                }
 
                 _finished = true;
                 break;
@@ -286,7 +289,6 @@ namespace lms::audio::ffmpeg
             if (outputChannelBuffers.size() != _parameters.channelCount)
                 throw Exception{ "Expected " + std::to_string(_parameters.channelCount) + " buffers for planar output" };
 
-            // Each planar buffer holds samples for one channel only
             const int bytesPerSample{ av_get_bytes_per_sample(toAvSampleFormat(_parameters.sampleType, true)) };
             if (bytesPerSample <= 0)
                 throw Exception{ "Invalid bytes per sample for output format" };
@@ -306,7 +308,6 @@ namespace lms::audio::ffmpeg
         if (bytesPerSample <= 0)
             throw Exception{ "Invalid bytes per sample for output format" };
 
-        // Divide by (bytes per sample * number of channels) for interleaved
         const std::size_t sampleCount = outputChannelBuffers[0].size() / (bytesPerSample * _parameters.channelCount);
 
         return sampleCount;
@@ -353,28 +354,73 @@ namespace lms::audio::ffmpeg
         }
     }
 
-    std::size_t PcmDecoder::drainResampler(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel)
+    bool PcmDecoder::inputFormatChanged(const AVFrame* frame) const
     {
-        std::array<uint8_t*, AV_NUM_DATA_POINTERS> outData{};
-        for (std::size_t i{}; i < outputChannelBuffers.size(); ++i)
-            outData[i] = reinterpret_cast<uint8_t*>(outputChannelBuffers[i].data());
+        const auto& c{ _resamplerInputConfig };
+        if (frame->sample_rate != c.sampleRate
+            || frame->format != c.sampleFormat
+            || frame->ch_layout.nb_channels != c.nbChannels
+            || static_cast<int>(frame->ch_layout.order) != c.channelOrder)
+            return true;
+        if (frame->ch_layout.order == AV_CHANNEL_ORDER_NATIVE)
+            return frame->ch_layout.u.mask != c.channelMask;
+        return false;
+    }
 
-        const int outSampleCount{ ::swr_convert(_resampleContext.get(),
-                                                outData.data(),
-                                                static_cast<int>(maxSamplesPerChannel),
-                                                nullptr,
-                                                0) };
+    void PcmDecoder::reinitResamplerForFrame(const AVFrame* frame)
+    {
+        // The format change is caused by a corrupt/non-standard frame so the lost samples are likely garbled audio anyway.
+        _resampleContext = createResampler(_parameters, frame->ch_layout, static_cast<AVSampleFormat>(frame->format), frame->sample_rate);
+        _resamplerInputConfig = {
+            frame->sample_rate,
+            frame->format,
+            frame->ch_layout.nb_channels,
+            static_cast<int>(frame->ch_layout.order),
+            frame->ch_layout.u.mask,
+        };
+    }
+
+    std::size_t PcmDecoder::resampleFrame(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel, const AVFrame* inputFrame)
+    {
+        if (inputFrame && inputFormatChanged(inputFrame))
+        {
+            LMS_LOG(AUDIO, DEBUG, "Input format changed");
+            reinitResamplerForFrame(inputFrame);
+        }
+
+        std::array<std::uint8_t*, AV_NUM_DATA_POINTERS> outData{};
+        for (std::size_t i{}; i < outputChannelBuffers.size(); ++i)
+            outData[i] = static_cast<std::uint8_t*>(static_cast<void*>(outputChannelBuffers[i].data()));
+
+        std::array<const std::uint8_t*, AV_NUM_DATA_POINTERS> inData{};
+        if (inputFrame)
+        {
+            for (int i{}; i < AV_NUM_DATA_POINTERS; ++i)
+                inData[i] = inputFrame->data[i];
+        }
+
+        const int outSampleCount{ ::swr_convert(
+            _resampleContext.get(),
+            outData.data(),
+            static_cast<int>(maxSamplesPerChannel),
+            inputFrame ? inData.data() : nullptr,
+            inputFrame ? inputFrame->nb_samples : 0) };
 
         if (outSampleCount < 0)
-            throw FFmpegException{ "swr_convert (drain) failed", outSampleCount };
+            throw FFmpegException{ inputFrame ? "swr_convert failed" : "swr_convert (drain) failed", outSampleCount };
 
-        return outSampleCount;
+        return static_cast<std::size_t>(outSampleCount);
+    }
+
+    std::size_t PcmDecoder::drainResampler(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel)
+    {
+        return resampleFrame(outputChannelBuffers, maxSamplesPerChannel, nullptr);
     }
 
     std::size_t PcmDecoder::getEstimatedResamplerAvailableSamples() const
     {
-        const int64_t delayedInputSampleCount{ ::swr_get_delay(_resampleContext.get(), _decoderContext->sample_rate) };
-        const int64_t sampleCount{ av_rescale_rnd(delayedInputSampleCount, _parameters.sampleRate, _decoderContext->sample_rate, AV_ROUND_UP) };
+        const int64_t delayedInputSampleCount{ ::swr_get_delay(_resampleContext.get(), _resamplerInputConfig.sampleRate) };
+        const int64_t sampleCount{ av_rescale_rnd(delayedInputSampleCount, _parameters.sampleRate, _resamplerInputConfig.sampleRate, AV_ROUND_UP) };
 
         return sampleCount;
     }

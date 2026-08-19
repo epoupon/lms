@@ -73,7 +73,7 @@ namespace lms::db
         static pointer find(Session& session, TrackId trackId, UserId userId); // current feedback backend
         static pointer find(Session& session, TrackId trackId, UserId userId, FeedbackBackend backend);
         static bool exists(Session& session, TrackId trackId, UserId userId, FeedbackBackend backend);
-        static RangeResults<StarredTrackId> find(Session& session, const FindParameters& findParams);
+        static std::vector<StarredTrackId> find(Session& session, const FindParameters& findParams);
 
         // Accessors
         ObjectPtr<Track> getTrack() const { return _track; }

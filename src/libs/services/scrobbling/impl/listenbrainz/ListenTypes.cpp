@@ -31,9 +31,9 @@ namespace lms::scrobbling::listenBrainz
         if (listen.trackNumber)
             os << ", trackNumber = " << *listen.trackNumber;
         if (listen.trackMBID)
-            os << ", trackMBID = '" << listen.trackMBID->getAsString() << "'";
+            os << ", trackMBID = '" << listen.trackMBID->toString() << "'";
         if (listen.recordingMBID)
-            os << ", recordingMBID = '" << listen.recordingMBID->getAsString() << "'";
+            os << ", recordingMBID = '" << listen.recordingMBID->toString() << "'";
 
         return os;
     }

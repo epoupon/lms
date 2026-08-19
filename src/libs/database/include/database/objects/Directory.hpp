@@ -122,11 +122,11 @@ namespace lms::db
         static pointer find(Session& session, DirectoryId id);
         static pointer find(Session& session, const std::filesystem::path& path);
         static void find(Session& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory::pointer&)>& func);
-        static RangeResults<Directory::pointer> find(Session& session, const FindParameters& params);
+        static std::vector<Directory::pointer> find(Session& session, const FindParameters& params);
         static void find(Session& session, const FindParameters& params, const std::function<void(const Directory::pointer&)>& func);
-        static RangeResults<DirectoryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
-        static RangeResults<DirectoryId> findMismatchedLibrary(Session& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId);
-        static RangeResults<pointer> findRootDirectories(Session& session, std::optional<Range> range = std::nullopt);
+        static std::vector<DirectoryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::vector<DirectoryId> findMismatchedLibrary(Session& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId);
+        static std::vector<pointer> findRootDirectories(Session& session, std::optional<Range> range = std::nullopt);
 
         // getters
         const std::filesystem::path& getAbsolutePath() const { return _absolutePath; }

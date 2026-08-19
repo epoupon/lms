@@ -20,7 +20,9 @@
 #pragma once
 
 #include "core/String.hpp"
+
 #include "database/objects/ArtistId.hpp"
+#include "database/objects/ArtworkId.hpp"
 #include "database/objects/DirectoryId.hpp"
 #include "database/objects/MediaLibraryId.hpp"
 #include "database/objects/PodcastEpisodeId.hpp"
@@ -32,6 +34,7 @@
 namespace lms::api::subsonic
 {
     std::string idToString(db::ArtistId id);
+    std::string idToString(db::ArtworkId id);
     std::string idToString(db::DirectoryId id);
     std::string idToString(db::PodcastEpisodeId id);
     std::string idToString(db::PodcastId id);
@@ -45,6 +48,9 @@ namespace lms::core::stringUtils
 {
     template<>
     std::optional<db::ArtistId> readAs(std::string_view str);
+
+    template<>
+    std::optional<db::ArtworkId> readAs(std::string_view str);
 
     template<>
     std::optional<db::DirectoryId> readAs(std::string_view str);

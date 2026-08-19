@@ -26,6 +26,10 @@
 #include "core/media/Codec.hpp"
 
 #include "database/objects/Filters.hpp"
+#include "database/objects/GenreId.hpp"
+#include "database/objects/GroupingId.hpp"
+#include "database/objects/LanguageId.hpp"
+#include "database/objects/MoodId.hpp"
 
 namespace lms::ui
 {
@@ -37,6 +41,10 @@ namespace lms::ui
         const db::Filters& getDbFilters() const { return _dbFilters; }
 
         void add(db::ClusterId clusterId);
+        void set(db::GenreId genreId);
+        void set(db::GroupingId groupingId);
+        void set(db::LanguageId languageId);
+        void set(db::MoodId moodId);
 
         Wt::Signal<>& updated() { return _sigUpdated; }
 
@@ -53,6 +61,10 @@ namespace lms::ui
         Wt::WInteractWidget* _labelFilter{};
         Wt::WInteractWidget* _releaseTypeFilter{};
         Wt::WInteractWidget* _codecFilter{};
+        Wt::WInteractWidget* _genreFilter{};
+        Wt::WInteractWidget* _groupingFilter{};
+        Wt::WInteractWidget* _languageFilter{};
+        Wt::WInteractWidget* _moodFilter{};
 
         Wt::Signal<> _sigUpdated;
 

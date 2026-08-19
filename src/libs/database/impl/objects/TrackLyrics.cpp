@@ -25,6 +25,10 @@
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Directory.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
+#include "database/objects/Mood.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 
@@ -117,7 +121,7 @@ namespace lms::db
         });
     }
 
-    RangeResults<TrackLyricsId> TrackLyrics::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<TrackLyricsId> TrackLyrics::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 

@@ -30,5 +30,8 @@ namespace lms::ui
 
     private:
         void refreshView();
+        void refreshFormSection();
+        void refreshLastFmCardSection();
+        void showLastFmLinkModal();
     };
 } // namespace lms::ui

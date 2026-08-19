@@ -24,10 +24,11 @@
 #include "core/String.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
-#include "database/objects/Artwork.hpp"
-#include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
 #include "database/objects/Medium.hpp"
+#include "database/objects/Mood.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
@@ -35,7 +36,6 @@
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
-#include "CoverArtId.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 #include "responses/Artist.hpp"
@@ -89,11 +89,8 @@ namespace lms::api::subsonic
 
         albumNode.setAttribute("created", core::stringUtils::toISO8601String(release->getAddedTime()));
 
-        if (const auto artwork{ release->getPreferredArtwork() })
-        {
-            CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
-            albumNode.setAttribute("coverArt", idToString(coverArtId));
-        }
+        if (const db::ArtworkId artworkId{ release->getPreferredArtworkId() }; artworkId.isValid())
+            albumNode.setAttribute("coverArt", idToString(artworkId));
 
         if (const auto originalYear{ release->getOriginalYear() })
             albumNode.setAttribute("year", *originalYear);
@@ -134,14 +131,12 @@ namespace lms::api::subsonic
 
         albumNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.getUser()->getId(), release->getId()));
 
-        // Report the first GENRE for this track
-        const ClusterType::pointer genreClusterType{ ClusterType::find(context.getDbSession(), "GENRE") };
-        if (genreClusterType)
-        {
-            const auto clusters{ release->getClusters(genreClusterType->getId(), 1) };
-            if (!clusters.empty())
-                albumNode.setAttribute("genre", clusters.front()->getName());
-        }
+        Genre::FindParameters genreParams;
+        genreParams.setRelease(release->getId());
+        genreParams.setSortMethod(GenreSortMethod::TrackCountDesc);
+        const auto genres{ Genre::find(context.getDbSession(), genreParams) };
+        if (!genres.empty())
+            albumNode.setAttribute("genre", genres.front()->getName());
 
         if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.getUser()->getId(), release->getId()) }; dateTime.isValid())
             albumNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
@@ -165,36 +160,30 @@ namespace lms::api::subsonic
 
         {
             std::optional<core::UUID> mbid{ release->getMBID() };
-            albumNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
+            albumNode.setAttribute("musicBrainzId", mbid ? mbid->toString() : "");
         }
 
-        auto addClusters{ [&](Response::Node::Key field, std::string_view clusterTypeName) {
-            albumNode.createEmptyArrayValue(field);
-
-            Cluster::FindParameters params;
-            params.setRelease(release->getId());
-            params.setClusterTypeName(clusterTypeName);
-
-            Cluster::find(context.getDbSession(), params, [&](const Cluster::pointer& cluster) {
-                albumNode.addArrayValue(field, cluster->getName());
-            });
-        } };
-
-        addClusters("moods", "MOOD");
-        addClusters("groupings", "GROUPING");
-
-        // Genres
-        albumNode.createEmptyArrayChild("genres");
-        if (genreClusterType)
+        albumNode.createEmptyArrayValue("moods");
         {
-            Cluster::FindParameters params;
+            Mood::FindParameters params;
             params.setRelease(release->getId());
-            params.setClusterType(genreClusterType->getId());
-
-            Cluster::find(context.getDbSession(), params, [&](const Cluster::pointer& cluster) {
-                albumNode.addArrayChild("genres", createItemGenreNode(cluster->getName()));
+            Mood::find(context.getDbSession(), params, [&](const Mood::pointer& mood) {
+                albumNode.addArrayValue("moods", mood->getName());
             });
         }
+
+        albumNode.createEmptyArrayValue("groupings");
+        {
+            Grouping::FindParameters params;
+            params.setRelease(release->getId());
+            Grouping::find(context.getDbSession(), params, [&](const Grouping::pointer& grouping) {
+                albumNode.addArrayValue("groupings", grouping->getName());
+            });
+        }
+
+        albumNode.createEmptyArrayChild("genres");
+        for (const auto& genre : genres)
+            albumNode.addArrayChild("genres", createItemGenreNode(genre->getName()));
 
         if (id3)
         {

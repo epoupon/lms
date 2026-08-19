@@ -8,10 +8,15 @@ add_executable(test-database
 	Common.cpp
 	DatabaseTest.cpp
 	Directory.cpp
+	Genre.cpp
+	Grouping.cpp
 	Image.cpp
+	Language.cpp
 	Listen.cpp
 	Medium.cpp
 	Migration.cpp
+	Mood.cpp
+	Movement.cpp
 	PlayListFile.cpp
 	Podcast.cpp
 	RatedArtist.cpp
@@ -25,6 +30,7 @@ add_executable(test-database
 	StarredTrack.cpp
 	Track.cpp
 	TrackArtistLink.cpp
+	Work.cpp
 	TrackBookmark.cpp
 	TrackEmbeddedImage.cpp
 	TrackList.cpp

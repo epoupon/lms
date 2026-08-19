@@ -26,8 +26,12 @@
 #include "core/media/Codec.hpp"
 
 #include "database/objects/ClusterId.hpp"
+#include "database/objects/GenreId.hpp"
+#include "database/objects/GroupingId.hpp"
 #include "database/objects/LabelId.hpp"
+#include "database/objects/LanguageId.hpp"
 #include "database/objects/MediaLibraryId.hpp"
+#include "database/objects/MoodId.hpp"
 #include "database/objects/ReleaseTypeId.hpp"
 
 namespace lms::db
@@ -36,13 +40,37 @@ namespace lms::db
     {
         MediaLibraryId mediaLibrary;             // tracks that belongs to this library
         std::vector<ClusterId> clusters;         // tracks that belong to *all* these clusters
+        GenreId genre;                           // tracks that belong to this genre
+        GroupingId grouping;                     // tracks that belong to this grouping
         LabelId label;                           // tracks which release has this label
+        LanguageId language;                     // tracks that belong to this language
+        MoodId mood;                             // tracks that belong to this mood
         ReleaseTypeId releaseType;               // tracks which release has this type
         std::optional<core::media::Codec> codec; // tracks that match this codec
 
         Filters& setClusters(std::span<const ClusterId> _clusters)
         {
             clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+            return *this;
+        }
+        Filters& setGenre(GenreId _genre)
+        {
+            genre = _genre;
+            return *this;
+        }
+        Filters& setGrouping(GroupingId _grouping)
+        {
+            grouping = _grouping;
+            return *this;
+        }
+        Filters& setLanguage(LanguageId _language)
+        {
+            language = _language;
+            return *this;
+        }
+        Filters& setMood(MoodId _mood)
+        {
+            mood = _mood;
             return *this;
         }
         Filters& setMediaLibrary(MediaLibraryId _mediaLibrary)

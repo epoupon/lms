@@ -23,7 +23,6 @@
 #include <variant>
 
 #include <Wt/Dbo/Field.h>
-#include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"
 #include "database/objects/ArtworkId.hpp"
@@ -50,7 +49,6 @@ namespace lms::db
         // getters
         using UnderlyingId = std::variant<std::monostate, TrackEmbeddedImageId, ImageId>;
         UnderlyingId getUnderlyingId() const;
-        Wt::WDateTime getLastWrittenTime() const;
         std::filesystem::path getAbsoluteFilePath() const;
         ObjectPtr<Image> getImage() const;
         ImageId getImageId() const;
@@ -68,7 +66,6 @@ namespace lms::db
         Artwork(ObjectPtr<Image> image);
         static pointer create(Session& session, ObjectPtr<TrackEmbeddedImage> trackEmbeddedImage);
         static pointer create(Session& session, ObjectPtr<Image> image);
-
         Wt::Dbo::ptr<TrackEmbeddedImage> _trackEmbeddedImage;
         Wt::Dbo::ptr<Image> _image;
     };

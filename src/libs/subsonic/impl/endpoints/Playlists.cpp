@@ -55,7 +55,7 @@ namespace lms::api::subsonic
     {
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& playlistsNode{ response.createNode("playlists") };
 
         auto addTrackList{ [&](const db::TrackList::pointer& trackList) {
@@ -103,11 +103,11 @@ namespace lms::api::subsonic
         if (trackList->getUserId() != context.getUser()->getId() && trackList->getVisibility() != TrackList::Visibility::Public)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node playlistNode{ createPlaylistNode(context, trackList) };
 
         auto entries{ trackList->getEntries() };
-        for (const TrackListEntry::pointer& entry : entries.results)
+        for (const TrackListEntry::pointer& entry : entries)
             playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), context.getUser()));
 
         response.addNode("playlist", std::move(playlistNode));
@@ -156,11 +156,11 @@ namespace lms::api::subsonic
             context.getDbSession().create<TrackListEntry>(track, trackList);
         }
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node playlistNode{ createPlaylistNode(context, trackList) };
 
         auto entries{ trackList->getEntries() };
-        for (const TrackListEntry::pointer& entry : entries.results)
+        for (const TrackListEntry::pointer& entry : entries)
             playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), context.getUser()));
 
         response.addNode("playlist", std::move(playlistNode));
@@ -213,7 +213,7 @@ namespace lms::api::subsonic
             context.getDbSession().create<TrackListEntry>(track, trackList);
         }
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 
     Response handleDeletePlaylistRequest(RequestContext& context)
@@ -227,6 +227,6 @@ namespace lms::api::subsonic
 
         trackList.remove();
 
-        return Response::createOkResponse(context.getServerProtocolVersion());
+        return Response::createOkResponse();
     }
 } // namespace lms::api::subsonic

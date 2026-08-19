@@ -145,13 +145,13 @@ namespace lms::ui
         }
 
         const auto trackListIds{ db::TrackList::find(session, params) };
-        for (const db::TrackListId trackListId : trackListIds.results)
+        for (const db::TrackListId trackListId : trackListIds)
         {
             if (const db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), trackListId) })
                 addTracklist(trackList);
         }
 
-        _container->setHasMore(trackListIds.moreResults);
+        _container->setHasMore(trackListIds.size() == _batchSize);
     }
 
     void TrackLists::addTracklist(const db::ObjectPtr<db::TrackList>& trackList)

@@ -20,8 +20,10 @@
 #pragma once
 
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <optional>
+#include <string_view>
 
 #include <Wt/WDateTime.h>
 #include <boost/asio/io_context.hpp>
@@ -64,9 +66,9 @@ namespace lms::scrobbling
         virtual void visitNowPlayingListens(const std::function<void(Clock::time_point startedAt, const Listen&)>& visitor, db::UserId userId = {}) = 0;
 
         // Stats
-        using ArtistContainer = db::RangeResults<db::ArtistId>;
-        using ReleaseContainer = db::RangeResults<db::ReleaseId>;
-        using TrackContainer = db::RangeResults<db::TrackId>;
+        using ArtistContainer = std::vector<db::ArtistId>;
+        using ReleaseContainer = std::vector<db::ReleaseId>;
+        using TrackContainer = std::vector<db::TrackId>;
 
         struct FindParameters
         {
@@ -142,6 +144,18 @@ namespace lms::scrobbling
         virtual ArtistContainer getTopArtists(const ArtistFindParameters& params) = 0;
         virtual ReleaseContainer getTopReleases(const FindParameters& params) = 0;
         virtual TrackContainer getTopTracks(const FindParameters& params) = 0;
+
+        virtual void initiateLastFmLink(db::UserId userId,
+                                        std::string_view apiKey,
+                                        std::string_view apiSecret,
+                                        std::function<void(std::string_view authUrl)> onSuccess,
+                                        std::function<void()> onFailure)
+            = 0;
+
+        virtual void continueLastFmLink(db::UserId userId,
+                                        std::function<void()> onSuccess,
+                                        std::function<void()> onFailure)
+            = 0;
     };
 
     std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, db::IDb& db);

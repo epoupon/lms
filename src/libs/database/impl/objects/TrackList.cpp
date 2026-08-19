@@ -25,9 +25,15 @@
 
 #include "database/Session.hpp"
 #include "database/objects/Cluster.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
+#include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/PlayListFile.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
+#include "database/objects/Work.hpp"
 
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
@@ -109,7 +115,7 @@ namespace lms::db
                 WhereClause clusterClause;
                 for (const ClusterId clusterId : params.filters.clusters)
                 {
-                    clusterClause.Or(WhereClause("c.id = ?"));
+                    clusterClause.Or(WhereClause{ "c.id = ?" });
                     query.bind(clusterId);
                 }
 
@@ -178,7 +184,7 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<TrackList>>("select t_l from tracklist t_l").where("t_l.name = ?").bind(name).where("t_l.type = ?").bind(type).where("t_l.user_id = ?").bind(userId));
     }
 
-    RangeResults<TrackListId> TrackList::find(Session& session, const FindParameters& params)
+    std::vector<TrackListId> TrackList::find(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
         auto query{ createQuery<TrackListId>(session, params) };
@@ -214,13 +220,13 @@ namespace lms::db
         TrackListEntry::pointer res;
 
         auto entries = getEntries(Range{ pos, 1 });
-        if (!entries.results.empty())
-            res = entries.results.front();
+        if (!entries.empty())
+            res = entries.front();
 
         return res;
     }
 
-    RangeResults<ObjectPtr<TrackListEntry>> TrackList::getEntries(std::optional<Range> range) const
+    std::vector<ObjectPtr<TrackListEntry>> TrackList::getEntries(std::optional<Range> range) const
     {
         assert(session());
 

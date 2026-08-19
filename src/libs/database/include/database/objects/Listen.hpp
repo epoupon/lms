@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <functional>
 #include <optional>
 
 #include <Wt/Dbo/Field.h>
@@ -36,6 +37,8 @@
 
 namespace lms::db
 {
+    class Artist;
+    class Release;
     class Session;
     class Track;
     class User;
@@ -78,13 +81,12 @@ namespace lms::db
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, ListenId id);
         static pointer find(Session& session, UserId userId, TrackId trackId, ScrobblingBackend backend, const Wt::WDateTime& dateTime);
-        static RangeResults<ListenId> find(Session& session, const FindParameters& parameters);
+        static std::vector<ListenId> find(Session& session, const FindParameters& parameters);
 
         // Stats
         struct StatsFindParameters
         {
             UserId user;
-            std::optional<ScrobblingBackend> backend;
             db::Filters filters;
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
             std::optional<Range> range;
@@ -93,11 +95,6 @@ namespace lms::db
             StatsFindParameters& setUser(UserId _user)
             {
                 user = _user;
-                return *this;
-            }
-            StatsFindParameters& setScrobblingBackend(std::optional<ScrobblingBackend> _backend)
-            {
-                backend = _backend;
                 return *this;
             }
             StatsFindParameters& setFilters(const db::Filters& _filters)
@@ -139,19 +136,25 @@ namespace lms::db
             }
         };
 
-        static RangeResults<ArtistId> getTopArtists(Session& session, const ArtistStatsFindParameters& params);
-        static RangeResults<ReleaseId> getTopReleases(Session& session, const StatsFindParameters& params);
-        static RangeResults<TrackId> getTopTracks(Session& session, const StatsFindParameters& params);
+        static std::vector<ArtistId> getTopArtists(Session& session, const ArtistStatsFindParameters& params);
+        static std::vector<ReleaseId> getTopReleases(Session& session, const StatsFindParameters& params);
+        static std::vector<TrackId> getTopTracks(Session& session, const StatsFindParameters& params);
+        static std::vector<ArtistId> getRecentArtists(Session& session, const ArtistStatsFindParameters& params);
+        static std::vector<ReleaseId> getRecentReleases(Session& session, const StatsFindParameters& params);
+        static std::vector<TrackId> getRecentTracks(Session& session, const StatsFindParameters& params);
 
-        static RangeResults<ArtistId> getRecentArtists(Session& session, const ArtistStatsFindParameters& params);
-        static RangeResults<ReleaseId> getRecentReleases(Session& session, const StatsFindParameters& params);
-        static RangeResults<TrackId> getRecentTracks(Session& session, const StatsFindParameters& params);
+        static void getTopArtists(Session& session, const ArtistStatsFindParameters& params, const std::function<void(const ObjectPtr<Artist>&)>& func);
+        static void getTopReleases(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Release>&)>& func);
+        static void getTopTracks(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Track>&)>& func);
+        static void getRecentArtists(Session& session, const ArtistStatsFindParameters& params, const std::function<void(const ObjectPtr<Artist>&)>& func);
+        static void getRecentReleases(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Release>&)>& func);
+        static void getRecentTracks(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Track>&)>& func);
 
         static std::size_t getCount(Session& session, UserId userId, TrackId trackId);   // for the current backend
         static std::size_t getCount(Session& session, UserId userId, ReleaseId trackId); // for the current backend
 
-        static pointer getMostRecentListen(Session& session, UserId userId, ScrobblingBackend backend, ReleaseId releaseId);
-        static pointer getMostRecentListen(Session& session, UserId userId, ScrobblingBackend backend, TrackId releaseId);
+        static pointer getMostRecentListen(Session& session, UserId userId, ReleaseId releaseId); // uses current scrobbling backend
+        static pointer getMostRecentListen(Session& session, UserId userId, TrackId trackId);     // uses current scrobbling backend
 
         SyncState getSyncState() const { return _syncState; }
         ObjectPtr<User> getUser() const { return _user; }

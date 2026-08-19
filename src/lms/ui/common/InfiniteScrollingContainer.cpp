@@ -21,6 +21,9 @@
 
 #include <cassert>
 
+#include <Wt/WContainerWidget.h>
+#include <Wt/WText.h>
+
 #include "LoadingIndicator.hpp"
 
 namespace lms::ui
@@ -41,6 +44,7 @@ namespace lms::ui
     void InfiniteScrollingContainer::reset()
     {
         _elements->clear();
+        hideResultHint();
         setHasMore(true);
     }
 
@@ -51,7 +55,8 @@ namespace lms::ui
 
     void InfiniteScrollingContainer::add(std::unique_ptr<Wt::WWidget> result)
     {
-        return _elements->addWidget(std::move(result));
+        _gotItems = true;
+        _elements->addWidget(std::move(result));
     }
 
     void InfiniteScrollingContainer::setHasMore()
@@ -62,9 +67,20 @@ namespace lms::ui
     void InfiniteScrollingContainer::setHasMore(bool hasMore)
     {
         if (hasMore)
+        {
+            _gotItems = false;
             displayLoadingIndicator();
+        }
         else
+        {
             hideLoadingIndicator();
+            if (getCount() == 0)
+                displayResultHint(Wt::WString::tr("Lms.infinite-scrolling-container.no-results"));
+            else if (!_gotItems)
+                displayResultHint(Wt::WString::tr("Lms.infinite-scrolling-container.limit-reached"));
+            else
+                hideResultHint();
+        }
     }
 
     void InfiniteScrollingContainer::remove(Wt::WWidget& widget)
@@ -111,6 +127,20 @@ namespace lms::ui
     void InfiniteScrollingContainer::hideLoadingIndicator()
     {
         _loadingIndicator = nullptr;
+        bindEmpty("loading-indicator");
+    }
+
+    void InfiniteScrollingContainer::displayResultHint(const Wt::WString& msg)
+    {
+        _loadingIndicator = nullptr;
+        auto container{ std::make_unique<Wt::WContainerWidget>() };
+        container->addStyleClass("my-5 text-center text-muted");
+        container->addNew<Wt::WText>(msg);
+        bindWidget("loading-indicator", std::move(container));
+    }
+
+    void InfiniteScrollingContainer::hideResultHint()
+    {
         bindEmpty("loading-indicator");
     }
 } // namespace lms::ui

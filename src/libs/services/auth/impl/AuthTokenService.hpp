@@ -47,6 +47,7 @@ namespace lms::auth
 
     private:
         void registerDomain(core::LiteralString domain, const DomainParameters& params) override;
+        bool isClientThrottled(const boost::asio::ip::address& clientAddress) const override;
         AuthTokenProcessResult processAuthToken(core::LiteralString domain, const boost::asio::ip::address& clientAddress, std::string_view tokenValue) override;
         void visitAuthTokens(core::LiteralString domain, db::UserId userId, std::function<void(const AuthTokenInfo& info, std::string_view token)> visitor) override;
         void createAuthToken(core::LiteralString domain, db::UserId userId, std::string_view token) override;
@@ -55,7 +56,7 @@ namespace lms::auth
         std::optional<AuthTokenInfo> processAuthToken(core::LiteralString domain, std::string_view tokenValue);
         const DomainParameters& getDomainParameters(core::LiteralString domain) const;
 
-        std::shared_mutex _mutex;
+        mutable std::shared_mutex _mutex;
         std::map<core::LiteralString, DomainParameters> _domainParameters;
         LoginThrottler _loginThrottler;
     };

@@ -11,6 +11,7 @@ add_library(lmspodcast STATIC
 	impl/Executor.cpp
 	impl/PodcastParsing.cpp
 	impl/PodcastService.cpp
+	impl/UrlValidation.cpp
 	)
 
 target_include_directories(lmspodcast INTERFACE

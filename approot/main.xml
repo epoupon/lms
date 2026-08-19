@@ -45,10 +45,8 @@
 							<li>${scanner class="dropdown-item"}</li>
 							<li>${users class="dropdown-item"}</li>
 							<li>${about class="dropdown-item"}</li>
-							${<if-debug-tools>}
 							<li class="dropdown-divider"></li>
 							<li>${debug-tools class="dropdown-item"}</li>
-							${</if-debug-tools>}
 						</ul>
 					</li>
 				${</if-is-admin>}

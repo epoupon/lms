@@ -19,8 +19,12 @@
 
 #pragma once
 
+#include <functional>
 #include <optional>
+#include <vector>
 
+#include "database/Object.hpp"
+#include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 
 #include "ArtistType.hpp"
@@ -38,13 +42,12 @@ namespace lms::ui
     public:
         using DatabaseCollectorBase::DatabaseCollectorBase;
 
-        db::RangeResults<db::ArtistId> get(std::optional<db::Range> range = std::nullopt);
+        void get(db::Range range, bool& moreResults, const std::function<void(const db::ObjectPtr<db::Artist>&)>& func);
         void reset() { _randomArtists.reset(); }
         void setArtistType(ArtistType artistType) { _artistType = artistType; }
 
     private:
-        db::RangeResults<db::ArtistId> getRandomArtists(Range range);
-        std::optional<db::RangeResults<db::ArtistId>> _randomArtists;
+        std::optional<std::vector<db::ArtistId>> _randomArtists;
         ArtistType _artistType;
     };
 } // namespace lms::ui

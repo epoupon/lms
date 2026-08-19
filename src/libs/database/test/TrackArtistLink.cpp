@@ -275,4 +275,118 @@ namespace lms::db::tests
             EXPECT_EQ(links[0]->getTrack()->getId(), track2.getId());
         }
     }
+
+    TEST_F(DatabaseFixture, Track_getArtists_typeFilterAndOrder)
+    {
+        ScopedTrack track{ session };
+        ScopedArtist artist1{ session, "Artist1" };
+        ScopedArtist artist2{ session, "Artist2" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Artist, false);
+            session.create<TrackArtistLink>(track.get(), artist2.get(), TrackArtistLinkType::Artist, false);
+            session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Mixer, false);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto artistLinks{ track->getArtists({ TrackArtistLinkType::Artist }) };
+            ASSERT_EQ(artistLinks.size(), 2);
+            EXPECT_EQ(artistLinks[0]->getId(), artist1.getId());
+            EXPECT_EQ(artistLinks[1]->getId(), artist2.getId());
+
+            const auto mixerLinks{ track->getArtists({ TrackArtistLinkType::Mixer }) };
+            ASSERT_EQ(mixerLinks.size(), 1);
+            EXPECT_EQ(mixerLinks[0]->getId(), artist1.getId());
+
+            const auto noFilter{ track->getArtists({}) };
+            EXPECT_EQ(noFilter.size(), 2);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_getArtistIds_typeFilter)
+    {
+        ScopedTrack track{ session };
+        ScopedArtist artist1{ session, "Artist1" };
+        ScopedArtist artist2{ session, "Artist2" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Artist, false);
+            session.create<TrackArtistLink>(track.get(), artist2.get(), TrackArtistLinkType::Artist, false);
+            session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Mixer, false);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto artistIds{ track->getArtistIds({ TrackArtistLinkType::Artist }) };
+            ASSERT_EQ(artistIds.size(), 2);
+            EXPECT_EQ(artistIds[0], artist1.getId());
+            EXPECT_EQ(artistIds[1], artist2.getId());
+
+            const auto mixerIds{ track->getArtistIds({ TrackArtistLinkType::Mixer }) };
+            ASSERT_EQ(mixerIds.size(), 1);
+            EXPECT_EQ(mixerIds[0], artist1.getId());
+
+            const auto noFilter{ track->getArtistIds({}) };
+            EXPECT_EQ(noFilter.size(), 2);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_visitArtistLinks_orderedById)
+    {
+        ScopedTrack track{ session };
+        ScopedArtist artist1{ session, "Artist1" };
+        ScopedArtist artist2{ session, "Artist2" };
+
+        TrackArtistLinkId link1Id;
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            auto link1{ session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Artist, false) };
+            link1Id = link1->getId();
+            session.create<TrackArtistLink>(track.get(), artist2.get(), TrackArtistLinkType::Artist, false);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<db::TrackArtistLink::pointer> links;
+            track->visitArtistLinks([&](const db::TrackArtistLink::pointer& link) {
+                links.push_back(link);
+            });
+
+            ASSERT_EQ(links.size(), 2);
+            EXPECT_EQ(links[0]->getArtistId(), artist1.getId());
+            EXPECT_EQ(links[1]->getArtistId(), artist2.getId());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            TrackArtistLink::find(session, link1Id).remove();
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Artist, false);
+        }
+
+        // artist2's link has lower id, artist1's re-created link has higher id.
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<db::TrackArtistLink::pointer> links;
+            track->visitArtistLinks([&](const db::TrackArtistLink::pointer& link) {
+                links.push_back(link);
+            });
+
+            ASSERT_EQ(links.size(), 2);
+            EXPECT_EQ(links[0]->getArtistId(), artist2.getId());
+            EXPECT_EQ(links[1]->getArtistId(), artist1.getId());
+        }
+    }
+
 } // namespace lms::db::tests

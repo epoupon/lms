@@ -19,8 +19,11 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -31,24 +34,28 @@ namespace lms::core
     class UUID
     {
     public:
+        static constexpr std::size_t binarySize{ 16 };
+
+        UUID() noexcept = default;
         static std::optional<UUID> fromString(std::string_view str);
+        static UUID fromBytes(std::span<const std::byte, binarySize> bytes) noexcept;
         static UUID generate();
 
-        std::string_view getAsString() const { return _value; }
+        std::string toString() const;
+        std::span<const std::byte, binarySize> bytes() const noexcept { return _bytes; }
 
         auto operator<=>(const UUID&) const = default;
 
     private:
-        UUID(std::string_view value);
-        std::string _value;
+        explicit UUID(std::array<std::byte, binarySize> bytes) noexcept;
+        std::array<std::byte, binarySize> _bytes{};
     };
 } // namespace lms::core
 
 namespace lms::core::stringUtils
 {
     template<>
-    std::optional<UUID>
-    readAs(std::string_view str);
+    std::optional<UUID> readAs(std::string_view str);
 }
 
 namespace std
@@ -56,9 +63,10 @@ namespace std
     template<>
     struct hash<lms::core::UUID>
     {
-        size_t operator()(const lms::core::UUID& str) const
+        size_t operator()(const lms::core::UUID& uuid) const noexcept
         {
-            return hash<std::string_view>{}(str.getAsString());
+            const auto& b{ uuid.bytes() };
+            return hash<string_view>{}({ static_cast<const char*>(static_cast<const void*>(b.data())), b.size() });
         }
     };
 } // namespace std

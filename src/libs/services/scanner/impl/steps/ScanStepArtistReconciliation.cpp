@@ -46,7 +46,7 @@ namespace lms::scanner
         {
             os << "'" << artist->getName() << "'";
             if (const auto mbid{ artist->getMBID() })
-                os << " [" << mbid->getAsString() << "]";
+                os << " [" << mbid->toString() << "]";
 
             return os;
         }
@@ -183,10 +183,10 @@ namespace lms::scanner
                 auto transaction{ session.createReadTransaction() };
 
                 const auto artists{ db::Artist::findWithMBIDNameVariants(session, lastRetrievedArtist, db::Range{ .offset = 0, .size = batchSize }) };
-                if (artists.results.empty())
+                if (artists.empty())
                     break;
 
-                for (const db::Artist::pointer& artist : artists.results)
+                for (const db::Artist::pointer& artist : artists)
                 {
                     bool hasArtistInfo{};
                     db::ArtistInfo::find(session, artist->getId(), db::Range{ .offset = 0, .size = 1 }, [&](const db::ArtistInfo::pointer&) {
@@ -218,7 +218,7 @@ namespace lms::scanner
                     }
                 }
 
-                if (!artists.moreResults)
+                if (artists.size() < batchSize)
                     break;
             }
 

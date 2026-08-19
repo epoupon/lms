@@ -92,13 +92,9 @@ namespace lms::feedback
 
     FeedbackService::ArtistContainer FeedbackService::findStarredArtists(const ArtistFindParameters& params)
     {
-        auto backend{ getUserFeedbackBackend(params.user) };
-        if (!backend)
-            return {};
-
         Artist::FindParameters searchParams;
         searchParams.setFilters(params.filters);
-        searchParams.setStarringUser(params.user, *backend);
+        searchParams.setStarringUser(params.user);
         searchParams.setKeywords(params.keywords);
         searchParams.setTrackArtistLinkType(params.trackArtistLinkType);
         searchParams.setSortMethod(params.sortMethod);
@@ -142,12 +138,8 @@ namespace lms::feedback
 
     FeedbackService::ReleaseContainer FeedbackService::findStarredReleases(const FindParameters& params)
     {
-        auto backend{ getUserFeedbackBackend(params.user) };
-        if (!backend)
-            return {};
-
         Release::FindParameters searchParams;
-        searchParams.setStarringUser(params.user, *backend);
+        searchParams.setStarringUser(params.user);
         searchParams.setFilters(params.filters);
         searchParams.setKeywords(params.keywords);
         searchParams.setSortMethod(ReleaseSortMethod::StarredDateDesc);
@@ -191,12 +183,8 @@ namespace lms::feedback
 
     FeedbackService::TrackContainer FeedbackService::findStarredTracks(const FindParameters& params)
     {
-        auto backend{ getUserFeedbackBackend(params.user) };
-        if (!backend)
-            return {};
-
         Track::FindParameters searchParams;
-        searchParams.setStarringUser(params.user, *backend);
+        searchParams.setStarringUser(params.user);
         searchParams.setFilters(params.filters);
         searchParams.setKeywords(params.keywords);
         searchParams.setSortMethod(TrackSortMethod::StarredDateDesc);

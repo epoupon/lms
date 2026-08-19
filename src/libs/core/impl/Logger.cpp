@@ -19,15 +19,47 @@
 
 #include "Logger.hpp"
 
-#include <Wt/WDateTime.h>
-
 #include <algorithm>
+#include <array>
+#include <chrono>
+#include <ctime>
 #include <fstream>
 #include <iostream>
+#include <string_view>
 #include <thread>
 
 #include "core/Exception.hpp"
-#include "core/String.hpp"
+
+namespace
+{
+    std::string localISO8601TimeString()
+    {
+        using Clock = std::chrono::system_clock;
+        const auto now{ Clock::now() };
+        const int ms{ static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000) };
+        const std::time_t tt{ Clock::to_time_t(now) };
+        std::tm tm{};
+        ::localtime_r(&tt, &tm);
+
+        std::array<char, 24> datetime{};
+        std::array<char, 8> offset{};
+        std::strftime(datetime.data(), datetime.size(), "%Y-%m-%dT%H:%M:%S", &tm);
+        std::strftime(offset.data(), offset.size(), "%z", &tm); // "+HHMM" or "-HHMM"
+
+        // Append msecs and offset
+        const std::string_view offsetView{ offset.data() };
+        std::string result{ datetime.data() };
+        result += '.';
+        result += static_cast<char>('0' + ms / 100);
+        result += static_cast<char>('0' + (ms / 10) % 10);
+        result += static_cast<char>('0' + ms % 10);
+        result += offsetView.substr(0, 3); // sign + HH
+        result += ':';
+        result += offsetView.substr(3); // MM
+
+        return result;
+    }
+} // namespace
 
 namespace lms::core::logging
 {
@@ -205,9 +237,8 @@ namespace lms::core::logging
     {
         assert(isSeverityActive(severity)); // should have been filtered out by a isSeverityActive call
         OutputStream* outputStream{ _severityToOutputStreamMap.at(severity) };
-        const Wt::WDateTime now{ Wt::WDateTime::currentDateTime() };
 
         std::unique_lock lock{ outputStream->mutex };
-        outputStream->stream << stringUtils::toISO8601String(now) << " " << std::this_thread::get_id() << " [" << getSeverityName(severity) << "] [" << getModuleName(module) << "] " << message << std::endl;
+        outputStream->stream << localISO8601TimeString() << " " << std::this_thread::get_id() << " [" << getSeverityName(severity) << "] [" << getModuleName(module) << "] " << message << std::endl;
     }
 } // namespace lms::core::logging

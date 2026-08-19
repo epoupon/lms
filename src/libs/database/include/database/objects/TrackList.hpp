@@ -116,7 +116,7 @@ namespace lms::db
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, std::string_view name, TrackListType type, UserId userId);
         static pointer find(Session& session, TrackListId tracklistId);
-        static RangeResults<TrackListId> find(Session& session, const FindParameters& params);
+        static std::vector<TrackListId> find(Session& session, const FindParameters& params);
         static void find(Session& session, const FindParameters& params, const std::function<void(const TrackList::pointer&)>& func);
 
         // Accessors
@@ -139,7 +139,7 @@ namespace lms::db
         bool isEmpty() const;
         std::size_t getCount() const;
         ObjectPtr<TrackListEntry> getEntry(std::size_t pos) const;
-        RangeResults<ObjectPtr<TrackListEntry>> getEntries(std::optional<Range> range = {}) const;
+        std::vector<ObjectPtr<TrackListEntry>> getEntries(std::optional<Range> range = {}) const;
         ObjectPtr<TrackListEntry> getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const;
 
         std::vector<TrackId> getTrackIds() const;

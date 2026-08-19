@@ -26,6 +26,11 @@ namespace lms::api::subsonic
         return "ar-" + id.toString();
     }
 
+    std::string idToString(db::ArtworkId id)
+    {
+        return "art-" + id.toString();
+    }
+
     std::string idToString(db::DirectoryId id)
     {
         return "dir-" + id.toString();
@@ -59,6 +64,19 @@ namespace lms::api::subsonic
 
 namespace lms::core::stringUtils
 {
+    template<>
+    std::optional<db::ArtworkId> readAs(std::string_view str)
+    {
+        std::vector<std::string_view> values{ core::stringUtils::splitString(str, '-') };
+        if (values.size() != 2 || values[0] != "art")
+            return std::nullopt;
+
+        if (const auto value{ core::stringUtils::readAs<db::ArtworkId::ValueType>(values[1]) })
+            return db::ArtworkId{ *value };
+
+        return std::nullopt;
+    }
+
     template<>
     std::optional<db::ArtistId> readAs(std::string_view str)
     {

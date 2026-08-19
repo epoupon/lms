@@ -17,68 +17,60 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScanStepComputeClusterStats.hpp"
-
-#include "core/ILogger.hpp"
+#include "ScanStepComputeGenreStats.hpp"
 
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/objects/Cluster.hpp"
+#include "database/objects/Genre.hpp"
 
 #include "ScanContext.hpp"
 
 namespace lms::scanner
 {
-    bool ScanStepComputeClusterStats::needProcess(const ScanContext& context) const
+    bool ScanStepComputeGenreStats::needProcess(const ScanContext& context) const
     {
         return context.stats.getChangesCount() > 0;
     }
 
-    void ScanStepComputeClusterStats::process(ScanContext& context)
+    void ScanStepComputeGenreStats::process(ScanContext& context)
     {
         using namespace db;
 
         Session& dbSession{ _db.getTLSSession() };
 
-        const std::size_t clusterCount{ [&] {
+        const std::size_t genreCount{ [&] {
             auto transaction{ dbSession.createReadTransaction() };
-            return Cluster::getCount(dbSession);
+            return Genre::getCount(dbSession);
         }() };
 
-        context.currentStepStats.totalElems = clusterCount;
+        context.currentStepStats.totalElems = genreCount;
 
-        foreachSubRange(Range{ 0, clusterCount }, 100, [&](Range range) {
-            const std::vector<ClusterId> clusterIds{ [&] {
-                Cluster::FindParameters params;
+        foreachSubRange(Range{ 0, genreCount }, 100, [&](Range range) {
+            const std::vector<GenreId> genreIds{ [&] {
+                Genre::FindParameters params;
                 params.setRange(range);
-
-                {
-                    auto transaction{ dbSession.createReadTransaction() };
-                    return std::move(Cluster::findIds(dbSession, params).results);
-                }
+                auto transaction{ dbSession.createReadTransaction() };
+                return Genre::findIds(dbSession, params);
             }() };
 
-            for (const ClusterId clusterId : clusterIds)
+            for (const GenreId genreId : genreIds)
             {
                 if (_abortScan)
                     break;
 
                 std::size_t trackCount;
                 std::size_t releaseCount;
-
                 {
                     auto transaction{ dbSession.createReadTransaction() };
-
-                    trackCount = Cluster::computeTrackCount(dbSession, clusterId);
-                    releaseCount = Cluster::computeReleaseCount(dbSession, clusterId);
+                    trackCount = Genre::computeTrackCount(dbSession, genreId);
+                    releaseCount = Genre::computeReleaseCount(dbSession, genreId);
                 }
 
                 {
                     auto transaction{ dbSession.createWriteTransaction() };
-
-                    auto cluster{ Cluster::find(dbSession, clusterId) };
-                    cluster.modify()->setTrackCount(trackCount);
-                    cluster.modify()->setReleaseCount(releaseCount);
+                    auto genre{ Genre::find(dbSession, genreId) };
+                    genre.modify()->setTrackCount(trackCount);
+                    genre.modify()->setReleaseCount(releaseCount);
                 }
 
                 context.currentStepStats.processedElems++;
@@ -87,7 +79,5 @@ namespace lms::scanner
 
             return true;
         });
-
-        LMS_LOG(DBUPDATER, DEBUG, "Recomputed stats for " << context.currentStepStats.processedElems << " clusters!");
     }
 } // namespace lms::scanner

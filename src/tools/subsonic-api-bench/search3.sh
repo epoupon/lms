@@ -1,7 +1,13 @@
 #!/bin/bash
 
+verbose=0
+if [ "$1" = "-v" ]; then
+    verbose=1
+    shift
+fi
+
 if [ "$#" -lt 6 ] || [ "$#" -gt 7 ]; then
-    echo "Usage: $0 <base_url> <user> <artist_count> <album_count> <song_count> <batch_size> [musicFolderId]"
+    echo "Usage: $0 [-v] <base_url> <user> <artist_count> <album_count> <song_count> <batch_size> [musicFolderId]"
     exit 1
 fi
 
@@ -32,24 +38,32 @@ append_music_folder() {
     echo "$url"
 }
 
+fetch() {
+    local url="$1"
+    if [ "$verbose" -eq 1 ]; then
+        echo "GET ${url/&p=$user_password/\&p=***}" >&2
+    fi
+    wget -q -O - "$url" > /dev/null
+}
+
 start_time=$(date +%s.%3N)
 
 # artists
 echo "Fetching $artist_count artists..."
 for ((i = 0; i < artist_count; i += $batch_size)); do
-    wget -q -O - "$(append_music_folder "$base_url/rest/search3.view?u=$user&p=$user_password&v=1.13.0&c=benchmark&f=json&query=&artistCount=$batch_size&artistOffset=$i&albumCount=0&songCount=0")" > /dev/null
+    fetch "$(append_music_folder "$base_url/rest/search3.view?u=$user&p=$user_password&v=1.13.0&c=benchmark&f=json&query=&artistCount=$batch_size&artistOffset=$i&albumCount=0&songCount=0")"
 done
 
 # albums
 echo "Fetching $album_count albums..."
 for ((i = 0; i < album_count; i += $batch_size)); do
-	wget -q -O - "$(append_music_folder "$base_url/rest/search3.view?u=$user&p=$user_password&v=1.13.0&c=benchmark&f=json&query=&artistCount=0&albumCount=$batch_size&albumOffset=$i&songCount=0")" > /dev/null
+	fetch "$(append_music_folder "$base_url/rest/search3.view?u=$user&p=$user_password&v=1.13.0&c=benchmark&f=json&query=&artistCount=0&albumCount=$batch_size&albumOffset=$i&songCount=0")"
 done
 
 # songs
 echo "Fetching $song_count songs..."
 for ((i = 0; i < song_count; i += $batch_size)); do
-	wget -q -O - "$(append_music_folder "$base_url/rest/search3.view?u=$user&p=$user_password&v=1.13.0&c=benchmark&f=json&query=&artistCount=0&albumCount=0&songCount=$batch_size&songOffset=$i")" > /dev/null
+	fetch "$(append_music_folder "$base_url/rest/search3.view?u=$user&p=$user_password&v=1.13.0&c=benchmark&f=json&query=&artistCount=0&albumCount=0&songCount=$batch_size&songOffset=$i")"
 done
 
 end_time=$(date +%s.%3N)

@@ -31,6 +31,7 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
+#include "core/http/UrlValidation.hpp"
 
 #define LOG(sev, message) LMS_LOG(HTTP, sev, "[Http SendQueue] - " << message)
 
@@ -190,6 +191,12 @@ namespace lms::core::http
         const std::string url{ _baseUrl + request.getParameters().relativeUrl };
         LOG(DEBUG, "Sending " << (request.getType() == ClientRequest::Type::GET ? "GET" : "POST") << " request to url '" << url << "'");
 
+        if (!isValidUrl(url))
+        {
+            LOG(ERROR, "Refusing request to '" << url << "': invalid URL");
+            return false;
+        }
+
         _client.setMaximumResponseSize(request.getParameters().onChunkReceived ? 0 : request.getParameters().responseBufferSize);
 
         bool res{};
@@ -284,8 +291,12 @@ namespace lms::core::http
         LOG(DEBUG, "Remaining messages = " << (remainingCount ? *remainingCount : 0));
         if (mustThrottle || (remainingCount && *remainingCount == 0))
         {
-            const auto waitDuration{ headerReadAs<std::chrono::seconds>(msg, "X-RateLimit-Reset-In") };
-            throttle(waitDuration.value_or(_defaultRetryWaitDuration));
+            const std::chrono::seconds waitDuration{
+                headerReadAs<std::chrono::seconds>(msg, "X-RateLimit-Reset-In")
+                    .value_or(headerReadAs<std::chrono::seconds>(msg, "Retry-After")
+                                  .value_or(_defaultRetryWaitDuration))
+            };
+            throttle(waitDuration);
         }
 
         if (!mustThrottle)

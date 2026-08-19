@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,27 +17,14 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "UrlValidation.hpp"
 
-#include <ctime>
+#include "core/http/UrlValidation.hpp"
 
-#include "core/String.hpp"
-#include "database/objects/ArtworkId.hpp"
-
-namespace lms::api::subsonic
+namespace lms::podcast
 {
-    struct CoverArtId
+    bool isAllowedPodcastUrl(std::string_view url)
     {
-        db::ArtworkId id;
-        std::time_t timestamp;
-    };
-
-    std::string idToString(CoverArtId coverId);
-} // namespace lms::api::subsonic
-
-// Used to parse parameters
-namespace lms::core::stringUtils
-{
-    template<>
-    std::optional<api::subsonic::CoverArtId> readAs(std::string_view str);
-} // namespace lms::core::stringUtils
+        return core::http::isValidUrl(url);
+    }
+} // namespace lms::podcast

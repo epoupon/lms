@@ -39,7 +39,6 @@
 #include "services/artwork/IArtworkService.hpp"
 #include "services/transcoding/ITranscodeService.hpp"
 
-#include "CoverArtId.hpp"
 #include "ParameterParsing.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
@@ -237,7 +236,7 @@ namespace lms::api::subsonic
         std::string artistName{ getParameterAs<std::string>(context.getParameters(), "artist").value_or("") };
         std::string titleName{ getParameterAs<std::string>(context.getParameters(), "title").value_or("") };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
 
         // best effort search, as this API is really limited
         auto transaction{ context.getDbSession().createReadTransaction() };
@@ -249,11 +248,11 @@ namespace lms::api::subsonic
 
         // Choice: we return nothing if there are too many results
         const auto tracks{ db::Track::findIds(context.getDbSession(), params) };
-        if (tracks.results.size() == 1)
+        if (tracks.size() == 1)
         {
             // Choice: we return only the first lyrics if the track has many lyrics
             db::TrackLyrics::FindParameters lyricsParams;
-            lyricsParams.setTrack(tracks.results[0]);
+            lyricsParams.setTrack(tracks[0]);
             lyricsParams.setSortMethod(db::TrackLyricsSortMethod::ExternalFirst);
             lyricsParams.setRange(db::Range{ 0, 1 });
 
@@ -270,7 +269,7 @@ namespace lms::api::subsonic
         // mandatory params
         db::TrackId id{ getMandatoryParameterAs<db::TrackId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& lyricsList{ response.createNode("lyricsList") };
         lyricsList.createEmptyArrayChild("structuredLyrics");
 
@@ -359,13 +358,13 @@ namespace lms::api::subsonic
     void handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/, Wt::Http::Response& response)
     {
         // Mandatory params
-        const CoverArtId coverArtId{ getMandatoryParameterAs<CoverArtId>(context.getParameters(), "id") };
+        const db::ArtworkId artworkId{ getMandatoryParameterAs<db::ArtworkId>(context.getParameters(), "id") };
 
         std::optional<std::size_t> size{ getParameterAs<std::size_t>(context.getParameters(), "size") };
         if (size)
             *size = std::clamp(*size, std::size_t{ 32 }, std::size_t{ 2048 });
 
-        std::shared_ptr<image::IEncodedImage> image{ core::Service<artwork::IArtworkService>::get()->getImage(coverArtId.id, size) };
+        std::shared_ptr<image::IEncodedImage> image{ core::Service<artwork::IArtworkService>::get()->getImage(artworkId, size) };
         if (!image)
         {
             response.setStatus(404);

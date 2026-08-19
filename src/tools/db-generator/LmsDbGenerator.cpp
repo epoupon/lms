@@ -17,9 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <iostream>
+#include <numeric>
 #include <optional>
 #include <stdexcept>
 #include <stdlib.h>
@@ -32,18 +34,25 @@
 #include "core/Random.hpp"
 #include "core/Service.hpp"
 #include "core/SystemPaths.hpp"
+
+#include "audio/MusicNNEmbeddings.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Medium.hpp"
+#include "database/objects/Mood.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
+#include "database/objects/TrackMusicNNEmbeddings.hpp"
 
 namespace lms
 {
@@ -55,10 +64,15 @@ namespace lms
         std::size_t trackCountPerRelease{ 10 };
         float compilationRatio{ 0.1 };
         std::size_t genreCountPerTrack{ 3 };
+        std::size_t groupingCountPerTrack{ 1 };
+        std::size_t languageCountPerTrack{ 1 };
         std::size_t moodCountPerTrack{ 3 };
         std::size_t trackEmbeddedImagePerRelease{ 1 }; // usual case: one same image saved on each track
         std::size_t genreCount{ 50 };
+        std::size_t groupingCount{ 10 };
+        std::size_t languageCount{ 10 };
         std::size_t moodCount{ 25 };
+        bool generateMusicNNEmbeddings{ false };
         std::filesystem::path trackPath;
     };
 
@@ -66,22 +80,18 @@ namespace lms
     {
         db::Session& session;
         std::vector<db::MediaLibrary::pointer> mediaLibraries;
-        std::vector<db::Cluster::pointer> genres;
-        std::vector<db::Cluster::pointer> moods;
+        std::vector<db::Genre::pointer> genres;
+        std::vector<db::Grouping::pointer> groupings;
+        std::vector<db::Language::pointer> languages;
+        std::vector<db::Mood::pointer> moods;
         GenerationContext(db::Session& _session)
             : session{ _session } {}
     };
 
-    db::Cluster::pointer generateCluster(db::Session& session, db::ClusterType::pointer clusterType)
-    {
-        const std::string clusterName{ std::string{ clusterType->getName() } + "-" + std::string{ core::UUID::generate().getAsString() } };
-        return session.create<db::Cluster>(clusterType, clusterName);
-    }
-
     db::Artist::pointer generateArtist(db::Session& session)
     {
         const core::UUID artistMBID{ core::UUID::generate() };
-        const std::string artistName{ "Artist-" + std::string{ core::UUID::generate().getAsString() } };
+        const std::string artistName{ "Artist-" + core::UUID::generate().toString() };
         return session.create<db::Artist>(artistName, artistMBID);
     }
 
@@ -90,7 +100,7 @@ namespace lms
         using namespace db;
 
         const core::UUID releaseMBID{ core::UUID::generate() };
-        const std::string releaseName{ "Release-" + std::string{ core::UUID::generate().getAsString() } };
+        const std::string releaseName{ "Release-" + core::UUID::generate().toString() };
         Release::pointer release{ context.session.create<Release>(releaseName, releaseMBID) };
         Medium::pointer medium{ context.session.create<Medium>(release) };
         medium.modify()->setTrackCount(params.trackCountPerRelease);
@@ -109,7 +119,7 @@ namespace lms
         {
             Track::pointer track{ context.session.create<Track>() };
 
-            track.modify()->setName("Track-" + std::string{ core::UUID::generate().getAsString() });
+            track.modify()->setName("Track-" + core::UUID::generate().toString());
             track.modify()->setMedium(medium);
             track.modify()->setTrackNumber(i);
             track.modify()->setDuration(std::chrono::seconds{ core::random::getRandom(30, 300) });
@@ -125,12 +135,39 @@ namespace lms
             if (!trackEmbeddedImages.empty())
                 context.session.create<TrackEmbeddedImageLink>(track, *core::random::pickRandom(trackEmbeddedImages));
 
-            std::vector<ObjectPtr<Cluster>> clusters;
+            auto pickN = [](const auto& pool, std::size_t n) {
+                using T = typename std::decay_t<decltype(pool)>::value_type;
+                std::vector<std::size_t> indices(pool.size());
+                std::iota(indices.begin(), indices.end(), std::size_t{});
+                std::shuffle(indices.begin(), indices.end(), core::random::getRandGenerator());
+                const std::size_t count{ std::min(n, pool.size()) };
+                std::vector<T> picked;
+                picked.reserve(count);
+                for (std::size_t k{}; k < count; ++k)
+                    picked.push_back(pool[indices[k]]);
+                return picked;
+            };
+
             if (!context.genres.empty())
-                clusters.push_back(*core::random::pickRandom(context.genres));
+                track.modify()->setGenres(pickN(context.genres, params.genreCountPerTrack));
+            if (!context.groupings.empty())
+                track.modify()->setGroupings(pickN(context.groupings, params.groupingCountPerTrack));
+            if (!context.languages.empty())
+                track.modify()->setLanguages(pickN(context.languages, params.languageCountPerTrack));
             if (!context.moods.empty())
-                clusters.push_back(*core::random::pickRandom(context.moods));
-            track.modify()->setClusters(clusters);
+                track.modify()->setMoods(pickN(context.moods, params.moodCountPerTrack));
+
+            if (params.generateMusicNNEmbeddings)
+            {
+                audio::TrackMusicNNEmbeddings embeddings;
+                std::normal_distribution<float> embeddingDist{ 0.0F, 1.0F };
+                for (auto& v : embeddings.mean.values)
+                    v = embeddingDist(core::random::getRandGenerator());
+                std::vector<std::byte> blob(sizeof(audio::TrackMusicNNEmbeddings));
+                audio::trackMusicNNEmbeddingsToBlob(embeddings, blob);
+                TrackMusicNNEmbeddings::pointer entry{ context.session.create<TrackMusicNNEmbeddings>(track) };
+                entry.modify()->setData(blob);
+            }
         }
     }
 
@@ -156,24 +193,18 @@ namespace lms
         for (std::size_t i{}; i < params.mediaLibraryCount; ++i)
             context.mediaLibraries.push_back(context.session.create<db::MediaLibrary>("Library" + std::to_string(i), "/root" + std::to_string(i)));
 
-        // create some random genres/moods
-        {
-            db::ClusterType::pointer genre{ db::ClusterType::find(context.session, "GENRE") };
-            if (!genre)
-                genre = context.session.create<db::ClusterType>("GENRE");
+        // create some random genres/groupings/languages/moods
+        for (std::size_t i{}; i < params.genreCount; ++i)
+            context.genres.push_back(context.session.create<db::Genre>("Genre-" + core::UUID::generate().toString()));
 
-            for (std::size_t i{}; i < params.genreCount; ++i)
-                context.genres.push_back(generateCluster(context.session, genre));
-        }
+        for (std::size_t i{}; i < params.groupingCount; ++i)
+            context.groupings.push_back(context.session.create<db::Grouping>("Grouping-" + core::UUID::generate().toString()));
 
-        {
-            db::ClusterType::pointer mood{ db::ClusterType::find(context.session, "MOOD") };
-            if (!mood)
-                mood = context.session.create<db::ClusterType>("MOOD");
+        for (std::size_t i{}; i < params.languageCount; ++i)
+            context.languages.push_back(context.session.create<db::Language>("Language-" + core::UUID::generate().toString()));
 
-            for (std::size_t i{}; i < params.moodCount; ++i)
-                context.moods.push_back(generateCluster(context.session, mood));
-        }
+        for (std::size_t i{}; i < params.moodCount; ++i)
+            context.moods.push_back(context.session.create<db::Mood>("Mood-" + core::UUID::generate().toString()));
     }
 } // namespace lms
 
@@ -203,8 +234,14 @@ int main(int argc, char* argv[])
         ("track-path",program_options::value<std::string>()->required(), "Path of a valid track file, that will be used for all generated tracks")
         ("genre-count", program_options::value<unsigned>()->default_value(defaultParams.genreCount), "Number of genres to generate")
         ("genre-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.genreCountPerTrack), "Number of genres to assign to each track")
+        ("grouping-count", program_options::value<unsigned>()->default_value(defaultParams.groupingCount), "Number of groupings to generate")
+        ("grouping-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.groupingCountPerTrack), "Number of groupings to assign to each track")
+        ("language-count", program_options::value<unsigned>()->default_value(defaultParams.languageCount), "Number of languages to generate")
+        ("language-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.languageCountPerTrack), "Number of languages to assign to each track")
         ("mood-count", program_options::value<unsigned>()->default_value(defaultParams.moodCount), "Number of moods to generate")
-        ("mood-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.moodCountPerTrack), "Number of moods to assign to each track")("help,h", "produce help message");
+        ("mood-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.moodCountPerTrack), "Number of moods to assign to each track")
+        ("musicnn-embeddings", program_options::bool_switch()->default_value(false), "Generate fake MusicNN embeddings for each track")
+        ("help,h", "produce help message");
         // clang-format on
 
         program_options::variables_map vm;
@@ -226,7 +263,16 @@ int main(int argc, char* argv[])
         genParams.trackCountPerRelease = vm["track-count-per-release"].as<unsigned>();
         genParams.compilationRatio = vm["compilation-ratio"].as<float>();
         genParams.trackEmbeddedImagePerRelease = vm["track-embedded-image-count"].as<unsigned>();
+        genParams.generateMusicNNEmbeddings = vm["musicnn-embeddings"].as<bool>();
         genParams.trackPath = std::filesystem::path{ vm["track-path"].as<std::string>() };
+        genParams.genreCount = vm["genre-count"].as<unsigned>();
+        genParams.genreCountPerTrack = vm["genre-count-per-track"].as<unsigned>();
+        genParams.groupingCount = vm["grouping-count"].as<unsigned>();
+        genParams.groupingCountPerTrack = vm["grouping-count-per-track"].as<unsigned>();
+        genParams.languageCount = vm["language-count"].as<unsigned>();
+        genParams.languageCountPerTrack = vm["language-count-per-track"].as<unsigned>();
+        genParams.moodCount = vm["mood-count"].as<unsigned>();
+        genParams.moodCountPerTrack = vm["mood-count-per-track"].as<unsigned>();
 
         if (!std::filesystem::exists(genParams.trackPath))
             throw std::runtime_error{ "File '" + genParams.trackPath.string() + "' does not exist!" };
@@ -234,6 +280,11 @@ int main(int argc, char* argv[])
         core::Service<core::IConfig> config{ core::createConfig(vm["conf"].as<std::string>()) };
         auto db{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db") };
         db::Session session{ *db };
+        session.prepareTablesIfNeeded();
+        session.migrateSchemaIfNeeded();
+        session.createScanSettingsIfNeeded();
+        session.createIndexesIfNeeded();
+
         std::cout << "Starting generation..." << std::endl;
 
         GenerationContext genContext{ session };

@@ -45,7 +45,10 @@ namespace lms::ui
         template<typename T, typename... Args>
         T* addNew(Args&&... args)
         {
-            return _elements->addNew<T>(std::forward<Args>(args)...);
+            auto widget{ std::make_unique<T>(std::forward<Args>(args)...) };
+            T* ptr{ widget.get() };
+            add(std::move(widget));
+            return ptr;
         }
 
         void remove(Wt::WWidget& widget);
@@ -63,8 +66,11 @@ namespace lms::ui
         void clear() override;
         void displayLoadingIndicator();
         void hideLoadingIndicator();
+        void displayResultHint(const Wt::WString& msg);
+        void hideResultHint();
 
         Wt::WContainerWidget* _elements;
         Wt::WTemplate* _loadingIndicator;
+        bool _gotItems{};
     };
 } // namespace lms::ui

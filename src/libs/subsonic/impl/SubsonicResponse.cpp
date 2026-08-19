@@ -302,23 +302,23 @@ namespace lms::api::subsonic
         os << '\"';
     }
 
-    Response Response::createOkResponse(ProtocolVersion protocolVersion)
+    Response Response::createOkResponse()
     {
-        return createResponseCommon(protocolVersion);
+        return createResponseCommon();
     }
 
-    Response Response::createFailedResponse(ProtocolVersion protocolVersion, const Error& error)
+    Response Response::createFailedResponse(const Error& error)
     {
-        return createResponseCommon(protocolVersion, &error);
+        return createResponseCommon(&error);
     }
 
-    Response Response::createResponseCommon(ProtocolVersion protocolVersion, const Error* error)
+    Response Response::createResponseCommon(const Error* error)
     {
         Response response;
         Node& responseNode{ response._root.createChild("subsonic-response") };
 
         responseNode.setAttribute("status", error ? "failed" : "ok");
-        responseNode.setVersionAttribute(protocolVersion);
+        responseNode.setVersionAttribute(serverProtocolVersion);
 
         if (error)
         {

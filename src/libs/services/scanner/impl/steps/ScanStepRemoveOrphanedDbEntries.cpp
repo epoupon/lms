@@ -25,10 +25,15 @@
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
 #include "database/objects/Medium.hpp"
+#include "database/objects/Mood.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
+#include "database/objects/Work.hpp"
 
 #include "ScanContext.hpp"
 
@@ -44,6 +49,11 @@ namespace lms::scanner
     {
         removeOrphanedClusters(context);
         removeOrphanedClusterTypes(context);
+        removeOrphanedGenres(context);
+        removeOrphanedGroupings(context);
+        removeOrphanedLanguages(context);
+        removeOrphanedMoods(context);
+        removeOrphanedWorks(context);
         removeOrphanedArtists(context);
         removeOrphanedReleases(context);
         removeOrphanedMediums(context); // after release so that most entries are removed using the medium foreign key
@@ -64,6 +74,36 @@ namespace lms::scanner
     {
         LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned cluster types...");
         removeOrphanedEntries<db::ClusterType>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedGenres(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned genres...");
+        removeOrphanedEntries<db::Genre>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedGroupings(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned groupings...");
+        removeOrphanedEntries<db::Grouping>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedLanguages(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned languages...");
+        removeOrphanedEntries<db::Language>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedMoods(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned moods...");
+        removeOrphanedEntries<db::Mood>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedWorks(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned works...");
+        removeOrphanedEntries<db::Work>(context);
     }
 
     void ScanStepRemoveOrphanedDbEntries::removeOrphanedArtists(ScanContext& context)
@@ -123,7 +163,7 @@ namespace lms::scanner
 
         db::Session& session{ _db.getTLSSession() };
 
-        db::RangeResults<IdType> entries;
+        std::vector<IdType> entries;
         while (!_abortScan)
         {
             {
@@ -132,16 +172,16 @@ namespace lms::scanner
                 entries = T::findOrphanIds(session, db::Range{ 0, batchSize });
             };
 
-            if (entries.results.empty())
+            if (entries.empty())
                 break;
 
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                session.destroy<T>(entries.results);
+                session.destroy<T>(entries);
             }
 
-            context.currentStepStats.processedElems += entries.results.size();
+            context.currentStepStats.processedElems += entries.size();
             _progressCallback(context.currentStepStats);
         }
     }

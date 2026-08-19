@@ -41,9 +41,8 @@ namespace lms::ui
         void addSome();
         std::vector<db::ReleaseId> getAllReleases();
 
-        static constexpr std::size_t _maxItemsPerLine{ 6 };
-        static constexpr std::size_t _batchSize{ _maxItemsPerLine };
-        static constexpr std::size_t _maxCount{ _maxItemsPerLine * 500 };
+        static constexpr std::size_t _batchSize{ 30 };
+        static constexpr std::size_t _maxCount{ 5'000 };
 
         PlayQueueController& _playQueueController;
         InfiniteScrollingContainer* _container{};

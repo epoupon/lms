@@ -373,7 +373,7 @@ namespace lms::api::subsonic
             if (!query.empty())
                 keywords = core::stringUtils::splitString(query, ' ');
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             Response::Node& searchResultNode{ response.createNode(id3 ? "searchResult3" : "searchResult2") };
 
             auto transaction{ context.getDbSession().createReadTransaction() };

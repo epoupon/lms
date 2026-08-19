@@ -39,7 +39,7 @@ namespace lms::db::tests
             EXPECT_EQ(StarredRelease::getCount(session), 0);
 
             auto releases{ Release::find(session, Release::FindParameters{}) };
-            EXPECT_EQ(releases.results.size(), 1);
+            EXPECT_EQ(releases.size(), 1);
         }
 
         ScopedStarredRelease starredRelease{ session, release.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
@@ -55,13 +55,13 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             auto releases{ Release::find(session, Release::FindParameters{}) };
-            EXPECT_EQ(releases.results.size(), 1);
+            EXPECT_EQ(releases.size(), 1);
 
-            releases = Release::find(session, Release::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
-            EXPECT_EQ(releases.results.size(), 1);
+            releases = Release::find(session, Release::FindParameters{}.setStarringUser(user.getId()));
+            EXPECT_EQ(releases.size(), 1);
 
-            releases = Release::find(session, Release::FindParameters{}.setStarringUser(user2.getId(), FeedbackBackend::Internal));
-            EXPECT_EQ(releases.results.size(), 0);
+            releases = Release::find(session, Release::FindParameters{}.setStarringUser(user2.getId()));
+            EXPECT_EQ(releases.size(), 0);
         }
 
         {
@@ -86,12 +86,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto releases{ Release::find(session, Release::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
-            EXPECT_EQ(releases.results.size(), 1);
+            auto releases{ Release::find(session, Release::FindParameters{}.setStarringUser(user.getId())) };
+            EXPECT_EQ(releases.size(), 1);
 
             starredRelease.get().modify()->setSyncState(SyncState::PendingRemove);
-            releases = Release::find(session, Release::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
-            EXPECT_EQ(releases.results.size(), 0);
+            releases = Release::find(session, Release::FindParameters{}.setStarringUser(user.getId()));
+            EXPECT_EQ(releases.size(), 0);
         }
     }
 
@@ -109,8 +109,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
-            EXPECT_EQ(releases.results.size(), 2);
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setStarringUser(user.getId())) };
+            EXPECT_EQ(releases.size(), 2);
         }
 
         {
@@ -119,10 +119,10 @@ namespace lms::db::tests
             starredRelease1.get().modify()->setDateTime(dateTime);
             starredRelease2.get().modify()->setDateTime(dateTime.addSecs(-1));
 
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ReleaseSortMethod::StarredDateDesc)) };
-            ASSERT_EQ(releases.results.size(), 2);
-            EXPECT_EQ(releases.results[0], starredRelease1->getRelease()->getId());
-            EXPECT_EQ(releases.results[1], starredRelease2->getRelease()->getId());
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setStarringUser(user.getId()).setSortMethod(ReleaseSortMethod::StarredDateDesc)) };
+            ASSERT_EQ(releases.size(), 2);
+            EXPECT_EQ(releases[0], starredRelease1->getRelease()->getId());
+            EXPECT_EQ(releases[1], starredRelease2->getRelease()->getId());
         }
         {
             auto transaction{ session.createWriteTransaction() };
@@ -130,10 +130,34 @@ namespace lms::db::tests
             starredRelease1.get().modify()->setDateTime(dateTime);
             starredRelease2.get().modify()->setDateTime(dateTime.addSecs(1));
 
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ReleaseSortMethod::StarredDateDesc)) };
-            ASSERT_EQ(releases.results.size(), 2);
-            EXPECT_EQ(releases.results[0], starredRelease2->getRelease()->getId());
-            EXPECT_EQ(releases.results[1], starredRelease1->getRelease()->getId());
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setStarringUser(user.getId()).setSortMethod(ReleaseSortMethod::StarredDateDesc)) };
+            ASSERT_EQ(releases.size(), 2);
+            EXPECT_EQ(releases[0], starredRelease2->getRelease()->getId());
+            EXPECT_EQ(releases[1], starredRelease1->getRelease()->getId());
+        }
+    }
+    TEST_F(DatabaseFixture, StarredRelease_currentBackend)
+    {
+        ScopedRelease release{ session, "MyRelease" };
+        ScopedUser user{ session, "MyUser" };
+        ScopedStarredRelease starredRelease{ session, release.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setStarringUser(user.getId())) };
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases[0], release->getId());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            user.get().modify()->setFeedbackBackend(FeedbackBackend::ListenBrainz);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setStarringUser(user.getId())) };
+            EXPECT_EQ(releases.size(), 0);
         }
     }
 } // namespace lms::db::tests

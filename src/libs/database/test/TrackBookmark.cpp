@@ -50,8 +50,8 @@ namespace lms::db::tests
             EXPECT_EQ(TrackBookmark::getCount(session), 1);
 
             const auto bookmarks{ TrackBookmark::find(session, user.getId()) };
-            ASSERT_EQ(bookmarks.results.size(), 1);
-            EXPECT_EQ(bookmarks.results.front(), bookmark.getId());
+            ASSERT_EQ(bookmarks.size(), 1);
+            EXPECT_EQ(bookmarks.front(), bookmark.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };

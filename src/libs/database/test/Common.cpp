@@ -59,8 +59,6 @@ namespace lms::db::tests
 
     void DatabaseFixture::testDatabaseEmpty()
     {
-        using namespace db;
-
         auto transaction{ session.createReadTransaction() };
 
         EXPECT_TRUE(session.areAllTablesEmpty());
@@ -74,26 +72,6 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, analyze)
     {
         session.fullAnalyze();
-    }
-
-    TEST_F(DatabaseFixture, Common_subRangeEmpty)
-    {
-        RangeResults<int> results;
-        results.range = Range{ 0, 0 };
-        results.results = {};
-        results.moreResults = false;
-
-        {
-            auto subRange{ results.getSubRange(Range{ 0, 0 }) };
-            EXPECT_FALSE(subRange.moreResults);
-            ASSERT_EQ(subRange.results.size(), 0);
-            EXPECT_EQ(subRange.range, Range{});
-        }
-        {
-            auto subRange{ results.getSubRange(Range{ 0, 1 }) };
-            EXPECT_FALSE(subRange.moreResults);
-            ASSERT_EQ(subRange.results.size(), 0);
-        }
     }
 
     TEST_F(DatabaseFixture, Common_subRangeForeach)
@@ -157,55 +135,4 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Common_subRange)
-    {
-        RangeResults<int> results;
-        results.range = Range{ 0, 2 };
-        results.results = { 5, 6 };
-        results.moreResults = false;
-
-        {
-            auto subRange{ results.getSubRange(Range{ 0, 1 }) };
-            EXPECT_TRUE(subRange.moreResults);
-            ASSERT_EQ(subRange.results.size(), 1);
-            EXPECT_EQ(subRange.results.front(), 5);
-        }
-        {
-            auto subRange{ results.getSubRange(Range{ 1, 1 }) };
-            EXPECT_FALSE(subRange.moreResults);
-            ASSERT_EQ(subRange.results.size(), 1);
-            EXPECT_EQ(subRange.results.front(), 6);
-        }
-        {
-            auto subRange{ results.getSubRange(Range{ 0, 2 }) };
-            EXPECT_FALSE(subRange.moreResults);
-            ASSERT_EQ(subRange.results.size(), 2);
-            EXPECT_EQ(subRange.results.front(), 5);
-            EXPECT_EQ(subRange.results.back(), 6);
-        }
-        {
-            auto subRange{ results.getSubRange(Range{}) };
-            EXPECT_FALSE(subRange.moreResults);
-            ASSERT_EQ(subRange.results.size(), 2);
-            EXPECT_EQ(subRange.results.front(), 5);
-            EXPECT_EQ(subRange.results.back(), 6);
-            EXPECT_EQ(subRange.range, results.range);
-        }
-
-        {
-            auto subRange{ results.getSubRange(Range{ 1, 0 }) };
-            EXPECT_FALSE(subRange.moreResults);
-            ASSERT_EQ(subRange.results.size(), 1);
-            EXPECT_EQ(subRange.results.front(), 6);
-            const Range expectedRange{ 1, 1 };
-            EXPECT_EQ(subRange.range, expectedRange);
-        }
-        {
-            auto subRange{ results.getSubRange(Range{ 3, 2 }) };
-            EXPECT_FALSE(subRange.moreResults);
-            ASSERT_EQ(subRange.results.size(), 0);
-            const Range expectedRange{ 2, 0 };
-            EXPECT_EQ(subRange.range, expectedRange);
-        }
-    }
 } // namespace lms::db::tests

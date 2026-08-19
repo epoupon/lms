@@ -148,7 +148,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto directories{ Directory::findOrphanIds(session).results };
+            const auto directories{ Directory::findOrphanIds(session) };
             EXPECT_EQ(directories.size(), 2);
         }
 
@@ -161,7 +161,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto directories{ Directory::findOrphanIds(session).results };
+            const auto directories{ Directory::findOrphanIds(session) };
             ASSERT_EQ(directories.size(), 1);
             EXPECT_EQ(directories.front(), child.getId());
         }
@@ -182,7 +182,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto directories{ Directory::findRootDirectories(session).results };
+            const auto directories{ Directory::findRootDirectories(session) };
             ASSERT_EQ(directories.size(), 2);
             EXPECT_EQ(directories[0]->getId(), parent1.getId());
             EXPECT_EQ(directories[1]->getId(), parent2.getId());
@@ -209,7 +209,7 @@ namespace lms::db::tests
             Directory::FindParameters params;
             params.setWithNoTrack(true);
 
-            auto res{ Directory::find(session, params).results };
+            auto res{ Directory::find(session, params) };
 
             ASSERT_EQ(res.size(), 3);
             EXPECT_EQ(res[0]->getId(), parent.getId());
@@ -228,7 +228,7 @@ namespace lms::db::tests
             Directory::FindParameters params;
             params.setWithNoTrack(true);
 
-            auto res{ Directory::find(session, params).results };
+            auto res{ Directory::find(session, params) };
             ASSERT_EQ(res.size(), 2);
             EXPECT_EQ(res[0]->getId(), parent.getId());
             EXPECT_EQ(res[1]->getId(), child1.getId());
@@ -247,7 +247,7 @@ namespace lms::db::tests
             Directory::FindParameters params;
             params.setKeywords({ "foo" });
 
-            auto res{ Directory::find(session, params).results };
+            auto res{ Directory::find(session, params) };
 
             ASSERT_EQ(res.size(), 2);
             EXPECT_EQ(res[0]->getId(), child1.getId());
@@ -267,7 +267,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto res{ Directory::findMismatchedLibrary(session, std::nullopt, library->getPath(), library->getId()).results };
+            const auto res{ Directory::findMismatchedLibrary(session, std::nullopt, library->getPath(), library->getId()) };
             ASSERT_EQ(res.size(), 2);
             EXPECT_EQ(res[0], parent1.getId());
             EXPECT_EQ(res[1], child1.getId());
@@ -283,7 +283,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto res{ Directory::findMismatchedLibrary(session, std::nullopt, library->getPath(), library->getId()).results };
+            const auto res{ Directory::findMismatchedLibrary(session, std::nullopt, library->getPath(), library->getId()) };
             EXPECT_EQ(res.size(), 0);
         }
     }

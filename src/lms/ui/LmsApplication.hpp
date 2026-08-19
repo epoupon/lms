@@ -25,6 +25,8 @@
 
 #include <Wt/WApplication.h>
 
+#include "core/UUID.hpp"
+
 #include "database/Object.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
@@ -53,10 +55,10 @@ namespace lms::ui
     class LmsApplication : public Wt::WApplication
     {
     public:
-        LmsApplication(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend);
-        ~LmsApplication();
+        LmsApplication(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend, const core::UUID& serverInstanceId);
+        ~LmsApplication() override;
 
-        static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend);
+        static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend, const core::UUID& serverInstanceId);
         static LmsApplication* instance();
 
         // Session application data
@@ -76,9 +78,11 @@ namespace lms::ui
         scanner::Events& getScannerEvents() { return _scannerEvents; }
 
         AuthenticationBackend getAuthBackend() const { return _authBackend; }
+        core::UUID getServerInstanceId() const { return _serverInstanceId; }
 
         // Utils
-        void post(std::function<void()> func);
+        static void post(const std::string& sessionId, const std::function<void()>& func);
+        void post(const std::function<void()>& func);
         void setTitle(const Wt::WString& title = "");
 
         // Used to classify the message sent to the user
@@ -111,6 +115,7 @@ namespace lms::ui
         Wt::Signal<> _preQuit;
         LmsApplicationManager& _appManager;
         const AuthenticationBackend _authBackend;
+        const core::UUID _serverInstanceId;
         const bool _areDownloadsEnabled;
         scanner::Events _scannerEvents;
         struct UserAuthInfo

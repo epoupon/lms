@@ -31,7 +31,6 @@
 
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "core/Random.hpp"
 
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
@@ -51,10 +50,10 @@
 
 #include "InterpolationFitConstraint.hpp"
 #include "MaxDistanceConstraint.hpp"
-#include "NearDuplicateEmbeddingConstraint.hpp"
 #include "SmoothTransitionConstraint.hpp"
 #include "track-selection-constraints/DuplicateTrackConstraint.hpp"
 #include "track-selection-constraints/SameArtistConstraint.hpp"
+#include "track-selection-constraints/SameRecordingMBIDConstraint.hpp"
 #include "track-selection-constraints/SameReleaseConstraint.hpp"
 
 #include "Types.hpp"
@@ -65,21 +64,27 @@ namespace lms::recommendation
 {
     namespace detail
     {
+        struct TrackNeighbor
+        {
+            db::TrackId id;
+            float distance{};
+        };
+
         template<typename ReducedVector>
-        TrackResults findNearestNeighbors(
+        std::vector<TrackNeighbor> findNearestNeighbors(
             const ReducedVector& queryVector, // expected to be normalized
             const std::unordered_map<db::TrackId, const ReducedVector*>& trackVectors,
             std::size_t maxNeighbors,
-            db::TrackId excludeTrackId)
+            std::span<const db::TrackId> excludeTrackIds)
         {
             const math::NormalizedCosineDistance distFunc{ queryVector };
 
-            TrackResults neighbors;
+            std::vector<TrackNeighbor> neighbors;
             neighbors.reserve(trackVectors.size());
 
             for (const auto& [trackId, trackVector] : trackVectors)
             {
-                if (trackId == excludeTrackId)
+                if (std::find(std::cbegin(excludeTrackIds), std::cend(excludeTrackIds), trackId) != std::cend(excludeTrackIds))
                     continue;
 
                 neighbors.push_back({ .id = trackId, .distance = distFunc(*trackVector) });
@@ -116,11 +121,9 @@ namespace lms::recommendation
         constexpr float smoothTransitionWeight{ 0.2F };
         constexpr float sameReleaseWeight{ 0.5F };
         constexpr float sameArtistWeight{ 0.5F };
-        constexpr float nearDuplicateThreshold{ 0.01F };
-
         _similarityEvaluator = {};
         _similarityEvaluator.addHardConstraint(std::make_unique<DuplicateTrackConstraint>());
-        _similarityEvaluator.addHardConstraint(std::make_unique<NearDuplicateEmbeddingConstraint<ReducedDimCount>>(_trackVectors, nearDuplicateThreshold));
+        _similarityEvaluator.addHardConstraint(std::make_unique<SameRecordingMBIDConstraint>(_trackMetadata));
         _similarityEvaluator.addHardConstraint(std::make_unique<MaxDistanceConstraint<ReducedDimCount>>(_trackVectors, _trackDistanceThreshold));
         _similarityEvaluator.addSoftConstraint(std::make_unique<InterpolationFitConstraint<ReducedDimCount>>(_trackVectors), interpolationFitWeight);
         _similarityEvaluator.addSoftConstraint(std::make_unique<SmoothTransitionConstraint<ReducedDimCount>>(_trackVectors), smoothTransitionWeight);
@@ -129,7 +132,7 @@ namespace lms::recommendation
 
         _pathEvaluator = {};
         _pathEvaluator.addHardConstraint(std::make_unique<DuplicateTrackConstraint>());
-        _pathEvaluator.addHardConstraint(std::make_unique<NearDuplicateEmbeddingConstraint<ReducedDimCount>>(_trackVectors, nearDuplicateThreshold));
+        _pathEvaluator.addHardConstraint(std::make_unique<SameRecordingMBIDConstraint>(_trackMetadata));
         _pathEvaluator.addSoftConstraint(std::make_unique<InterpolationFitConstraint<ReducedDimCount>>(_trackVectors), interpolationFitWeight);
         _pathEvaluator.addSoftConstraint(std::make_unique<SmoothTransitionConstraint<ReducedDimCount>>(_trackVectors), smoothTransitionWeight);
         _pathEvaluator.addSoftConstraint(std::make_unique<SameReleaseConstraint>(_trackMetadata), sameReleaseWeight);
@@ -187,27 +190,10 @@ namespace lms::recommendation
             return res;
 
         const ReducedVector& queryVector{ *medoidCalculator.finalize() };
-        const math::NormalizedCosineDistance distFunc{ queryVector };
-
-        using Distance = float;
-        std::vector<std::pair<db::TrackId, Distance>> rankedTracks;
-        rankedTracks.reserve(_trackVectors.size());
-
-        for (const auto& [trackId, vectors] : _trackVectors)
-        {
-            if (std::find(std::cbegin(tracksId), std::cend(tracksId), trackId) != std::cend(tracksId))
-                continue;
-
-            rankedTracks.emplace_back(trackId, distFunc(*vectors));
-        }
 
         // Oversample to give the diversity selection enough candidates to work with
         static constexpr std::size_t oversamplingFactor{ 5 };
-        const std::size_t candidateCount{ std::min(maxCount * oversamplingFactor, rankedTracks.size()) };
-        std::partial_sort(std::begin(rankedTracks), std::next(std::begin(rankedTracks), static_cast<std::ptrdiff_t>(candidateCount)), std::end(rankedTracks), [](const auto& lhs, const auto& rhs) {
-            return lhs.second < rhs.second;
-        });
-        rankedTracks.resize(candidateCount);
+        auto rankedTracks{ detail::findNearestNeighbors(queryVector, _trackVectors, maxCount * oversamplingFactor, tracksId) };
 
         // Greedy selection: at each step pick the candidate with the lowest penalized score.
         // Pre-seed selectedTracks with the input tracks so that soft constraints (same release,
@@ -217,6 +203,17 @@ namespace lms::recommendation
         selectedTracks.reserve(selectedTracks.size() + maxCount);
         res.reserve(maxCount);
 
+        const ReducedVector* prevVector{ nullptr };
+        for (auto it{ tracksId.rbegin() }; it != tracksId.rend(); ++it)
+        {
+            const auto found{ _trackVectors.find(*it) };
+            if (found != _trackVectors.cend())
+            {
+                prevVector = found->second;
+                break;
+            }
+        }
+
         while (res.size() < maxCount && !rankedTracks.empty())
         {
             std::optional<std::size_t> bestIdx;
@@ -224,7 +221,7 @@ namespace lms::recommendation
 
             for (std::size_t i{}; i < rankedTracks.size(); ++i)
             {
-                const db::TrackId candidateId{ rankedTracks[i].first };
+                const db::TrackId candidateId{ rankedTracks[i].id };
 
                 const TrackCandidateContext context{
                     .candidateTrackId = candidateId,
@@ -247,8 +244,11 @@ namespace lms::recommendation
                 break;
 
             const auto& [selectedId, distanceToQuery]{ rankedTracks[*bestIdx] };
-            res.push_back({ .id = selectedId, .distance = distanceToQuery });
+            const auto* selectedVector{ _trackVectors.at(selectedId) };
+            const float distanceToPrev{ prevVector ? math::NormalizedCosineDistance{ *prevVector }(*selectedVector) : distanceToQuery };
+            res.push_back({ .id = selectedId, .distanceToFirst = distanceToQuery, .distanceToPrevious = distanceToPrev });
             selectedTracks.push_back(selectedId);
+            prevVector = selectedVector;
             rankedTracks.erase(std::begin(rankedTracks) + static_cast<std::ptrdiff_t>(*bestIdx));
         }
 
@@ -285,17 +285,17 @@ namespace lms::recommendation
             auto queryPoint{ startVector + direction * t };
             queryPoint.normalizeL2();
 
-            const auto neighbors{ detail::findNearestNeighbors(queryPoint, _trackVectors, NeighborCount, endTrackId) };
+            const auto neighbors{ detail::findNearestNeighbors(queryPoint, _trackVectors, NeighborCount, std::span<const db::TrackId>{ &endTrackId, 1 }) };
             const db::TrackId stepSeedTrackId{ neighbors.empty() ? startTrackId : neighbors[0].id };
             const std::array<db::TrackId, 1> stepSeedTrackIds{ stepSeedTrackId };
 
             std::optional<db::TrackId> best;
             float bestScore{ std::numeric_limits<float>::max() };
 
-            for (const auto& [candidateTrackId, candidateDistance] : neighbors)
+            for (const auto& neighbor : neighbors)
             {
                 const TrackCandidateContext context{
-                    .candidateTrackId = candidateTrackId,
+                    .candidateTrackId = neighbor.id,
                     .selectedTracks = path,
                     .seedTrackIds = stepSeedTrackIds,
                 };
@@ -307,7 +307,7 @@ namespace lms::recommendation
                 if (score < bestScore)
                 {
                     bestScore = score;
-                    best = candidateTrackId;
+                    best = neighbor.id;
                 }
             }
 
@@ -324,10 +324,14 @@ namespace lms::recommendation
         results.reserve(path.size());
 
         const math::NormalizedCosineDistance startDistFunc{ startVector };
+        const ReducedVector* prevVector{ &startVector };
         for (const db::TrackId trackId : path)
         {
             const auto* trackVector{ _trackVectors.at(trackId) };
-            results.push_back({ .id = trackId, .distance = startDistFunc(*trackVector) });
+            const float distToFirst{ startDistFunc(*trackVector) };
+            const float distToPrev{ math::NormalizedCosineDistance{ *prevVector }(*trackVector) };
+            results.push_back({ .id = trackId, .distanceToFirst = distToFirst, .distanceToPrevious = distToPrev });
+            prevVector = trackVector;
         }
 
         return results;
@@ -385,7 +389,7 @@ namespace lms::recommendation
 
         res.reserve(resultCount);
         for (std::size_t i{}; i < resultCount; ++i)
-            res.push_back({ .id = rankedReleases[i].first, .distance = rankedReleases[i].second });
+            res.push_back({ .id = rankedReleases[i].first, .distanceToFirst = rankedReleases[i].second });
 
         return res;
     }
@@ -445,7 +449,7 @@ namespace lms::recommendation
 
         res.reserve(resultCount);
         for (std::size_t i{}; i < resultCount; ++i)
-            res.push_back({ .id = rankedArtists[i].first, .distance = rankedArtists[i].second });
+            res.push_back({ .id = rankedArtists[i].first, .distanceToFirst = rankedArtists[i].second });
 
         return res;
     }
@@ -589,32 +593,33 @@ namespace lms::recommendation
             _trackVectors.try_emplace(trackId, &reducedVector);
         });
 
-        db::Release::find(session, db::Release::FindParameters{}, [&](const db::Release::pointer& release) {
-            std::vector<std::reference_wrapper<const ReducedVector>> releaseTrackFeatures;
+        db::Track::find(session, db::Track::FindParameters{}, [&](const db::Track::pointer& track) {
+            const auto itVec{ _trackVectors.find(track->getId()) };
+            if (itVec == _trackVectors.cend())
+                return;
 
-            db::Track::FindParameters params;
-            params.setRelease(release->getId());
+            auto& meta{ _trackMetadata[track->getId()] };
+            const db::ReleaseId releaseId{ track->getReleaseId() };
+            meta.releaseId = releaseId;
+            meta.recordingMBID = track->getRecordingMBID();
 
-            const auto trackIds{ db::Track::findIds(session, params) };
-            for (const db::TrackId trackId : trackIds.results)
-            {
-                const auto itFeatures{ _trackVectors.find(trackId) };
-                if (itFeatures != std::cend(_trackVectors))
-                {
-                    assert(itFeatures->second);
-                    releaseTrackFeatures.emplace_back(*itFeatures->second);
-                    _trackMetadata[trackId].releaseId = release->getId();
-                }
-            }
-
-            if (!releaseTrackFeatures.empty())
-                _releaseVectors.try_emplace(release->getId(), std::move(releaseTrackFeatures));
+            if (releaseId.isValid())
+                _releaseVectors[releaseId].emplace_back(*itVec->second);
         });
+
+        math::MedoidCalculator<ReducedVector> calc;
+        for (const auto& [id, vecs] : _releaseVectors)
+        {
+            calc.clear();
+            for (const auto& v : vecs)
+                calc.add(v.get());
+            _releaseMedoids.try_emplace(id, calc.finalize());
+        }
 
         db::Artist::find(session, db::Artist::FindParameters{}, [&](const db::Artist::pointer& artist) {
             const auto mbid{ artist->getMBID() };
             // skip "Various Artists" to avoid false artist matches
-            if (mbid && mbid->getAsString() == "89ad4ac3-39f7-470e-963a-56509c546377")
+            if (mbid && mbid->toString() == "89ad4ac3-39f7-470e-963a-56509c546377")
                 return;
 
             std::unordered_set<db::TrackId> artistTrackIds;
@@ -622,13 +627,13 @@ namespace lms::recommendation
             {
                 db::Release::FindParameters params;
                 params.setArtist(artist->getId());
-                for (const db::ReleaseId releaseId : db::Release::findIds(session, params).results)
+                for (const db::ReleaseId releaseId : db::Release::findIds(session, params))
                 {
                     if (_releaseVectors.contains(releaseId))
                     {
                         db::Track::FindParameters trackParams;
                         trackParams.setRelease(releaseId);
-                        for (const db::TrackId trackId : db::Track::findIds(session, trackParams).results)
+                        for (const db::TrackId trackId : db::Track::findIds(session, trackParams))
                             artistTrackIds.insert(trackId);
                     }
                 }
@@ -652,15 +657,6 @@ namespace lms::recommendation
                 _artistVectors.try_emplace(artist->getId(), std::move(artistTrackVectors));
         });
 
-        math::MedoidCalculator<ReducedVector> calc;
-        for (const auto& [id, vecs] : _releaseVectors)
-        {
-            calc.clear();
-            for (const auto& v : vecs)
-                calc.add(v.get());
-            _releaseMedoids.try_emplace(id, calc.finalize());
-        }
-
         for (const auto& [id, vecs] : _artistVectors)
         {
             calc.clear();
@@ -682,20 +678,26 @@ namespace lms::recommendation
         LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "computeTrackDistanceThreshold");
 
         constexpr std::size_t maxSampleCount{ 500 };
+        constexpr std::size_t maxCandidateCount{ 10'000 };
         constexpr float stdDevMultiplier{ 2.F };
 
-        const std::size_t sampleCount{ std::min(_trackVectors.size(), maxSampleCount) };
-
-        LOG(INFO, "computing track distance threshold using " << sampleCount << " samples...");
-
-        // Collect all vector pointers and shuffle for an unbiased random sample.
         std::vector<const ReducedVector*> allVectors;
         allVectors.reserve(_trackVectors.size());
         for (const auto& [id, vec] : _trackVectors)
             allVectors.push_back(vec);
 
+        // move maxCandidateCount random elements to the front
+        const std::size_t candidateCount{ std::min(allVectors.size(), maxCandidateCount) };
         std::minstd_rand randomEngine{ 42 };
-        core::random::shuffleContainer(randomEngine, allVectors);
+        for (std::size_t i{}; i < candidateCount; ++i)
+        {
+            std::uniform_int_distribution<std::size_t> dist{ i, allVectors.size() - 1 };
+            std::swap(allVectors[i], allVectors[dist(randomEngine)]);
+        }
+        allVectors.resize(candidateCount);
+
+        const std::size_t sampleCount{ std::min(candidateCount, maxSampleCount) };
+        LOG(INFO, "computing track distance threshold using " << sampleCount << " samples on " << candidateCount << " candidates...");
 
         math::StatsAccumulator<FloatType> stats;
         for (std::size_t i{}; i < sampleCount; ++i)
@@ -714,7 +716,8 @@ namespace lms::recommendation
                     minDist = d;
             }
 
-            stats.add(minDist);
+            if (minDist < std::numeric_limits<FloatType>::max())
+                stats.add(minDist);
         }
 
         if (stats.getCount() >= 2)
@@ -731,7 +734,7 @@ namespace lms::recommendation
         LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "ComputeReleaseDistanceThreshold");
 
         constexpr std::size_t maxSampleCount{ 200 };
-        constexpr std::size_t maxCandidateCount{ 1'000 };
+        constexpr std::size_t maxCandidateCount{ 2'000 };
         constexpr float stdDevMultiplier{ 2.F };
         using CosineDistance = math::NormalizedCosineDistance<ReducedVector::getSize(), FloatType>;
 
@@ -784,7 +787,7 @@ namespace lms::recommendation
         LMS_SCOPED_TRACE_DETAILED("AudioSimilarityEngine", "ComputeArtistDistanceThreshold");
 
         constexpr std::size_t maxSampleCount{ 200 };
-        constexpr std::size_t maxCandidateCount{ 1'000 };
+        constexpr std::size_t maxCandidateCount{ 2'000 };
         constexpr float stdDevMultiplier{ 2.F };
         using CosineDistance = math::NormalizedCosineDistance<ReducedVector::getSize(), FloatType>;
 

@@ -42,8 +42,8 @@ namespace lms::ui
         std::vector<db::TrackId> getAllTracks();
 
         static constexpr TrackCollector::Mode _defaultMode{ TrackCollector::Mode::Random };
-        static constexpr std::size_t _batchSize{ 6 };
-        static constexpr std::size_t _maxCount{ 8000 };
+        static constexpr std::size_t _batchSize{ 10 };
+        static constexpr std::size_t _maxCount{ 5'000 };
 
         Filters& _filters;
         PlayQueueController& _playQueueController;

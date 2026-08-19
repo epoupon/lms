@@ -112,13 +112,13 @@ namespace lms::db
         query.where("a_i.mbid_matched = FALSE");
         if (!allowArtistMBIDFallback)
         {
-            query.where("a.mbid <> ''");
+            query.where("a.mbid IS NOT NULL");
         }
         else
         {
             query.where(R"(
-                (a.mbid <> '' AND EXISTS (SELECT 1 FROM artist a2 WHERE a2.name = a.name AND a2.mbid <> '' AND a2.mbid <> a.mbid))
-                OR (a.mbid = '' AND (SELECT COUNT(*) FROM artist a2 WHERE a2.name = a.name AND a2.mbid <> '') = 1))");
+                (a.mbid IS NOT NULL AND EXISTS (SELECT 1 FROM artist a2 WHERE a2.name = a.name AND a2.mbid IS NOT NULL AND a2.mbid <> a.mbid))
+                OR (a.mbid IS NULL AND (SELECT COUNT(*) FROM artist a2 WHERE a2.name = a.name AND a2.mbid IS NOT NULL) = 1))");
         }
 
         utils::applyRange(query, range);

@@ -23,6 +23,7 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/ILogger.hpp"
+#include "core/String.hpp"
 
 #include "database/Session.hpp"
 #include "database/Types.hpp"
@@ -30,14 +31,20 @@
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Medium.hpp"
+#include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/User.hpp"
+#include "database/objects/Work.hpp"
 
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
@@ -46,6 +53,7 @@
 #include "traits/PartialDateTimeTraits.hpp"
 #include "traits/PathTraits.hpp"
 #include "traits/StringViewTraits.hpp"
+#include "traits/UUIDTraits.hpp"
 
 DBO_INSTANTIATE_TEMPLATES(lms::db::Track)
 
@@ -72,14 +80,13 @@ namespace lms::db
 
             if (params.starringUser.isValid())
             {
-                assert(params.feedbackBackend);
                 query.join("starred_track s_t ON s_t.track_id = t.id")
+                    .join("user u ON u.id = s_t.user_id")
                     .where("s_t.user_id = ?")
                     .bind(params.starringUser)
-                    .where("s_t.backend = ?")
-                    .bind(*params.feedbackBackend)
                     .where("s_t.sync_state <> ?")
-                    .bind(SyncState::PendingRemove);
+                    .bind(SyncState::PendingRemove)
+                    .where("s_t.backend = u.feedback_backend");
             }
 
             if (params.filters.clusters.size() == 1)
@@ -98,7 +105,7 @@ namespace lms::db
                 WhereClause clusterClause;
                 for (const ClusterId clusterId : params.filters.clusters)
                 {
-                    clusterClause.Or(WhereClause("t_c.cluster_id = ?"));
+                    clusterClause.Or(WhereClause{ "t_c.cluster_id = ?" });
                     query.bind(clusterId);
                 }
 
@@ -106,6 +113,34 @@ namespace lms::db
                 oss << " GROUP BY t.id HAVING COUNT(*) = " << params.filters.clusters.size() << ")";
 
                 query.where(oss.str());
+            }
+
+            if (params.filters.genre.isValid())
+            {
+                query.join("track_genre t_g ON t_g.track_id = t.id")
+                    .where("t_g.genre_id = ?")
+                    .bind(params.filters.genre);
+            }
+
+            if (params.filters.grouping.isValid())
+            {
+                query.join("track_grouping t_gr ON t_gr.track_id = t.id")
+                    .where("t_gr.grouping_id = ?")
+                    .bind(params.filters.grouping);
+            }
+
+            if (params.filters.language.isValid())
+            {
+                query.join("track_language t_l ON t_l.track_id = t.id")
+                    .where("t_l.language_id = ?")
+                    .bind(params.filters.language);
+            }
+
+            if (params.filters.mood.isValid())
+            {
+                query.join("track_mood t_m ON t_m.track_id = t.id")
+                    .where("t_m.mood_id = ?")
+                    .bind(params.filters.mood);
             }
 
             if (params.artist.isValid() || !params.artistName.empty())
@@ -392,21 +427,21 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQueryResults<Track::pointer>(session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").where("t.mbid = ?").bind(mbid.getAsString()));
+        return utils::fetchQueryResults<Track::pointer>(session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").where("t.mbid = ?").bind(mbid));
     }
 
     std::vector<Track::pointer> Track::findByRecordingMBID(Session& session, const core::UUID& mbid)
     {
         session.checkReadTransaction();
 
-        return utils::fetchQueryResults<Track::pointer>(session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").where("t.recording_mbid = ?").bind(mbid.getAsString()));
+        return utils::fetchQueryResults<Track::pointer>(session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").where("t.recording_mbid = ?").bind(mbid));
     }
 
-    RangeResults<TrackId> Track::findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range)
+    std::vector<TrackId> Track::findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession()->query<TrackId>("SELECT track.id FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)").orderBy("track.release_id,track.mbid") };
+        auto query{ session.getDboSession()->query<TrackId>("SELECT track.id FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid IS NOT NULL GROUP BY mbid HAVING COUNT (*) > 1)").orderBy("track.release_id,track.mbid") };
 
         return utils::execRangeQuery<TrackId>(query, range);
     }
@@ -445,6 +480,62 @@ namespace lms::db
         return utils::fetchQueryResults(query);
     }
 
+    std::vector<Genre::pointer> Track::getGenres() const
+    {
+        return utils::fetchQueryResults<Genre::pointer>(_genres.find());
+    }
+
+    std::vector<GenreId> Track::getGenreIds() const
+    {
+        assert(session());
+
+        const auto query{ session()->query<GenreId>("SELECT t_g.genre_id FROM track_genre t_g").where("t_g.track_id = ?").bind(getId()) };
+
+        return utils::fetchQueryResults(query);
+    }
+
+    std::vector<Grouping::pointer> Track::getGroupings() const
+    {
+        return utils::fetchQueryResults<Grouping::pointer>(_groupings.find());
+    }
+
+    std::vector<GroupingId> Track::getGroupingIds() const
+    {
+        assert(session());
+
+        const auto query{ session()->query<GroupingId>("SELECT t_gr.grouping_id FROM track_grouping t_gr").where("t_gr.track_id = ?").bind(getId()) };
+
+        return utils::fetchQueryResults(query);
+    }
+
+    std::vector<Language::pointer> Track::getLanguages() const
+    {
+        return utils::fetchQueryResults<Language::pointer>(_languages.find());
+    }
+
+    std::vector<LanguageId> Track::getLanguageIds() const
+    {
+        assert(session());
+
+        const auto query{ session()->query<LanguageId>("SELECT t_l.language_id FROM track_language t_l").where("t_l.track_id = ?").bind(getId()) };
+
+        return utils::fetchQueryResults(query);
+    }
+
+    std::vector<Mood::pointer> Track::getMoods() const
+    {
+        return utils::fetchQueryResults<Mood::pointer>(_moods.find());
+    }
+
+    std::vector<MoodId> Track::getMoodIds() const
+    {
+        assert(session());
+
+        const auto query{ session()->query<MoodId>("SELECT t_m.mood_id FROM track_mood t_m").where("t_m.track_id = ?").bind(getId()) };
+
+        return utils::fetchQueryResults(query);
+    }
+
     ObjectPtr<MediaLibrary> Track::getMediaLibrary() const
     {
         return _mediaLibrary;
@@ -475,7 +566,7 @@ namespace lms::db
         return _preferredMediaArtwork.id();
     }
 
-    RangeResults<TrackId> Track::findIds(Session& session, const FindParameters& parameters)
+    std::vector<TrackId> Track::findIds(Session& session, const FindParameters& parameters)
     {
         session.checkReadTransaction();
 
@@ -483,7 +574,7 @@ namespace lms::db
         return utils::execRangeQuery<TrackId>(query, parameters.range);
     }
 
-    RangeResults<Track::pointer> Track::find(Session& session, const FindParameters& parameters)
+    std::vector<Track::pointer> Track::find(Session& session, const FindParameters& parameters)
     {
         session.checkReadTransaction();
 
@@ -497,14 +588,6 @@ namespace lms::db
 
         auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, params) };
         utils::forEachQueryRangeResult(query, params.range, func);
-    }
-
-    void Track::find(Session& session, const FindParameters& params, bool& moreResults, const std::function<void(const Track::pointer&)>& func)
-    {
-        session.checkReadTransaction();
-
-        auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, params) };
-        utils::forEachQueryRangeResult(query, params.range, moreResults, func);
     }
 
     std::size_t Track::getCount(Session& session, const FindParameters& params)
@@ -532,19 +615,19 @@ namespace lms::db
 
     void Track::setName(std::string_view name)
     {
-        _name = std::string{ name, 0, _maxNameLength };
+        _name = core::stringUtils::utf8Truncate(name, _maxNameLength);
         LMS_LOG_IF(DB, WARNING, name.size() > _maxNameLength, "Track name too long, truncated to '" << _name << "'");
     }
 
     void Track::setCopyright(std::string_view copyright)
     {
-        _copyright = std::string{ copyright, 0, _maxCopyrightLength };
+        _copyright = core::stringUtils::utf8Truncate(copyright, _maxCopyrightLength);
         LMS_LOG_IF(DB, WARNING, copyright.size() > _maxCopyrightLength, "Track copyright too long, truncated to '" << _copyright << "'");
     }
 
     void Track::setCopyrightURL(std::string_view copyrightURL)
     {
-        _copyrightURL = std::string{ copyrightURL, 0, _maxCopyrightURLLength };
+        _copyrightURL = core::stringUtils::utf8Truncate(copyrightURL, _maxCopyrightURLLength);
         LMS_LOG_IF(DB, WARNING, copyrightURL.size() > _maxCopyrightURLLength, "Track copyright URL too long, truncated to '" << _copyrightURL << "'");
     }
 
@@ -563,6 +646,68 @@ namespace lms::db
         _clusters.clear();
         for (const ObjectPtr<Cluster>& cluster : clusters)
             _clusters.insert(getDboPtr(cluster));
+    }
+
+    void Track::setGenres(std::span<const ObjectPtr<Genre>> genres)
+    {
+        _genres.clear();
+        for (const ObjectPtr<Genre>& genre : genres)
+            _genres.insert(getDboPtr(genre));
+    }
+
+    void Track::setGroupings(std::span<const ObjectPtr<Grouping>> groupings)
+    {
+        _groupings.clear();
+        for (const ObjectPtr<Grouping>& grouping : groupings)
+            _groupings.insert(getDboPtr(grouping));
+    }
+
+    void Track::setLanguages(std::span<const ObjectPtr<Language>> languages)
+    {
+        _languages.clear();
+        for (const ObjectPtr<Language>& language : languages)
+            _languages.insert(getDboPtr(language));
+    }
+
+    void Track::setMoods(std::span<const ObjectPtr<Mood>> moods)
+    {
+        _moods.clear();
+        for (const ObjectPtr<Mood>& mood : moods)
+            _moods.insert(getDboPtr(mood));
+    }
+
+    void Track::setWorks(std::span<const ObjectPtr<Work>> works)
+    {
+        _works.clear();
+        for (const ObjectPtr<Work>& work : works)
+            _works.insert(getDboPtr(work));
+    }
+
+    std::vector<Work::pointer> Track::getWorks() const
+    {
+        // deterministic order, callers rely on the first entry
+        return utils::fetchQueryResults<Work::pointer>(_works.find().orderBy("id"));
+    }
+
+    bool Track::hasWork() const
+    {
+        return !_works.empty();
+    }
+
+    void Track::clearMovements()
+    {
+        _movements.clear();
+    }
+
+    std::vector<Movement::pointer> Track::getMovements() const
+    {
+        // deterministic order, callers rely on the first entry
+        return utils::fetchQueryResults<Movement::pointer>(_movements.find().orderBy("id"));
+    }
+
+    bool Track::hasMovement() const
+    {
+        return !_movements.empty();
     }
 
     void Track::clearLyrics()
@@ -651,8 +796,7 @@ namespace lms::db
 
         std::ostringstream oss;
         oss << "SELECT a from artist a"
-               " INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id"
-               " INNER JOIN track t ON t.id = t_a_l.track_id";
+               " INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id";
 
         if (!linkTypes.empty())
         {
@@ -663,6 +807,7 @@ namespace lms::db
             {
                 if (!first)
                     oss << ", ";
+
                 oss << "?";
                 first = false;
             }
@@ -673,7 +818,7 @@ namespace lms::db
         for (TrackArtistLinkType type : linkTypes)
             query.bind(type);
 
-        query.where("t.id = ?").bind(getId());
+        query.where("t_a_l.track_id = ?").bind(getId());
         query.groupBy("t_a_l.artist_id");
         query.orderBy("t_a_l.id");
 
@@ -685,30 +830,30 @@ namespace lms::db
         assert(self());
         assert(session());
 
-        std::ostringstream oss;
-        oss << "SELECT t_a_l.artist_id FROM track_artist_link t_a_l"
-               " INNER JOIN track t ON t.id = t_a_l.track_id";
+        auto query{ session()->query<ArtistId>("SELECT t_a_l.artist_id FROM track_artist_link t_a_l") };
 
         if (!linkTypes.empty())
         {
-            oss << " AND t_a_l.type IN (";
+            std::ostringstream oss;
+            oss << "t_a_l.type IN (";
 
             bool first{ true };
             for ([[maybe_unused]] TrackArtistLinkType type : linkTypes)
             {
                 if (!first)
                     oss << ", ";
+
                 oss << "?";
                 first = false;
             }
             oss << ")";
+
+            query.where(oss.str());
+            for (TrackArtistLinkType type : linkTypes)
+                query.bind(type);
         }
 
-        auto query{ session()->query<ArtistId>(oss.str()) };
-        for (TrackArtistLinkType type : linkTypes)
-            query.bind(type);
-
-        query.where("t.id = ?").bind(getId());
+        query.where("t_a_l.track_id = ?").bind(getId());
         query.groupBy("t_a_l.artist_id");
         query.orderBy("t_a_l.id");
 
@@ -752,11 +897,11 @@ namespace lms::db
 
         oss << "SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id";
 
-        where.And(WhereClause("t.id = ?")).bind(getId().toString());
+        where.And(WhereClause{ "t.id = ?" }).bind(getId().toString());
         {
             WhereClause clusterClause;
             for (ClusterTypeId clusterTypeId : clusterTypeIds)
-                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterTypeId.toString());
+                clusterClause.Or(WhereClause{ "c_type.id = ?" }).bind(clusterTypeId.toString());
             where.And(clusterClause);
         }
         oss << " " << where.get();

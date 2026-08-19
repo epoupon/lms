@@ -19,6 +19,7 @@
 
 #include "ScanStepCheckForRemovedFiles.hpp"
 
+#include <algorithm>
 #include <deque>
 #include <filesystem>
 #include <span>
@@ -92,8 +93,11 @@ namespace lms::scanner
                 const std::filesystem::directory_entry fileEntry{ p, ec };
                 if (ec)
                 {
-                    // TODO store error?
-                    LMS_LOG(DBUPDATER, ERROR, "Error while checking file " << p << ": " << ec.message());
+                    // no_such_file_or_directory may be triggered if the mount point changed
+                    if (ec == std::errc::no_such_file_or_directory)
+                        LMS_LOG(DBUPDATER, DEBUG, "Removing " << p << ": missing");
+                    else
+                        LMS_LOG(DBUPDATER, ERROR, "Error while checking file " << p << ": " << ec.message());
                     return false;
                 }
 
@@ -104,14 +108,19 @@ namespace lms::scanner
                     return false;
                 }
 
-                const auto isInActiveLibrary{ [&](const MediaLibraryInfo& lib) {
-                    if (!core::pathUtils::isPathInRootPath(p, lib.rootDirectory))
-                        return false;
-                    return lib.ignoreRules.isEmpty() || !lib.ignoreRules.isIgnored(std::filesystem::relative(p, lib.rootDirectory), IgnoreRules::IsDirectory{ false });
-                } };
-                if (std::none_of(std::cbegin(_settings.mediaLibraries), std::cend(_settings.mediaLibraries), isInActiveLibrary))
+                // media library root paths never overlap: at most one library can own this path
+                const auto itOwningLibrary{ std::find_if(std::cbegin(_settings.mediaLibraries), std::cend(_settings.mediaLibraries), [&](const MediaLibraryInfo& lib) {
+                    return core::pathUtils::isPathInRootPath(p, lib.rootDirectory);
+                }) };
+                if (itOwningLibrary == std::cend(_settings.mediaLibraries))
                 {
                     LMS_LOG(DBUPDATER, DEBUG, "Removing " << p << ": out of media directory");
+                    return false;
+                }
+
+                if (itOwningLibrary->ignoreRules.isIgnored(std::filesystem::relative(p, itOwningLibrary->rootDirectory), IgnoreRules::IsDirectory{ false }))
+                {
+                    LMS_LOG(DBUPDATER, DEBUG, "Removing " << p << ": ignored by .lmsignore rules");
                     return false;
                 }
 

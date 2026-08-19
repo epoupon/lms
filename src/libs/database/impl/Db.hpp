@@ -51,6 +51,7 @@ namespace lms::db
 
         void logPageSize();
         void logCacheSize();
+        void logMmapSize();
         void logCompileOptions();
         void performQuickCheck();
         void performIntegrityCheck();

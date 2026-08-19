@@ -53,10 +53,10 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             auto tracks{ Track::findIds(session, Track::FindParameters{}.setTrackList(trackList1.getId())) };
-            EXPECT_EQ(tracks.results.size(), 0);
+            EXPECT_EQ(tracks.size(), 0);
 
             tracks = Track::findIds(session, Track::FindParameters{}.setTrackList(trackList2.getId()));
-            EXPECT_EQ(tracks.results.size(), 0);
+            EXPECT_EQ(tracks.size(), 0);
         }
 
         {
@@ -69,11 +69,11 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             auto tracks{ Track::findIds(session, Track::FindParameters{}.setTrackList(trackList1.getId())) };
-            ASSERT_EQ(tracks.results.size(), 1);
-            EXPECT_EQ(tracks.results.front(), track.getId());
+            ASSERT_EQ(tracks.size(), 1);
+            EXPECT_EQ(tracks.front(), track.getId());
 
             tracks = Track::findIds(session, Track::FindParameters{}.setTrackList(trackList2.getId()));
-            EXPECT_EQ(tracks.results.size(), 0);
+            EXPECT_EQ(tracks.size(), 0);
         }
     }
 
@@ -87,9 +87,9 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             const auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setSortMethod(TrackListSortMethod::Name)) };
-            ASSERT_EQ(trackLists.results.size(), 2);
-            EXPECT_EQ(trackLists.results[0], trackList1.getId());
-            EXPECT_EQ(trackLists.results[1], trackList2.getId());
+            ASSERT_EQ(trackLists.size(), 2);
+            EXPECT_EQ(trackLists[0], trackList1.getId());
+            EXPECT_EQ(trackLists[1], trackList2.getId());
         }
 
         {
@@ -103,9 +103,9 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             const auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
-            ASSERT_EQ(trackLists.results.size(), 2);
-            EXPECT_EQ(trackLists.results[0], trackList2.getId());
-            EXPECT_EQ(trackLists.results[1], trackList1.getId());
+            ASSERT_EQ(trackLists.size(), 2);
+            EXPECT_EQ(trackLists[0], trackList2.getId());
+            EXPECT_EQ(trackLists[1], trackList1.getId());
         }
 
         {
@@ -119,9 +119,9 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             const auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
-            ASSERT_EQ(trackLists.results.size(), 2);
-            EXPECT_EQ(trackLists.results[0], trackList1.getId());
-            EXPECT_EQ(trackLists.results[1], trackList2.getId());
+            ASSERT_EQ(trackLists.size(), 2);
+            EXPECT_EQ(trackLists[0], trackList1.getId());
+            EXPECT_EQ(trackLists[1], trackList2.getId());
         }
     }
 
@@ -245,7 +245,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setClusters(std::initializer_list<ClusterId>{ cluster.getId() }))) };
-            EXPECT_EQ(trackLists.results.size(), 0);
+            EXPECT_EQ(trackLists.size(), 0);
         }
 
         {
@@ -259,8 +259,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setClusters(std::initializer_list<ClusterId>{ cluster.getId() }))) };
-            ASSERT_EQ(trackLists.results.size(), 1);
-            EXPECT_EQ(trackLists.results.front(), trackList1.getId());
+            ASSERT_EQ(trackLists.size(), 1);
+            EXPECT_EQ(trackLists.front(), trackList1.getId());
         }
     }
 
@@ -278,8 +278,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto entries{ trackList.get()->getEntries() };
-            ASSERT_EQ(entries.results.size(), 1);
-            EXPECT_EQ(entries.results.front()->getTrack()->getId(), track1.getId());
+            ASSERT_EQ(entries.size(), 1);
+            EXPECT_EQ(entries.front()->getTrack()->getId(), track1.getId());
         }
 
         {
@@ -290,16 +290,16 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto entries{ trackList.get()->getEntries() };
-            ASSERT_EQ(entries.results.size(), 2);
-            EXPECT_EQ(entries.results[0]->getTrack()->getId(), track1.getId());
-            EXPECT_EQ(entries.results[1]->getTrack()->getId(), track2.getId());
+            ASSERT_EQ(entries.size(), 2);
+            EXPECT_EQ(entries[0]->getTrack()->getId(), track1.getId());
+            EXPECT_EQ(entries[1]->getTrack()->getId(), track2.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             auto entries{ trackList.get()->getEntries(Range{ 1, 1 }) };
-            ASSERT_EQ(entries.results.size(), 1);
-            EXPECT_EQ(entries.results[0]->getTrack()->getId(), track2.getId());
+            ASSERT_EQ(entries.size(), 1);
+            EXPECT_EQ(entries[0]->getTrack()->getId(), track2.getId());
         }
     }
 

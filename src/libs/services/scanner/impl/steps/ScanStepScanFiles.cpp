@@ -67,25 +67,35 @@ namespace lms::scanner
                 {
                     continueExploring = cb(ec, path, nullptr);
                 }
-                else if (entry.is_regular_file())
+                else
                 {
-                    if (shouldIgnore(path, IgnoreRules::IsDirectory{ false }))
+                    const bool isFile{ entry.is_regular_file(ec) };
+                    const bool isDir{ !ec && !isFile && entry.is_directory(ec) };
+
+                    if (ec)
                     {
-                        LMS_LOG(DBUPDATER, DEBUG, "Ignoring file " << path << " (matched .lmsignore rule)");
-                        itPath.increment(ec);
-                        continue;
+                        continueExploring = cb(ec, path, nullptr);
                     }
-                    continueExploring = cb(ec, path, &entry);
-                }
-                else if (entry.is_directory())
-                {
-                    if (shouldIgnore(path, IgnoreRules::IsDirectory{ true }))
+                    else if (isFile)
                     {
-                        LMS_LOG(DBUPDATER, DEBUG, "Ignoring directory " << path << " (matched .lmsignore rule)");
-                        itPath.increment(ec);
-                        continue;
+                        if (shouldIgnore(path, IgnoreRules::IsDirectory{ false }))
+                        {
+                            LMS_LOG(DBUPDATER, DEBUG, "Ignoring file " << path << " (matched .lmsignore rule)");
+                            itPath.increment(ec);
+                            continue;
+                        }
+                        continueExploring = cb(ec, path, &entry);
                     }
-                    continueExploring = exploreFilesRecursive(path, cb, shouldIgnore);
+                    else if (isDir)
+                    {
+                        if (shouldIgnore(path, IgnoreRules::IsDirectory{ true }))
+                        {
+                            LMS_LOG(DBUPDATER, DEBUG, "Ignoring directory " << path << " (matched .lmsignore rule)");
+                            itPath.increment(ec);
+                            continue;
+                        }
+                        continueExploring = exploreFilesRecursive(path, cb, shouldIgnore);
+                    }
                 }
 
                 if (!continueExploring)

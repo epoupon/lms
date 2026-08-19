@@ -19,85 +19,97 @@
 
 #include "ArtistCollector.hpp"
 
-#include "core/Service.hpp"
 #include "core/Utils.hpp"
 
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
+#include "database/objects/Listen.hpp"
 #include "database/objects/TrackList.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/User.hpp"
-#include "services/feedback/IFeedbackService.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
 
 #include "LmsApplication.hpp"
 
 namespace lms::ui
 {
-    db::RangeResults<db::ArtistId> ArtistCollector::get(std::optional<db::Range> requestedRange)
+    void ArtistCollector::get(db::Range requestedRange, bool& moreResults, const std::function<void(const db::ObjectPtr<db::Artist>&)>& func)
     {
-        feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
-        scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };
-
         const Range range{ getActualRange(requestedRange) };
 
-        db::RangeResults<db::ArtistId> artists;
+        auto applyArtistType = [&](auto& params) {
+            std::visit(core::utils::overloads{
+                           [&](AllArtistsTag) {},
+                           [&](ReleaseArtistsTag) { params.setReleaseArtistsOnly(true); },
+                           [&](db::TrackArtistLinkType trackArtistLinkType) { params.setTrackArtistLinkType(trackArtistLinkType); } },
+                       _artistType);
+        };
 
         switch (getMode())
         {
         case Mode::Random:
-            artists = getRandomArtists(range);
-            break;
+            {
+                if (!_randomArtists)
+                {
+                    db::Artist::FindParameters params;
+                    params.setFilters(getDbFilters());
+                    params.setKeywords(getSearchKeywords());
+                    params.setSortMethod(db::ArtistSortMethod::Random);
+                    params.setRange(db::Range{ 0, getMaxCount() });
+                    applyArtistType(params);
+                    _randomArtists = db::Artist::findIds(LmsApp->getDbSession(), params);
+                }
+                const auto& all{ *_randomArtists };
+                const std::size_t offset{ std::min(range.offset, all.size()) };
+                const auto slice{ std::span{ all }.subspan(offset, std::min(range.size, all.size() - offset)) };
+                moreResults = (offset + slice.size() < all.size());
+                for (const auto id : slice)
+                {
+                    if (const auto artist{ db::Artist::find(LmsApp->getDbSession(), id) })
+                        func(artist);
+                }
+                break;
+            }
 
         case Mode::Starred:
             {
-                feedback::IFeedbackService::ArtistFindParameters params;
+                db::Artist::FindParameters params;
                 params.setFilters(getDbFilters());
-                params.setUser(LmsApp->getUserId());
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::ArtistSortMethod::StarredDateDesc);
                 params.setRange(range);
-                std::visit(core::utils::overloads{
-                               [&](AllArtistsTag) {},
-                               [&](ReleaseArtistsTag) { params.setReleaseArtistsOnly(true); },
-                               [&](db::TrackArtistLinkType trackArtistLinkType) { params.setTrackArtistLinkType(trackArtistLinkType); } },
-                           _artistType);
-
-                artists = feedbackService.findStarredArtists(params);
+                params.setStarringUser(LmsApp->getUserId());
+                applyArtistType(params);
+                std::size_t count{};
+                db::Artist::find(LmsApp->getDbSession(), params, [&](const auto& a) { func(a); ++count; });
+                moreResults = (count == range.size);
                 break;
             }
 
         case Mode::RecentlyPlayed:
             {
-                scrobbling::IScrobblingService::ArtistFindParameters params;
-                params.setUser(LmsApp->getUserId());
+                db::Listen::ArtistStatsFindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
-                std::visit(core::utils::overloads{
-                               [&](AllArtistsTag) {},
-                               [&](ReleaseArtistsTag) { params.setReleaseArtistsOnly(true); },
-                               [&](db::TrackArtistLinkType trackArtistLinkType) { params.setTrackArtistLinkType(trackArtistLinkType); } },
-                           _artistType);
-
-                artists = scrobblingService.getRecentArtists(params);
+                params.setUser(LmsApp->getUserId());
+                applyArtistType(params);
+                std::size_t count{};
+                db::Listen::getRecentArtists(LmsApp->getDbSession(), params, [&](const auto& a) { func(a); ++count; });
+                moreResults = (count == range.size);
                 break;
             }
 
         case Mode::MostPlayed:
             {
-                scrobbling::IScrobblingService::ArtistFindParameters params;
-                params.setUser(LmsApp->getUserId());
+                db::Listen::ArtistStatsFindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
-                std::visit(core::utils::overloads{
-                               [&](AllArtistsTag) {},
-                               [&](ReleaseArtistsTag) { params.setReleaseArtistsOnly(true); },
-                               [&](db::TrackArtistLinkType trackArtistLinkType) { params.setTrackArtistLinkType(trackArtistLinkType); } },
-                           _artistType);
-
-                artists = scrobblingService.getTopArtists(params);
+                params.setUser(LmsApp->getUserId());
+                applyArtistType(params);
+                std::size_t count{};
+                db::Listen::getTopArtists(LmsApp->getDbSession(), params, [&](const auto& a) { func(a); ++count; });
+                moreResults = (count == range.size);
                 break;
             }
 
@@ -108,16 +120,10 @@ namespace lms::ui
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::ArtistSortMethod::AddedDesc);
                 params.setRange(range);
-                std::visit(core::utils::overloads{
-                               [&](AllArtistsTag) {},
-                               [&](ReleaseArtistsTag) { params.setReleaseArtistsOnly(true); },
-                               [&](db::TrackArtistLinkType trackArtistLinkType) { params.setTrackArtistLinkType(trackArtistLinkType); } },
-                           _artistType);
-
-                {
-                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    artists = db::Artist::findIds(LmsApp->getDbSession(), params);
-                }
+                applyArtistType(params);
+                std::size_t count{};
+                db::Artist::find(LmsApp->getDbSession(), params, [&](const auto& a) { func(a); ++count; });
+                moreResults = (count == range.size);
                 break;
             }
 
@@ -128,16 +134,10 @@ namespace lms::ui
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::ArtistSortMethod::LastWrittenDesc);
                 params.setRange(range);
-                std::visit(core::utils::overloads{
-                               [&](AllArtistsTag) {},
-                               [&](ReleaseArtistsTag) { params.setReleaseArtistsOnly(true); },
-                               [&](db::TrackArtistLinkType trackArtistLinkType) { params.setTrackArtistLinkType(trackArtistLinkType); } },
-                           _artistType);
-
-                {
-                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    artists = db::Artist::findIds(LmsApp->getDbSession(), params);
-                }
+                applyArtistType(params);
+                std::size_t count{};
+                db::Artist::find(LmsApp->getDbSession(), params, [&](const auto& a) { func(a); ++count; });
+                moreResults = (count == range.size);
                 break;
             }
 
@@ -148,49 +148,13 @@ namespace lms::ui
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::ArtistSortMethod::SortName);
                 params.setRange(range);
-                std::visit(core::utils::overloads{
-                               [&](AllArtistsTag) {},
-                               [&](ReleaseArtistsTag) { params.setReleaseArtistsOnly(true); },
-                               [&](db::TrackArtistLinkType trackArtistLinkType) { params.setTrackArtistLinkType(trackArtistLinkType); } },
-                           _artistType);
-
-                {
-                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    artists = db::Artist::findIds(LmsApp->getDbSession(), params);
-                }
+                applyArtistType(params);
+                std::size_t count{};
+                db::Artist::find(LmsApp->getDbSession(), params, [&](const auto& a) { func(a); ++count; });
+                moreResults = (count == range.size);
                 break;
             }
         }
-
-        if (range.offset + range.size == getMaxCount())
-            artists.moreResults = false;
-
-        return artists;
     }
 
-    db::RangeResults<db::ArtistId> ArtistCollector::getRandomArtists(Range range)
-    {
-        assert(getMode() == Mode::Random);
-
-        if (!_randomArtists)
-        {
-            db::Artist::FindParameters params;
-            params.setFilters(getDbFilters());
-            params.setKeywords(getSearchKeywords());
-            params.setSortMethod(db::ArtistSortMethod::Random);
-            params.setRange(db::Range{ 0, getMaxCount() });
-            std::visit(core::utils::overloads{
-                           [&](AllArtistsTag) {},
-                           [&](ReleaseArtistsTag) { params.setReleaseArtistsOnly(true); },
-                           [&](db::TrackArtistLinkType trackArtistLinkType) { params.setTrackArtistLinkType(trackArtistLinkType); } },
-                       _artistType);
-
-            {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                _randomArtists = db::Artist::findIds(LmsApp->getDbSession(), params);
-            }
-        }
-
-        return _randomArtists->getSubRange(range);
-    }
 } // namespace lms::ui

@@ -14,6 +14,8 @@
 <message id="Lms.discard">撤销</message>
 <message id="Lms.edit">编辑</message>
 <message id="Lms.field-must-be-in-upper-case">此字段必须为大写</message>
+<message id="Lms.infinite-scrolling-container.limit-reached">已达到显示上限 — 请精简搜索条件以查看更多结果</message>
+<message id="Lms.infinite-scrolling-container.no-results">未找到结果</message>
 <message id="Lms.loading">加载中...</message>
 <message id="Lms.login">登陆</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> 注销</message>
@@ -127,7 +129,7 @@
 <message id="Lms.Admin.ScannerController.get-report">生成报告</message>
 <message id="Lms.Admin.ScannerController.last-scan">最后扫描</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">不可用</message>
-<message id="Lms.Admin.ScannerController.last-scan-status">已扫描 {1} 个文件，用时 {2}，在 {3} 的 {4} (UTC) - {5} 个错误，{6} 个重复项</message>
+<message id="Lms.Admin.ScannerController.last-scan-status">已扫描 {1} 个文件，用时 {2}，在 {3} 的 {4} - {5} 个错误，{6} 个重复项</message>
 <message id="Lms.Admin.ScannerController.missing-artist-name">缺少艺术家名称</message>
 <message id="Lms.Admin.ScannerController.playlist-all-pathes-missing">无法找到曲目路径</message>
 <message id="Lms.Admin.ScannerController.playlist-path-missing">无法找到路径 "{1}"</message>
@@ -139,7 +141,7 @@
 <message id="Lms.Admin.ScannerController.scanner">扫描器</message>
 <message id="Lms.Admin.ScannerController.status">状态</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">无计划</message>
-<message id="Lms.Admin.ScannerController.status-scheduled">计划于 {2} 在 {1} (UTC)</message>
+<message id="Lms.Admin.ScannerController.status-scheduled">计划于 {2} 在 {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">扫描中: 阶段 {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">关联艺术家图片：{1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">关联外部歌词：{1}%...</message>
@@ -150,7 +152,7 @@
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">检查重复文件... {1} 个文件</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">检查文件中... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">正在压缩数据库...</message>
-<message id="Lms.Admin.ScannerController.step-compute-cluster-stats">正在计算统计信息... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-compute-genre-stats">正在计算统计信息... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-extract-musicnn-embeddings">正在提取 MusicNN 嵌入：{1} / {2} 个文件（{3}%）</message>
 <message id="Lms.Admin.ScannerController.step-optimize">正在优化数据库... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">整理艺术家：{1} 条记录...</message>
@@ -166,6 +168,13 @@
 <!--Db-->
 <message id="Lms.Admin.DebugTools.Db.export-query-profiling">导出查询分析数据</message>
 <message id="Lms.Admin.DebugTools.Db.db">数据库</message>
+
+<!--PcmDecodingStats-->
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.pcm-decoding-stats">PCM解码统计</message>
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.run">运行基准测试</message>
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.download">下载结果</message>
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.running">运行中…</message>
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.benchmark-completed">PCM解码基准测试已在{1}内完成</message>
 
 <!--Tracing-->
 <message id="Lms.Admin.DebugTools.Tracing.export-current-buffer">导出跟踪</message>
@@ -213,10 +222,14 @@
 <message id="Lms.Explore.duration">时长</message>
 <message id="Lms.Explore.filter-added">过滤器已添加</message>
 <message id="Lms.Explore.filters">过滤器</message>
+<message id="Lms.Explore.genre">流派</message>
+<message id="Lms.Explore.grouping">分组</message>
 <message id="Lms.Explore.label">厂牌</message>
+<message id="Lms.Explore.language">语言</message>
 <message id="Lms.Explore.lyricist">作词者</message>
 <message id="Lms.Explore.media-library">音乐库</message>
 <message id="Lms.Explore.mixer">混音师</message>
+<message id="Lms.Explore.mood">情绪</message>
 <message id="Lms.Explore.most-played">播放最多</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz 歌手</message>
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz 专辑</message>
@@ -316,6 +329,22 @@
 <message id="Lms.Settings.backend.internal">内部</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">ListenBrainz API 令牌</message>
+<message id="Lms.Settings.backend.lastfm">Last.fm</message>
+<message id="Lms.Settings.services.lastfm-api-key">Last.fm API 密钥</message>
+<message id="Lms.Settings.services.lastfm-api-secret">Last.fm API 共享密钥</message>
+<message id="Lms.Settings.services.lastfm-card-title">Last.fm 账户</message>
+<message id="Lms.Settings.services.lastfm-linked">已关联</message>
+<message id="Lms.Settings.services.lastfm-link">关联账户</message>
+<message id="Lms.Settings.services.lastfm-unlink">取消关联账户</message>
+<message id="Lms.Settings.services.lastfm-link-modal-title">关联 Last.fm 账户</message>
+<message id="Lms.Settings.services.lastfm-link-modal-help">输入您的 Last.fm API 密钥和共享密钥（从 <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a> 获取），然后点击授权。</message>
+<message id="Lms.Settings.services.lastfm-authorize">在 Last.fm 上授权</message>
+<message id="Lms.Settings.services.lastfm-done">完成，我已授权</message>
+<message id="Lms.Settings.services.lastfm-auth-url">未打开？点击此处在 Last.fm 上授权</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-title">取消关联 Last.fm 账户</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-body">您确定要取消关联 Last.fm 账户吗？在重新关联之前，scrobbling 将停止。</message>
+<message id="Lms.Settings.services.lastfm-missing-credentials">请输入您的 Last.fm API 密钥和共享密钥。</message>
+<message id="Lms.Settings.services.lastfm-auth-error">Last.fm 认证失败。请检查您的 API 密钥和共享密钥。</message>
 <message id="Lms.Settings.change-password">更改密码</message>
 <message id="Lms.Settings.date-asc">发行日期（升序）</message>
 <message id="Lms.Settings.date-desc">发行日期（降序）</message>

@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -34,6 +35,10 @@
 
 #include "database/Object.hpp"
 #include "database/objects/ClusterId.hpp"
+#include "database/objects/GenreId.hpp"
+#include "database/objects/GroupingId.hpp"
+#include "database/objects/LanguageId.hpp"
+#include "database/objects/MoodId.hpp"
 #include "database/objects/Types.hpp"
 
 #include "resource/ArtworkResource.hpp"
@@ -63,6 +68,10 @@ namespace lms::ui::utils
 
     std::unique_ptr<Wt::WInteractWidget> createFilter(const Wt::WString& name, const Wt::WString& tooltip, std::string_view colorStyleClass, bool canDelete = false);
     std::unique_ptr<Wt::WInteractWidget> createFilterCluster(db::ClusterId clusterId, bool canDelete = false);
+    std::unique_ptr<Wt::WInteractWidget> createFilterGenre(db::GenreId genreId, bool canDelete = false);
+    std::unique_ptr<Wt::WInteractWidget> createFilterGrouping(db::GroupingId groupingId, bool canDelete = false);
+    std::unique_ptr<Wt::WInteractWidget> createFilterLanguage(db::LanguageId languageId, bool canDelete = false);
+    std::unique_ptr<Wt::WInteractWidget> createFilterMood(db::MoodId moodId, bool canDelete = false);
     std::unique_ptr<Wt::WContainerWidget> createFilterClustersForTrack(db::ObjectPtr<db::Track> track, Filters& filters);
 
     std::unique_ptr<Wt::WAnchor> createArtistAnchor(db::ObjectPtr<db::Artist> artist, bool setText = true);
@@ -95,4 +104,11 @@ namespace lms::ui::utils
     std::unique_ptr<Wt::WInteractWidget> createCopyright(std::string_view copyright, std::string_view copyrightURL);
 
     void copyToClipboard(std::string_view text);
+
+    struct TrackDisplayInfo
+    {
+        std::string title;                   // "i. MovementName" when track has work + movement, otherwise just the track's title
+        std::optional<std::string> workName; // only set when title comes from a movement
+    };
+    TrackDisplayInfo computeTrackDisplayInfo(const db::ObjectPtr<db::Track>& track);
 } // namespace lms::ui::utils

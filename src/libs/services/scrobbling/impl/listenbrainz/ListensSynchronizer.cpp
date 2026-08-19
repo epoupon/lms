@@ -79,7 +79,7 @@ namespace lms::scrobbling::listenBrainz
             const std::vector<Artist> artists{ getTrackArtists(track) };
             if (artists.empty())
             {
-                LOG(DEBUG, "Track cannot be scrobbled since it does not have any artist");
+                LMS_LOG_LISTENBRAINZ(DEBUG, "Track cannot be scrobbled since it does not have any artist");
                 return std::nullopt;
             }
 
@@ -89,9 +89,9 @@ namespace lms::scrobbling::listenBrainz
             if (const auto release{ track->getRelease() })
             {
                 if (auto MBID{ release->getMBID() })
-                    additionalInfo["release_mbid"] = Wt::Json::Value{ std::string{ MBID->getAsString() } };
+                    additionalInfo["release_mbid"] = Wt::Json::Value{ MBID->toString() };
                 if (auto groupMBID{ release->getGroupMBID() })
-                    additionalInfo["release_group_mbid"] = Wt::Json::Value{ std::string{ groupMBID->getAsString() } };
+                    additionalInfo["release_group_mbid"] = Wt::Json::Value{ groupMBID->toString() };
             }
 
             {
@@ -99,7 +99,7 @@ namespace lms::scrobbling::listenBrainz
                 for (const Artist& artist : artists)
                 {
                     if (artist.mbid)
-                        artistMBIDs.push_back(Wt::Json::Value{ std::string{ artist.mbid->getAsString() } });
+                        artistMBIDs.push_back(Wt::Json::Value{ artist.mbid->toString() });
                 }
 
                 if (!artistMBIDs.empty())
@@ -107,10 +107,10 @@ namespace lms::scrobbling::listenBrainz
             }
 
             if (auto MBID{ track->getTrackMBID() })
-                additionalInfo["track_mbid"] = Wt::Json::Value{ std::string{ MBID->getAsString() } };
+                additionalInfo["track_mbid"] = Wt::Json::Value{ MBID->toString() };
 
             if (auto MBID{ track->getRecordingMBID() })
-                additionalInfo["recording_mbid"] = Wt::Json::Value{ std::string{ MBID->getAsString() } };
+                additionalInfo["recording_mbid"] = Wt::Json::Value{ MBID->toString() };
 
             if (const std::optional<std::size_t> trackNumber{ track->getTrackNumber() })
                 additionalInfo["tracknumber"] = Wt::Json::Value{ static_cast<long long int>(*trackNumber) };
@@ -118,7 +118,7 @@ namespace lms::scrobbling::listenBrainz
             Wt::Json::Object trackMetadata;
             trackMetadata["additional_info"] = std::move(additionalInfo);
             trackMetadata["artist_name"] = Wt::Json::Value{ std::string{ track->getArtistDisplayName() } };
-            trackMetadata["track_name"] = Wt::Json::Value{ track->getName() };
+            trackMetadata["track_name"] = Wt::Json::Value{ std::string{ track->getName() } };
             if (track->getRelease())
                 trackMetadata["release_name"] = Wt::Json::Value{ std::string{ track->getRelease()->getName() } };
 
@@ -158,7 +158,7 @@ namespace lms::scrobbling::listenBrainz
             }
             catch (const Wt::WException& e)
             {
-                LOG(ERROR, "Cannot parse listen count response: " << e.what());
+                LMS_LOG_LISTENBRAINZ(ERROR, "Cannot parse listen count response: " << e.what());
                 return std::nullopt;
             }
         }
@@ -176,12 +176,12 @@ namespace lms::scrobbling::listenBrainz
                 // if duplicated files, do not record it (let the user correct its database)
                 if (tracks.size() == 1)
                 {
-                    LOG(DEBUG, "Matched listen '" << listen << "' using track MBID");
+                    LMS_LOG_LISTENBRAINZ(DEBUG, "Matched listen '" << listen << "' using track MBID");
                     return tracks.front()->getId();
                 }
                 else if (tracks.size() > 1)
                 {
-                    LOG(DEBUG, "Too many matches for listen '" << listen << "' using track MBID!");
+                    LMS_LOG_LISTENBRAINZ(DEBUG, "Too many matches for listen '" << listen << "' using track MBID!");
                     return {};
                 }
             }
@@ -192,12 +192,12 @@ namespace lms::scrobbling::listenBrainz
                 // if duplicated files, do not record it (let the user correct its database)
                 if (tracks.size() == 1)
                 {
-                    LOG(DEBUG, "Matched listen '" << listen << "' using recording MBID");
+                    LMS_LOG_LISTENBRAINZ(DEBUG, "Matched listen '" << listen << "' using recording MBID");
                     return tracks.front()->getId();
                 }
                 else if (tracks.size() > 1)
                 {
-                    LOG(DEBUG, "Too many matches for listen '" << listen << "' using recording MBID!");
+                    LMS_LOG_LISTENBRAINZ(DEBUG, "Too many matches for listen '" << listen << "' using recording MBID!");
                     return {};
                 }
             }
@@ -214,18 +214,18 @@ namespace lms::scrobbling::listenBrainz
 
             const auto tracks{ Track::findIds(session, params) };
             // conservative behavior: in case of multiple matches: reject
-            if (tracks.results.size() == 1)
+            if (tracks.size() == 1)
             {
-                LOG(DEBUG, "Matched listen '" << listen << "' using metadata");
-                return tracks.results.front();
+                LMS_LOG_LISTENBRAINZ(DEBUG, "Matched listen '" << listen << "' using metadata");
+                return tracks.front();
             }
-            else if (tracks.results.size() > 1)
+            else if (tracks.size() > 1)
             {
-                LOG(DEBUG, "Too many matches for listen '" << listen << "' using metadata");
+                LMS_LOG_LISTENBRAINZ(DEBUG, "Too many matches for listen '" << listen << "' using metadata");
                 return {};
             }
 
-            LOG(DEBUG, "No match for listen '" << listen << "'");
+            LMS_LOG_LISTENBRAINZ(DEBUG, "No match for listen '" << listen << "'");
             return {};
         }
     } // namespace
@@ -237,7 +237,7 @@ namespace lms::scrobbling::listenBrainz
         , _maxSyncListenCount{ core::Service<core::IConfig>::get()->getULong("listenbrainz-max-sync-listen-count", 1000) }
         , _syncListensPeriod{ core::Service<core::IConfig>::get()->getULong("listenbrainz-sync-listens-period-hours", 1) }
     {
-        LOG(INFO, "Starting Listens synchronizer, maxSyncListenCount = " << _maxSyncListenCount << ", _syncListensPeriod = " << _syncListensPeriod.count() << " hours");
+        LMS_LOG_LISTENBRAINZ(INFO, "Starting Listens synchronizer, maxSyncListenCount = " << _maxSyncListenCount << ", _syncListensPeriod = " << _syncListensPeriod.count() << " hours");
 
         scheduleSync(std::chrono::seconds{ 30 });
     }
@@ -287,14 +287,14 @@ namespace lms::scrobbling::listenBrainz
         std::string bodyText{ listenToJsonString(_db.getTLSSession(), listen, timePoint, timePoint.isValid() ? "single" : "playing_now") };
         if (bodyText.empty())
         {
-            LOG(DEBUG, "Cannot convert listen to json: skipping");
+            LMS_LOG_LISTENBRAINZ(DEBUG, "Cannot convert listen to json: skipping");
             return;
         }
 
         const std::string listenBrainzToken{ utils::getListenBrainzToken(_db.getTLSSession(), listen.userId) };
         if (listenBrainzToken.empty())
         {
-            LOG(DEBUG, "No listenbrainz token found: skipping");
+            LMS_LOG_LISTENBRAINZ(DEBUG, "No listenbrainz token found: skipping");
             return;
         }
 
@@ -323,7 +323,7 @@ namespace lms::scrobbling::listenBrainz
             dbListen = session.create<db::Listen>(user, track, db::ScrobblingBackend::ListenBrainz, listen.listenedAt);
             dbListen.modify()->setSyncState(scrobblingState);
 
-            LOG(DEBUG, "LISTEN CREATED for user " << user->getLoginName() << ", track '" << track->getName() << "' AT " << listen.listenedAt.toString());
+            LMS_LOG_LISTENBRAINZ(DEBUG, "LISTEN CREATED for user " << user->getLoginName() << ", track '" << track->getName() << "' AT " << listen.listenedAt.toString());
 
             return true;
         }
@@ -349,10 +349,10 @@ namespace lms::scrobbling::listenBrainz
                 .setSyncState(db::SyncState::PendingAdd)
                 .setRange(db::Range{ 0, 100 }); // don't flood too much?
 
-            const db::RangeResults results{ db::Listen::find(session, params) };
-            pendingListens.reserve(results.results.size());
+            const auto results{ db::Listen::find(session, params) };
+            pendingListens.reserve(results.size());
 
-            for (db::ListenId listenId : results.results)
+            for (db::ListenId listenId : results)
             {
                 const db::Listen::pointer listen{ db::Listen::find(session, listenId) };
 
@@ -365,7 +365,7 @@ namespace lms::scrobbling::listenBrainz
             }
         }
 
-        LOG(DEBUG, "Queing " << pendingListens.size() << " pending listen");
+        LMS_LOG_LISTENBRAINZ(DEBUG, "Queing " << pendingListens.size() << " pending listen");
 
         for (const TimedListen& pendingListen : pendingListens)
             enqueListen(pendingListen);
@@ -396,12 +396,12 @@ namespace lms::scrobbling::listenBrainz
         if (_syncListensPeriod.count() == 0 || _maxSyncListenCount == 0)
             return;
 
-        LOG(DEBUG, "Scheduled sync in " << fromNow.count() << " seconds...");
+        LMS_LOG_LISTENBRAINZ(DEBUG, "Scheduled sync in " << fromNow.count() << " seconds...");
         _syncTimer.expires_after(fromNow);
         _syncTimer.async_wait(boost::asio::bind_executor(_strand, [this](const boost::system::error_code& ec) {
             if (ec == boost::asio::error::operation_aborted)
             {
-                LOG(DEBUG, "getListens aborted");
+                LMS_LOG_LISTENBRAINZ(DEBUG, "getListens aborted");
                 return;
             }
             else if (ec)
@@ -415,20 +415,20 @@ namespace lms::scrobbling::listenBrainz
 
     void ListensSynchronizer::startSync()
     {
-        LOG(DEBUG, "Starting sync!");
+        LMS_LOG_LISTENBRAINZ(DEBUG, "Starting sync!");
 
         assert(!isSyncing());
 
         enquePendingListens();
 
-        db::RangeResults<db::UserId> userIds;
+        std::vector<db::UserId> userIds;
         {
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
             userIds = db::User::find(_db.getTLSSession(), db::User::FindParameters{}.setScrobblingBackend(db::ScrobblingBackend::ListenBrainz));
         }
 
-        for (const db::UserId userId : userIds.results)
+        for (const db::UserId userId : userIds)
             startSync(getUserContext(userId));
 
         if (!isSyncing())
@@ -450,7 +450,7 @@ namespace lms::scrobbling::listenBrainz
     void ListensSynchronizer::onSyncEnded(UserContext& context)
     {
         boost::asio::post(boost::asio::bind_executor(_strand, [this, &context] {
-            LOG(INFO, "Sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount);
+            LMS_LOG_LISTENBRAINZ(INFO, "Sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount);
             context.syncing = false;
 
             if (!isSyncing())
@@ -500,7 +500,7 @@ namespace lms::scrobbling::listenBrainz
             const auto listenCount{ parseListenCount(msg.body()) };
             boost::asio::post(boost::asio::bind_executor(_strand, [this, listenCount, &context] {
                 if (listenCount)
-                    LOG(DEBUG, "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount);
+                    LMS_LOG_LISTENBRAINZ(DEBUG, "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount);
 
                 bool needSync{ listenCount && (!context.listenCount || *context.listenCount != *listenCount) };
                 context.listenCount = listenCount;
@@ -559,7 +559,7 @@ namespace lms::scrobbling::listenBrainz
             // update oldest listen for the next query
             if (!parsedListen.listenedAt.isValid())
             {
-                LOG(DEBUG, "Skipping entry due to invalid listenedAt");
+                LMS_LOG_LISTENBRAINZ(DEBUG, "Skipping entry due to invalid listenedAt");
                 continue;
             }
 

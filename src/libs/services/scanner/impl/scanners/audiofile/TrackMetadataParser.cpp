@@ -184,6 +184,38 @@ namespace lms::scanner
             return res;
         }
 
+        std::vector<Work> getWorks(const audio::ITagReader& tagReader)
+        {
+            const std::vector<std::string> titles{ getTagValuesAs<std::string>(tagReader, audio::TagType::WorkTitle, {}) };
+            const std::vector<core::UUID> mbids{ getTagValuesAs<core::UUID>(tagReader, audio::TagType::MusicBrainzWorkID, {}) };
+
+            const bool mbidsMatch{ mbids.size() == titles.size() };
+
+            std::vector<Work> works;
+            works.reserve(titles.size());
+            for (std::size_t i{}; i < titles.size(); ++i)
+                works.push_back({ mbidsMatch ? std::optional{ mbids[i] } : std::nullopt, titles[i] });
+
+            return works;
+        }
+
+        std::vector<Track::MovementData> getMovements(const audio::ITagReader& tagReader)
+        {
+            const std::vector<std::string> names{ getTagValuesAs<std::string>(tagReader, audio::TagType::Movement, {}) };
+            const std::vector<std::size_t> numbers{ getTagValuesAs<std::size_t>(tagReader, audio::TagType::MovementNumber, {}) };
+            const std::vector<std::size_t> counts{ getTagValuesAs<std::size_t>(tagReader, audio::TagType::MovementCount, {}) };
+
+            const bool numbersMatch{ numbers.size() == names.size() };
+            const bool countsMatch{ counts.size() == names.size() };
+
+            std::vector<Track::MovementData> movements;
+            movements.reserve(names.size());
+            for (std::size_t i{}; i < names.size(); ++i)
+                movements.push_back({ names[i], numbersMatch ? std::optional{ numbers[i] } : std::nullopt, countsMatch ? std::optional{ counts[i] } : std::nullopt });
+
+            return movements;
+        }
+
         std::vector<Artist> getArtists(const audio::ITagReader& tagReader,
                                        std::initializer_list<audio::TagType> artistTagNames,
                                        std::initializer_list<audio::TagType> artistSortTagNames,
@@ -328,6 +360,8 @@ namespace lms::scanner
         track.title = getTagValueAs<std::string>(tagReader, TagType::TrackTitle).value_or("");
         track.mbid = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzTrackID);
         track.recordingMBID = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzRecordingID);
+        track.works = getWorks(tagReader);
+        track.movements = getMovements(tagReader);
         track.acoustID = getTagValueAs<core::UUID>(tagReader, TagType::AcoustID);
         track.position = getTagValueAs<std::size_t>(tagReader, TagType::TrackNumber); // May parse 'Number/Total', that's fine
         if (const auto dateStr{ getTagValueAs<std::string>(tagReader, TagType::Date) })

@@ -29,6 +29,7 @@
 
 #include "database/IdType.hpp"
 #include "database/Object.hpp"
+#include "database/objects/Types.hpp"
 
 LMS_DECLARE_IDTYPE(ScanSettingsId)
 
@@ -49,14 +50,6 @@ namespace lms::db
             Hourly,
         };
 
-        // Do not modify values (just add)
-        enum class RecommendationEngineType
-        {
-            Clusters = 0,
-            None = 2,
-            AudioSimilarity = 3,
-        };
-
         ScanSettings() = default;
 
         static pointer find(Session& session, std::string_view name = "");
@@ -75,7 +68,7 @@ namespace lms::db
         std::vector<std::string> getArtistsToNotSplit() const;
         bool getSkipSingleReleasePlayLists() const { return _skipSingleReleasePlayLists; }
         bool getAllowMBIDArtistMerge() const { return _allowMBIDArtistMerge; }
-        bool getArtistImageFallbackToReleaseField() const { return _artistImageFallbackToReleaseField; }
+        bool getArtistImageFallbackToRelease() const { return _artistImageFallbackToRelease; }
 
         // Setters
         void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
@@ -87,7 +80,7 @@ namespace lms::db
         void setDefaultTagDelimiters(std::span<const std::string_view> delimiters);
         void setSkipSingleReleasePlayLists(bool value);
         void setAllowMBIDArtistMerge(bool value);
-        void setArtistImageFallbackToReleaseField(bool value);
+        void setArtistImageFallbackToRelease(bool value);
         void setMusicNNModelIdentifier(std::string_view identifier) { _musicnnModelIdentifier = identifier; }
         template<class Action>
         void persist(Action& a)
@@ -104,7 +97,7 @@ namespace lms::db
             Wt::Dbo::field(a, _defaultTagDelimiters, "default_tag_delimiters");
             Wt::Dbo::field(a, _skipSingleReleasePlayLists, "skip_single_release_playlists");
             Wt::Dbo::field(a, _allowMBIDArtistMerge, "allow_mbid_artist_merge");
-            Wt::Dbo::field(a, _artistImageFallbackToReleaseField, "artist_image_fallback_to_release");
+            Wt::Dbo::field(a, _artistImageFallbackToRelease, "artist_image_fallback_to_release");
             Wt::Dbo::field(a, _musicnnModelIdentifier, "musicnn_model_identifier");
         }
 
@@ -126,9 +119,9 @@ namespace lms::db
         std::string _artistTagDelimiters;
         std::string _artistsToNotSplit;
         std::string _defaultTagDelimiters;
-        bool _skipSingleReleasePlayLists{};
-        bool _allowMBIDArtistMerge{};
-        bool _artistImageFallbackToReleaseField{};
+        bool _skipSingleReleasePlayLists{ true };
+        bool _allowMBIDArtistMerge{ true };
+        bool _artistImageFallbackToRelease{ true };
         std::string _musicnnModelIdentifier;
     };
 } // namespace lms::db

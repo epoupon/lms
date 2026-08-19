@@ -30,20 +30,22 @@
 
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
-#include "database/objects/Artwork.hpp"
-#include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Medium.hpp"
+#include "database/objects/Mood.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/User.hpp"
+#include "database/objects/Work.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
-#include "CoverArtId.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 #include "responses/Artist.hpp"
@@ -122,26 +124,28 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("transcodedContentType", core::getMimeType(std::filesystem::path{ "." + fileSuffix }));
         }
 
-        auto artwork{ track->getPreferredMediaArtwork() };
-        if (!artwork)
-            artwork = track->getPreferredArtwork();
+        const db::ArtworkId artworkId{ track->getPreferredMediaArtworkId().isValid() ? track->getPreferredMediaArtworkId() : track->getPreferredArtworkId() };
+        if (artworkId.isValid())
+            trackResponse.setAttribute("coverArt", idToString(artworkId));
 
-        if (artwork)
-        {
-            CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
-            trackResponse.setAttribute("coverArt", idToString(coverArtId));
-        }
+        std::vector<db::TrackArtistLink::pointer> artistLinks;
+        std::vector<db::TrackArtistLink::pointer> trackArtistLinks;
+        track->visitArtistLinks([&](const db::TrackArtistLink::pointer& link) {
+            artistLinks.push_back(link);
 
-        const std::vector<db::Artist::pointer>& artists{ track->getArtists({ db::TrackArtistLinkType::Artist }) };
-        if (!artists.empty())
+            if (link->getType() == db::TrackArtistLinkType::Artist)
+                trackArtistLinks.push_back(link);
+        });
+
+        if (!trackArtistLinks.empty())
         {
             if (!track->getArtistDisplayName().empty())
                 trackResponse.setAttribute("artist", track->getArtistDisplayName());
             else
-                trackResponse.setAttribute("artist", utils::joinArtistNames(artists));
+                trackResponse.setAttribute("artist", utils::joinArtistNames(trackArtistLinks));
 
-            if (artists.size() == 1)
-                trackResponse.setAttribute("artistId", idToString(artists.front()->getId()));
+            if (trackArtistLinks.size() == 1)
+                trackResponse.setAttribute("artistId", idToString(trackArtistLinks.front()->getArtistId()));
         }
 
         const db::Release::pointer release{ track->getRelease() };
@@ -162,17 +166,10 @@ namespace lms::api::subsonic
         if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.getUser()->getId(), track->getId()) }; dateTime.isValid())
             trackResponse.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
 
-        // Report the first GENRE for this track
-        std::vector<db::Cluster::pointer> genres;
-        {
-            db::Cluster::FindParameters params;
-            params.setTrack(track->getId());
-            params.setClusterTypeName("GENRE");
-
-            genres = db::Cluster::find(context.getDbSession(), params).results;
-            if (!genres.empty())
-                trackResponse.setAttribute("genre", genres.front()->getName());
-        }
+        // Report the first genre for this track
+        const auto genres{ track->getGenres() };
+        if (!genres.empty())
+            trackResponse.setAttribute("genre", genres.front()->getName());
 
         // OpenSubsonic specific fields (must always be set)
         if (!context.isOpenSubsonicEnabled())
@@ -192,7 +189,7 @@ namespace lms::api::subsonic
 
         {
             std::optional<core::UUID> mbid{ track->getRecordingMBID() };
-            trackResponse.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
+            trackResponse.setAttribute("musicBrainzId", mbid ? mbid->toString() : "");
         }
 
         {
@@ -200,7 +197,8 @@ namespace lms::api::subsonic
             trackResponse.createEmptyArrayChild("artists");
             trackResponse.createEmptyArrayChild("contributors");
 
-            track->visitArtistLinks([&](const db::TrackArtistLink::pointer& artistLink) {
+            for (const auto& artistLink : artistLinks)
+            {
                 switch (artistLink->getType())
                 {
                 case db::TrackArtistLinkType::Artist:
@@ -209,7 +207,7 @@ namespace lms::api::subsonic
                 default:
                     trackResponse.addArrayChild("contributors", createContributorNode(artistLink));
                 }
-            });
+            }
 
             if (release)
             {
@@ -223,19 +221,13 @@ namespace lms::api::subsonic
         if (release)
             trackResponse.setAttribute("displayAlbumArtist", release->getArtistDisplayName());
 
-        auto addClusters{ [&](Response::Node::Key field, std::string_view clusterTypeName) {
-            trackResponse.createEmptyArrayValue(field);
+        trackResponse.createEmptyArrayValue("moods");
+        for (const auto& mood : track->getMoods())
+            trackResponse.addArrayValue("moods", mood->getName());
 
-            db::Cluster::FindParameters params;
-            params.setTrack(track->getId());
-            params.setClusterTypeName(clusterTypeName);
-
-            for (const auto& cluster : db::Cluster::find(context.getDbSession(), params).results)
-                trackResponse.addArrayValue(field, cluster->getName());
-        } };
-
-        addClusters("moods", "MOOD");
-        addClusters("groupings", "GROUPING");
+        trackResponse.createEmptyArrayValue("groupings");
+        for (const auto& grouping : track->getGroupings())
+            trackResponse.addArrayValue("groupings", grouping->getName());
 
         // Genres
         trackResponse.createEmptyArrayChild("genres");
@@ -259,6 +251,28 @@ namespace lms::api::subsonic
         trackResponse.setAttribute("explicitStatus", advisoryToExplicitStatus(track->getAdvisory()));
 
         trackResponse.addChild("replayGain", createReplayGainNode(track, medium));
+
+        trackResponse.createEmptyArrayChild("works");
+        for (const auto& work : track->getWorks())
+        {
+            Response::Node workNode;
+            workNode.setAttribute("name", work->getName());
+            if (const auto mbid{ work->getMBID() })
+                workNode.setAttribute("musicBrainzId", mbid->toString());
+            trackResponse.addArrayChild("works", std::move(workNode));
+        }
+
+        trackResponse.createEmptyArrayChild("movements");
+        for (const auto& movement : track->getMovements())
+        {
+            Response::Node movementNode;
+            movementNode.setAttribute("name", movement->getName());
+            if (const auto n{ movement->getNumber() })
+                movementNode.setAttribute("number", *n);
+            if (const auto c{ movement->getCount() })
+                movementNode.setAttribute("count", *c);
+            trackResponse.addArrayChild("movements", std::move(movementNode));
+        }
 
         return trackResponse;
     }

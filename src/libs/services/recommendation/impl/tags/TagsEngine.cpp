@@ -17,19 +17,21 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ClustersEngine.hpp"
+#include "TagsEngine.hpp"
 
 #include <algorithm>
 #include <limits>
 #include <memory>
 #include <optional>
-#include <random>
 #include <unordered_set>
 
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
-#include "database/objects/Cluster.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
+#include "database/objects/Mood.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackList.hpp"
@@ -39,45 +41,52 @@
 
 #include "track-selection-constraints/DuplicateTrackConstraint.hpp"
 #include "track-selection-constraints/SameArtistConstraint.hpp"
+#include "track-selection-constraints/SameRecordingMBIDConstraint.hpp"
 #include "track-selection-constraints/SameReleaseConstraint.hpp"
 #include "track-selection-constraints/TrackCandidateContext.hpp"
 
-#define LOG(sev, message) LMS_LOG(RECOMMENDATION, sev, "[clusters] " << message)
+#define LOG(sev, message) LMS_LOG(RECOMMENDATION, sev, "[tags] " << message)
 
 namespace lms::recommendation
 {
     namespace
     {
         template<typename IdType>
-        std::vector<std::pair<IdType, std::size_t>> computeClusterOverlap(
-            const std::unordered_map<IdType, std::vector<db::ClusterId>>& profileMap,
+        std::vector<std::pair<IdType, std::size_t>> computeTagOverlap(
+            const std::unordered_map<IdType, std::vector<TagId>>& profileMap,
             const std::unordered_set<IdType>& excludeIds,
-            const std::unordered_set<db::ClusterId>& queryClusters)
+            const std::unordered_set<TagId>& queryTags)
         {
             std::vector<std::pair<IdType, std::size_t>> results;
-            for (const auto& [candidateId, candidateClusters] : profileMap)
+
+            for (const auto& [candidateId, candidateTags] : profileMap)
             {
                 if (excludeIds.contains(candidateId))
                     continue;
+
                 std::size_t count{};
-                for (const db::ClusterId clusterId : candidateClusters)
-                    if (queryClusters.contains(clusterId))
+                for (const TagId& tagId : candidateTags)
+                {
+                    if (queryTags.contains(tagId))
                         ++count;
+                }
+
                 if (count > 0)
                     results.emplace_back(candidateId, count);
             }
+
             return results;
         }
 
         template<typename IdType>
-        ResultContainer<IdType> findSimilarByClusterOverlap(
-            const std::unordered_map<IdType, std::vector<db::ClusterId>>& profileMap,
+        ResultContainer<IdType> findSimilarByTagOverlap(
+            const std::unordered_map<IdType, std::vector<TagId>>& profileMap,
             IdType queryId,
-            const std::vector<db::ClusterId>& queryClusters,
+            const std::vector<TagId>& queryTags,
             std::size_t maxCount)
         {
-            const std::unordered_set<db::ClusterId> querySet{ queryClusters.cbegin(), queryClusters.cend() };
-            auto overlapCounts{ computeClusterOverlap(profileMap, { queryId }, querySet) };
+            const std::unordered_set<TagId> querySet{ queryTags.cbegin(), queryTags.cend() };
+            auto overlapCounts{ computeTagOverlap(profileMap, { queryId }, querySet) };
 
             const std::size_t resultCount{ std::min(maxCount, overlapCounts.size()) };
             std::partial_sort(overlapCounts.begin(), std::next(overlapCounts.begin(), resultCount), overlapCounts.end(),
@@ -86,65 +95,72 @@ namespace lms::recommendation
             ResultContainer<IdType> res;
             res.reserve(resultCount);
             for (std::size_t i{}; i < resultCount; ++i)
-                res.push_back({ .id = overlapCounts[i].first, .distance = {} });
+                res.push_back({ .id = overlapCounts[i].first, .distanceToFirst = {}, .distanceToPrevious = {} });
 
             return res;
         }
     } // namespace
 
-    std::unique_ptr<IEngine> createClustersEngine(db::IDb& db)
+    std::unique_ptr<IEngine> createTagsEngine(db::IDb& db)
     {
-        return std::make_unique<ClusterEngine>(db);
+        return std::make_unique<TagsEngine>(db);
     }
 
-    ClusterEngine::ClusterEngine(db::IDb& db)
+    TagsEngine::TagsEngine(db::IDb& db)
         : _db{ db }
     {
         constexpr float sameReleaseWeight{ 0.5F };
         constexpr float sameArtistWeight{ 0.5F };
+
         _trackEvaluator.addHardConstraint(std::make_unique<DuplicateTrackConstraint>());
+        _trackEvaluator.addHardConstraint(std::make_unique<SameRecordingMBIDConstraint>(_trackMetadata));
         _trackEvaluator.addSoftConstraint(std::make_unique<SameReleaseConstraint>(_trackMetadata), sameReleaseWeight);
         _trackEvaluator.addSoftConstraint(std::make_unique<SameArtistConstraint>(_trackMetadata), sameArtistWeight);
     }
 
-    ClusterEngine::~ClusterEngine() = default;
+    TagsEngine::~TagsEngine() = default;
 
-    void ClusterEngine::load()
+    void TagsEngine::load()
     {
-        LMS_SCOPED_TRACE_OVERVIEW("ClustersEngine", "Loading");
+        LMS_SCOPED_TRACE_OVERVIEW("TagsEngine", "Loading");
         LOG(INFO, "loading...");
 
         _trackMetadata.clear();
-        _trackClusters.clear();
-        _releaseClusters.clear();
-        _artistClusters.clear();
+        _trackTags.clear();
+        _releaseTags.clear();
+        _artistTags.clear();
 
         db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
+        buildTrackTags(session);
         buildTrackMetadata(session);
-        buildTrackClusters(session);
-        buildReleaseClusters();
-        buildArtistClusters();
+        buildReleaseTags();
+        buildArtistTags();
 
-        LOG(INFO, "loaded " << _trackClusters.size() << " tracks, " << _releaseClusters.size() << " releases, " << _artistClusters.size() << " artists");
+        LOG(INFO, "loaded " << _trackTags.size() << " tracks, " << _releaseTags.size() << " releases, " << _artistTags.size() << " artists");
     }
 
-    void ClusterEngine::buildTrackMetadata(db::Session& session)
+    void TagsEngine::buildTrackMetadata(db::Session& session)
     {
         LOG(DEBUG, "building track metadata...");
 
-        db::Release::find(session, db::Release::FindParameters{}, [&](const db::Release::pointer& release) {
-            db::Track::FindParameters params;
-            params.setRelease(release->getId());
-            for (const db::TrackId trackId : db::Track::findIds(session, params).results)
-                _trackMetadata[trackId].releaseId = release->getId();
+        for (const auto& [trackId, tags] : _trackTags)
+            _trackMetadata.try_emplace(trackId);
+
+        db::Track::find(session, db::Track::FindParameters{}, [&](const db::Track::pointer& track) {
+            const auto it{ _trackMetadata.find(track->getId()) };
+            if (it != _trackMetadata.cend())
+            {
+                it->second.releaseId = track->getReleaseId();
+                it->second.recordingMBID = track->getRecordingMBID();
+            }
         });
 
         db::Artist::find(session, db::Artist::FindParameters{}, [&](const db::Artist::pointer& artist) {
             const auto mbid{ artist->getMBID() };
             // skip "Various Artists" to avoid false artist matches
-            if (mbid && mbid->getAsString() == "89ad4ac3-39f7-470e-963a-56509c546377")
+            if (mbid && mbid->toString() == "89ad4ac3-39f7-470e-963a-56509c546377")
                 return;
 
             std::unordered_set<db::TrackId> artistTrackIds;
@@ -152,11 +168,12 @@ namespace lms::recommendation
             {
                 db::Release::FindParameters params;
                 params.setArtist(artist->getId());
-                for (const db::ReleaseId releaseId : db::Release::findIds(session, params).results)
+
+                for (const db::ReleaseId releaseId : db::Release::findIds(session, params))
                 {
                     db::Track::FindParameters trackParams;
                     trackParams.setRelease(releaseId);
-                    for (const db::TrackId trackId : db::Track::findIds(session, trackParams).results)
+                    for (const db::TrackId trackId : db::Track::findIds(session, trackParams))
                         artistTrackIds.insert(trackId);
                 }
             }
@@ -169,82 +186,126 @@ namespace lms::recommendation
             std::sort(metadata.artistIds.begin(), metadata.artistIds.end());
     }
 
-    void ClusterEngine::buildTrackClusters(db::Session& session)
+    void TagsEngine::buildTrackTags(db::Session& session)
     {
-        LOG(DEBUG, "building track clusters...");
+        LOG(DEBUG, "building track tags...");
 
-        db::Cluster::find(session, db::Cluster::FindParameters{}, [&](const db::Cluster::pointer& cluster) {
-            const db::ClusterId clusterId{ cluster->getId() };
-            for (const db::TrackId trackId : cluster->getTracks().results)
-                _trackClusters[trackId].push_back(clusterId);
+        db::Genre::find(session, db::Genre::FindParameters{}, [&](const db::Genre::pointer& genre) {
+            const TagId tagId{ .type = TagId::Type::Genre, .id = genre->getId() };
+
+            db::Track::FindParameters params;
+            params.filters.setGenre(genre->getId());
+
+            db::Track::find(session, params, [&](const db::Track::pointer& track) {
+                _trackTags[track->getId()].push_back(tagId);
+            });
+        });
+
+        db::Mood::find(session, db::Mood::FindParameters{}, [&](const db::Mood::pointer& mood) {
+            const TagId tagId{ .type = TagId::Type::Mood, .id = mood->getId() };
+
+            db::Track::FindParameters params;
+            params.filters.setMood(mood->getId());
+
+            db::Track::find(session, params, [&](const db::Track::pointer& track) {
+                _trackTags[track->getId()].push_back(tagId);
+            });
+        });
+
+        db::Grouping::find(session, db::Grouping::FindParameters{}, [&](const db::Grouping::pointer& grouping) {
+            const TagId tagId{ .type = TagId::Type::Grouping, .id = grouping->getId() };
+
+            db::Track::FindParameters params;
+            params.filters.setGrouping(grouping->getId());
+
+            db::Track::find(session, params, [&](const db::Track::pointer& track) {
+                _trackTags[track->getId()].push_back(tagId);
+            });
+        });
+
+        db::Language::find(session, db::Language::FindParameters{}, [&](const db::Language::pointer& language) {
+            const TagId tagId{ .type = TagId::Type::Language, .id = language->getId() };
+
+            db::Track::FindParameters params;
+            params.filters.setLanguage(language->getId());
+
+            db::Track::find(session, params, [&](const db::Track::pointer& track) {
+                _trackTags[track->getId()].push_back(tagId);
+            });
         });
     }
 
-    void ClusterEngine::buildReleaseClusters()
+    void TagsEngine::buildReleaseTags()
     {
-        LOG(DEBUG, "building release clusters...");
+        LOG(DEBUG, "building release tags...");
 
-        for (const auto& [trackId, clusters] : _trackClusters)
+        for (const auto& [trackId, tags] : _trackTags)
         {
             const auto metaIt{ _trackMetadata.find(trackId) };
             if (metaIt == _trackMetadata.cend())
                 continue;
 
             if (const db::ReleaseId releaseId{ metaIt->second.releaseId }; releaseId.isValid())
-                for (const db::ClusterId clusterId : clusters)
-                    _releaseClusters[releaseId].push_back(clusterId);
+            {
+                for (const TagId& tagId : tags)
+                    _releaseTags[releaseId].push_back(tagId);
+            }
         }
 
-        for (auto& [_, clusters] : _releaseClusters)
+        for (auto& [releaseId, tags] : _releaseTags)
         {
-            std::sort(clusters.begin(), clusters.end());
-            clusters.erase(std::unique(clusters.begin(), clusters.end()), clusters.end());
+            std::sort(tags.begin(), tags.end());
+            tags.erase(std::unique(tags.begin(), tags.end()), tags.end());
         }
     }
 
-    void ClusterEngine::buildArtistClusters()
+    void TagsEngine::buildArtistTags()
     {
-        LOG(DEBUG, "building artist clusters...");
+        LOG(DEBUG, "building artist tags...");
 
-        for (const auto& [trackId, clusters] : _trackClusters)
+        for (const auto& [trackId, tags] : _trackTags)
         {
             const auto metaIt{ _trackMetadata.find(trackId) };
             if (metaIt == _trackMetadata.cend())
                 continue;
 
             for (const db::ArtistId artistId : metaIt->second.artistIds)
-                for (const db::ClusterId clusterId : clusters)
-                    _artistClusters[artistId].push_back(clusterId);
+            {
+                for (const TagId& tagId : tags)
+                    _artistTags[artistId].push_back(tagId);
+            }
         }
 
-        for (auto& [_, clusters] : _artistClusters)
+        for (auto& [artistId, tags] : _artistTags)
         {
-            std::sort(clusters.begin(), clusters.end());
-            clusters.erase(std::unique(clusters.begin(), clusters.end()), clusters.end());
+            std::sort(tags.begin(), tags.end());
+            tags.erase(std::unique(tags.begin(), tags.end()), tags.end());
         }
     }
 
-    TrackResults ClusterEngine::findSimilarTracks(std::span<const db::TrackId> trackIds, std::size_t maxCount) const
+    TrackResults TagsEngine::findSimilarTracks(std::span<const db::TrackId> trackIds, std::size_t maxCount) const
     {
-        LMS_SCOPED_TRACE_DETAILED("ClustersEngine", "Find similar tracks");
+        LMS_SCOPED_TRACE_DETAILED("TagsEngine", "Find similar tracks");
 
         if (maxCount == 0 || trackIds.empty())
             return {};
 
-        std::unordered_set<db::ClusterId> queryClusters;
+        std::unordered_set<TagId> queryTags;
         for (const db::TrackId trackId : trackIds)
         {
-            const auto it{ _trackClusters.find(trackId) };
-            if (it != _trackClusters.cend())
-                for (const db::ClusterId clusterId : it->second)
-                    queryClusters.insert(clusterId);
+            const auto it{ _trackTags.find(trackId) };
+            if (it != _trackTags.cend())
+            {
+                for (const TagId& tagId : it->second)
+                    queryTags.insert(tagId);
+            }
         }
 
-        if (queryClusters.empty())
+        if (queryTags.empty())
             return {};
 
         const std::unordered_set<db::TrackId> excludeSet{ std::cbegin(trackIds), std::cend(trackIds) };
-        auto overlapCounts{ computeClusterOverlap(_trackClusters, excludeSet, queryClusters) };
+        auto overlapCounts{ computeTagOverlap(_trackTags, excludeSet, queryTags) };
 
         static constexpr std::size_t oversamplingFactor{ 5 };
         const std::size_t candidateCount{ std::min(maxCount * oversamplingFactor, overlapCounts.size()) };
@@ -261,7 +322,7 @@ namespace lms::recommendation
         return greedySelect(std::move(candidates), std::move(seeds), maxCount);
     }
 
-    TrackResults ClusterEngine::greedySelect(std::vector<db::TrackId> candidates, std::vector<db::TrackId> selectedTracks, std::size_t maxCount) const
+    TrackResults TagsEngine::greedySelect(std::vector<db::TrackId> candidates, std::vector<db::TrackId> selectedTracks, std::size_t maxCount) const
     {
         selectedTracks.reserve(selectedTracks.size() + maxCount);
 
@@ -295,7 +356,7 @@ namespace lms::recommendation
             if (!bestIdx)
                 break;
 
-            res.push_back({ .id = candidates[*bestIdx], .distance = {} });
+            res.push_back({ .id = candidates[*bestIdx], .distanceToFirst = {}, .distanceToPrevious = {} });
             selectedTracks.push_back(candidates[*bestIdx]);
             candidates.erase(std::begin(candidates) + static_cast<std::ptrdiff_t>(*bestIdx));
         }
@@ -303,9 +364,9 @@ namespace lms::recommendation
         return res;
     }
 
-    TrackResults ClusterEngine::findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const
+    TrackResults TagsEngine::findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const
     {
-        LMS_SCOPED_TRACE_DETAILED("ClustersEngine", "Find similar tracks from tracklist");
+        LMS_SCOPED_TRACE_DETAILED("TagsEngine", "Find similar tracks from tracklist");
 
         if (maxCount == 0)
             return {};
@@ -328,43 +389,43 @@ namespace lms::recommendation
         return findSimilarTracks(trackIds, maxCount);
     }
 
-    ReleaseResults ClusterEngine::findSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const
+    ReleaseResults TagsEngine::findSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const
     {
-        LMS_SCOPED_TRACE_DETAILED("ClustersEngine", "Find similar releases");
+        LMS_SCOPED_TRACE_DETAILED("TagsEngine", "Find similar releases");
 
         if (maxCount == 0)
             return {};
 
-        const auto queryIt{ _releaseClusters.find(releaseId) };
-        if (queryIt == _releaseClusters.cend() || queryIt->second.empty())
+        const auto queryIt{ _releaseTags.find(releaseId) };
+        if (queryIt == _releaseTags.cend() || queryIt->second.empty())
             return {};
 
-        return findSimilarByClusterOverlap<db::ReleaseId>(_releaseClusters, releaseId, queryIt->second, maxCount);
+        return findSimilarByTagOverlap<db::ReleaseId>(_releaseTags, releaseId, queryIt->second, maxCount);
     }
 
-    ArtistResults ClusterEngine::findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
+    ArtistResults TagsEngine::findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
     {
-        LMS_SCOPED_TRACE_DETAILED("ClustersEngine", "Find similar artists");
+        LMS_SCOPED_TRACE_DETAILED("TagsEngine", "Find similar artists");
 
         if (maxCount == 0 || !linkTypes.contains(db::TrackArtistLinkType::Artist))
             return {};
 
-        const auto queryIt{ _artistClusters.find(artistId) };
-        if (queryIt == _artistClusters.cend() || queryIt->second.empty())
+        const auto queryIt{ _artistTags.find(artistId) };
+        if (queryIt == _artistTags.cend() || queryIt->second.empty())
             return {};
 
-        return findSimilarByClusterOverlap<db::ArtistId>(_artistClusters, artistId, queryIt->second, maxCount);
+        return findSimilarByTagOverlap<db::ArtistId>(_artistTags, artistId, queryIt->second, maxCount);
     }
 
-    TrackResults ClusterEngine::findTrackSimilarityPath(db::TrackId startTrackId, db::TrackId endTrackId, std::size_t maxCount) const
+    TrackResults TagsEngine::findTrackSimilarityPath(db::TrackId startTrackId, db::TrackId endTrackId, std::size_t maxCount) const
     {
-        LMS_SCOPED_TRACE_DETAILED("ClustersEngine", "Find track similarity path");
+        LMS_SCOPED_TRACE_DETAILED("TagsEngine", "Find track similarity path");
 
         if (maxCount == 0)
             return {};
 
         if (startTrackId == endTrackId)
-            return { RecommendationResult<db::TrackId>{ .id = startTrackId, .distance = {} } };
+            return { RecommendationResult<db::TrackId>{ .id = startTrackId, .distanceToFirst = {}, .distanceToPrevious = {} } };
 
         db::Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
@@ -376,9 +437,9 @@ namespace lms::recommendation
 
         TrackResults res;
         res.reserve(std::min<std::size_t>(maxCount, 2));
-        res.push_back({ .id = startTrackId, .distance = {} });
+        res.push_back({ .id = startTrackId, .distanceToFirst = {}, .distanceToPrevious = {} });
         if (maxCount > 1)
-            res.push_back({ .id = endTrackId, .distance = {} });
+            res.push_back({ .id = endTrackId, .distanceToFirst = {}, .distanceToPrevious = {} });
 
         return res;
     }

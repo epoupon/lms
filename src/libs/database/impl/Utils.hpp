@@ -128,29 +128,10 @@ namespace lms::db::utils
     }
 
     template<typename ResultType, typename Query>
-    RangeResults<ResultType> execRangeQuery(Query& query, const std::optional<Range> range)
+    std::vector<ResultType> execRangeQuery(Query& query, const std::optional<Range> range)
     {
-        RangeResults<ResultType> res;
-
-        if (range)
-        {
-            res.range.offset = range->offset;
-            applyRange(query, Range{ range->offset, range->size + 1 });
-
-            res.results.reserve(range->size);
-        }
-
-        // TODO optim useless last copy
-        res.results = utils::fetchQueryResults<ResultType>(query);
-        if (range && (res.results.size() == range->size + 1))
-        {
-            res.moreResults = true;
-            res.results.pop_back();
-        }
-
-        res.range.size = res.results.size();
-
-        return res;
+        applyRange(query, range);
+        return utils::fetchQueryResults<ResultType>(query);
     }
 
     template<typename Query, typename UnaryFunc>
@@ -160,35 +141,6 @@ namespace lms::db::utils
             applyRange(query, range);
 
         forEachQueryResult(query, std::forward<UnaryFunc>(func));
-    }
-
-    template<typename Query, typename UnaryFunc>
-    void forEachQueryRangeResult(Query& query, std::optional<Range> range, bool& moreResults, UnaryFunc&& func)
-    {
-        using ResultType = typename QueryResultType<Query>::type;
-
-        if (range)
-            applyRange(query, Range{ range->offset, range->size + 1 });
-
-        moreResults = false;
-
-        std::size_t count{};
-        ScopedQueryProfiler queryProfiler{ query };
-        const auto collection{ query.resultList() };
-        auto it{ fetchFirstResult(collection) };
-        while (it != collection.end())
-        {
-            if (range && (count++ == static_cast<std::size_t>(range->size)))
-            {
-                moreResults = true;
-                break;
-            }
-
-            queryProfiler.suspend();
-            func(*it);
-            queryProfiler.resume();
-            fetchNextResult<ResultType>(it);
-        }
     }
 
     template<typename... Args>

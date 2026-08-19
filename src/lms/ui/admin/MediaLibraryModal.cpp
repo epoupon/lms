@@ -83,7 +83,7 @@ namespace lms::ui
                 std::error_code ec;
 
                 if (p.is_relative())
-                    return Wt::WValidator::Result(Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.MediaLibrary.path-must-be-absolute"));
+                    return Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.MediaLibrary.path-must-be-absolute") };
 
                 // TODO check and translate access rights issues
                 bool res{ std::filesystem::is_directory(p, ec) };

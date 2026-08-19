@@ -60,18 +60,18 @@ namespace lms::scrobbling::listenBrainz::tests
         EXPECT_EQ(result.listens[0].releaseName, "Petal");
         EXPECT_EQ(result.listens[0].artistName, "Broke For Free");
         ASSERT_TRUE(result.listens[0].recordingMBID.has_value());
-        EXPECT_EQ(result.listens[0].recordingMBID->getAsString(), "46ae879f-2dbe-46d3-99ad-05c116f97a30");
+        EXPECT_EQ(result.listens[0].recordingMBID->toString(), "46ae879f-2dbe-46d3-99ad-05c116f97a30");
         ASSERT_TRUE(result.listens[0].releaseMBID.has_value());
-        EXPECT_EQ(result.listens[0].releaseMBID->getAsString(), "44915500-fbb9-4060-98ce-59a57a429edc");
+        EXPECT_EQ(result.listens[0].releaseMBID->toString(), "44915500-fbb9-4060-98ce-59a57a429edc");
         EXPECT_EQ(result.listens[0].trackNumber, 5);
 
         EXPECT_EQ(result.listens[1].trackName, "Melt");
         EXPECT_EQ(result.listens[1].releaseName, "Petal");
         EXPECT_EQ(result.listens[1].artistName, "Broke For Free");
         ASSERT_TRUE(result.listens[1].recordingMBID.has_value());
-        EXPECT_EQ(result.listens[1].recordingMBID->getAsString(), "d89d042c-8cc1-4526-9080-5bab728ee15f");
+        EXPECT_EQ(result.listens[1].recordingMBID->toString(), "d89d042c-8cc1-4526-9080-5bab728ee15f");
         ASSERT_TRUE(result.listens[1].releaseMBID.has_value());
-        EXPECT_EQ(result.listens[1].releaseMBID->getAsString(), "44915500-fbb9-4060-98ce-59a57a429edc");
+        EXPECT_EQ(result.listens[1].releaseMBID->toString(), "44915500-fbb9-4060-98ce-59a57a429edc");
         EXPECT_EQ(result.listens[1].trackNumber, 4);
     }
 
@@ -84,9 +84,9 @@ namespace lms::scrobbling::listenBrainz::tests
         EXPECT_EQ(result.listens[0].releaseName, "Petal");
         EXPECT_EQ(result.listens[0].artistName, "Broke For Free");
         ASSERT_TRUE(result.listens[0].recordingMBID.has_value());
-        EXPECT_EQ(result.listens[0].recordingMBID->getAsString(), "46ae879f-2dbe-46d3-99ad-05c116f97a30");
+        EXPECT_EQ(result.listens[0].recordingMBID->toString(), "46ae879f-2dbe-46d3-99ad-05c116f97a30");
         ASSERT_TRUE(result.listens[0].releaseMBID.has_value());
-        EXPECT_EQ(result.listens[0].releaseMBID->getAsString(), "44915500-fbb9-4060-98ce-59a57a429edc");
+        EXPECT_EQ(result.listens[0].releaseMBID->toString(), "44915500-fbb9-4060-98ce-59a57a429edc");
         EXPECT_EQ(result.listens[0].trackNumber, 5);
     }
 

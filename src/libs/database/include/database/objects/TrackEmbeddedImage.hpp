@@ -100,7 +100,7 @@ namespace lms::db
         static pointer find(Session& session, TrackEmbeddedImageId id);
         static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
         static pointer find(Session& session, std::size_t size, ImageHashType hash);
-        static RangeResults<TrackEmbeddedImageId> findOrphanIds(Session& session, std::optional<Range> range);
+        static std::vector<TrackEmbeddedImageId> findOrphanIds(Session& session, std::optional<Range> range);
 
         // getters
         ImageHashType getHash() const { return _hash; }

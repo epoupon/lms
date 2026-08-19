@@ -39,7 +39,7 @@ namespace lms::db::tests
             EXPECT_EQ(RatedArtist::getCount(session), 0);
 
             auto artists{ Artist::findIds(session, Artist::FindParameters{}) };
-            EXPECT_EQ(artists.results.size(), 1);
+            EXPECT_EQ(artists.size(), 1);
         }
 
         ScopedRatedArtist ratedArtist{ session, artist.lockAndGet(), user.lockAndGet() };

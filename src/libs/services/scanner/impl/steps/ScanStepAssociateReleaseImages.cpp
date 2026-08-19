@@ -90,7 +90,7 @@ namespace lms::scanner
             if (mbid)
             {
                 // Find anywhere, since it is suppoed to be unique!
-                db::Image::find(session, db::Image::FindParameters{}.setFileStem(mbid->getAsString()), [&](const db::Image::pointer& image) {
+                db::Image::find(session, db::Image::FindParameters{}.setFileStem(mbid->toString()), [&](const db::Image::pointer& image) {
                     if (!artwork)
                         artwork = db::Artwork::find(session, image->getId());
                 });

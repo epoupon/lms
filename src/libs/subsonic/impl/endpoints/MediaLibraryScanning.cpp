@@ -49,19 +49,19 @@ namespace lms::api::subsonic::Scan
         }
     } // namespace
 
-    Response handleGetScanStatus(RequestContext& context)
+    Response handleGetScanStatus(RequestContext& /*context*/)
     {
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         response.addNode("scanStatus", createStatusResponseNode());
 
         return response;
     }
 
-    Response handleStartScan(RequestContext& context)
+    Response handleStartScan(RequestContext& /*context*/)
     {
         core::Service<IScannerService>::get()->requestImmediateScan();
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         response.addNode("scanStatus", createStatusResponseNode());
 
         return response;

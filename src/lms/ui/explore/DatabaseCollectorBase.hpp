@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -60,7 +59,7 @@ namespace lms::ui
         void setSearch(std::string_view search);
 
     protected:
-        Range getActualRange(std::optional<Range> range) const;
+        Range getActualRange(Range range) const;
         std::size_t getMaxCount() const;
         const db::Filters& getDbFilters() const;
         const std::vector<std::string_view>& getSearchKeywords() const { return _searchKeywords; }

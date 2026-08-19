@@ -78,7 +78,7 @@ namespace lms::db
         static pointer find(Session& session, ReleaseId id, std::optional<std::size_t> position);
         static void find(Session& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium::pointer&)>& func);
         static IdRange<MediumId> findNextIdRange(Session& session, MediumId lastRetrievedId, std::size_t count);
-        static RangeResults<MediumId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::vector<MediumId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // Updates
         static void updatePreferredArtwork(Session& session, MediumId mediumId, ArtworkId artworkId);

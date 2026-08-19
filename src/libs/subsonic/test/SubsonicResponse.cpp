@@ -25,7 +25,6 @@
 #include "core/String.hpp"
 #include "core/Version.hpp"
 
-#include "ProtocolVersion.hpp"
 #include "SubsonicResponse.hpp"
 
 namespace lms::api::subsonic::tests
@@ -34,7 +33,7 @@ namespace lms::api::subsonic::tests
     {
         Response generateFakeResponse()
         {
-            Response response{ Response::createOkResponse(defaultServerProtocolVersion) };
+            Response response{ Response::createOkResponse() };
 
             Response::Node& node{ response.createNode("MyNode") };
             node.setAttribute("Attr1", "value1");
@@ -62,7 +61,7 @@ namespace lms::api::subsonic::tests
 
     TEST(SubsonicResponse, emptyJson)
     {
-        Response response{ Response::createOkResponse(defaultServerProtocolVersion) };
+        Response response{ Response::createOkResponse() };
 
         std::ostringstream oss;
         response.write(oss, ResponseFormat::json);
@@ -88,7 +87,7 @@ namespace lms::api::subsonic::tests
 
     TEST(SubsonicResponse, emptyXml)
     {
-        Response response{ Response::createOkResponse(defaultServerProtocolVersion) };
+        Response response{ Response::createOkResponse() };
 
         std::ostringstream oss;
         response.write(oss, ResponseFormat::xml);
@@ -116,7 +115,7 @@ namespace lms::api::subsonic::tests
 
     TEST(SubsonicResponse, jsonNaNAndInfinity)
     {
-        Response response{ Response::createOkResponse(defaultServerProtocolVersion) };
+        Response response{ Response::createOkResponse() };
 
         Response::Node& node{ response.createNode("MyMath") };
         node.setAttribute("finite", 1.25F);

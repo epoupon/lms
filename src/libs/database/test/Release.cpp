@@ -57,21 +57,21 @@ namespace lms::db::tests
 
             {
                 const auto releases{ Release::findOrphanIds(session) };
-                ASSERT_EQ(releases.results.size(), 1);
-                EXPECT_EQ(releases.results.front(), release.getId());
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases.front(), release.getId());
             }
 
             {
                 const auto releases{ Release::findIds(session, Release::FindParameters{}) };
-                ASSERT_EQ(releases.results.size(), 1);
-                EXPECT_EQ(releases.results.front(), release.getId());
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases.front(), release.getId());
                 EXPECT_EQ(release->getDuration(), std::chrono::seconds{ 0 });
             }
 
             {
                 const auto releases{ Release::find(session, Release::FindParameters{}) };
-                ASSERT_EQ(releases.results.size(), 1);
-                EXPECT_EQ(releases.results.front()->getId(), release.getId());
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases.front()->getId(), release.getId());
             }
 
             {
@@ -280,11 +280,11 @@ namespace lms::db::tests
 
             {
                 auto transaction{ session.createReadTransaction() };
-                EXPECT_EQ(Release::findOrphanIds(session).results.size(), 0);
+                EXPECT_EQ(Release::findOrphanIds(session).size(), 0);
 
                 const auto tracks{ Track::findIds(session, Track::FindParameters{}.setRelease(release.getId())) };
-                ASSERT_EQ(tracks.results.size(), 1);
-                EXPECT_EQ(tracks.results.front(), track.getId());
+                ASSERT_EQ(tracks.size(), 1);
+                EXPECT_EQ(tracks.front(), track.getId());
             }
 
             {
@@ -297,18 +297,18 @@ namespace lms::db::tests
             {
                 auto transaction{ session.createWriteTransaction() };
                 auto tracks{ Track::findIds(session, Track::FindParameters{}.setName("MyTrackName").setReleaseName("MyReleaseName")) };
-                ASSERT_EQ(tracks.results.size(), 1);
-                EXPECT_EQ(tracks.results.front(), track.getId());
+                ASSERT_EQ(tracks.size(), 1);
+                EXPECT_EQ(tracks.front(), track.getId());
             }
             {
                 auto transaction{ session.createWriteTransaction() };
                 auto tracks{ Track::findIds(session, Track::FindParameters{}.setName("MyTrackName").setReleaseName("MyReleaseFoo")) };
-                EXPECT_EQ(tracks.results.size(), 0);
+                EXPECT_EQ(tracks.size(), 0);
             }
             {
                 auto transaction{ session.createWriteTransaction() };
                 auto tracks{ Track::findIds(session, Track::FindParameters{}.setName("MyTrackFoo").setReleaseName("MyReleaseName")) };
-                EXPECT_EQ(tracks.results.size(), 0);
+                EXPECT_EQ(tracks.size(), 0);
             }
         }
 
@@ -316,11 +316,11 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
 
             const auto tracks{ Track::findIds(session, Track::FindParameters{}.setRelease(release.getId())) };
-            EXPECT_EQ(tracks.results.size(), 0);
+            EXPECT_EQ(tracks.size(), 0);
 
             auto releases{ Release::findOrphanIds(session) };
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release.getId());
         }
     }
 
@@ -340,13 +340,13 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto releases{ Release::findIds(session, Release::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId()))) };
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
             auto releases{ Release::findIds(session, Release::FindParameters{}.setFilters(Filters{}.setMediaLibrary(otherLibrary->getId()))) };
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
         }
     }
 
@@ -383,36 +383,102 @@ namespace lms::db::tests
 
             {
                 const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "Release" })) };
-                EXPECT_EQ(releases.results.size(), 6);
+                EXPECT_EQ(releases.size(), 6);
             }
 
             {
                 const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "MyRelease" })) };
-                ASSERT_EQ(releases.results.size(), 5);
-                EXPECT_TRUE(std::none_of(std::cbegin(releases.results), std::cend(releases.results), [&](const ReleaseId releaseId) { return releaseId == release6.getId(); }));
+                ASSERT_EQ(releases.size(), 5);
+                EXPECT_TRUE(std::none_of(std::cbegin(releases), std::cend(releases), [&](const ReleaseId releaseId) { return releaseId == release6.getId(); }));
             }
             {
                 const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "MyRelease%" })) };
-                ASSERT_EQ(releases.results.size(), 2);
-                EXPECT_EQ(releases.results[0], release2.getId());
-                EXPECT_EQ(releases.results[1], release4.getId());
+                ASSERT_EQ(releases.size(), 2);
+                EXPECT_EQ(releases[0], release2.getId());
+                EXPECT_EQ(releases[1], release4.getId());
             }
             {
                 const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "%MyRelease" })) };
-                ASSERT_EQ(releases.results.size(), 2);
-                EXPECT_EQ(releases.results[0], release3.getId());
-                EXPECT_EQ(releases.results[1], release5.getId());
+                ASSERT_EQ(releases.size(), 2);
+                EXPECT_EQ(releases[0], release3.getId());
+                EXPECT_EQ(releases[1], release5.getId());
             }
             {
                 const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "Foo%MyRelease" })) };
-                ASSERT_EQ(releases.results.size(), 1);
-                EXPECT_EQ(releases.results[0], release5.getId());
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases[0], release5.getId());
             }
             {
                 const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "MyRelease%Foo" })) };
-                ASSERT_EQ(releases.results.size(), 1);
-                EXPECT_EQ(releases.results[0], release4.getId());
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases[0], release4.getId());
             }
+        }
+    }
+
+    TEST_F(DatabaseFixture, ReleaseSearchByMediumName)
+    {
+        ScopedRelease release{ session, "The Beatles In Mono" };
+        ScopedMedium medium{ session, release.lockAndGet() };
+        ScopedTrack track{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            track.get().modify()->setRelease(release.get());
+            track.get().modify()->setMedium(medium.get());
+            medium.get().modify()->setName("Sgt. Pepper's Lonely Hearts Club Band");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            // matches only the medium (discsubtitle), not the release name
+            {
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "Sgt. Pepper" })) };
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases.front(), release.getId());
+            }
+            // release name search still works
+            {
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "Beatles In Mono" })) };
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases.front(), release.getId());
+            }
+            // no match on either field
+            {
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "NoSuchKeyword" })) };
+                EXPECT_EQ(releases.size(), 0);
+            }
+        }
+    }
+
+    TEST_F(DatabaseFixture, ReleaseSearchByMediumName_multipleMediaNoDuplicates)
+    {
+        ScopedRelease release{ session, "The Beatles In Mono" };
+        ScopedMedium medium1{ session, release.lockAndGet() };
+        ScopedMedium medium2{ session, release.lockAndGet() };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            track1.get().modify()->setRelease(release.get());
+            track1.get().modify()->setMedium(medium1.get());
+            medium1.get().modify()->setName("Sgt. Pepper's Lonely Hearts Club Band");
+
+            track2.get().modify()->setRelease(release.get());
+            track2.get().modify()->setMedium(medium2.get());
+            medium2.get().modify()->setName("Abbey Road");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "Sgt. Pepper" })) };
+            ASSERT_EQ(releases.size(), 1); // not duplicated despite the 1:N join
+            EXPECT_EQ(releases.front(), release.getId());
         }
     }
 
@@ -508,8 +574,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            EXPECT_EQ(Track::findIds(session, Track::FindParameters{}.setRelease(release1.getId())).results.size(), 0);
-            EXPECT_EQ(Track::findIds(session, Track::FindParameters{}.setRelease(release2.getId())).results.size(), 0);
+            EXPECT_EQ(Track::findIds(session, Track::FindParameters{}.setRelease(release1.getId())).size(), 0);
+            EXPECT_EQ(Track::findIds(session, Track::FindParameters{}.setRelease(release2.getId())).size(), 0);
         }
 
         {
@@ -538,16 +604,16 @@ namespace lms::db::tests
 
             {
                 const auto tracks{ Track::findIds(session, Track::FindParameters{}.setRelease(release1.getId()).setSortMethod(TrackSortMethod::Release)) };
-                ASSERT_EQ(tracks.results.size(), 2);
-                EXPECT_EQ(tracks.results[0], track1A.getId());
-                EXPECT_EQ(tracks.results[1], track1B.getId());
+                ASSERT_EQ(tracks.size(), 2);
+                EXPECT_EQ(tracks[0], track1A.getId());
+                EXPECT_EQ(tracks[1], track1B.getId());
             }
 
             {
                 const auto tracks{ Track::findIds(session, Track::FindParameters{}.setRelease(release2.getId()).setSortMethod(TrackSortMethod::Release)) };
-                ASSERT_EQ(tracks.results.size(), 2);
-                EXPECT_EQ(tracks.results[0], track2A.getId());
-                EXPECT_EQ(tracks.results[1], track2B.getId());
+                ASSERT_EQ(tracks.size(), 2);
+                EXPECT_EQ(tracks[0], track2A.getId());
+                EXPECT_EQ(tracks[1], track2B.getId());
             }
         }
     }
@@ -568,7 +634,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ -3000, 3000 })) };
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
         }
 
         {
@@ -595,15 +661,15 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1950, 2000 })) };
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release1.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release1.getId());
 
             releases = Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1994, 1994 }));
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release1.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release1.getId());
 
             releases = Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1993, 1993 }));
-            ASSERT_EQ(releases.results.size(), 0);
+            ASSERT_EQ(releases.size(), 0);
         }
     }
 
@@ -624,7 +690,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setOriginalDateRange(YearRange{ -3000, 3000 })) };
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
         }
 
         {
@@ -649,15 +715,15 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             auto releases = Release::findIds(session, Release::FindParameters{}.setOriginalDateRange(YearRange{ 1950, 2000 }));
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release1.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release1.getId());
 
             releases = Release::findIds(session, Release::FindParameters{}.setOriginalDateRange(YearRange{ 1993, 1993 }));
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release1.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release1.getId());
 
             releases = Release::findIds(session, Release::FindParameters{}.setOriginalDateRange(YearRange{ 1994, 1994 }));
-            ASSERT_EQ(releases.results.size(), 0);
+            ASSERT_EQ(releases.size(), 0);
         }
     }
 
@@ -677,7 +743,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 0, 3000 })) };
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
         }
 
         {
@@ -701,15 +767,15 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1950, 2000 })) };
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release1.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release1.getId());
 
             releases = Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1994, 1994 }));
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release1.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release1.getId());
 
             releases = Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1993, 1993 }));
-            ASSERT_EQ(releases.results.size(), 0);
+            ASSERT_EQ(releases.size(), 0);
         }
     }
 
@@ -729,19 +795,19 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             const auto releases{ Release::findIds(session, Release::FindParameters{}) };
-            EXPECT_EQ(releases.results.size(), 1);
+            EXPECT_EQ(releases.size(), 1);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setWrittenAfter(dateTime.addSecs(-1))) };
-            EXPECT_EQ(releases.results.size(), 1);
+            EXPECT_EQ(releases.size(), 1);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setWrittenAfter(dateTime.addSecs(+1))) };
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
         }
     }
 
@@ -760,12 +826,12 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             auto releases{ Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist.getId(), { TrackArtistLinkType::Artist })) };
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setTrackArtist(artist.getId(), { TrackArtistLinkType::Artist })), 0);
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setTrackArtist(artist.getId())), 0);
 
             releases = Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist2.getId(), { TrackArtistLinkType::Artist }));
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setTrackArtist(artist2.getId(), { TrackArtistLinkType::Artist })), 0);
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setTrackArtist(artist2.getId())), 0);
         }
@@ -782,39 +848,39 @@ namespace lms::db::tests
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}), 1);
 
             auto releases{ Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist.getId(), { TrackArtistLinkType::Artist })) };
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release.getId());
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setTrackArtist(artist.getId(), { TrackArtistLinkType::Artist })), 1);
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setTrackArtist(artist.getId(), { TrackArtistLinkType::Remixer })), 0);
 
             releases = Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist.getId(), { TrackArtistLinkType::Artist, TrackArtistLinkType::Mixer }));
-            EXPECT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release.getId());
+            EXPECT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release.getId());
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setTrackArtist(artist.getId(), { TrackArtistLinkType::Artist, TrackArtistLinkType::Mixer })), 1);
 
             releases = Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist2.getId(), { TrackArtistLinkType::Artist }));
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
 
             releases = Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist2.getId()));
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
 
             releases = Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist.getId(), { TrackArtistLinkType::Writer, TrackArtistLinkType::Artist }));
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release.getId());
 
             releases = Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist.getId()));
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release.getId());
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setTrackArtist(artist.getId())), 1);
             EXPECT_EQ(release->getTrackArtists().size(), 1);
             EXPECT_EQ(release->getTrackArtists(TrackArtistLinkType::Artist).size(), 1);
             EXPECT_EQ(release->getTrackArtists(TrackArtistLinkType::Conductor).size(), 0);
 
             releases = Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist.getId(), { TrackArtistLinkType::Composer }));
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
 
             releases = Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist.getId(), { TrackArtistLinkType::Composer, TrackArtistLinkType::Mixer }));
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
         }
 
         {
@@ -850,7 +916,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setArtist(artist1.getId())) };
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist1.getId())), 0);
             EXPECT_EQ(release->getTrackArtists(TrackArtistLinkType::Conductor).size(), 0);
             EXPECT_EQ(release->getArtistLinks().size(), 0);
@@ -907,8 +973,8 @@ namespace lms::db::tests
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}), 1);
 
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setArtist(artist1.getId())) };
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release.getId());
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setTrackArtist(artist1.getId())), 0);
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist1.getId())), 1);
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setTrackArtist(artist2.getId())), 0);
@@ -999,8 +1065,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto labels{ Label::findOrphanIds(session) };
-            ASSERT_EQ(labels.results.size(), 1);
-            EXPECT_EQ(labels.results.front(), label.getId());
+            ASSERT_EQ(labels.size(), 1);
+            EXPECT_EQ(labels.front(), label.getId());
         }
 
         ScopedRelease release{ session, "MyRelease" };
@@ -1013,7 +1079,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto labels{ Label::findOrphanIds(session) };
-            EXPECT_EQ(labels.results.size(), 0);
+            EXPECT_EQ(labels.size(), 0);
         }
 
         {
@@ -1024,8 +1090,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto labels{ Label::findOrphanIds(session) };
-            ASSERT_EQ(labels.results.size(), 1);
-            EXPECT_EQ(labels.results.front(), label.getId());
+            ASSERT_EQ(labels.size(), 1);
+            EXPECT_EQ(labels.front(), label.getId());
         }
     }
 
@@ -1071,8 +1137,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto countries{ Country::findOrphanIds(session) };
-            ASSERT_EQ(countries.results.size(), 1);
-            EXPECT_EQ(countries.results.front(), country.getId());
+            ASSERT_EQ(countries.size(), 1);
+            EXPECT_EQ(countries.front(), country.getId());
         }
 
         ScopedRelease release{ session, "MyRelease" };
@@ -1085,7 +1151,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto countries{ Country::findOrphanIds(session) };
-            EXPECT_EQ(countries.results.size(), 0);
+            EXPECT_EQ(countries.size(), 0);
         }
 
         {
@@ -1096,8 +1162,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto countries{ Country::findOrphanIds(session) };
-            ASSERT_EQ(countries.results.size(), 1);
-            EXPECT_EQ(countries.results.front(), country.getId());
+            ASSERT_EQ(countries.size(), 1);
+            EXPECT_EQ(countries.front(), country.getId());
         }
     }
 
@@ -1126,8 +1192,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto releaseTypes{ ReleaseType::findOrphanIds(session) };
-            ASSERT_EQ(releaseTypes.results.size(), 1);
-            EXPECT_EQ(releaseTypes.results.front(), releaseType.getId());
+            ASSERT_EQ(releaseTypes.size(), 1);
+            EXPECT_EQ(releaseTypes.front(), releaseType.getId());
         }
 
         ScopedRelease release{ session, "MyRelease" };
@@ -1140,7 +1206,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto releaseTypes{ ReleaseType::findOrphanIds(session) };
-            EXPECT_EQ(releaseTypes.results.size(), 0);
+            EXPECT_EQ(releaseTypes.size(), 0);
         }
 
         {
@@ -1151,8 +1217,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto releaseTypes{ ReleaseType::findOrphanIds(session) };
-            ASSERT_EQ(releaseTypes.results.size(), 1);
-            EXPECT_EQ(releaseTypes.results.front(), releaseType.getId());
+            ASSERT_EQ(releaseTypes.size(), 1);
+            EXPECT_EQ(releaseTypes.front(), releaseType.getId());
         }
     }
 
@@ -1191,7 +1257,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            auto releases{ Release::find(session, Release::FindParameters{}.setReleaseType("Foo")).results };
+            auto releases{ Release::find(session, Release::FindParameters{}.setReleaseType("Foo")) };
             EXPECT_EQ(releases.size(), 0);
         }
 
@@ -1205,10 +1271,10 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::find(session, Release::FindParameters{}.setReleaseType("Foo")).results };
+            auto releases{ Release::find(session, Release::FindParameters{}.setReleaseType("Foo")) };
             EXPECT_EQ(releases.size(), 0);
 
-            releases = Release::find(session, Release::FindParameters{}.setReleaseType("album")).results;
+            releases = Release::find(session, Release::FindParameters{}.setReleaseType("album"));
             ASSERT_EQ(releases.size(), 1);
             EXPECT_EQ(releases.front()->getId(), release.getId());
         }
@@ -1244,51 +1310,51 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::Name)) };
-            ASSERT_EQ(releases.results.size(), 2);
-            EXPECT_EQ(releases.results.front(), release1.getId());
-            EXPECT_EQ(releases.results.back(), release2.getId());
+            ASSERT_EQ(releases.size(), 2);
+            EXPECT_EQ(releases.front(), release1.getId());
+            EXPECT_EQ(releases.back(), release2.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::Random)) };
-            ASSERT_EQ(releases.results.size(), 2);
+            ASSERT_EQ(releases.size(), 2);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::DateAsc)) };
-            ASSERT_EQ(releases.results.size(), 2);
-            EXPECT_EQ(releases.results.front(), release2.getId());
-            EXPECT_EQ(releases.results.back(), release1.getId());
+            ASSERT_EQ(releases.size(), 2);
+            EXPECT_EQ(releases.front(), release2.getId());
+            EXPECT_EQ(releases.back(), release1.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::DateDesc)) };
-            ASSERT_EQ(releases.results.size(), 2);
-            EXPECT_EQ(releases.results.front(), release1.getId());
-            EXPECT_EQ(releases.results.back(), release2.getId());
+            ASSERT_EQ(releases.size(), 2);
+            EXPECT_EQ(releases.front(), release1.getId());
+            EXPECT_EQ(releases.back(), release2.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::OriginalDate)) };
-            ASSERT_EQ(releases.results.size(), 2);
-            EXPECT_EQ(releases.results.front(), release1.getId());
-            EXPECT_EQ(releases.results.back(), release2.getId());
+            ASSERT_EQ(releases.size(), 2);
+            EXPECT_EQ(releases.front(), release1.getId());
+            EXPECT_EQ(releases.back(), release2.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::OriginalDateDesc)) };
-            ASSERT_EQ(releases.results.size(), 2);
-            EXPECT_EQ(releases.results.front(), release2.getId());
-            EXPECT_EQ(releases.results.back(), release1.getId());
+            ASSERT_EQ(releases.size(), 2);
+            EXPECT_EQ(releases.front(), release2.getId());
+            EXPECT_EQ(releases.back(), release1.getId());
         }
     }
 
@@ -1392,8 +1458,8 @@ namespace lms::db::tests
             params.setFilters(Filters{}.setCodec(core::media::Codec::MP3));
 
             auto releases{ Release::findIds(session, params) };
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release2.getId());
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release2.getId());
         }
     }
 
@@ -1491,11 +1557,11 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::AddedDesc)) };
-            ASSERT_EQ(releases.results.size(), 4);
-            EXPECT_EQ(releases.results[0], releaseA.getId());
-            EXPECT_EQ(releases.results[1], releaseD.getId());
-            EXPECT_EQ(releases.results[2], releaseB.getId());
-            EXPECT_EQ(releases.results[3], releaseC.getId());
+            ASSERT_EQ(releases.size(), 4);
+            EXPECT_EQ(releases[0], releaseA.getId());
+            EXPECT_EQ(releases[1], releaseD.getId());
+            EXPECT_EQ(releases[2], releaseB.getId());
+            EXPECT_EQ(releases[3], releaseC.getId());
         }
     }
 
@@ -1531,11 +1597,11 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::LastWrittenDesc)) };
-            ASSERT_EQ(releases.results.size(), 4);
-            EXPECT_EQ(releases.results[0], releaseA.getId());
-            EXPECT_EQ(releases.results[1], releaseD.getId());
-            EXPECT_EQ(releases.results[2], releaseB.getId());
-            EXPECT_EQ(releases.results[3], releaseC.getId());
+            ASSERT_EQ(releases.size(), 4);
+            EXPECT_EQ(releases[0], releaseA.getId());
+            EXPECT_EQ(releases[1], releaseD.getId());
+            EXPECT_EQ(releases[2], releaseB.getId());
+            EXPECT_EQ(releases[3], releaseC.getId());
         }
     }
 
@@ -1610,7 +1676,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::find(session, Release::FindParameters{}.setReleaseGroupMBID(groupMBID)) };
-            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(releases.size(), 0);
         }
 
         {
@@ -1622,8 +1688,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::find(session, Release::FindParameters{}.setReleaseGroupMBID(groupMBID)) };
-            EXPECT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results[0]->getId(), release->getId());
+            EXPECT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases[0]->getId(), release->getId());
         }
     }
 
@@ -1642,18 +1708,18 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::find(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::Name)) };
-            ASSERT_EQ(releases.results.size(), 2);
-            EXPECT_EQ(releases.results[0]->getId(), release1->getId());
-            EXPECT_EQ(releases.results[1]->getId(), release2->getId());
+            ASSERT_EQ(releases.size(), 2);
+            EXPECT_EQ(releases[0]->getId(), release1->getId());
+            EXPECT_EQ(releases[1]->getId(), release2->getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             const auto releases{ Release::find(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::SortName)) };
-            ASSERT_EQ(releases.results.size(), 2);
-            EXPECT_EQ(releases.results[0]->getId(), release2->getId());
-            EXPECT_EQ(releases.results[1]->getId(), release1->getId());
+            ASSERT_EQ(releases.size(), 2);
+            EXPECT_EQ(releases[0]->getId(), release2->getId());
+            EXPECT_EQ(releases[1]->getId(), release1->getId());
         }
     }
 
@@ -1726,4 +1792,5 @@ namespace lms::db::tests
             EXPECT_EQ(mediums[1]->getId(), medium2.getId());
         }
     }
+
 } // namespace lms::db::tests

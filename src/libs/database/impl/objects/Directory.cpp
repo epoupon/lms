@@ -173,7 +173,7 @@ namespace lms::db
         });
     }
 
-    RangeResults<Directory::pointer> Directory::find(Session& session, const FindParameters& params)
+    std::vector<Directory::pointer> Directory::find(Session& session, const FindParameters& params)
     {
         auto query{ createQuery(session, params) };
         return utils::execRangeQuery<Directory::pointer>(query, params.range);
@@ -187,7 +187,7 @@ namespace lms::db
         });
     }
 
-    RangeResults<DirectoryId> Directory::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<DirectoryId> Directory::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 
@@ -208,7 +208,7 @@ namespace lms::db
         return utils::execRangeQuery<DirectoryId>(query, range);
     }
 
-    RangeResults<DirectoryId> Directory::findMismatchedLibrary(Session& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId)
+    std::vector<DirectoryId> Directory::findMismatchedLibrary(Session& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId)
     {
         session.checkReadTransaction();
 
@@ -219,7 +219,7 @@ namespace lms::db
         return utils::execRangeQuery<DirectoryId>(query, range);
     }
 
-    RangeResults<Directory::pointer> Directory::findRootDirectories(Session& session, std::optional<Range> range)
+    std::vector<Directory::pointer> Directory::findRootDirectories(Session& session, std::optional<Range> range)
     {
         auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Directory>>("SELECT d from directory d").where("d.parent_directory_id IS NULL") };
         return utils::execRangeQuery<Directory::pointer>(query, range);

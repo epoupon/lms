@@ -20,7 +20,6 @@
 #include "database/objects/Artwork.hpp"
 
 #include <Wt/Dbo/Impl.h>
-#include <Wt/Dbo/WtSqlTraits.h>
 
 #include "database/Session.hpp"
 #include "database/objects/Image.hpp"
@@ -90,18 +89,6 @@ namespace lms::db
             res = imageId;
 
         return res;
-    }
-
-    Wt::WDateTime Artwork::getLastWrittenTime() const
-    {
-        auto query{ session()->query<Wt::WDateTime>("SELECT MAX(COALESCE(image.file_last_write, track.file_last_write)) AS last_written_datetime FROM artwork") };
-        query.leftJoin("image ON artwork.image_id = image.id");
-        query.leftJoin("track_embedded_image ON artwork.track_embedded_image_id = track_embedded_image.id");
-        query.leftJoin("track_embedded_image_link ON track_embedded_image.id = track_embedded_image_link.track_embedded_image_id");
-        query.leftJoin("track ON track.id = track_embedded_image_link.track_id");
-        query.where("artwork.id = ?").bind(getId());
-
-        return utils::fetchQuerySingleResult(query);
     }
 
     std::filesystem::path Artwork::getAbsoluteFilePath() const

@@ -105,7 +105,7 @@ namespace lms::db
         });
     }
 
-    RangeResults<Image::pointer> Image::find(Session& session, const FindParameters& params)
+    std::vector<Image::pointer> Image::find(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
 

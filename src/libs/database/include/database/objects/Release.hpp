@@ -70,7 +70,7 @@ namespace lms::db
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, CountryId id);
         static pointer find(Session& session, std::string_view name);
-        static RangeResults<CountryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::vector<CountryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
         std::string_view getName() const { return _name; }
@@ -102,7 +102,7 @@ namespace lms::db
         static pointer find(Session& session, LabelId id);
         static pointer find(Session& session, std::string_view name);
         static void find(Session& session, LabelSortMethod sortMethod, std::function<void(const Label::pointer& label)> func);
-        static RangeResults<LabelId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::vector<LabelId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
         std::string_view getName() const { return _name; }
@@ -134,7 +134,7 @@ namespace lms::db
         static pointer find(Session& session, ReleaseTypeId id);
         static pointer find(Session& session, std::string_view name);
         static void find(Session& session, ReleaseTypeSortMethod sortMethod, std::function<void(const ReleaseType::pointer& releaseType)> func);
-        static RangeResults<ReleaseTypeId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::vector<ReleaseTypeId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
         std::string_view getName() const { return _name; }
@@ -170,8 +170,7 @@ namespace lms::db
             Wt::WDateTime writtenAfter;
             std::optional<YearRange> dateRange;
             std::optional<YearRange> originalDateRange;
-            UserId starringUser;                                     // only releases starred by this user
-            std::optional<FeedbackBackend> feedbackBackend;          //    and for this backend
+            UserId starringUser;                                     // only releases starred by this user (uses their current feedback backend)
             ArtistId artist;                                         // only releases by this release artist
             ArtistId trackArtist;                                    // only releases that involved this track artist
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes; //    and for these link types, if set
@@ -220,10 +219,9 @@ namespace lms::db
                 originalDateRange = _originalDateRange;
                 return *this;
             }
-            FindParameters& setStarringUser(UserId _user, FeedbackBackend _feedbackBackend)
+            FindParameters& setStarringUser(UserId _user)
             {
                 starringUser = _user;
-                feedbackBackend = _feedbackBackend;
                 return *this;
             }
             FindParameters& setArtist(ArtistId _artist)
@@ -269,11 +267,11 @@ namespace lms::db
         static void find(Session& session, ReleaseId& lastRetrievedRelease, std::size_t count, const std::function<void(const Release::pointer&)>& func, MediaLibraryId library = {});
         static void find(Session& session, const IdRange<ReleaseId>& idRange, const std::function<void(const Release::pointer&)>& func);
         static IdRange<ReleaseId> findNextIdRange(Session& session, ReleaseId lastRetrievedId, std::size_t count);
-        static RangeResults<pointer> find(Session& session, const FindParameters& parameters);
+        static std::vector<pointer> find(Session& session, const FindParameters& parameters);
         static void find(Session& session, const FindParameters& parameters, const std::function<void(const pointer&)>& func);
-        static RangeResults<ReleaseId> findIds(Session& session, const FindParameters& parameters);
+        static std::vector<ReleaseId> findIds(Session& session, const FindParameters& parameters);
         static std::size_t getCount(Session& session, const FindParameters& parameters);
-        static RangeResults<ReleaseId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // not track related
+        static std::vector<ReleaseId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // not track related
 
         // Updates
         static void updatePreferredArtwork(Session& session, ReleaseId id, ArtworkId artworkId);
@@ -298,8 +296,8 @@ namespace lms::db
         // Accessors
         std::string_view getName() const { return _name; }
         std::string_view getSortName() const { return _sortName; }
-        std::optional<core::UUID> getMBID() const { return core::UUID::fromString(_MBID); }
-        std::optional<core::UUID> getGroupMBID() const { return core::UUID::fromString(_groupMBID); }
+        std::optional<core::UUID> getMBID() const { return _MBID; }
+        std::optional<core::UUID> getGroupMBID() const { return _groupMBID; }
         std::optional<std::size_t> getTotalDisc() const { return _totalDisc; } // the number of discs this release should have if complete
         std::chrono::milliseconds getDuration() const;
         Wt::WDateTime getAddedTime() const;
@@ -325,8 +323,8 @@ namespace lms::db
         // Setters
         void setName(std::string_view name) { _name = name; }
         void setSortName(std::string_view sortName) { _sortName = sortName; }
-        void setMBID(const std::optional<core::UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
-        void setGroupMBID(const std::optional<core::UUID>& mbid) { _groupMBID = mbid ? mbid->getAsString() : ""; }
+        void setMBID(const std::optional<core::UUID>& mbid) { _MBID = mbid; }
+        void setGroupMBID(const std::optional<core::UUID>& mbid) { _groupMBID = mbid; }
         void setTotalDisc(std::optional<int> totalDisc) { _totalDisc = totalDisc; }
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
         void clearArtistLinks();
@@ -382,8 +380,8 @@ namespace lms::db
 
         std::string _name;
         std::string _sortName;
-        std::string _MBID;
-        std::string _groupMBID;
+        std::optional<core::UUID> _MBID;
+        std::optional<core::UUID> _groupMBID;
         std::optional<int> _totalDisc{};
         std::string _artistDisplayName;
         bool _isCompilation{}; // See https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#compilation-itunes-5

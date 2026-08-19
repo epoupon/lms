@@ -53,7 +53,7 @@ namespace lms::scanner
         AssociateTrackImages,
         CheckForDuplicatedFiles,
         CheckForRemovedFiles,
-        ComputeClusterStats,
+        ComputeGenreStats,
         Compact,
         ExtractMusicNNEmbeddings,
         Optimize,

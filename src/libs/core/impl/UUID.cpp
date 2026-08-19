@@ -19,72 +19,93 @@
 
 #include "core/UUID.hpp"
 
-#include <cassert>
-#include <iomanip>
-#include <regex>
-#include <sstream>
+#include <array>
+#include <charconv>
+#include <cstddef>
+#include <cstdint>
 
 #include "core/Random.hpp"
-#include "core/String.hpp"
 
 namespace lms::core
 {
     namespace stringUtils
     {
         template<>
-        std::optional<UUID>
-        readAs(std::string_view str)
+        std::optional<UUID> readAs(std::string_view str)
         {
             return UUID::fromString(str);
         }
     } // namespace stringUtils
+
     namespace
     {
-        bool stringIsUUID(std::string_view str)
-        {
-            static const std::regex re{ R"([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})" };
+        // Each entry is the str index of the high hex char for that UUID byte
+        constexpr std::array<std::size_t, 16> byteOffsets{
+            0, 2, 4, 6,            // group 1 (4 bytes, positions 0-7)
+            9, 11,                 // group 2 (2 bytes, positions 9-12)
+            14, 16,                // group 3 (2 bytes, positions 14-17)
+            19, 21,                // group 4 (2 bytes, positions 19-22)
+            24, 26, 28, 30, 32, 34 // group 5 (6 bytes, positions 24-35)
+        };
 
-            return std::regex_match(std::cbegin(str), std::cend(str), re);
+        bool parseUUID(std::string_view str, std::array<std::byte, 16>& out)
+        {
+            if (str.size() != 36 || str[8] != '-' || str[13] != '-' || str[18] != '-' || str[23] != '-')
+                return false;
+
+            for (std::size_t i{}; i < 16; ++i)
+            {
+                unsigned int byte{};
+                const char* begin{ str.data() + byteOffsets[i] };
+                const auto [ptr, ec]{ std::from_chars(begin, begin + 2, byte, 16) };
+                if (ec != std::errc{} || ptr != begin + 2)
+                    return false;
+                out[i] = static_cast<std::byte>(byte);
+            }
+            return true;
         }
     } // namespace
 
-    UUID::UUID(std::string_view str)
-        : _value{ stringUtils::stringToLower(str) }
+    UUID::UUID(std::array<std::byte, 16> bytes) noexcept
+        : _bytes{ bytes }
     {
     }
 
     std::optional<UUID> UUID::fromString(std::string_view str)
     {
-        if (!stringIsUUID(str))
+        std::array<std::byte, 16> bytes{};
+        if (!parseUUID(str, bytes))
             return std::nullopt;
+        return UUID{ bytes };
+    }
 
-        return UUID{ str };
+    UUID UUID::fromBytes(std::span<const std::byte, 16> bytes) noexcept
+    {
+        std::array<std::byte, 16> arr{};
+        std::copy(bytes.begin(), bytes.end(), arr.begin());
+        return UUID{ arr };
+    }
+
+    std::string UUID::toString() const
+    {
+        static constexpr char hex[]{ "0123456789abcdef" };
+        std::string s(36, '-');
+        for (std::size_t i{}; i < 16; ++i)
+        {
+            const auto b{ std::to_integer<unsigned char>(_bytes[i]) };
+            s[byteOffsets[i]] = hex[b >> 4];
+            s[byteOffsets[i] + 1] = hex[b & 0x0F];
+        }
+        return s;
     }
 
     UUID UUID::generate()
     {
-        // Form is "123e4567-e89b-12d3-a456-426614174000"
-        // TODO: store 128 bits and only convert to string when necessary
-
-        std::ostringstream oss;
-
-        auto concatRandomBytes{ [](std::ostream& os, std::size_t byteCount) {
-            for (std::size_t i{}; i < byteCount; ++i)
-                os << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(random::getRandom<std::uint8_t>(0, 255));
-        } };
-
-        concatRandomBytes(oss, 4);
-        oss << "-";
-        concatRandomBytes(oss, 2);
-        oss << "-";
-        concatRandomBytes(oss, 2);
-        oss << "-";
-        concatRandomBytes(oss, 2);
-        oss << "-";
-        concatRandomBytes(oss, 6);
-
-        const auto uuid{ fromString(oss.str()) };
-        assert(uuid);
-        return uuid.value();
+        std::uniform_int_distribution<std::uint8_t> dist{ 0, 255 };
+        auto& rng{ random::getRandGenerator() };
+        std::array<std::byte, binarySize> bytes{};
+        for (auto& b : bytes)
+            b = static_cast<std::byte>(dist(rng));
+        return UUID{ bytes };
     }
 } // namespace lms::core

@@ -22,8 +22,14 @@
 #include <Wt/Dbo/Impl.h>
 
 #include "core/ILogger.hpp"
+#include "core/String.hpp"
+
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
+#include "database/objects/Mood.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 
@@ -123,13 +129,13 @@ namespace lms::db
         query.where("r_a_l.artist_mbid_matched = FALSE");
         if (!allowArtistMBIDFallback)
         {
-            query.where("a.mbid <> ''");
+            query.where("a.mbid IS NOT NULL");
         }
         else
         {
             query.where(R"(
-                (a.mbid <> '' AND EXISTS (SELECT 1 FROM artist a2 WHERE a2.name = a.name AND a2.mbid <> '' AND a2.mbid <> a.mbid))
-                OR (a.mbid = '' AND (SELECT COUNT(*) FROM artist a2 WHERE a2.name = a.name AND a2.mbid <> '') = 1))");
+                (a.mbid IS NOT NULL AND EXISTS (SELECT 1 FROM artist a2 WHERE a2.name = a.name AND a2.mbid IS NOT NULL AND a2.mbid <> a.mbid))
+                OR (a.mbid IS NULL AND (SELECT COUNT(*) FROM artist a2 WHERE a2.name = a.name AND a2.mbid IS NOT NULL) = 1))");
         }
 
         utils::applyRange(query, range);
@@ -145,13 +151,13 @@ namespace lms::db
 
     void ReleaseArtistLink::setArtistName(std::string_view artistName)
     {
-        _artistName.assign(artistName, 0, Artist::maxNameLength);
+        _artistName = core::stringUtils::utf8Truncate(artistName, Artist::maxNameLength);
         LMS_LOG_IF(DB, WARNING, artistName.size() > Artist::maxNameLength, "Artist link name too long, truncated to '" << _artistName << "'");
     }
 
     void ReleaseArtistLink::setArtistSortName(std::string_view artistSortName)
     {
-        _artistSortName.assign(artistSortName, 0, Artist::maxNameLength);
+        _artistSortName = core::stringUtils::utf8Truncate(artistSortName, Artist::maxNameLength);
         LMS_LOG_IF(DB, WARNING, artistSortName.size() > Artist::maxNameLength, "Artist link sort name too long, truncated to '" << _artistSortName << "'");
     }
 } // namespace lms::db

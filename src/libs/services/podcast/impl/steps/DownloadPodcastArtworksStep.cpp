@@ -29,6 +29,8 @@
 #include "database/Session.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Podcast.hpp"
+#include "image/Exception.hpp"
+#include "image/Image.hpp"
 
 #include "Executor.hpp"
 #include "Utils.hpp"
@@ -121,9 +123,20 @@ namespace lms::podcast
         };
         params.onSuccessFunc = [=, this](const Wt::Http::Message& msg) {
             getExecutor().post([=, this] {
-                const std::string body{ msg.body() }; // API enforces a copy here
+                const std::string body{ msg.body() }; // API enforces a copy here :(
+                const auto bodySpan{ std::as_bytes(std::span{ body.data(), body.size() }) };
+                try
+                {
+                    image::probeImage(bodySpan);
+                }
+                catch (const image::Exception& e)
+                {
+                    LMS_LOG(PODCAST, WARNING, "Discarding non-image response for podcast artwork from '" << url << "': " << e.what());
+                    processNext();
+                    return;
+                }
 
-                std::ofstream file{ finalFilePath, std::ios::binary | std::ios::app };
+                std::ofstream file{ finalFilePath, std::ios::binary | std::ios::trunc };
                 if (!file)
                 {
                     std::error_code ec{ errno, std::generic_category() };
@@ -132,7 +145,7 @@ namespace lms::podcast
                     return;
                 }
 
-                file.write(body.data(), body.size());
+                file.write(body.data(), static_cast<std::streamsize>(body.size()));
                 if (!file)
                 {
                     std::error_code ec{ errno, std::generic_category() };

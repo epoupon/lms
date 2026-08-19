@@ -21,7 +21,13 @@
 
 #include <Wt/Dbo/Impl.h>
 
+#include "core/String.hpp"
+
 #include "database/Session.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
+#include "database/objects/Mood.hpp"
 #include "database/objects/Track.hpp"
 
 #include "Utils.hpp"
@@ -34,7 +40,7 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::MediaLibrary)
 namespace lms::db
 {
     MediaLibrary::MediaLibrary(std::string_view name, const std::filesystem::path& p)
-        : _name{ std::string{ name, 0, maxNameLength } }
+        : _name{ core::stringUtils::utf8Truncate(name, maxNameLength) }
     {
         setPath(p);
     }

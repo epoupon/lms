@@ -48,10 +48,10 @@ namespace lms::recommendation
         session.checkReadTransaction();
 
         const db::TrackMusicNNEmbeddings::pointer embeddings{ db::TrackMusicNNEmbeddings::find(session, trackId) };
-        if (embeddings)
+        if (embeddings && !embeddings->getData().empty())
             readEmbeddings(embeddings, vec);
 
-        return embeddings;
+        return embeddings && !embeddings->getData().empty();
     }
 
     void MusicNNEmbeddingProvider::visitVectors(db::Session& session, const std::function<void(db::TrackId, Vector&)>& visitor)
@@ -60,6 +60,8 @@ namespace lms::recommendation
 
         Vector vec;
         db::TrackMusicNNEmbeddings::find(session, [&](const db::TrackMusicNNEmbeddings::pointer& embeddings) {
+            if (embeddings->getData().empty())
+                return;
             readEmbeddings(embeddings, vec);
             visitor(embeddings->getTrackId(), vec);
         });

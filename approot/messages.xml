@@ -14,6 +14,8 @@
 <message id="Lms.discard">Discard</message>
 <message id="Lms.edit">Edit</message>
 <message id="Lms.field-must-be-in-upper-case">This field must be in upper case</message>
+<message id="Lms.infinite-scrolling-container.limit-reached">Display limit reached — refine your search to see more results</message>
+<message id="Lms.infinite-scrolling-container.no-results">No results found</message>
 <message id="Lms.loading">Loading...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
@@ -129,7 +131,7 @@
 <message id="Lms.Admin.ScannerController.get-report">Get report</message>
 <message id="Lms.Admin.ScannerController.last-scan">Last scan</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Not available</message>
-<message id="Lms.Admin.ScannerController.last-scan-status">{1} files were scanned in {2} at {4} on {3} (UTC) - {5} errors, {6} duplicates</message>
+<message id="Lms.Admin.ScannerController.last-scan-status">{1} files were scanned in {2} at {4} on {3} - {5} errors, {6} duplicates</message>
 <message id="Lms.Admin.ScannerController.missing-artist-name">Missing artist name</message>
 <message id="Lms.Admin.ScannerController.playlist-all-pathes-missing">Unable to find track paths</message>
 <message id="Lms.Admin.ScannerController.playlist-path-missing">Unable to find the path "{1}"</message>
@@ -141,7 +143,7 @@
 <message id="Lms.Admin.ScannerController.scanner">Scanner</message>
 <message id="Lms.Admin.ScannerController.status">Status</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Not scheduled</message>
-<message id="Lms.Admin.ScannerController.status-scheduled">Scheduled at {2} on {1} (UTC)</message>
+<message id="Lms.Admin.ScannerController.status-scheduled">Scheduled at {2} on {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Scanning: step {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Associating artist images: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Associating external lyrics: {1}%...</message>
@@ -152,7 +154,7 @@
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Checking for duplicate files... {1} files</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Checking for removed files... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compacting database...</message>
-<message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Computing stats... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-compute-genre-stats">Computing stats... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-extract-musicnn-embeddings">Extracting MusicNN embeddings: {1} of {2} files ({3}%)</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optimizing database... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">Reconciliating artists: {1} entries...</message>
@@ -168,6 +170,13 @@
 <!--Db-->
 <message id="Lms.Admin.DebugTools.Db.export-query-profiling">Export query profiling data</message>
 <message id="Lms.Admin.DebugTools.Db.db">Database</message>
+
+<!--PcmDecodingStats-->
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.pcm-decoding-stats">PCM decoding stats</message>
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.run">Run bench</message>
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.download">Download results</message>
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.running">Running…</message>
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.benchmark-completed">PCM decoding benchmark completed in {1}</message>
 
 <!--Tracing-->
 <message id="Lms.Admin.DebugTools.Tracing.export-current-buffer">Export traces</message>
@@ -221,7 +230,19 @@
 <message id="Lms.Explore.duration">Duration</message>
 <message id="Lms.Explore.filter-added">Filter added</message>
 <message id="Lms.Explore.filters">Filters</message>
+<message id="Lms.Explore.genre">
+	<plural case="0">Genre</plural>
+	<plural case="1">Genres</plural>
+</message>
+<message id="Lms.Explore.grouping">
+	<plural case="0">Grouping</plural>
+	<plural case="1">Groupings</plural>
+</message>
 <message id="Lms.Explore.label">Label</message>
+<message id="Lms.Explore.language">
+	<plural case="0">Language</plural>
+	<plural case="1">Languages</plural>
+</message>
 <message id="Lms.Explore.lyricist">
 	<plural case="0">Lyricist</plural>
 	<plural case="1">Lyricists</plural>
@@ -230,6 +251,10 @@
 <message id="Lms.Explore.mixer">
 	<plural case="0">Mixer</plural>
 	<plural case="1">Mixers</plural>
+</message>
+<message id="Lms.Explore.mood">
+	<plural case="0">Mood</plural>
+	<plural case="1">Moods</plural>
 </message>
 <message id="Lms.Explore.most-played">Most played</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz Artist</message>
@@ -343,8 +368,24 @@
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">These audio settings are local to your browser</message>
 <message id="Lms.Settings.backend.internal">Internal</message>
+<message id="Lms.Settings.backend.lastfm">Last.fm</message>
+<message id="Lms.Settings.services.lastfm-api-key">Last.fm API key</message>
+<message id="Lms.Settings.services.lastfm-api-secret">Last.fm API secret</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">ListenBrainz API token</message>
+<message id="Lms.Settings.services.lastfm-card-title">Last.fm account</message>
+<message id="Lms.Settings.services.lastfm-linked">Linked</message>
+<message id="Lms.Settings.services.lastfm-link">Link account</message>
+<message id="Lms.Settings.services.lastfm-unlink">Unlink account</message>
+<message id="Lms.Settings.services.lastfm-link-modal-title">Link Last.fm account</message>
+<message id="Lms.Settings.services.lastfm-link-modal-help">Enter your Last.fm API key and shared secret (get them at <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a>), then click Authorize.</message>
+<message id="Lms.Settings.services.lastfm-authorize">Authorize on Last.fm</message>
+<message id="Lms.Settings.services.lastfm-done">Done, I've authorized</message>
+<message id="Lms.Settings.services.lastfm-auth-url">Didn't open? Click here to authorize on Last.fm</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-title">Unlink Last.fm account</message>
+<message id="Lms.Settings.services.lastfm-unlink-confirm-body">Are you sure you want to unlink your Last.fm account? Scrobbling will stop until you link again.</message>
+<message id="Lms.Settings.services.lastfm-missing-credentials">Please enter your Last.fm API key and secret.</message>
+<message id="Lms.Settings.services.lastfm-auth-error">Last.fm authentication failed. Check your API key and secret.</message>
 <message id="Lms.Settings.change-password">Change password</message>
 <message id="Lms.Settings.date-asc">Release Date (Ascending)</message>
 <message id="Lms.Settings.date-desc">Release Date (Descending)</message>

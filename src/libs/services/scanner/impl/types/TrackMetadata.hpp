@@ -54,6 +54,14 @@ namespace lms::scanner
 
     using PerformerContainer = std::map<std::string /*role*/, std::vector<Artist>>;
 
+    struct Work
+    {
+        std::optional<core::UUID> mbid;
+        std::string name;
+
+        auto operator<=>(const Work&) const = default;
+    };
+
     struct Release
     {
         std::optional<core::UUID> mbid;
@@ -100,8 +108,17 @@ namespace lms::scanner
             Clean,
         };
 
+        struct MovementData
+        {
+            std::string name;
+            std::optional<std::size_t> number;
+            std::optional<std::size_t> count;
+        };
+
         std::optional<core::UUID> mbid;
         std::optional<core::UUID> recordingMBID;
+        std::vector<Work> works;
+        std::vector<MovementData> movements;
         std::string title;
         std::optional<Medium> medium;
         std::optional<std::size_t> position; // in medium

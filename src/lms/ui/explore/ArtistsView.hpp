@@ -44,7 +44,7 @@ namespace lms::ui
         void addSome();
 
         static constexpr std::size_t _batchSize{ 30 };
-        static constexpr std::size_t _maxCount{ 8000 };
+        static constexpr std::size_t _maxCount{ 5'000 };
 
         Wt::WWidget* _currentLinkTypeActiveItem{};
         InfiniteScrollingContainer* _container{};

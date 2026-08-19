@@ -30,6 +30,13 @@ namespace lms::scanner::tests
         EXPECT_FALSE(f.isIgnored("track.flac", IgnoreRules::IsDirectory{ false }));
     }
 
+    TEST(IgnoreRules, EmptyPath_NeverIgnored)
+    {
+        const IgnoreRules f{ "*.mp3\ncovers/\n" };
+        EXPECT_FALSE(f.isIgnored("", IgnoreRules::IsDirectory{ false }));
+        EXPECT_FALSE(f.isIgnored("", IgnoreRules::IsDirectory{ true }));
+    }
+
     TEST(IgnoreRules, CommentsAndBlanksOnly)
     {
         const IgnoreRules f{ "# this is a comment\n\n# another comment\n" };
@@ -79,7 +86,7 @@ namespace lms::scanner::tests
         const IgnoreRules f{ "covers*/\n" };
         EXPECT_TRUE(f.isIgnored("covers", IgnoreRules::IsDirectory{ true }));
         EXPECT_TRUE(f.isIgnored("covers_2024", IgnoreRules::IsDirectory{ true }));
-        EXPECT_TRUE(f.isIgnored("jazz/covers_hq", IgnoreRules::IsDirectory{ true })); // unanchored — matches at any depth
+        EXPECT_TRUE(f.isIgnored("jazz/covers_hq", IgnoreRules::IsDirectory{ true })); // unanchored: matches at any depth
         EXPECT_FALSE(f.isIgnored("notcovers", IgnoreRules::IsDirectory{ true }));
         EXPECT_FALSE(f.isIgnored("covers_2024", IgnoreRules::IsDirectory{ false })); // dirOnly
     }
@@ -112,27 +119,49 @@ namespace lms::scanner::tests
     TEST(IgnoreRules, DirOnly_AnchoredOnlyMatchesRoot)
     {
         const IgnoreRules f{ "/untagged/\n" };
-        EXPECT_TRUE(f.isIgnored("untagged", IgnoreRules::IsDirectory{ true }));       // root level — match
-        EXPECT_FALSE(f.isIgnored("jazz/untagged", IgnoreRules::IsDirectory{ true })); // nested — no match
-        EXPECT_FALSE(f.isIgnored("untagged", IgnoreRules::IsDirectory{ false }));     // file, not dir — no match
+        EXPECT_TRUE(f.isIgnored("untagged", IgnoreRules::IsDirectory{ true }));       // root level: match
+        EXPECT_FALSE(f.isIgnored("jazz/untagged", IgnoreRules::IsDirectory{ true })); // nested: no match
+        EXPECT_FALSE(f.isIgnored("untagged", IgnoreRules::IsDirectory{ false }));     // file, not dir: no match
     }
 
     TEST(IgnoreRules, DirOnly_UnanchoredMatchesAnyDepth)
     {
         const IgnoreRules f{ "covers/\n" };
-        EXPECT_TRUE(f.isIgnored("covers", IgnoreRules::IsDirectory{ true }));       // root — match
-        EXPECT_TRUE(f.isIgnored("jazz/covers", IgnoreRules::IsDirectory{ true }));  // nested — also match
-        EXPECT_TRUE(f.isIgnored("a/b/c/covers", IgnoreRules::IsDirectory{ true })); // deep — also match
-        EXPECT_FALSE(f.isIgnored("covers", IgnoreRules::IsDirectory{ false }));     // file, not dir — no match
+        EXPECT_TRUE(f.isIgnored("covers", IgnoreRules::IsDirectory{ true }));       // root: match
+        EXPECT_TRUE(f.isIgnored("jazz/covers", IgnoreRules::IsDirectory{ true }));  // nested: also match
+        EXPECT_TRUE(f.isIgnored("a/b/c/covers", IgnoreRules::IsDirectory{ true })); // deep: also match
+        EXPECT_FALSE(f.isIgnored("covers", IgnoreRules::IsDirectory{ false }));     // file, not dir: no match
     }
 
     TEST(IgnoreRules, FullPath_ExactDir)
     {
         const IgnoreRules f{ "jazz/covers\n" };
         EXPECT_TRUE(f.isIgnored("jazz/covers", IgnoreRules::IsDirectory{ true }));
-        EXPECT_FALSE(f.isIgnored("jazz/covers/foo", IgnoreRules::IsDirectory{ true })); // never reached in practice: scanner prunes jazz/covers/ first
-        EXPECT_FALSE(f.isIgnored("foo/jazz/covers", IgnoreRules::IsDirectory{ true })); // never reached in practice: scanner prunes jazz/covers/ first
+        EXPECT_TRUE(f.isIgnored("jazz/covers/foo", IgnoreRules::IsDirectory{ true }));  // descendant of an ignored dir
+        EXPECT_FALSE(f.isIgnored("foo/jazz/covers", IgnoreRules::IsDirectory{ true })); // unrelated path structure, no prefix matches
         EXPECT_FALSE(f.isIgnored("rock/covers", IgnoreRules::IsDirectory{ true }));
+    }
+
+    TEST(IgnoreRules, AncestorDirIgnored_MatchesDescendantFile)
+    {
+        const IgnoreRules f{ "import\n" };
+        EXPECT_TRUE(f.isIgnored("import/song.mp3", IgnoreRules::IsDirectory{ false }));
+        EXPECT_TRUE(f.isIgnored("import/sub/song.mp3", IgnoreRules::IsDirectory{ false }));
+        EXPECT_FALSE(f.isIgnored("other/song.mp3", IgnoreRules::IsDirectory{ false }));
+    }
+
+    TEST(IgnoreRules, AncestorDirIgnored_AnchoredRuleMatchesNestedFile)
+    {
+        const IgnoreRules f{ "/import/\n" };
+        EXPECT_TRUE(f.isIgnored("import/song.mp3", IgnoreRules::IsDirectory{ false }));
+        EXPECT_FALSE(f.isIgnored("jazz/import/song.mp3", IgnoreRules::IsDirectory{ false })); // anchored to root only
+    }
+
+    TEST(IgnoreRules, AncestorDirIgnored_NegationDoesNotReinclude)
+    {
+        const IgnoreRules f{ "jazz/\n!jazz/keep.flac\n" };
+        EXPECT_TRUE(f.isIgnored("jazz/keep.flac", IgnoreRules::IsDirectory{ false })); // ancestor dir ignored: negation deeper inside has no effect
+        EXPECT_TRUE(f.isIgnored("jazz", IgnoreRules::IsDirectory{ true }));
     }
 
     TEST(IgnoreRules, FullPath_GlobInDir)

@@ -1,5 +1,6 @@
 
 add_library(lmssubsonic STATIC
+	impl/AuthUtils.cpp
 	impl/endpoints/transcoding/AudioFileInfo.cpp
 	impl/endpoints/transcoding/TranscodeDecision.cpp
 	impl/endpoints/transcoding/TranscodeDecisionTracker.cpp
@@ -34,7 +35,6 @@ add_library(lmssubsonic STATIC
 	impl/responses/ReplayGain.cpp
 	impl/responses/Song.cpp
 	impl/responses/User.cpp
-	impl/CoverArtId.cpp
 	impl/RequestContext.cpp
 	impl/ResponseFormat.cpp
 	impl/ProtocolVersion.cpp

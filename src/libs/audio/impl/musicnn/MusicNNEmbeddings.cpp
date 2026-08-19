@@ -32,7 +32,7 @@ namespace lms::audio
 
     namespace
     {
-        constexpr uint32_t byteswap32(uint32_t x)
+        constexpr std::uint32_t byteswap32(uint32_t x)
         {
             return (x >> 24) | ((x >> 8) & 0x0000FF00u) | ((x << 8) & 0x00FF0000u) | (x << 24);
         }
@@ -44,7 +44,7 @@ namespace lms::audio
 
             for (std::size_t i{}; i < data.size(); ++i)
             {
-                uint32_t bits{ std::bit_cast<uint32_t>(data[i]) };
+                std::uint32_t bits{ std::bit_cast<std::uint32_t>(data[i]) };
                 if constexpr (std::endian::native == std::endian::little)
                     bits = byteswap32(bits);
                 std::memcpy(blob.data() + i * 4, &bits, 4);
@@ -58,7 +58,7 @@ namespace lms::audio
 
             for (std::size_t i{}; i < data.size(); ++i)
             {
-                uint32_t bits{};
+                std::uint32_t bits{};
                 std::memcpy(&bits, blob.data() + i * 4, 4);
                 if constexpr (std::endian::native == std::endian::little)
                     bits = byteswap32(bits);

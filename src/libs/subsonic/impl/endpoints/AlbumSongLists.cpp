@@ -25,7 +25,7 @@
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
-#include "database/objects/Cluster.hpp"
+#include "database/objects/Genre.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
@@ -58,7 +58,7 @@ namespace lms::api::subsonic
 
             const Range range{ offset, size };
 
-            RangeResults<ReleaseId> releases;
+            std::vector<ReleaseId> releases;
             scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };
             feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
 
@@ -87,18 +87,15 @@ namespace lms::api::subsonic
                 // Mandatory param
                 const std::string genre{ getMandatoryParameterAs<std::string>(context.getParameters(), "genre") };
 
-                if (const ClusterType::pointer clusterType{ ClusterType::find(context.getDbSession(), "GENRE") })
+                if (const Genre::pointer genreObj{ Genre::find(context.getDbSession(), genre) })
                 {
-                    if (const Cluster::pointer cluster{ clusterType->getCluster(genre) })
-                    {
-                        Release::FindParameters params;
-                        params.filters.setMediaLibrary(mediaLibraryId);
-                        params.filters.setClusters(std::initializer_list<ClusterId>{ cluster->getId() });
-                        params.setSortMethod(ReleaseSortMethod::Name);
-                        params.setRange(range);
+                    Release::FindParameters params;
+                    params.filters.setMediaLibrary(mediaLibraryId);
+                    params.filters.setGenre(genreObj->getId());
+                    params.setSortMethod(ReleaseSortMethod::Name);
+                    params.setRange(range);
 
-                        releases = Release::findIds(context.getDbSession(), params);
-                    }
+                    releases = Release::findIds(context.getDbSession(), params);
                 }
             }
             else if (type == "byYear")
@@ -166,10 +163,10 @@ namespace lms::api::subsonic
                 throw NotImplementedGenericError{};
             }
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             Response::Node& albumListNode{ response.createNode(id3 ? Response::Node::Key{ "albumList2" } : Response::Node::Key{ "albumList" }) };
 
-            for (const ReleaseId releaseId : releases.results)
+            for (const ReleaseId releaseId : releases)
             {
                 const Release::pointer release{ Release::find(context.getDbSession(), releaseId) };
                 albumListNode.addArrayChild("album", createAlbumNode(context, release, id3));
@@ -185,7 +182,7 @@ namespace lms::api::subsonic
 
             auto transaction{ context.getDbSession().createReadTransaction() };
 
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+            Response response{ Response::createOkResponse() };
             Response::Node& starredNode{ response.createNode(id3 ? Response::Node::Key{ "starred2" } : Response::Node::Key{ "starred" }) };
 
             feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
@@ -196,7 +193,7 @@ namespace lms::api::subsonic
                 feedback::IFeedbackService::ArtistFindParameters artistFindParams;
                 artistFindParams.setUser(context.getUser()->getId());
                 artistFindParams.setSortMethod(ArtistSortMethod::SortName);
-                for (const ArtistId artistId : feedbackService.findStarredArtists(artistFindParams).results)
+                for (const ArtistId artistId : feedbackService.findStarredArtists(artistFindParams))
                 {
                     if (auto artist{ Artist::find(context.getDbSession(), artistId) })
                         starredNode.addArrayChild("artist", createArtistNode(context, artist));
@@ -207,13 +204,13 @@ namespace lms::api::subsonic
             findParameters.setUser(context.getUser()->getId());
             findParameters.filters.setMediaLibrary(mediaLibrary);
 
-            for (const ReleaseId releaseId : feedbackService.findStarredReleases(findParameters).results)
+            for (const ReleaseId releaseId : feedbackService.findStarredReleases(findParameters))
             {
                 if (auto release{ Release::find(context.getDbSession(), releaseId) })
                     starredNode.addArrayChild("album", createAlbumNode(context, release, id3));
             }
 
-            for (const TrackId trackId : feedbackService.findStarredTracks(findParameters).results)
+            for (const TrackId trackId : feedbackService.findStarredTracks(findParameters))
             {
                 if (auto track{ Track::find(context.getDbSession(), trackId) })
                     starredNode.addArrayChild("song", createSongNode(context, track, context.getUser()));
@@ -241,7 +238,7 @@ namespace lms::api::subsonic
         if (size > defaultMaxCountSize)
             throw ParameterValueTooHighGenericError{ "size", defaultMaxCountSize };
 
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& randomSongsNode{ response.createNode("randomSongs") };
 
         auto transaction{ context.getDbSession().createReadTransaction() };
@@ -273,19 +270,15 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        auto clusterType{ ClusterType::find(context.getDbSession(), "GENRE") };
-        if (!clusterType)
+        const Genre::pointer genreObj{ Genre::find(context.getDbSession(), genre) };
+        if (!genreObj)
             throw RequestedDataNotFoundError{};
 
-        auto cluster{ clusterType->getCluster(genre) };
-        if (!cluster)
-            throw RequestedDataNotFoundError{};
-
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& songsByGenreNode{ response.createNode("songsByGenre") };
 
         Track::FindParameters params;
-        params.filters.setClusters(std::initializer_list<ClusterId>{ cluster->getId() });
+        params.filters.setGenre(genreObj->getId());
         params.filters.setMediaLibrary(mediaLibrary);
         params.setRange(Range{ offset, count });
 
@@ -298,7 +291,7 @@ namespace lms::api::subsonic
 
     Response handleGetNowPlayingRequest(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response response{ Response::createOkResponse() };
         Response::Node& nowPlayingNode{ response.createNode("nowPlaying") };
 
         scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };

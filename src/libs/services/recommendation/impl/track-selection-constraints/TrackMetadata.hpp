@@ -19,9 +19,11 @@
 
 #pragma once
 
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
+#include "core/UUID.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
@@ -30,9 +32,9 @@ namespace lms::recommendation
 {
     struct TrackMetadata
     {
-        db::ReleaseId releaseId;             // invalid if track has no release
-        std::vector<db::ArtistId> artistIds; // sorted; album artists only
-        // Future: db::MediaLibraryId mediaLibraryId;
+        db::ReleaseId releaseId;                 // invalid if track has no release
+        std::vector<db::ArtistId> artistIds;     // sorted, album artists only
+        std::optional<core::UUID> recordingMBID; // absent if track has no recording MBID
     };
 
     using TrackMetadataMap = std::unordered_map<db::TrackId, TrackMetadata>;

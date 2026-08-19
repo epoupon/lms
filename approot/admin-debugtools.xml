@@ -8,8 +8,23 @@
        	<hr/>
         <legend>${tr:Lms.Admin.DebugTools.Db.db}</legend>
         ${db}
+        <hr/>
+        <legend>${tr:Lms.Admin.DebugTools.PcmDecodingStats.pcm-decoding-stats}</legend>
+        ${pcm-decoding-stats}
 	</form>
 
+</message>
+
+<message id="Lms.Admin.DebugTools.PcmDecodingStats.template">
+	<form>
+		<div class="row g-3">
+			<div class="col-12">
+				${run-btn class="btn btn-primary"}
+				${download-btn class="btn btn-secondary ms-2"}
+				${status}
+			</div>
+		</div>
+	</form>
 </message>
 
 </messages>

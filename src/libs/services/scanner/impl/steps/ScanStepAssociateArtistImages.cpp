@@ -94,7 +94,7 @@ namespace lms::scanner
             db::Image::pointer image;
 
             // Find anywhere, since it is supposed to be unique!
-            db::Image::find(session, db::Image::FindParameters{}.setFileStem(mbid.getAsString()), [&](const db::Image::pointer foundImg) {
+            db::Image::find(session, db::Image::FindParameters{}.setFileStem(mbid.toString()), [&](const db::Image::pointer foundImg) {
                 if (!image)
                     image = foundImg;
             });

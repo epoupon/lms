@@ -20,6 +20,7 @@
 #include "Common.hpp"
 
 #include "core/String.hpp"
+#include "core/UUID.hpp"
 
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfo.hpp"
@@ -36,6 +37,7 @@
 #include "database/objects/RatedTrack.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/ScanSettings.hpp"
+#include "database/objects/ServerInfo.hpp"
 #include "database/objects/StarredArtist.hpp"
 #include "database/objects/StarredRelease.hpp"
 #include "database/objects/StarredTrack.hpp"
@@ -289,14 +291,14 @@ CREATE INDEX starred_release_user_scrobbler_idx ON starred_release(user_id,scrob
 CREATE INDEX starred_track_user_scrobbler_idx ON starred_track(user_id,scrobbler);)" };
 
         const std::string_view createDummyData{ R"(
--- Inserting artists
+-- Inserting artists (Artist A has a valid UUID MBID to verify round-trip through migration)
 INSERT INTO artist (version, name, sort_name, mbid) VALUES
-(1, 'Artist A', 'Artist A', 'mbid_artist_a'),
+(1, 'Artist A', 'Artist A', '550e8400-e29b-41d4-a716-446655440000'),
 (2, 'Artist B', 'Artist B', 'mbid_artist_b');
 
--- Inserting releases
+-- Inserting releases (Release X has a valid UUID MBID to verify round-trip through migration)
 INSERT INTO release (version, name, mbid) VALUES
-(1, 'Release X', 'mbid_release_x'),
+(1, 'Release X', '6ba7b810-9dad-11d1-80b4-00c04fd430c8'),
 (2, 'Release Y', 'mbid_release_y');
 
 -- Inserting tracks without any associated artists or releases (Orphan Tracks)
@@ -343,6 +345,8 @@ VALUES
 
         // Now perform full migration
         db.getTLSSession().migrateSchemaIfNeeded();
+        db.getTLSSession().createScanSettingsIfNeeded();
+        db.getTLSSession().createServerInfoIfNeeded();
 
         // Now perform some dummy finds to ensure all fields are correctly mapped
         {
@@ -372,6 +376,7 @@ VALUES
             EXPECT_FALSE(ReleaseArtistLink::find(session, ReleaseArtistLinkId{}));
             EXPECT_FALSE(ReleaseType::find(session, ReleaseTypeId{}));
             EXPECT_FALSE(ScanSettings::find(session, ScanSettingsId{}));
+            EXPECT_NE(ServerInfo::get(session)->getInstanceId(), core::UUID{});
             EXPECT_FALSE(StarredArtist::find(session, StarredArtistId{}));
             EXPECT_FALSE(StarredRelease::find(session, StarredReleaseId{}));
             EXPECT_FALSE(StarredTrack::find(session, StarredTrackId{}));
@@ -381,6 +386,18 @@ VALUES
             EXPECT_FALSE(TrackLyrics::find(session, TrackLyricsId{}));
             EXPECT_FALSE(UIState::find(session, UIStateId{}));
             EXPECT_FALSE(User::find(session, UserId{}));
+
+            const auto artistMBID{ core::UUID::fromString("550e8400-e29b-41d4-a716-446655440000") };
+            ASSERT_TRUE(artistMBID);
+            const auto artist{ Artist::find(session, *artistMBID) };
+            ASSERT_TRUE(artist);
+            EXPECT_EQ(artist->getMBID(), artistMBID);
+
+            const auto releaseMBID{ core::UUID::fromString("6ba7b810-9dad-11d1-80b4-00c04fd430c8") };
+            ASSERT_TRUE(releaseMBID);
+            const auto release{ Release::find(session, *releaseMBID) };
+            ASSERT_TRUE(release);
+            EXPECT_EQ(release->getMBID(), releaseMBID);
         }
     }
 } // namespace lms::db::tests

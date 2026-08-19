@@ -170,6 +170,24 @@ namespace lms::db
             return res;
         }
 
+        std::optional<long long> getMmapSize(Wt::Dbo::SqlConnection& connection)
+        {
+            auto statement = connection.prepareStatement("PRAGMA mmap_size");
+            statement->execute();
+
+            std::optional<long long> res;
+            while (statement->nextRow())
+            {
+                assert(!res);
+                long long value{};
+                if (statement->getResult(0, &value))
+                    res = value;
+                break;
+            }
+
+            return res;
+        }
+
         void getCompileOptions(Wt::Dbo::SqlConnection& connection, std::function<void(std::string_view compileOption)> callback)
         {
             auto statement = connection.prepareStatement("PRAGMA compile_options");
@@ -217,6 +235,7 @@ namespace lms::db
 
         logPageSize();
         logCacheSize();
+        logMmapSize();
         logCompileOptions();
         if (checkType == "quick")
         {
@@ -229,7 +248,7 @@ namespace lms::db
         }
         else if (checkType != "none")
         {
-            throw Exception("Invalid 'db-integrity-check' value: '" + checkType + "'. Expected 'quick', 'full' or 'none'.");
+            throw Exception{ "Invalid 'db-integrity-check' value: '" + checkType + "'. Expected 'quick', 'full' or 'none'." };
         }
     }
 
@@ -276,6 +295,15 @@ namespace lms::db
 
         if (cacheSize)
             LMS_LOG(DB, INFO, "Cache size set to " << *cacheSize);
+    }
+
+    void Db::logMmapSize()
+    {
+        ScopedConnection connection{ *_connectionPool };
+        const std::optional<long long> mmapSize{ getMmapSize(*connection) };
+
+        if (mmapSize)
+            LMS_LOG(DB, INFO, "Mmap size set to " << *mmapSize);
     }
 
     void Db::logCompileOptions()
@@ -332,7 +360,7 @@ namespace lms::db
         }) };
 
         if (!foreignKeyConstraintsPassed)
-            throw Exception("Foreign key constraints check failed! Please restore from a backup or recreate the database.");
+            throw Exception{ "Foreign key constraints check failed! Please restore from a backup or recreate the database." };
 
         LMS_LOG(DB, INFO, "Foreign key constraints check passed!");
     }

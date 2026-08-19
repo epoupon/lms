@@ -19,66 +19,80 @@
 
 #include "TrackCollector.hpp"
 
-#include "core/Service.hpp"
-#include "database/Session.hpp"
+#include "database/objects/Listen.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackList.hpp"
-#include "database/objects/User.hpp"
-#include "services/feedback/IFeedbackService.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
 
-#include "Filters.hpp"
 #include "LmsApplication.hpp"
 
 namespace lms::ui
 {
-    db::RangeResults<db::TrackId> TrackCollector::get(std::optional<db::Range> requestedRange)
+    void TrackCollector::get(db::Range requestedRange, bool& moreResults, const std::function<void(const db::ObjectPtr<db::Track>&)>& func)
     {
-        feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
-        scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };
-
         const db::Range range{ getActualRange(requestedRange) };
-
-        db::RangeResults<db::TrackId> tracks;
 
         switch (getMode())
         {
         case Mode::Random:
-            tracks = getRandomTracks(range);
-            break;
-
-        case Mode::Starred:
             {
-                feedback::IFeedbackService::FindParameters params;
-                params.setFilters(getDbFilters());
-                params.setKeywords(getSearchKeywords());
-                params.setRange(range);
-                params.setUser(LmsApp->getUserId());
-                tracks = feedbackService.findStarredTracks(params);
+                if (!_randomTracks)
+                {
+                    db::Track::FindParameters params;
+                    params.setFilters(getDbFilters());
+                    params.setKeywords(getSearchKeywords());
+                    params.setSortMethod(db::TrackSortMethod::Random);
+                    params.setRange(db::Range{ 0, getMaxCount() });
+                    _randomTracks = db::Track::findIds(LmsApp->getDbSession(), params);
+                }
+                const auto& all{ *_randomTracks };
+                const std::size_t offset{ std::min(range.offset, all.size()) };
+                const auto slice{ std::span{ all }.subspan(offset, std::min(range.size, all.size() - offset)) };
+                moreResults = (offset + slice.size() < all.size());
+                for (const auto id : slice)
+                {
+                    if (const auto track{ db::Track::find(LmsApp->getDbSession(), id) })
+                        func(track);
+                }
                 break;
             }
 
-        case TrackCollector::Mode::RecentlyPlayed:
+        case Mode::Starred:
             {
-                scrobbling::IScrobblingService::FindParameters params;
-                params.setUser(LmsApp->getUserId());
+                db::Track::FindParameters params;
+                params.setFilters(getDbFilters());
+                params.setKeywords(getSearchKeywords());
+                params.setSortMethod(db::TrackSortMethod::StarredDateDesc);
+                params.setRange(range);
+                params.setStarringUser(LmsApp->getUserId());
+                std::size_t count{};
+                db::Track::find(LmsApp->getDbSession(), params, [&](const auto& t) { func(t); ++count; });
+                moreResults = (count == range.size);
+                break;
+            }
+
+        case Mode::RecentlyPlayed:
+            {
+                db::Listen::StatsFindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
-
-                tracks = scrobblingService.getRecentTracks(params);
+                params.setUser(LmsApp->getUserId());
+                std::size_t count{};
+                db::Listen::getRecentTracks(LmsApp->getDbSession(), params, [&](const auto& t) { func(t); ++count; });
+                moreResults = (count == range.size);
                 break;
             }
 
         case Mode::MostPlayed:
             {
-                scrobbling::IScrobblingService::FindParameters params;
-                params.setUser(LmsApp->getUserId());
+                db::Listen::StatsFindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
-
-                tracks = scrobblingService.getTopTracks(params);
+                params.setUser(LmsApp->getUserId());
+                std::size_t count{};
+                db::Listen::getTopTracks(LmsApp->getDbSession(), params, [&](const auto& t) { func(t); ++count; });
+                moreResults = (count == range.size);
                 break;
             }
 
@@ -89,11 +103,9 @@ namespace lms::ui
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::TrackSortMethod::AddedDesc);
                 params.setRange(range);
-
-                {
-                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    tracks = db::Track::findIds(LmsApp->getDbSession(), params);
-                }
+                std::size_t count{};
+                db::Track::find(LmsApp->getDbSession(), params, [&](const auto& t) { func(t); ++count; });
+                moreResults = (count == range.size);
                 break;
             }
 
@@ -104,11 +116,9 @@ namespace lms::ui
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::TrackSortMethod::LastWrittenDesc);
                 params.setRange(range);
-
-                {
-                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    tracks = db::Track::findIds(LmsApp->getDbSession(), params);
-                }
+                std::size_t count{};
+                db::Track::find(LmsApp->getDbSession(), params, [&](const auto& t) { func(t); ++count; });
+                moreResults = (count == range.size);
                 break;
             }
 
@@ -118,40 +128,12 @@ namespace lms::ui
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
-
-                {
-                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    tracks = db::Track::findIds(LmsApp->getDbSession(), params);
-                }
+                std::size_t count{};
+                db::Track::find(LmsApp->getDbSession(), params, [&](const auto& t) { func(t); ++count; });
+                moreResults = (count == range.size);
                 break;
             }
         }
-
-        if (range.offset + range.size == getMaxCount())
-            tracks.moreResults = false;
-
-        return tracks;
-    }
-
-    db::RangeResults<db::TrackId> TrackCollector::getRandomTracks(Range range)
-    {
-        assert(getMode() == Mode::Random);
-
-        if (!_randomTracks)
-        {
-            db::Track::FindParameters params;
-            params.setFilters(getDbFilters());
-            params.setKeywords(getSearchKeywords());
-            params.setSortMethod(db::TrackSortMethod::Random);
-            params.setRange(db::Range{ 0, getMaxCount() });
-
-            {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                _randomTracks = db::Track::findIds(LmsApp->getDbSession(), params);
-            }
-        }
-
-        return _randomTracks->getSubRange(range);
     }
 
 } // namespace lms::ui

@@ -54,11 +54,9 @@
 	<div class="card mt-3">
 		<div class="card-header">
 			${tr:Lms.Settings.subsonic-token}
-			${<if-has-subsonic-token-usage>}
 			<button type="button" class="btn btn-sm p-0" data-bs-toggle="tooltip" data-bs-placement="right" title="${tr:Lms.Settings.subsonic-token-usage}">
 				<i class="fa fa-fw fa-info-circle" aria-hidden="true"></i>
 			</button>
-			${</if-has-subsonic-token-usage>}
 		</div>
 		<div class="card-body">
 			<div class="input-group mb-3">

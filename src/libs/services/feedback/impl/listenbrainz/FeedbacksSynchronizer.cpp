@@ -127,7 +127,7 @@ namespace lms::feedback::listenBrainz
             request.message.addHeader("Authorization", "Token " + listenBrainzToken);
 
             Wt::Json::Object root;
-            root["recording_mbid"] = Wt::Json::Value{ std::string{ recordingMBID->getAsString() } };
+            root["recording_mbid"] = Wt::Json::Value{ recordingMBID->toString() };
             root["score"] = Wt::Json::Value{ static_cast<int>(type) };
 
             request.message.addBodyText(Wt::Json::serialize(root));
@@ -196,7 +196,7 @@ namespace lms::feedback::listenBrainz
         using namespace db;
 
         auto processPendingFeedbacks{ [this](SyncState scrobblingState, FeedbackType feedbackType) {
-            RangeResults<StarredTrackId> pendingFeedbacks;
+            std::vector<StarredTrackId> pendingFeedbacks;
 
             {
                 db::Session& session{ _db.getTLSSession() };
@@ -210,9 +210,9 @@ namespace lms::feedback::listenBrainz
                 pendingFeedbacks = StarredTrack::find(session, params);
             }
 
-            LOG(DEBUG, "Queing " << pendingFeedbacks.results.size() << " pending '" << (feedbackType == FeedbackType::Love ? "love" : "erase") << "' feedbacks");
+            LOG(DEBUG, "Queing " << pendingFeedbacks.size() << " pending '" << (feedbackType == FeedbackType::Love ? "love" : "erase") << "' feedbacks");
 
-            for (const StarredTrackId starredTrackId : pendingFeedbacks.results)
+            for (const StarredTrackId starredTrackId : pendingFeedbacks)
                 enqueFeedback(feedbackType, starredTrackId);
         } };
 
@@ -270,14 +270,14 @@ namespace lms::feedback::listenBrainz
 
         enquePendingFeedbacks();
 
-        db::RangeResults<db::UserId> userIds;
+        std::vector<db::UserId> userIds;
         {
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
             userIds = db::User::find(_db.getTLSSession(), db::User::FindParameters{}.setFeedbackBackend(db::FeedbackBackend::ListenBrainz));
         }
 
-        for (const db::UserId userId : userIds.results)
+        for (const db::UserId userId : userIds)
             startSync(getUserContext(userId));
 
         if (!isSyncing())

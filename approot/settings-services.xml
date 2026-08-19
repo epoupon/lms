@@ -39,4 +39,64 @@
 	${save-btn class="btn btn-primary me-1"}${discard-btn class="btn btn-secondary"}
 </message>
 
+<message id="Lms.Settings.services.lastfm.template.card">
+	<div class="card mt-3">
+		<div class="card-header d-flex align-items-center gap-2">
+			${tr:Lms.Settings.services.lastfm-card-title}
+			${card-header-badge}
+		</div>
+		<div class="card-body d-flex align-items-center gap-2">
+			${card-content}
+		</div>
+	</div>
+</message>
+
+<message id="Lms.Settings.services.lastfm.template.link-modal">
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">${tr:Lms.Settings.services.lastfm-link-modal-title}</h5>
+				</div>
+				<div class="modal-body">
+					<p>${tr:Lms.Settings.services.lastfm-link-modal-help}</p>
+					<div class="mb-3">
+						<label class="form-label">${tr:Lms.Settings.services.lastfm-api-key}</label>
+						${api-key class="form-control"}
+					</div>
+					<div class="mb-3">
+						<label class="form-label">${tr:Lms.Settings.services.lastfm-api-secret}</label>
+						<div class="input-group">
+							${api-secret class="form-control"}
+							${api-secret-visibility-btn class="btn btn-outline-secondary"}
+						</div>
+					</div>
+					${auth-anchor-container}
+				</div>
+				<div class="modal-footer">
+					${authorize-btn class="btn btn-primary me-1"}${done-btn class="btn btn-success me-1"}${cancel-btn class="btn btn-secondary"}
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+<message id="Lms.Settings.services.lastfm.template.unlink-confirm">
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">${tr:Lms.Settings.services.lastfm-unlink-confirm-title}</h5>
+				</div>
+				<div class="modal-body">
+					${tr:Lms.Settings.services.lastfm-unlink-confirm-body}
+				</div>
+				<div class="modal-footer">
+					${confirm-btn class="btn btn-danger me-1"}${cancel-btn class="btn btn-secondary"}
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
 </messages>

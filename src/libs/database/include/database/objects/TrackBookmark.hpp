@@ -46,7 +46,7 @@ namespace lms::db
         // Find utility functions
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, TrackBookmarkId id);
-        static RangeResults<TrackBookmarkId> find(Session& session, UserId userId, std::optional<Range> range = std::nullopt);
+        static std::vector<TrackBookmarkId> find(Session& session, UserId userId, std::optional<Range> range = std::nullopt);
         static pointer find(Session& session, UserId userId, TrackId trackId);
 
         // Setters

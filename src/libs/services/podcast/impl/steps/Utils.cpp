@@ -78,7 +78,7 @@ namespace lms::podcast::utils
 
     std::string generateRandomFileName()
     {
-        return std::string{ core::UUID::generate().getAsString() };
+        return core::UUID::generate().toString();
     }
 
     void removeFile(const std::filesystem::path& filePath)

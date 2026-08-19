@@ -115,22 +115,26 @@ namespace lms::ui
 
     void Tracks::addSome()
     {
-        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-        const auto trackIds{ _trackCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }) };
-
-        for (const db::TrackId trackId : trackIds.results)
+        bool moreResults{};
         {
-            if (const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) })
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+            _trackCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }, moreResults, [&](const db::Track::pointer& track) {
                 _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
+            });
         }
-
-        _container->setHasMore(trackIds.moreResults);
+        _container->setHasMore(moreResults);
     }
 
     std::vector<db::TrackId> Tracks::getAllTracks()
     {
-        db::RangeResults<db::TrackId> trackIds{ _trackCollector.get() };
-        return std::move(trackIds.results);
+        std::vector<db::TrackId> ids;
+        bool moreResults{};
+        {
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+            _trackCollector.get(db::Range{ 0, _maxCount }, moreResults, [&](const db::Track::pointer& track) {
+                ids.push_back(track->getId());
+            });
+        }
+        return ids;
     }
 } // namespace lms::ui

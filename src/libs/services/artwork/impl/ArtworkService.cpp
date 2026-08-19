@@ -169,7 +169,7 @@ namespace lms::artwork
         }
 
         const auto entries{ trackList->getEntries(db::Range{ 0, 10 }) };
-        for (const auto& entry : entries.results)
+        for (const auto& entry : entries)
         {
             const auto track{ entry->getTrack() };
             if (track->getPreferredMediaArtworkId().isValid())

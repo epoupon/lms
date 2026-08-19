@@ -17,13 +17,7 @@ OpenSubsonic is an initiative to patch and extend the legacy Subsonic API. You'l
 
 ## Authentication
 _LMS_ supports the [API Key Authentication](https://opensubsonic.netlify.app/docs/extensions/apikeyauth/) method. Each user has to generate their own API key on the settings page to use the Subsonic API.
-
-By default, API keys can also be used as passwords, provided the `user` parameter matches the API key owner. To disable this fallback authentication method, set the following in `lms.conf`:
-```
-api-subsonic-support-user-password-auth = false;
-```
-
-__Note__: the token+salt authentication method is not supported; use the API key as the password instead (see above).
+If a client's login screen has no dedicated API key field, enter the API key as the password instead.
 
 ## Extra fields
 The following extra fields are implemented:
@@ -33,6 +27,7 @@ The following extra fields are implemented:
   * `displayArtist`
   * `explicitStatus`
   * `genres`
+  * `groupings`
   * `isCompilation`
   * `played`
   * `mediaType`
@@ -56,12 +51,15 @@ The following extra fields are implemented:
   * `displayArtist`
   * `explicitStatus`
   * `genres`
+  * `groupings`
   * `mediaType`
   * `moods`
+  * `movements`
   * `musicBrainzId`: note this is actually the recording MBID when this response refers to a song
   * `played`
   * `replayGain`
   * `samplingRate`
+  * `works`
 * `Artist` response:
   * `mediaType`
   * `musicBrainzId`
@@ -75,6 +73,7 @@ The following extra fields are implemented:
 * [getPodcastEpisode](https://opensubsonic.netlify.app/docs/extensions/getpodcastepisode/)
 * [HTTP form POST](https://opensubsonic.netlify.app/docs/extensions/formpost/)
 * [Index based Queue](https://opensubsonic.netlify.app/docs/extensions/indexbasedqueue/)
+* [Sonic similarity](https://opensubsonic.netlify.app/docs/extensions/sonicsimilarity/)
 * [Transcode offset](https://opensubsonic.netlify.app/docs/extensions/transcodeoffset/)
 * [Song Lyrics](https://opensubsonic.netlify.app/docs/extensions/songlyrics/)
 * [Transcoding](https://opensubsonic.netlify.app/docs/extensions/transcoding/)

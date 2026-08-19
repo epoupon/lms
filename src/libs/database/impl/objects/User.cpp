@@ -27,6 +27,10 @@
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/AuthToken.hpp"
+#include "database/objects/Genre.hpp"
+#include "database/objects/Grouping.hpp"
+#include "database/objects/Language.hpp"
+#include "database/objects/Mood.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/UIState.hpp"
@@ -57,7 +61,7 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM user"));
     }
 
-    RangeResults<UserId> User::find(Session& session, const FindParameters& params)
+    std::vector<UserId> User::find(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
 

@@ -39,7 +39,7 @@ namespace lms::db::tests
             EXPECT_EQ(StarredArtist::getCount(session), 0);
 
             auto artists{ Artist::findIds(session, Artist::FindParameters{}) };
-            EXPECT_EQ(artists.results.size(), 1);
+            EXPECT_EQ(artists.size(), 1);
         }
 
         ScopedStarredArtist starredArtist{ session, artist.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
@@ -55,13 +55,13 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             auto artists{ Artist::findIds(session, Artist::FindParameters{}) };
-            EXPECT_EQ(artists.results.size(), 1);
+            EXPECT_EQ(artists.size(), 1);
 
-            artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
-            EXPECT_EQ(artists.results.size(), 1);
+            artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId()));
+            EXPECT_EQ(artists.size(), 1);
 
-            artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user2.getId(), FeedbackBackend::Internal));
-            EXPECT_EQ(artists.results.size(), 0);
+            artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user2.getId()));
+            EXPECT_EQ(artists.size(), 0);
         }
 
         {
@@ -97,12 +97,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
-            EXPECT_EQ(artists.results.size(), 1);
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId())) };
+            EXPECT_EQ(artists.size(), 1);
 
             starredArtist.get().modify()->setSyncState(SyncState::PendingRemove);
-            artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
-            EXPECT_EQ(artists.results.size(), 0);
+            artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId()));
+            EXPECT_EQ(artists.size(), 0);
         }
     }
 
@@ -120,8 +120,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ Artist::find(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
-            EXPECT_EQ(artists.results.size(), 2);
+            auto artists{ Artist::find(session, Artist::FindParameters{}.setStarringUser(user.getId())) };
+            EXPECT_EQ(artists.size(), 2);
         }
 
         {
@@ -130,10 +130,10 @@ namespace lms::db::tests
             starredArtist1.get().modify()->setDateTime(dateTime);
             starredArtist2.get().modify()->setDateTime(dateTime.addSecs(-1));
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
-            ASSERT_EQ(artists.results.size(), 2);
-            EXPECT_EQ(artists.results[0], starredArtist1->getArtist()->getId());
-            EXPECT_EQ(artists.results[1], starredArtist2->getArtist()->getId());
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId()).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
+            ASSERT_EQ(artists.size(), 2);
+            EXPECT_EQ(artists[0], starredArtist1->getArtist()->getId());
+            EXPECT_EQ(artists[1], starredArtist2->getArtist()->getId());
         }
         {
             auto transaction{ session.createWriteTransaction() };
@@ -141,10 +141,34 @@ namespace lms::db::tests
             starredArtist1.get().modify()->setDateTime(dateTime);
             starredArtist2.get().modify()->setDateTime(dateTime.addSecs(1));
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
-            ASSERT_EQ(artists.results.size(), 2);
-            EXPECT_EQ(artists.results[0], starredArtist2->getArtist()->getId());
-            EXPECT_EQ(artists.results[1], starredArtist1->getArtist()->getId());
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId()).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
+            ASSERT_EQ(artists.size(), 2);
+            EXPECT_EQ(artists[0], starredArtist2->getArtist()->getId());
+            EXPECT_EQ(artists[1], starredArtist1->getArtist()->getId());
+        }
+    }
+    TEST_F(DatabaseFixture, StarredArtist_currentBackend)
+    {
+        ScopedArtist artist{ session, "MyArtist" };
+        ScopedUser user{ session, "MyUser" };
+        ScopedStarredArtist starredArtist{ session, artist.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId())) };
+            ASSERT_EQ(artists.size(), 1);
+            EXPECT_EQ(artists[0], artist->getId());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            user.get().modify()->setFeedbackBackend(FeedbackBackend::ListenBrainz);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId())) };
+            EXPECT_EQ(artists.size(), 0);
         }
     }
 } // namespace lms::db::tests

@@ -44,6 +44,9 @@ namespace lms::audio::ffmpeg
 
         std::size_t computeSampleCountPerChannel(std::span<WritableBuffer> outputChannelBuffers) const;
         void feedDecoder();
+        bool inputFormatChanged(const AVFrame* frame) const;
+        void reinitResamplerForFrame(const AVFrame* frame);
+        std::size_t resampleFrame(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel, const AVFrame* inputFrame);
         std::size_t drainResampler(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel);
         std::size_t getEstimatedResamplerAvailableSamples() const;
 
@@ -60,5 +63,15 @@ namespace lms::audio::ffmpeg
         AVFramePtr _decodedFrame;
         AVPacketPtr _inputPacket;
         SwrContextPtr _resampleContext;
+
+        struct ResamplerInputConfig
+        {
+            int sampleRate{};
+            int sampleFormat{};
+            int nbChannels{};
+            int channelOrder{};
+            std::uint64_t channelMask{};
+        };
+        ResamplerInputConfig _resamplerInputConfig;
     };
 } // namespace lms::audio::ffmpeg

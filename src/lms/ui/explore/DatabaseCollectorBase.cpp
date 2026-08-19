@@ -34,24 +34,14 @@ namespace lms::ui
     {
     }
 
-    DatabaseCollectorBase::Range DatabaseCollectorBase::getActualRange(std::optional<db::Range> requestedRange) const
+    DatabaseCollectorBase::Range DatabaseCollectorBase::getActualRange(Range requestedRange) const
     {
-        db::Range res;
-
-        if (!requestedRange)
-        {
-            res.offset = 0;
-            res.size = _maxCount;
-        }
+        Range res;
+        res.offset = requestedRange.offset;
+        if (requestedRange.offset < _maxCount)
+            res.size = std::min(_maxCount - requestedRange.offset, requestedRange.size);
         else
-        {
-            res.offset = requestedRange->offset;
-            if (requestedRange->offset < _maxCount)
-                res.size = std::min(_maxCount - requestedRange->offset, requestedRange->size);
-            else
-                res.size = 0;
-        }
-
+            res.size = 0;
         return res;
     }
 

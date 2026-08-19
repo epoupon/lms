@@ -28,7 +28,7 @@ add_library(lmsscanner STATIC
 	impl/steps/ScanStepCheckForDuplicatedFiles.cpp
 	impl/steps/ScanStepCheckForRemovedFiles.cpp
 	impl/steps/ScanStepCompact.cpp
-	impl/steps/ScanStepComputeClusterStats.cpp
+	impl/steps/ScanStepComputeGenreStats.cpp
 	impl/steps/ScanStepExtractMusicNNEmbeddings.cpp
 	impl/steps/ScanStepOptimize.cpp
 	impl/steps/ScanStepRemoveOrphanedDbEntries.cpp
