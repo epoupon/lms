@@ -43,12 +43,14 @@ namespace lms::feedback::listenBrainz
         ListenBrainzBackend(const ListenBrainzBackend&) = delete;
         ListenBrainzBackend& operator=(const ListenBrainzBackend&) = delete;
 
-        void onStarred(db::StarredArtistId starredArtistId) override;
-        void onUnstarred(db::StarredArtistId starredArtistId) override;
-        void onStarred(db::StarredReleaseId starredReleaseId) override;
-        void onUnstarred(db::StarredReleaseId starredReleaseId) override;
-        void onStarred(db::StarredTrackId starredTrackId) override;
-        void onUnstarred(db::StarredTrackId starredTrackId) override;
+        void onFeedbackChanged(db::ArtistFeedbackId id) override;
+        void onFeedbackChanged(db::ReleaseFeedbackId id) override;
+        void onFeedbackChanged(db::TrackFeedbackId id) override;
+        bool canBeFeedbacked(db::ArtistId artistId) const override;
+        bool canBeFeedbacked(db::ReleaseId releaseId) const override;
+        bool canBeFeedbacked(db::TrackId trackId) const override;
+        void requestImmediateImport(db::UserId userId) override;
+        void requestImmediateExport() override;
 
         boost::asio::io_context& _ioContext;
         db::IDb& _db;

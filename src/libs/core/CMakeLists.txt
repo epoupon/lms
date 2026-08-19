@@ -14,8 +14,10 @@ add_library(lmscore STATIC
 	impl/http/Client.cpp
 	impl/http/SendQueue.cpp
 	impl/http/UrlValidation.cpp
+	impl/http/WtHttpClient.cpp
 	impl/media/Codec.cpp
 	impl/media/Container.cpp
+	impl/media/ImageFormat.cpp
 	impl/media/ImageType.cpp
 	impl/media/MimeType.cpp
 	impl/ArchiveZipper.cpp

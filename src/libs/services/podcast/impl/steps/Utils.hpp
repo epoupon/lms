@@ -23,6 +23,7 @@
 #include <string>
 
 #include "database/Object.hpp"
+#include "image/Types.hpp"
 
 namespace lms::db
 {
@@ -32,7 +33,7 @@ namespace lms::db
 
 namespace lms::podcast::utils
 {
-    db::ObjectPtr<db::Artwork> createArtworkFromImage(db::Session& session, const std::filesystem::path& filePath, std::string_view mimeType);
+    db::ObjectPtr<db::Artwork> createArtworkFromImage(db::Session& session, const std::filesystem::path& filePath, const image::ImageProperties& probedImage);
     std::string generateRandomFileName();
     void removeFile(const std::filesystem::path& filePath);
 } // namespace lms::podcast::utils

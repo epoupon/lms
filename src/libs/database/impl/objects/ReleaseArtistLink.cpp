@@ -60,6 +60,9 @@ namespace lms::db
             if (params.mbidMatched)
                 query.where("r_a_l.artist_mbid_matched = ?").bind(*params.mbidMatched);
 
+            if (params.sortNameNotEmpty)
+                query.where("r_a_l.artist_sort_name <> ''");
+
             switch (params.sortMethod)
             {
             case ReleaseArtistLinkSortMethod::None:

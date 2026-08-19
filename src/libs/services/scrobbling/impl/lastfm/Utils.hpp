@@ -22,8 +22,10 @@
 #include <map>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "core/ILogger.hpp"
+#include "core/LiteralString.hpp"
 
 #include "database/objects/UserId.hpp"
 
@@ -49,4 +51,26 @@ namespace lms::scrobbling::lastFm::utils
     std::string buildFormBody(const std::map<std::string, std::string>& params);
     std::string parseAuthToken(std::string_view msgBody);
     std::string parseSessionKey(std::string_view msgBody);
+
+    enum class ScrobbleIgnoredCode
+    {
+        None = 0, // accepted
+        ArtistIgnored = 1,
+        TrackIgnored = 2,
+        TimestampTooOld = 3,
+        TimestampTooNew = 4,
+        DailyLimitExceeded = 5,
+    };
+
+    core::LiteralString toString(ScrobbleIgnoredCode code);
+
+    struct ScrobbleResult
+    {
+        ScrobbleIgnoredCode ignoredCode{ ScrobbleIgnoredCode::None };
+        std::string ignoredMessage; // Last.fm's own explanation, if ignored
+    };
+
+    // One entry per submitted scrobble, in order.
+    // Empty if the response couldn't be parsed or didn't yield exactly expectedCount entries.
+    std::vector<ScrobbleResult> parseScrobbleResults(std::string_view msgBody, std::size_t expectedCount);
 } // namespace lms::scrobbling::lastFm::utils

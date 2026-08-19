@@ -276,6 +276,69 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, TrackArtistLink_findWithSortNameNotEmpty)
+    {
+        ScopedArtist artist{ session, "MyArtist" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            auto link1{ session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Artist, false) };
+            link1.modify()->setArtistName("MyArtist");
+            // link2 has no sort name set at all
+            session.create<TrackArtistLink>(track2.get(), artist.get(), TrackArtistLinkType::Artist, false).modify()->setArtistName("MyArtist");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackArtistLink::FindParameters params;
+
+            std::vector<TrackArtistLink::pointer> links;
+            TrackArtistLink::find(session, params, [&](const TrackArtistLink::pointer& link) {
+                links.push_back(link);
+            });
+            ASSERT_EQ(links.size(), 2);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackArtistLink::FindParameters params;
+            params.setSortNameNotEmpty(true);
+
+            std::vector<TrackArtistLink::pointer> links;
+            TrackArtistLink::find(session, params, [&](const TrackArtistLink::pointer& link) {
+                links.push_back(link);
+            });
+            ASSERT_EQ(links.size(), 0);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            TrackArtistLink::FindParameters params;
+            TrackArtistLink::find(session, params, [&](TrackArtistLink::pointer link) {
+                if (link->getTrack()->getId() == track1.getId())
+                    link.modify()->setArtistSortName("MyArtist, Sort");
+            });
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackArtistLink::FindParameters params;
+            params.setSortNameNotEmpty(true);
+
+            std::vector<TrackArtistLink::pointer> links;
+            TrackArtistLink::find(session, params, [&](const TrackArtistLink::pointer& link) {
+                links.push_back(link);
+            });
+            ASSERT_EQ(links.size(), 1);
+            EXPECT_EQ(links[0]->getTrack()->getId(), track1.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, Track_getArtists_typeFilterAndOrder)
     {
         ScopedTrack track{ session };

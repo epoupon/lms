@@ -22,6 +22,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include "core/EnumSet.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 
 #include "IFeedbackBackend.hpp"
@@ -29,6 +30,11 @@
 namespace lms::db
 {
     class IDb;
+}
+
+namespace lms::feedback::listenBrainz
+{
+    class ListenBrainzBackend;
 }
 
 namespace lms::feedback
@@ -42,43 +48,39 @@ namespace lms::feedback
         FeedbackService& operator=(const FeedbackService&) = delete;
 
     private:
-        void star(db::UserId userId, db::ArtistId artistId) override;
-        void unstar(db::UserId userId, db::ArtistId artistId) override;
-        bool isStarred(db::UserId userId, db::ArtistId artistId) override;
-        Wt::WDateTime getStarredDateTime(db::UserId userId, db::ArtistId artistId) override;
-        ArtistContainer findStarredArtists(const ArtistFindParameters& params) override;
+        void setFeedback(db::UserId userId, db::ArtistId artistId, db::FeedbackValue value) override;
+        db::FeedbackValue getFeedback(db::UserId userId, db::ArtistId artistId) override;
+        Wt::WDateTime getFeedbackDateTime(db::UserId userId, db::ArtistId artistId) override;
 
         void setRating(db::UserId userId, db::ArtistId artistId, std::optional<db::Rating> rating) override;
         std::optional<db::Rating> getRating(db::UserId userId, db::ArtistId artistId) override;
 
-        void star(db::UserId userId, db::ReleaseId releaseId) override;
-        void unstar(db::UserId userId, db::ReleaseId releaseId) override;
-        bool isStarred(db::UserId userId, db::ReleaseId releaseId) override;
-        Wt::WDateTime getStarredDateTime(db::UserId userId, db::ReleaseId releaseId) override;
-        ReleaseContainer findStarredReleases(const FindParameters& params) override;
+        void setFeedback(db::UserId userId, db::ReleaseId releaseId, db::FeedbackValue value) override;
+        db::FeedbackValue getFeedback(db::UserId userId, db::ReleaseId releaseId) override;
+        Wt::WDateTime getFeedbackDateTime(db::UserId userId, db::ReleaseId releaseId) override;
 
         void setRating(db::UserId userId, db::ReleaseId releaseId, std::optional<db::Rating> rating) override;
         std::optional<db::Rating> getRating(db::UserId userId, db::ReleaseId releaseId) override;
 
-        void star(db::UserId userId, db::TrackId trackId) override;
-        void unstar(db::UserId userId, db::TrackId trackId) override;
-        bool isStarred(db::UserId userId, db::TrackId trackId) override;
-        Wt::WDateTime getStarredDateTime(db::UserId userId, db::TrackId trackId) override;
-        TrackContainer findStarredTracks(const FindParameters& params) override;
+        void setFeedback(db::UserId userId, db::TrackId trackId, db::FeedbackValue value) override;
+        db::FeedbackValue getFeedback(db::UserId userId, db::TrackId trackId) override;
+        Wt::WDateTime getFeedbackDateTime(db::UserId userId, db::TrackId trackId) override;
 
         void setRating(db::UserId userId, db::TrackId trackId, std::optional<db::Rating> rating) override;
         std::optional<db::Rating> getRating(db::UserId userId, db::TrackId trackId) override;
 
-        std::optional<db::FeedbackBackend> getUserFeedbackBackend(db::UserId userId);
+        void requestImmediateImport(db::UserId userId, db::FeedbackBackend backend) override;
+        void requestImmediateExport(db::UserId userId, db::FeedbackBackend backend) override;
 
-        template<typename ObjType, typename ObjIdType, typename StarredObjType>
-        void star(db::UserId userId, ObjIdType id);
-        template<typename ObjType, typename ObjIdType, typename StarredObjType>
-        void unstar(db::UserId userId, ObjIdType id);
-        template<typename ObjType, typename ObjIdType, typename StarredObjType>
-        bool isStarred(db::UserId userId, ObjIdType id);
-        template<typename ObjType, typename ObjIdType, typename StarredObjType>
-        Wt::WDateTime getStarredDateTime(db::UserId userId, ObjIdType id);
+        core::EnumSet<db::FeedbackBackend> getUserFeedbackBackends(db::UserId userId);
+        void markPendingExports(db::UserId userId, db::FeedbackBackend backend);
+
+        template<typename ObjType, typename ObjIdType, typename FeedbackObjType>
+        void setFeedback(db::UserId userId, ObjIdType id, db::FeedbackValue value);
+        template<typename ObjType, typename ObjIdType, typename FeedbackObjType>
+        db::FeedbackValue getFeedback(db::UserId userId, ObjIdType id);
+        template<typename ObjType, typename ObjIdType, typename FeedbackObjType>
+        Wt::WDateTime getFeedbackDateTime(db::UserId userId, ObjIdType id);
 
         template<typename ObjType, typename ObjIdType, typename RatedObjType>
         void setRating(db::UserId userId, ObjIdType objectId, std::optional<db::Rating> rating);

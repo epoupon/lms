@@ -14,8 +14,6 @@
 <message id="Lms.discard">撤销</message>
 <message id="Lms.edit">编辑</message>
 <message id="Lms.field-must-be-in-upper-case">此字段必须为大写</message>
-<message id="Lms.infinite-scrolling-container.limit-reached">已达到显示上限 — 请精简搜索条件以查看更多结果</message>
-<message id="Lms.infinite-scrolling-container.no-results">未找到结果</message>
 <message id="Lms.loading">加载中...</message>
 <message id="Lms.login">登陆</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> 注销</message>
@@ -226,6 +224,7 @@
 <message id="Lms.Explore.grouping">分组</message>
 <message id="Lms.Explore.label">厂牌</message>
 <message id="Lms.Explore.language">语言</message>
+<message id="Lms.Explore.limit-reached">已达到显示上限 — 请精简搜索条件以查看更多结果</message>
 <message id="Lms.Explore.lyricist">作词者</message>
 <message id="Lms.Explore.media-library">音乐库</message>
 <message id="Lms.Explore.mixer">混音师</message>
@@ -233,6 +232,7 @@
 <message id="Lms.Explore.most-played">播放最多</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz 歌手</message>
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz 专辑</message>
+<message id="Lms.Explore.no-results">未找到结果</message>
 <message id="Lms.Explore.performer">表演者</message>
 <message id="Lms.Explore.play">播放</message>
 <message id="Lms.Explore.play-last">最后播放</message>
@@ -293,6 +293,9 @@
 <message id="Lms.Explore.Release.type-secondary-soundtrack">原声带</message>
 <message id="Lms.Explore.Release.type-secondary-spokenword">朗诵</message>
 
+<!--Explore:TrackList-->
+<message id="Lms.Explore.TrackList.empty">此播放列表为空</message>
+
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">删除播放列表？</message>
 <message id="Lms.Explore.TrackLists.type-owned">我的播放列表</message>
@@ -314,6 +317,7 @@
 <message id="Lms.PlayQueue.clear">清除</message>
 <message id="Lms.PlayQueue.create-tracklist">创建新播放列表</message>
 <message id="Lms.PlayQueue.playqueue">播放队列</message>
+<message id="Lms.PlayQueue.queue-is-empty">您的播放队列为空</message>
 <message id="Lms.PlayQueue.radio-mode">广播模式</message>
 <message id="Lms.PlayQueue.repeat">循环播放</message>
 <message id="Lms.PlayQueue.replace-tracklist">替换现有播放列表</message>
@@ -326,25 +330,29 @@
 <message id="Lms.Settings.artist-release-sort-method">艺术家专辑排序方法</message>
 <message id="Lms.Settings.audio">音频</message>
 <message id="Lms.Settings.audio-settings-are-local">这些音频设置仅保存在您的本地浏览器</message>
-<message id="Lms.Settings.backend.internal">内部</message>
-<message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
-<message id="Lms.Settings.backend.listenbrainz-token">ListenBrainz API 令牌</message>
-<message id="Lms.Settings.backend.lastfm">Last.fm</message>
-<message id="Lms.Settings.services.lastfm-api-key">Last.fm API 密钥</message>
-<message id="Lms.Settings.services.lastfm-api-secret">Last.fm API 共享密钥</message>
-<message id="Lms.Settings.services.lastfm-card-title">Last.fm 账户</message>
-<message id="Lms.Settings.services.lastfm-linked">已关联</message>
-<message id="Lms.Settings.services.lastfm-link">关联账户</message>
-<message id="Lms.Settings.services.lastfm-unlink">取消关联账户</message>
-<message id="Lms.Settings.services.lastfm-link-modal-title">关联 Last.fm 账户</message>
-<message id="Lms.Settings.services.lastfm-link-modal-help">输入您的 Last.fm API 密钥和共享密钥（从 <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a> 获取），然后点击授权。</message>
-<message id="Lms.Settings.services.lastfm-authorize">在 Last.fm 上授权</message>
-<message id="Lms.Settings.services.lastfm-done">完成，我已授权</message>
-<message id="Lms.Settings.services.lastfm-auth-url">未打开？点击此处在 Last.fm 上授权</message>
-<message id="Lms.Settings.services.lastfm-unlink-confirm-title">取消关联 Last.fm 账户</message>
-<message id="Lms.Settings.services.lastfm-unlink-confirm-body">您确定要取消关联 Last.fm 账户吗？在重新关联之前，scrobbling 将停止。</message>
-<message id="Lms.Settings.services.lastfm-missing-credentials">请输入您的 Last.fm API 密钥和共享密钥。</message>
-<message id="Lms.Settings.services.lastfm-auth-error">Last.fm 认证失败。请检查您的 API 密钥和共享密钥。</message>
+<message id="Lms.Settings.lastfm">Last.fm</message>
+<message id="Lms.Settings.lastfm-api-key">Last.fm API 密钥</message>
+<message id="Lms.Settings.lastfm-api-secret">Last.fm API 共享密钥</message>
+<message id="Lms.Settings.lastfm-auth-error">Last.fm 认证失败。请检查您的 API 密钥和共享密钥。</message>
+<message id="Lms.Settings.lastfm-auth-url">未打开？点击此处在 Last.fm 上授权</message>
+<message id="Lms.Settings.lastfm-authorize">在 Last.fm 上授权</message>
+<message id="Lms.Settings.lastfm-card-title">Last.fm 账户</message>
+<message id="Lms.Settings.lastfm-done">完成，我已授权</message>
+<message id="Lms.Settings.lastfm-link">关联账户</message>
+<message id="Lms.Settings.lastfm-link-modal-help">输入您的 Last.fm API 密钥和共享密钥（从 <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a> 获取），然后点击授权。</message>
+<message id="Lms.Settings.lastfm-link-modal-title">关联 Last.fm 账户</message>
+<message id="Lms.Settings.lastfm-linked">已关联</message>
+<message id="Lms.Settings.lastfm-missing-credentials">请输入您的 Last.fm API 密钥和共享密钥。</message>
+<message id="Lms.Settings.lastfm-unlink">取消关联账户</message>
+<message id="Lms.Settings.lastfm-unlink-confirm-body">您确定要取消关联 Last.fm 账户吗？在重新关联之前，scrobbling 将停止。</message>
+<message id="Lms.Settings.lastfm-unlink-confirm-title">取消关联 Last.fm 账户</message>
+<message id="Lms.Settings.listenbrainz">ListenBrainz</message>
+<message id="Lms.Settings.listenbrainz-import-card-title">ListenBrainz 导入</message>
+<message id="Lms.Settings.listenbrainz-import-feedback">导入喜爱曲目</message>
+<message id="Lms.Settings.listenbrainz-import-listens">导入收听记录</message>
+<message id="Lms.Settings.listenbrainz-import-started">导入已开始，可能需要一些时间</message>
+<message id="Lms.Settings.listenbrainz-token">ListenBrainz API 令牌</message>
+<message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.change-password">更改密码</message>
 <message id="Lms.Settings.date-asc">发行日期（升序）</message>
 <message id="Lms.Settings.date-desc">发行日期（降序）</message>
@@ -353,12 +361,11 @@
 <message id="Lms.Settings.demo-cannot-save">使用演示账号时不能保存！</message>
 <message id="Lms.Settings.enable-inline-artist-relationships">在专辑中内联显示艺术家关系</message>
 <message id="Lms.Settings.enable-transcoding-by-default">默认启用转码</message>
-<message id="Lms.Settings.feedback">反馈</message>
+<message id="Lms.Settings.export-started">导出已开始，可能需要一些时间</message>
 <message id="Lms.Settings.inline-artist-relationships">要显示的艺术家关系类型</message>
 <message id="Lms.Settings.menu-ui"><i class="fa fa-fw fa-paint-brush" aria-hidden="true"></i> 用户界面</message>
 <message id="Lms.Settings.menu-audio"><i class="fa fa-fw fa-music" aria-hidden="true"></i> 音频</message>
-<message id="Lms.Settings.menu-subsonic"><i class="fa fa-fw fa-key" aria-hidden="true"></i> Subsonic 应用程序接口</message>
-<message id="Lms.Settings.menu-services"><i class="fa fa-fw fa-exchange" aria-hidden="true"></i> 服务</message>
+<message id="Lms.Settings.menu-lastfm"><i class="fa fa-fw fa-lastfm" aria-hidden="true"></i> Last.fm</message>
 <message id="Lms.Settings.menu-password"><i class="fa fa-fw fa-lock" aria-hidden="true"></i> 更改密码</message>
 <message id="Lms.Settings.name">专辑名称</message>
 <message id="Lms.Settings.original-date-asc">原始发行日期（升序）</message>
@@ -380,8 +387,6 @@
 <message id="Lms.Settings.replaygain-mode.release">专辑</message>
 <message id="Lms.Settings.replaygain-preamp">ReplayGain 放大器</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">ReplayGain 放大器 (如果没有信息)</message>
-<message id="Lms.Settings.scrobbling">记录播放</message>
-<message id="Lms.Settings.services">服务</message>
 <message id="Lms.Settings.settings">设置</message>
 <message id="Lms.Settings.settings-saved">新设置已保存！</message>
 <message id="Lms.Settings.subsonic-artist-list-mode">歌手列表模式</message>

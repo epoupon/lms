@@ -23,6 +23,7 @@
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
+#include "core/media/ImageFormat.hpp"
 
 #include "audio/Exception.hpp"
 #include "audio/IAudioFileInfo.hpp"
@@ -63,21 +64,21 @@ namespace lms::artwork
         LMS_LOG(COVER, INFO, "Default release cover path = " << defaultReleaseCoverSvgPath);
         LMS_LOG(COVER, INFO, "Max cache size = " << _cache.getMaxCacheSize());
 
-        _defaultReleaseCover = image::readImage(defaultReleaseCoverSvgPath); // may throw
-        _defaultArtistImage = image::readImage(defaultArtistImageSvgPath);   // may throw
+        _defaultReleaseCover = image::readImage(defaultReleaseCoverSvgPath, core::media::ImageFormat::SVG); // may throw
+        _defaultArtistImage = image::readImage(defaultArtistImageSvgPath, core::media::ImageFormat::SVG);   // may throw
     }
 
     ArtworkService::~ArtworkService() = default;
 
-    std::unique_ptr<image::IEncodedImage> ArtworkService::getFromImageFile(const std::filesystem::path& p, std::string_view mimeType, std::optional<image::ImageSize> width) const
+    std::unique_ptr<image::IEncodedImage> ArtworkService::getFromImageFile(const std::filesystem::path& p, core::media::ImageFormat format, std::optional<image::ImageSize> width) const
     {
         std::unique_ptr<image::IEncodedImage> image;
 
         try
         {
-            if (!width)
+            if (!width || !image::canFormatBeDecoded(format))
             {
-                image = image::readImage(p, mimeType);
+                image = image::readImage(p, format);
             }
             else
             {
@@ -104,7 +105,7 @@ namespace lms::artwork
         return _defaultArtistImage;
     }
 
-    std::unique_ptr<image::IEncodedImage> ArtworkService::getTrackImage(const std::filesystem::path& p, std::size_t index, std::optional<image::ImageSize> width) const
+    std::unique_ptr<image::IEncodedImage> ArtworkService::getFromTrackImage(const std::filesystem::path& p, std::size_t index, core::media::ImageFormat format, std::optional<image::ImageSize> width) const
     {
         std::unique_ptr<image::IEncodedImage> image;
 
@@ -125,9 +126,9 @@ namespace lms::artwork
 
                 try
                 {
-                    if (!width)
+                    if (!width || !image::canFormatBeDecoded(format))
                     {
-                        image = image::readImage(parsedImage.data, parsedImage.mimeType);
+                        image = image::readImage(parsedImage.data, format);
                     }
                     else
                     {
@@ -212,7 +213,9 @@ namespace lms::artwork
         else if (const auto* imageId = std::get_if<db::ImageId>(&underlyingArtworkId))
             image = getImage(*imageId, width);
 
-        if (image)
+        // Passthrough originals are not cached: caching would store the same bytes once per
+        // requested size, and a genuinely resized image is always produced as JPEG
+        if (image && image::canFormatBeDecoded(image->getFormat()))
             _cache.addImage(cacheEntryDesc, image);
 
         return image;
@@ -221,7 +224,7 @@ namespace lms::artwork
     std::shared_ptr<image::IEncodedImage> ArtworkService::getImage(db::ImageId imageId, std::optional<image::ImageSize> width)
     {
         std::filesystem::path imageFile;
-        std::string mimeType;
+        std::optional<core::media::ImageFormat> format;
         {
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
@@ -231,10 +234,16 @@ namespace lms::artwork
                 return nullptr;
 
             imageFile = image->getAbsoluteFilePath();
-            mimeType = image->getMimeType();
+            format = image->getFormat();
         }
 
-        return getFromImageFile(imageFile, mimeType, width);
+        if (!format)
+        {
+            LMS_LOG(COVER, ERROR, "Cannot determine image format for file " << imageFile);
+            return nullptr;
+        }
+
+        return getFromImageFile(imageFile, *format, width);
     }
 
     std::shared_ptr<image::IEncodedImage> ArtworkService::getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width)
@@ -245,10 +254,21 @@ namespace lms::artwork
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
+            const db::TrackEmbeddedImage::pointer trackEmbeddedImage{ db::TrackEmbeddedImage::find(session, trackEmbeddedImageId) };
+            if (!trackEmbeddedImage)
+                return image;
+
+            const std::optional<core::media::ImageFormat> format{ trackEmbeddedImage->getFormat() };
+            if (!format)
+            {
+                LMS_LOG(COVER, ERROR, "Cannot determine image format for embedded image " << trackEmbeddedImageId.getValue());
+                return image;
+            }
+
             // TODO: could be put outside transaction
             db::TrackEmbeddedImageLink::find(session, trackEmbeddedImageId, [&](const db::TrackEmbeddedImageLink::pointer& link) {
                 if (!image)
-                    image = getTrackImage(link->getTrack()->getAbsoluteFilePath(), link->getIndex(), width);
+                    image = getFromTrackImage(link->getTrack()->getAbsoluteFilePath(), link->getIndex(), *format, width);
             });
         }
 

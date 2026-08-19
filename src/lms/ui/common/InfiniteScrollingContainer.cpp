@@ -75,12 +75,32 @@ namespace lms::ui
         {
             hideLoadingIndicator();
             if (getCount() == 0)
-                displayResultHint(Wt::WString::tr("Lms.infinite-scrolling-container.no-results"));
+            {
+                if (_noResultsMsg)
+                    displayResultHint(*_noResultsMsg);
+                else
+                    hideResultHint();
+            }
             else if (!_gotItems)
-                displayResultHint(Wt::WString::tr("Lms.infinite-scrolling-container.limit-reached"));
+            {
+                if (_limitReachedMsg)
+                    displayResultHint(*_limitReachedMsg);
+                else
+                    hideResultHint();
+            }
             else
                 hideResultHint();
         }
+    }
+
+    void InfiniteScrollingContainer::setNoResultsMessage(std::optional<Wt::WString> msg)
+    {
+        _noResultsMsg = std::move(msg);
+    }
+
+    void InfiniteScrollingContainer::setLimitReachedMessage(std::optional<Wt::WString> msg)
+    {
+        _limitReachedMsg = std::move(msg);
     }
 
     void InfiniteScrollingContainer::remove(Wt::WWidget& widget)

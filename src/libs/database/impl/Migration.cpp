@@ -19,6 +19,8 @@
 
 #include "Migration.hpp"
 
+#include <array>
+
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/Exception.hpp"
@@ -36,7 +38,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 110 };
+        static constexpr Version LMS_DATABASE_VERSION{ 115 };
     }
 
     VersionInfo::VersionInfo()
@@ -1966,6 +1968,215 @@ CREATE TABLE IF NOT EXISTS "server_info" (
 ))");
     }
 
+    void migrateFromV110(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        LMS_LOG(DB, INFO, "Splitting listen delivery state into a dedicated table...");
+
+        // Make sure we remove all the previously created index, the createIndexesIfNeeded will recreate them all
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS listen_backend_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS listen_user_backend_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS listen_user_backend_date_time_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS listen_track_user_backend_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS listen_user_track_backend_date_time_idx");
+
+        // Create the replacement index now to not run unindexed now that the old indexes are gone
+        utils::executeCommand(dboSession, R"(CREATE INDEX IF NOT EXISTS listen_user_track_date_time_idx ON listen(user_id,track_id,date_time))");
+
+        utils::executeCommand(dboSession, R"(
+CREATE TABLE IF NOT EXISTS "listen_backend_sync" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "backend" integer not null,
+  "sync_state" integer not null,
+  "listen_id" bigint,
+  constraint "fk_listen_backend_sync_listen" foreign key ("listen_id") references "listen" ("id") on delete cascade deferrable initially deferred
+))");
+
+        const int listenCountBefore{ utils::fetchQuerySingleResult(dboSession.query<int>("SELECT COUNT(*) FROM listen")) };
+
+        // Collapse rows that used to represent the same playback event once per backend into a single canonical row,
+        // recording one listen_backend_sync entry per non-Internal backend that had a row in the group.
+        // sync_state priority when a group has more than one row for the same backend (shouldn't normally happen): Synchronized > PendingAdd > PendingRemove
+        utils::executeCommand(dboSession, R"(
+INSERT INTO listen_backend_sync (version, listen_id, backend, sync_state)
+SELECT 0, c.canonical_id, l.backend,
+       CASE MIN(CASE l.sync_state WHEN 1 THEN 0 WHEN 0 THEN 1 ELSE 2 END)
+            WHEN 0 THEN 1
+            WHEN 1 THEN 0
+            ELSE 2
+       END
+FROM listen l
+JOIN (
+  SELECT user_id, track_id, date_time, MIN(id) AS canonical_id
+  FROM listen
+  GROUP BY user_id, track_id, date_time
+) c ON c.user_id = l.user_id AND c.track_id = l.track_id AND c.date_time = l.date_time
+WHERE l.backend != 0
+GROUP BY c.canonical_id, l.backend)");
+
+        utils::executeCommand(dboSession, R"(
+DELETE FROM listen WHERE id NOT IN (
+  SELECT MIN(id) FROM listen GROUP BY user_id, track_id, date_time
+))");
+
+        const int listenCountAfter{ utils::fetchQuerySingleResult(dboSession.query<int>("SELECT COUNT(*) FROM listen")) };
+        const int deliveryCount{ utils::fetchQuerySingleResult(dboSession.query<int>("SELECT COUNT(*) FROM listen_backend_sync")) };
+        LMS_LOG(DB, INFO, "Collapsed " << listenCountBefore << " listen rows into " << listenCountAfter << ", created " << deliveryCount << " listen_backend_sync rows");
+
+        utils::executeCommand(dboSession, R"(ALTER TABLE "listen" DROP COLUMN "backend")");
+        utils::executeCommand(dboSession, R"(ALTER TABLE "listen" DROP COLUMN "sync_state")");
+
+        // A user can now enable zero, one or more scrobbling backends at once (bitmask). "Internal" is no longer a togglable backend:
+        // recording a Listen row is itself the "Internal" behavior, so a user whose old single backend was Internal ends up with an empty set.
+        utils::executeCommand(dboSession, R"(ALTER TABLE "user" ADD COLUMN "scrobbling_backends" bigint not null default 0)");
+        utils::executeCommand(dboSession, R"(UPDATE "user" SET "scrobbling_backends" = (1 << "scrobbling_backend") WHERE "scrobbling_backend" != 0)");
+        utils::executeCommand(dboSession, R"(ALTER TABLE "user" DROP COLUMN "scrobbling_backend")");
+    }
+
+    void migrateFromV111(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        LMS_LOG(DB, INFO, "Extracting feedback delivery state into dedicated tables...");
+
+        struct StarredTableInfo
+        {
+            std::string_view oldTable;
+            std::string_view newTable;
+            std::string_view sourceIdColumn;
+        };
+
+        constexpr std::array starredTables{
+            StarredTableInfo{ .oldTable = "starred_track", .newTable = "track_feedback", .sourceIdColumn = "track_id" },
+            StarredTableInfo{ .oldTable = "starred_artist", .newTable = "artist_feedback", .sourceIdColumn = "artist_id" },
+            StarredTableInfo{ .oldTable = "starred_release", .newTable = "release_feedback", .sourceIdColumn = "release_id" },
+        };
+
+        for (const StarredTableInfo& info : starredTables)
+        {
+            const std::string oldTable{ info.oldTable };
+            const std::string newTable{ info.newTable };
+            const std::string sourceIdColumn{ info.sourceIdColumn };
+            const std::string backendSyncTable{ newTable + "_backend_sync" };
+            const std::string syncFkColumn{ newTable + "_id" };
+
+            utils::executeCommand(dboSession, "DROP INDEX IF EXISTS " + oldTable + "_user_backend_idx");
+            utils::executeCommand(dboSession, "DROP INDEX IF EXISTS " + oldTable + "_" + sourceIdColumn.substr(0, sourceIdColumn.find('_')) + "_user_backend_idx");
+
+            // Rename first: everything below operates on the final table name directly
+            utils::executeCommand(dboSession, "ALTER TABLE " + oldTable + " RENAME TO " + newTable);
+
+            utils::executeCommand(dboSession, R"(
+CREATE TABLE IF NOT EXISTS ")" + backendSyncTable + R"(" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "backend" integer not null,
+  "sync_state" integer not null,
+  ")" + syncFkColumn + R"(" bigint,
+  constraint "fk_)" + backendSyncTable + "_" + newTable
+                                                  + R"(" foreign key (")" + syncFkColumn + R"(") references ")" + newTable + R"(" ("id") on delete cascade deferrable initially deferred
+))");
+
+            const int rowCountBefore{ utils::fetchQuerySingleResult(dboSession.query<int>("SELECT COUNT(*) FROM " + newTable)) };
+
+            // Collapse rows that used to represent the same star once per backend into a single canonical row,
+            // recording one *_backend_sync entry per non-Internal backend that had a row in the group
+            // sync_state priority when a group has more than one row for the same backend (shouldn't normally happen): Synchronized > PendingAdd > PendingRemove
+            utils::executeCommand(dboSession, R"(
+INSERT INTO )" + backendSyncTable + R"( (version, )"
+                                                  + syncFkColumn + R"(, backend, sync_state)
+SELECT 0, c.canonical_id, s.backend,
+       CASE MIN(CASE s.sync_state WHEN 1 THEN 0 WHEN 0 THEN 1 ELSE 2 END)
+            WHEN 0 THEN 1
+            WHEN 1 THEN 0
+            ELSE 2
+       END
+FROM )" + newTable + R"( s
+JOIN (
+  SELECT user_id, )" + sourceIdColumn + R"(, MIN(id) AS canonical_id
+  FROM )" + newTable + R"(
+  GROUP BY user_id, )" + sourceIdColumn + R"(
+) c ON c.user_id = s.user_id AND c.)" + sourceIdColumn
+                                                  + R"( = s.)" + sourceIdColumn + R"(
+WHERE s.backend != 0
+GROUP BY c.canonical_id, s.backend)");
+
+            // PendingRemove no longer exists as a distinct concept going forward (removal is just value=None, sent through the same path as any other value)
+            // -> collapse it into PendingAdd so these rows still get resynced
+            utils::executeCommand(dboSession, "UPDATE " + backendSyncTable + " SET sync_state = 0 WHERE sync_state = 2");
+            utils::executeCommand(dboSession, R"(DELETE FROM )" + newTable + R"( WHERE id NOT IN (SELECT MIN(id) FROM )" + newTable + R"( GROUP BY user_id, )" + sourceIdColumn + R"())");
+
+            const int rowCountAfter{ utils::fetchQuerySingleResult(dboSession.query<int>("SELECT COUNT(*) FROM " + newTable)) };
+            const int deliveryCount{ utils::fetchQuerySingleResult(dboSession.query<int>("SELECT COUNT(*) FROM " + backendSyncTable)) };
+            LMS_LOG(DB, INFO, "Collapsed " << rowCountBefore << " " << oldTable << " rows into " << rowCountAfter << " " << newTable << " rows, created " << deliveryCount << " " << backendSyncTable << " rows");
+
+            utils::executeCommand(dboSession, R"(ALTER TABLE ")" + newTable + R"(" DROP COLUMN "backend")");
+            utils::executeCommand(dboSession, R"(ALTER TABLE ")" + newTable + R"(" DROP COLUMN "sync_state")");
+            // No "hated" or "pending removal" concept existed before this migration: every remaining row is a loved star (value 1).
+            utils::executeCommand(dboSession, R"(ALTER TABLE ")" + newTable + R"(" ADD COLUMN "value" integer not null default 1)");
+        }
+
+        // A user can now enable zero, one or more feedback backends at once (bitmask). "Internal" is no longer a togglable backend:
+        // recording a *_feedback row is itself the "Internal" behavior, so a user whose old single backend was Internal ends up with an empty set
+        utils::executeCommand(dboSession, R"(ALTER TABLE "user" ADD COLUMN "feedback_backends" bigint not null default 0)");
+        utils::executeCommand(dboSession, R"(UPDATE "user" SET "feedback_backends" = (1 << "feedback_backend") WHERE "feedback_backend" != 0)");
+        utils::executeCommand(dboSession, R"(ALTER TABLE "user" DROP COLUMN "feedback_backend")");
+    }
+
+    void migrateFromV112(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        // Index set rework
+        dropIndexes(session);
+
+        // Sort names are no longer synthesized from the name: clear them and let the next scan write back only what the tags actually carry
+        utils::executeCommand(dboSession, "UPDATE artist SET sort_name = ''");
+        utils::executeCommand(dboSession, "UPDATE release SET sort_name = ''");
+
+        // Just increment the scan versions to make the next scan rescan everything
+        utils::executeCommand(dboSession, "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
+        utils::executeCommand(dboSession, "UPDATE scan_settings SET artist_info_scan_version = artist_info_scan_version + 1");
+    }
+
+    void migrateFromV113(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        // Index definitions changed but not their names: createIndexesIfNeeded uses IF NOT EXISTS and would not rebuild them
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS label_name_idx");
+        utils::executeCommand(dboSession, "DROP INDEX IF EXISTS release_type_name_idx");
+    }
+
+    void migrateFromV114(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        // passthrough image support (webp, gif) -> replace mimetype by our own format, need to rescan everything
+        utils::executeCommand(dboSession, "UPDATE track SET preferred_artwork_id = NULL, preferred_media_artwork_id = NULL");
+        utils::executeCommand(dboSession, "UPDATE release SET preferred_artwork_id = NULL");
+        utils::executeCommand(dboSession, "UPDATE artist SET preferred_artwork_id = NULL");
+        utils::executeCommand(dboSession, "UPDATE medium SET preferred_artwork_id = NULL");
+        utils::executeCommand(dboSession, "UPDATE playlist_file SET preferred_artwork_id = NULL");
+        utils::executeCommand(dboSession, "UPDATE podcast SET artwork_id = NULL");
+        utils::executeCommand(dboSession, "UPDATE podcast_episode SET artwork_id = NULL");
+
+        utils::executeCommand(dboSession, "DELETE FROM track_embedded_image_link");
+        utils::executeCommand(dboSession, "DELETE FROM artwork");
+        utils::executeCommand(dboSession, "DELETE FROM image");
+        utils::executeCommand(dboSession, "DELETE FROM track_embedded_image");
+        utils::executeCommand(dboSession, "ALTER TABLE image ADD COLUMN format INTEGER NOT NULL");
+        utils::executeCommand(dboSession, "ALTER TABLE image DROP COLUMN mime_type");
+        utils::executeCommand(dboSession, "ALTER TABLE track_embedded_image ADD COLUMN format INTEGER NOT NULL");
+        utils::executeCommand(dboSession, "ALTER TABLE track_embedded_image DROP COLUMN mime_type");
+
+        // Just increment the scan versions to make the next scan rescan everything
+        // Podcasts will download the missing images automatically
+        utils::executeCommand(dboSession, "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -2052,6 +2263,11 @@ CREATE TABLE IF NOT EXISTS "server_info" (
             { 107, migrateFromV107 },
             { 108, migrateFromV108 },
             { 109, migrateFromV109 },
+            { 110, migrateFromV110 },
+            { 111, migrateFromV111 },
+            { 112, migrateFromV112 },
+            { 113, migrateFromV113 },
+            { 114, migrateFromV114 },
         };
 
         LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");

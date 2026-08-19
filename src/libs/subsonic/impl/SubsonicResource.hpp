@@ -44,6 +44,7 @@ namespace lms::api::subsonic
 
     private:
         void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
+        void handleAbort(const Wt::Http::Request& request) override;
 
         bool handleMediaRetrievalRequest(const std::string& requestPath, const Wt::Http::Request& request, Wt::Http::Response& response);
         void handleRequest(const std::string& requestPath, const Wt::Http::Request& request, Wt::Http::Response& response);

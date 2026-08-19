@@ -145,7 +145,8 @@ namespace lms::scanner
                 if (dbArtistLink->getArtistName() != artist.name)
                     return true;
 
-                if (dbArtistLink->getArtistSortName() != artist.sortName)
+                const std::string_view artistSortName{ artist.sortName ? std::string_view{ *artist.sortName } : std::string_view{} };
+                if (dbArtistLink->getArtistSortName() != artistSortName)
                     return true;
 
                 if (!dbArtistLink->isArtistMBIDMatched() && artist.mbid)
@@ -216,7 +217,6 @@ namespace lms::scanner
         {
             // TODO: add more criterias?
             return dbCandidateRelease->getName() == release.name
-                && dbCandidateRelease->getSortName() == release.sortName
                 && dbCandidateRelease->getTotalDisc() == release.mediumCount
                 && dbCandidateRelease->isCompilation() == release.isCompilation
                 && dbCandidateRelease->getLabelNames() == release.labels
@@ -437,9 +437,9 @@ namespace lms::scanner
                 image = session.create<db::TrackEmbeddedImage>();
                 image.modify()->setSize(imageInfo.size);
                 image.modify()->setHash(db::ImageHashType{ imageInfo.hash });
-                image.modify()->setWidth(imageInfo.properties.width);
-                image.modify()->setHeight(imageInfo.properties.height);
-                image.modify()->setMimeType(imageInfo.mimeType);
+                image.modify()->setWidth(imageInfo.dimensions.width);
+                image.modify()->setHeight(imageInfo.dimensions.height);
+                image.modify()->setFormat(imageInfo.format);
 
                 session.create<db::Artwork>(image);
             }
@@ -622,7 +622,7 @@ namespace lms::scanner
             audioFileInfo->getImageReader()->visitImages([&](const audio::Image& image) {
                 try
                 {
-                    image::ImageProperties properties{ image::probeImage(image.data) };
+                    const image::ImageProperties probed{ image::probeImage(image.data) };
 
                     ImageInfo info;
                     info.index = index;
@@ -632,9 +632,9 @@ namespace lms::scanner
                         info.hash = core::XxHash3_64::hash(image.data);
                     }
                     info.size = image.data.size();
-                    info.mimeType = image.mimeType;
+                    info.format = probed.format;
                     info.description = image.description;
-                    info.properties = properties;
+                    info.dimensions = probed.dimensions.value_or(image::ImageDimensions{});
 
                     _file->images.push_back(std::move(info));
                 }

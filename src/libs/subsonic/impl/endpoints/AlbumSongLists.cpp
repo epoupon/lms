@@ -26,10 +26,10 @@
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Genre.hpp"
+#include "database/objects/Listen.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
-#include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
 #include "ParameterParsing.hpp"
@@ -59,8 +59,6 @@ namespace lms::api::subsonic
             const Range range{ offset, size };
 
             std::vector<ReleaseId> releases;
-            scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };
-            feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
 
             auto transaction{ context.getDbSession().createReadTransaction() };
 
@@ -113,12 +111,12 @@ namespace lms::api::subsonic
             }
             else if (type == "frequent")
             {
-                scrobbling::IScrobblingService::FindParameters params;
+                Listen::StatsFindParameters params;
                 params.setUser(context.getUser()->getId());
                 params.setRange(range);
                 params.filters.setMediaLibrary(mediaLibraryId);
 
-                releases = scrobblingService.getTopReleases(params);
+                releases = Listen::getTopReleases(context.getDbSession(), params);
             }
             else if (type == "newest")
             {
@@ -142,21 +140,23 @@ namespace lms::api::subsonic
             }
             else if (type == "recent")
             {
-                scrobbling::IScrobblingService::FindParameters params;
+                Listen::StatsFindParameters params;
                 params.setUser(context.getUser()->getId());
                 params.setRange(range);
                 params.filters.setMediaLibrary(mediaLibraryId);
 
-                releases = scrobblingService.getRecentReleases(params);
+                releases = Listen::getRecentReleases(context.getDbSession(), params);
             }
             else if (type == "starred")
             {
-                feedback::IFeedbackService::FindParameters params;
-                params.setUser(context.getUser()->getId());
+                Release::FindParameters params;
+                params.setFeedbackUser(context.getUser()->getId());
+                params.setFeedbackValue(db::FeedbackValue::Loved);
+                params.setSortMethod(ReleaseSortMethod::FeedbackDateDesc);
                 params.setRange(range);
                 params.filters.setMediaLibrary(mediaLibraryId);
 
-                releases = feedbackService.findStarredReleases(params);
+                releases = Release::findIds(context.getDbSession(), params);
             }
             else
             {
@@ -185,32 +185,39 @@ namespace lms::api::subsonic
             Response response{ Response::createOkResponse() };
             Response::Node& starredNode{ response.createNode(id3 ? Response::Node::Key{ "starred2" } : Response::Node::Key{ "starred" }) };
 
-            feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
-
             // We don't support starring directories
             if (id3)
             {
-                feedback::IFeedbackService::ArtistFindParameters artistFindParams;
-                artistFindParams.setUser(context.getUser()->getId());
+                Artist::FindParameters artistFindParams;
+                artistFindParams.setFeedbackUser(context.getUser()->getId());
+                artistFindParams.setFeedbackValue(db::FeedbackValue::Loved);
                 artistFindParams.setSortMethod(ArtistSortMethod::SortName);
-                for (const ArtistId artistId : feedbackService.findStarredArtists(artistFindParams))
+                for (const ArtistId artistId : Artist::findIds(context.getDbSession(), artistFindParams))
                 {
                     if (auto artist{ Artist::find(context.getDbSession(), artistId) })
                         starredNode.addArrayChild("artist", createArtistNode(context, artist));
                 }
             }
 
-            feedback::IFeedbackService::FindParameters findParameters;
-            findParameters.setUser(context.getUser()->getId());
-            findParameters.filters.setMediaLibrary(mediaLibrary);
+            Release::FindParameters releaseFindParameters;
+            releaseFindParameters.setFeedbackUser(context.getUser()->getId());
+            releaseFindParameters.setFeedbackValue(db::FeedbackValue::Loved);
+            releaseFindParameters.setSortMethod(ReleaseSortMethod::FeedbackDateDesc);
+            releaseFindParameters.filters.setMediaLibrary(mediaLibrary);
 
-            for (const ReleaseId releaseId : feedbackService.findStarredReleases(findParameters))
+            for (const ReleaseId releaseId : Release::findIds(context.getDbSession(), releaseFindParameters))
             {
                 if (auto release{ Release::find(context.getDbSession(), releaseId) })
                     starredNode.addArrayChild("album", createAlbumNode(context, release, id3));
             }
 
-            for (const TrackId trackId : feedbackService.findStarredTracks(findParameters))
+            Track::FindParameters trackFindParameters;
+            trackFindParameters.setFeedbackUser(context.getUser()->getId());
+            trackFindParameters.setFeedbackValue(db::FeedbackValue::Loved);
+            trackFindParameters.setSortMethod(TrackSortMethod::FeedbackDateDesc);
+            trackFindParameters.filters.setMediaLibrary(mediaLibrary);
+
+            for (const TrackId trackId : Track::findIds(context.getDbSession(), trackFindParameters))
             {
                 if (auto track{ Track::find(context.getDbSession(), trackId) })
                     starredNode.addArrayChild("song", createSongNode(context, track, context.getUser()));

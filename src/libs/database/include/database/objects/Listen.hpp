@@ -51,23 +51,11 @@ namespace lms::db
         struct FindParameters
         {
             UserId user;
-            std::optional<ScrobblingBackend> backend;
-            std::optional<SyncState> syncState;
             std::optional<Range> range;
 
             FindParameters& setUser(UserId _user)
             {
                 user = _user;
-                return *this;
-            }
-            FindParameters& setScrobblingBackend(ScrobblingBackend _backend)
-            {
-                backend = _backend;
-                return *this;
-            }
-            FindParameters& setSyncState(SyncState _syncState)
-            {
-                syncState = _syncState;
                 return *this;
             }
             FindParameters& setRange(Range _range)
@@ -80,7 +68,7 @@ namespace lms::db
         // Accessors
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, ListenId id);
-        static pointer find(Session& session, UserId userId, TrackId trackId, ScrobblingBackend backend, const Wt::WDateTime& dateTime);
+        static pointer find(Session& session, UserId userId, TrackId trackId, const Wt::WDateTime& dateTime);
         static std::vector<ListenId> find(Session& session, const FindParameters& parameters);
 
         // Stats
@@ -150,25 +138,20 @@ namespace lms::db
         static void getRecentReleases(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Release>&)>& func);
         static void getRecentTracks(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Track>&)>& func);
 
-        static std::size_t getCount(Session& session, UserId userId, TrackId trackId);   // for the current backend
-        static std::size_t getCount(Session& session, UserId userId, ReleaseId trackId); // for the current backend
+        static std::size_t getCount(Session& session, UserId userId, TrackId trackId);
+        static std::size_t getCount(Session& session, UserId userId, ReleaseId trackId);
 
-        static pointer getMostRecentListen(Session& session, UserId userId, ReleaseId releaseId); // uses current scrobbling backend
-        static pointer getMostRecentListen(Session& session, UserId userId, TrackId trackId);     // uses current scrobbling backend
+        static pointer getMostRecentListen(Session& session, UserId userId, ReleaseId releaseId);
+        static pointer getMostRecentListen(Session& session, UserId userId, TrackId trackId);
 
-        SyncState getSyncState() const { return _syncState; }
         ObjectPtr<User> getUser() const { return _user; }
         ObjectPtr<Track> getTrack() const { return _track; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
-
-        void setSyncState(SyncState state) { _syncState = state; }
 
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _dateTime, "date_time");
-            Wt::Dbo::field(a, _backend, "backend");      // TODO rename
-            Wt::Dbo::field(a, _syncState, "sync_state"); // TODO rename
 
             Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
@@ -176,12 +159,10 @@ namespace lms::db
 
     private:
         friend class Session;
-        Listen(ObjectPtr<User> user, ObjectPtr<Track> track, ScrobblingBackend backend, const Wt::WDateTime& dateTime);
-        static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, ScrobblingBackend backend, const Wt::WDateTime& dateTime);
+        Listen(ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime);
+        static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime);
 
         Wt::WDateTime _dateTime;
-        ScrobblingBackend _backend;
-        SyncState _syncState{ SyncState::PendingAdd };
 
         Wt::Dbo::ptr<User> _user;
         Wt::Dbo::ptr<Track> _track;

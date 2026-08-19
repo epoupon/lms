@@ -11,8 +11,9 @@ add_executable(lms
 	ui/NotificationContainer.cpp
 	ui/PlayQueue.cpp
 	ui/settings/AudioSettingsView.cpp
+	ui/settings/LastFmSettingsView.cpp
+	ui/settings/ListenBrainzSettingsView.cpp
 	ui/settings/PasswordSettingsView.cpp
-	ui/settings/ServicesSettingsView.cpp
 	ui/settings/SettingsView.cpp
 	ui/settings/SettingsViewUtils.cpp
 	ui/settings/SubsonicSettingsView.cpp

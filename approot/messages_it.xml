@@ -14,8 +14,6 @@
 <message id="Lms.discard">Annulla</message>
 <message id="Lms.edit">Modifica</message>
 <message id="Lms.field-must-be-in-upper-case">Questo campo deve essere in maiuscolo</message>
-<message id="Lms.infinite-scrolling-container.limit-reached">Limite di visualizzazione raggiunto — affina la ricerca per vedere più risultati</message>
-<message id="Lms.infinite-scrolling-container.no-results">Nessun risultato trovato</message>
 <message id="Lms.loading">Caricamento...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
@@ -243,6 +241,7 @@
 	<plural case="0">Lingua</plural>
 	<plural case="1">Lingue</plural>
 </message>
+<message id="Lms.Explore.limit-reached">Limite di visualizzazione raggiunto — affina la ricerca per vedere più risultati</message>
 <message id="Lms.Explore.lyricist">
 	<plural case="0">Paroliere</plural>
 	<plural case="1">Parolieri</plural>
@@ -259,6 +258,7 @@
 <message id="Lms.Explore.most-played">Più ascoltati</message>
 <message id="Lms.Explore.musicbrainz-artist">Artista MusicBrainz</message>
 <message id="Lms.Explore.musicbrainz-release">Album MusicBrainz</message>
+<message id="Lms.Explore.no-results">Nessun risultato trovato</message>
 <message id="Lms.Explore.performer">
 	<plural case="0">Interprete</plural>
 	<plural case="1">Interpreti</plural>
@@ -334,6 +334,9 @@
 <message id="Lms.Explore.Release.type-secondary-soundtrack">Colonna sonora</message>
 <message id="Lms.Explore.Release.type-secondary-spokenword">Parola parlata</message>
 
+<!--Explore:TrackList-->
+<message id="Lms.Explore.TrackList.empty">Questa playlist è vuota</message>
+
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Eliminare la playlist?</message>
 <message id="Lms.Explore.TrackLists.type-owned">Le mie liste</message>
@@ -355,6 +358,7 @@
 <message id="Lms.PlayQueue.clear">Cancella</message>
 <message id="Lms.PlayQueue.create-tracklist">Crea nuova playlist</message>
 <message id="Lms.PlayQueue.playqueue">Coda di riproduzione</message>
+<message id="Lms.PlayQueue.queue-is-empty">La tua coda è vuota</message>
 <message id="Lms.PlayQueue.radio-mode">Modalità radio</message>
 <message id="Lms.PlayQueue.repeat">Ripeti</message>
 <message id="Lms.PlayQueue.replace-tracklist">Sostituisci playlist esistente</message>
@@ -367,25 +371,29 @@
 <message id="Lms.Settings.artist-release-sort-method">Metodo per ordinare gli album dell'artista</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">Queste impostazioni sono salvate localmente su questo dispositivo</message>
-<message id="Lms.Settings.backend.internal">Interno</message>
-<message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
-<message id="Lms.Settings.backend.listenbrainz-token">Token API ListenBrainz</message>
-<message id="Lms.Settings.backend.lastfm">Last.fm</message>
-<message id="Lms.Settings.services.lastfm-api-key">Chiave API Last.fm</message>
-<message id="Lms.Settings.services.lastfm-api-secret">Segreto API Last.fm</message>
-<message id="Lms.Settings.services.lastfm-card-title">Account Last.fm</message>
-<message id="Lms.Settings.services.lastfm-linked">Collegato</message>
-<message id="Lms.Settings.services.lastfm-link">Collega account</message>
-<message id="Lms.Settings.services.lastfm-unlink">Scollega account</message>
-<message id="Lms.Settings.services.lastfm-link-modal-title">Collega account Last.fm</message>
-<message id="Lms.Settings.services.lastfm-link-modal-help">Inserisci la chiave API e il segreto condiviso di Last.fm (ottenili su <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a>), poi clicca su Autorizza.</message>
-<message id="Lms.Settings.services.lastfm-authorize">Autorizza su Last.fm</message>
-<message id="Lms.Settings.services.lastfm-done">Fatto, ho autorizzato</message>
-<message id="Lms.Settings.services.lastfm-auth-url">Non si è aperto? Clicca qui per autorizzare su Last.fm</message>
-<message id="Lms.Settings.services.lastfm-unlink-confirm-title">Scollega account Last.fm</message>
-<message id="Lms.Settings.services.lastfm-unlink-confirm-body">Sei sicuro di voler scollegare il tuo account Last.fm? Lo scrobbling si interromperà finché non lo ricolleghi.</message>
-<message id="Lms.Settings.services.lastfm-missing-credentials">Inserisci la chiave API e il segreto Last.fm.</message>
-<message id="Lms.Settings.services.lastfm-auth-error">Autenticazione Last.fm fallita. Controlla la chiave API e il segreto.</message>
+<message id="Lms.Settings.lastfm">Last.fm</message>
+<message id="Lms.Settings.lastfm-api-key">Chiave API Last.fm</message>
+<message id="Lms.Settings.lastfm-api-secret">Segreto API Last.fm</message>
+<message id="Lms.Settings.lastfm-auth-error">Autenticazione Last.fm fallita. Controlla la chiave API e il segreto.</message>
+<message id="Lms.Settings.lastfm-auth-url">Non si è aperto? Clicca qui per autorizzare su Last.fm</message>
+<message id="Lms.Settings.lastfm-authorize">Autorizza su Last.fm</message>
+<message id="Lms.Settings.lastfm-card-title">Account Last.fm</message>
+<message id="Lms.Settings.lastfm-done">Fatto, ho autorizzato</message>
+<message id="Lms.Settings.lastfm-link">Collega account</message>
+<message id="Lms.Settings.lastfm-link-modal-help">Inserisci la chiave API e il segreto condiviso di Last.fm (ottenili su <a href="https://www.last.fm/api/account/create" target="_blank">last.fm/api/account/create</a>), poi clicca su Autorizza.</message>
+<message id="Lms.Settings.lastfm-link-modal-title">Collega account Last.fm</message>
+<message id="Lms.Settings.lastfm-linked">Collegato</message>
+<message id="Lms.Settings.lastfm-missing-credentials">Inserisci la chiave API e il segreto Last.fm.</message>
+<message id="Lms.Settings.lastfm-unlink">Scollega account</message>
+<message id="Lms.Settings.lastfm-unlink-confirm-body">Sei sicuro di voler scollegare il tuo account Last.fm? Lo scrobbling si interromperà finché non lo ricolleghi.</message>
+<message id="Lms.Settings.lastfm-unlink-confirm-title">Scollega account Last.fm</message>
+<message id="Lms.Settings.listenbrainz">ListenBrainz</message>
+<message id="Lms.Settings.listenbrainz-import-card-title">Importazione ListenBrainz</message>
+<message id="Lms.Settings.listenbrainz-import-feedback">Importa preferiti</message>
+<message id="Lms.Settings.listenbrainz-import-listens">Importa ascolti</message>
+<message id="Lms.Settings.listenbrainz-import-started">Importazione avviata, potrebbe richiedere del tempo</message>
+<message id="Lms.Settings.listenbrainz-token">Token API ListenBrainz</message>
+<message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.change-password">Cambia password</message>
 <message id="Lms.Settings.date-asc">Data di uscita (Crescente)</message>
 <message id="Lms.Settings.date-desc">Data di uscita (Decrescente)</message>
@@ -394,12 +402,11 @@
 <message id="Lms.Settings.demo-cannot-save">Non posso salvare le impostazioni utilizzando l'account demo!</message>
 <message id="Lms.Settings.enable-inline-artist-relationships">Mostra le relazioni degli artisti in linea negli album</message>
 <message id="Lms.Settings.enable-transcoding-by-default">Abilita transcodifica di default</message>
-<message id="Lms.Settings.feedback">Feedback</message>
+<message id="Lms.Settings.export-started">Esportazione avviata, potrebbe richiedere del tempo</message>
 <message id="Lms.Settings.inline-artist-relationships">Tipi di relazioni artistiche da visualizzare</message>
 <message id="Lms.Settings.menu-ui"><i class="fa fa-fw fa-paint-brush" aria-hidden="true"></i> Interfaccia utente</message>
 <message id="Lms.Settings.menu-audio"><i class="fa fa-fw fa-music" aria-hidden="true"></i> Audio</message>
-<message id="Lms.Settings.menu-subsonic"><i class="fa fa-fw fa-key" aria-hidden="true"></i> API Subsonic</message>
-<message id="Lms.Settings.menu-services"><i class="fa fa-fw fa-exchange" aria-hidden="true"></i> Servizi</message>
+<message id="Lms.Settings.menu-lastfm"><i class="fa fa-fw fa-lastfm" aria-hidden="true"></i> Last.fm</message>
 <message id="Lms.Settings.menu-password"><i class="fa fa-fw fa-lock" aria-hidden="true"></i> Cambia password</message>
 <message id="Lms.Settings.name">Nome dell'album</message>
 <message id="Lms.Settings.original-date-asc">Data di uscita originale (Crescente)</message>
@@ -421,8 +428,6 @@
 <message id="Lms.Settings.replaygain-mode.release">Album</message>
 <message id="Lms.Settings.replaygain-preamp">Preamplificazione ReplayGain</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">Preamplificazione ReplayGain (se non è disponibile nessuna informazione)</message>
-<message id="Lms.Settings.scrobbling">Scrobbling</message>
-<message id="Lms.Settings.services">Servizi</message>
 <message id="Lms.Settings.settings">Impostazioni</message>
 <message id="Lms.Settings.settings-saved">Nuove impostazioni salvate!</message>
 <message id="Lms.Settings.subsonic-artist-list-mode">Modalità di elencazione artisti</message>

@@ -188,7 +188,8 @@ namespace lms::api::subsonic
         if (name)
             trackList.modify()->setName(*name);
 
-        trackList.modify()->setVisibility(isPublic ? db::TrackList::Visibility::Public : db::TrackList::Visibility::Private);
+        if (isPublic)
+            trackList.modify()->setVisibility(*isPublic ? db::TrackList::Visibility::Public : db::TrackList::Visibility::Private);
         trackList.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
 
         {

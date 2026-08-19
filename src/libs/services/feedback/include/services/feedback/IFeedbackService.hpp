@@ -25,9 +25,7 @@
 #include <Wt/WDateTime.h>
 #include <boost/asio/io_context.hpp>
 
-#include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
-#include "database/objects/Filters.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
@@ -45,91 +43,34 @@ namespace lms::feedback
     public:
         virtual ~IFeedbackService() = default;
 
-        using ArtistContainer = std::vector<db::ArtistId>;
-        using ReleaseContainer = std::vector<db::ReleaseId>;
-        using TrackContainer = std::vector<db::TrackId>;
-
-        struct FindParameters
-        {
-            db::UserId user;
-            db::Filters filters;
-            std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
-            std::optional<db::Range> range;
-
-            FindParameters& setUser(const db::UserId _user)
-            {
-                user = _user;
-                return *this;
-            }
-            FindParameters& setFilters(const db::Filters& _filters)
-            {
-                filters = _filters;
-                return *this;
-            }
-            FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
-            {
-                keywords = _keywords;
-                return *this;
-            }
-            FindParameters& setRange(std::optional<db::Range> _range)
-            {
-                range = _range;
-                return *this;
-            }
-        };
-
-        // Artists
-        struct ArtistFindParameters : public FindParameters
-        {
-            std::optional<db::TrackArtistLinkType> trackArtistLinkType; // if set, only artists that have produced at least one track with this link type
-            db::ArtistSortMethod sortMethod{ db::ArtistSortMethod::None };
-            std::optional<bool> releaseArtistsOnly;
-
-            ArtistFindParameters& setReleaseArtistsOnly(std::optional<bool> _releaseArtistsOnly)
-            {
-                releaseArtistsOnly = _releaseArtistsOnly;
-                return *this;
-            }
-            ArtistFindParameters& setTrackArtistLinkType(std::optional<db::TrackArtistLinkType> _trackArtistLinkType)
-            {
-                trackArtistLinkType = _trackArtistLinkType;
-                return *this;
-            }
-            ArtistFindParameters& setSortMethod(db::ArtistSortMethod _sortMethod)
-            {
-                sortMethod = _sortMethod;
-                return *this;
-            }
-        };
-
-        virtual void star(db::UserId userId, db::ArtistId artistId) = 0;
-        virtual void unstar(db::UserId userId, db::ArtistId artistId) = 0;
-        virtual bool isStarred(db::UserId userId, db::ArtistId artistId) = 0;
-        virtual Wt::WDateTime getStarredDateTime(db::UserId userId, db::ArtistId artistId) = 0;
-        virtual ArtistContainer findStarredArtists(const ArtistFindParameters& params) = 0;
+        virtual void setFeedback(db::UserId userId, db::ArtistId artistId, db::FeedbackValue value) = 0;
+        virtual db::FeedbackValue getFeedback(db::UserId userId, db::ArtistId artistId) = 0;
+        virtual Wt::WDateTime getFeedbackDateTime(db::UserId userId, db::ArtistId artistId) = 0;
 
         virtual void setRating(db::UserId userId, db::ArtistId artistId, std::optional<db::Rating> rating) = 0;
         virtual std::optional<db::Rating> getRating(db::UserId userId, db::ArtistId artistId) = 0;
 
         // Releases
-        virtual void star(db::UserId userId, db::ReleaseId releaseId) = 0;
-        virtual void unstar(db::UserId userId, db::ReleaseId releaseId) = 0;
-        virtual bool isStarred(db::UserId userId, db::ReleaseId artistId) = 0;
-        virtual Wt::WDateTime getStarredDateTime(db::UserId userId, db::ReleaseId artistId) = 0;
-        virtual ReleaseContainer findStarredReleases(const FindParameters& params) = 0;
+        virtual void setFeedback(db::UserId userId, db::ReleaseId releaseId, db::FeedbackValue value) = 0;
+        virtual db::FeedbackValue getFeedback(db::UserId userId, db::ReleaseId releaseId) = 0;
+        virtual Wt::WDateTime getFeedbackDateTime(db::UserId userId, db::ReleaseId releaseId) = 0;
 
         virtual void setRating(db::UserId userId, db::ReleaseId releaseId, std::optional<db::Rating> rating) = 0;
         virtual std::optional<db::Rating> getRating(db::UserId userId, db::ReleaseId releaseId) = 0;
 
         // Tracks
-        virtual void star(db::UserId userId, db::TrackId trackId) = 0;
-        virtual void unstar(db::UserId userId, db::TrackId trackId) = 0;
-        virtual bool isStarred(db::UserId userId, db::TrackId artistId) = 0;
-        virtual Wt::WDateTime getStarredDateTime(db::UserId userId, db::TrackId artistId) = 0;
-        virtual TrackContainer findStarredTracks(const FindParameters& params) = 0;
+        virtual void setFeedback(db::UserId userId, db::TrackId trackId, db::FeedbackValue value) = 0;
+        virtual db::FeedbackValue getFeedback(db::UserId userId, db::TrackId trackId) = 0;
+        virtual Wt::WDateTime getFeedbackDateTime(db::UserId userId, db::TrackId trackId) = 0;
 
         virtual void setRating(db::UserId userId, db::TrackId trackId, std::optional<db::Rating> rating) = 0;
         virtual std::optional<db::Rating> getRating(db::UserId userId, db::TrackId trackId) = 0;
+
+        // Manually trigger an on-demand import of feedback (loved/hated tracks) from the given backend for this user (if supported)
+        virtual void requestImmediateImport(db::UserId userId, db::FeedbackBackend backend) = 0;
+
+        // Manually trigger an on-demand export of all existing local feedback (loved/hated tracks) to the given backend for this user (if supported)
+        virtual void requestImmediateExport(db::UserId userId, db::FeedbackBackend backend) = 0;
     };
 
     std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, db::IDb& db);

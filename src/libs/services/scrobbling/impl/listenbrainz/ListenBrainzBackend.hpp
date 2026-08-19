@@ -45,8 +45,11 @@ namespace lms::scrobbling::listenBrainz
         ListenBrainzBackend& operator=(const ListenBrainzBackend&) = delete;
 
         void listenStarted(const Listen& listen) override;
-        void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
+        void listenFinished(const TimedListen& listen, std::optional<std::chrono::seconds> duration) override;
         void addTimedListen(const TimedListen& listen) override;
+        bool canBeScrobbled(db::TrackId trackId, std::optional<std::chrono::seconds> duration) const override;
+        void requestImmediateImport(db::UserId userId) override;
+        void requestImmediateExport() override;
 
         // Submit listens
         void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);

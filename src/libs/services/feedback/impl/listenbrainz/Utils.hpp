@@ -19,8 +19,12 @@
 
 #pragma once
 
+#include <optional>
+
 #include "core/ILogger.hpp"
 
+#include "database/objects/TrackId.hpp"
+#include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
 
 #define LOG(sev, message) LMS_LOG(FEEDBACK, sev, "[listenbrainz] " << message)
@@ -34,4 +38,11 @@ namespace lms::feedback::listenBrainz::utils
 {
     std::string getListenBrainzToken(db::Session& session, db::UserId userId);
     std::string parseValidateToken(std::string_view msgBody);
+
+    // See https://listenbrainz.readthedocs.io/en/latest/users/api/recordings.html
+    int toLBScore(db::FeedbackValue value);
+    std::optional<db::FeedbackValue> fromLBScore(int score);
+
+    // ListenBrainz's recording-feedback endpoint only supports recordings that have a recording MBID
+    bool canBeFeedbacked(db::Session& session, db::TrackId trackId);
 } // namespace lms::feedback::listenBrainz::utils

@@ -70,9 +70,10 @@ namespace lms::api::subsonic
             Extension{ "formPost", 1 },
             Extension{ "indexBasedQueue", 1 },
             Extension{ "songLyrics", 1 },
+            Extension{ "sonicSimilarity", 1 },
+            Extension{ "topSongsByArtistId", 1 },
             Extension{ "transcodeOffset", 1 },
             Extension{ "transcoding", 1 },
-            Extension{ "sonicSimilarity", 1 },
         };
 
         for (const Extension& extension : extensions)

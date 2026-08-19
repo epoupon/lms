@@ -4,7 +4,7 @@
 
 <message id="Lms.Explore.TrackList.template">
 	<div class="mb-3">
-		<h2>${name}</h2>
+		<h2 class="text-break">${name}</h2>
 		<div class="small text-muted">${track-count} · ${duration}</div>
 		${clusters class="mb-2"}
 		<div class="btn-group">

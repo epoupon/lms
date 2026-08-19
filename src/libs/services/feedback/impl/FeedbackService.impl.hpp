@@ -19,85 +19,77 @@
 
 #pragma once
 
+#include "FeedbackService.hpp"
+
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/User.hpp"
 
 namespace lms::feedback
 {
-    using namespace db;
-
-    template<typename ObjType, typename ObjIdType, typename StarredObjType>
-    void FeedbackService::star(UserId userId, ObjIdType objId)
+    template<typename ObjType, typename ObjIdType, typename FeedbackObjType>
+    void FeedbackService::setFeedback(db::UserId userId, ObjIdType id, db::FeedbackValue value)
     {
-        const auto backend{ getUserFeedbackBackend(userId) };
-        if (!backend)
-            return;
-
-        typename StarredObjType::IdType starredObjId;
+        typename FeedbackObjType::IdType feedbackObjId;
+        core::EnumSet<db::FeedbackBackend> backends;
         {
-            Session& session{ _db.getTLSSession() };
+            db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId, *backend) };
-            if (!starredObj)
+            const db::User::pointer user{ db::User::find(session, userId) };
+            if (!user)
+                return;
+
+            // Recording feedback locally is backend-independent
+            typename FeedbackObjType::pointer feedbackObj{ FeedbackObjType::find(session, id, userId) };
+            if (!feedbackObj)
             {
-                const typename ObjType::pointer obj{ ObjType::find(session, objId) };
+                if (value == db::FeedbackValue::None)
+                    return; // nothing to clear
+
+                const typename ObjType::pointer obj{ ObjType::find(session, id) };
                 if (!obj)
                     return;
 
-                const User::pointer user{ User::find(session, userId) };
-                if (!user)
-                    return;
-
-                starredObj = session.create<StarredObjType>(obj, user, *backend);
+                feedbackObj = session.create<FeedbackObjType>(obj, user);
             }
-            starredObj.modify()->setDateTime(Wt::WDateTime::currentDateTime());
-            starredObjId = starredObj->getId();
+
+            feedbackObj.modify()->setValue(value);
+            if (value != db::FeedbackValue::None)
+                feedbackObj.modify()->setDateTime(Wt::WDateTime::currentDateTime());
+
+            feedbackObjId = feedbackObj->getId();
+            backends = user->getFeedbackBackends();
         }
-        _backends[*backend]->onStarred(starredObjId);
-    }
 
-    template<typename ObjType, typename ObjIdType, typename StarredObjType>
-    void FeedbackService::unstar(UserId userId, ObjIdType objId)
-    {
-        const auto backend{ getUserFeedbackBackend(userId) };
-        if (!backend)
-            return;
-
-        typename StarredObjType::IdType starredObjId;
+        for (const db::FeedbackBackend backend : backends)
         {
-            Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createReadTransaction() };
+            if (!_backends[backend]->canBeFeedbacked(id))
+                continue;
 
-            typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId, *backend) };
-            if (!starredObj)
-                return;
-
-            starredObjId = starredObj->getId();
+            _backends[backend]->onFeedbackChanged(feedbackObjId);
         }
-        _backends[*backend]->onUnstarred(starredObjId);
     }
 
-    template<typename ObjType, typename ObjIdType, typename StarredObjType>
-    bool FeedbackService::isStarred(UserId userId, ObjIdType objId)
+    template<typename ObjType, typename ObjIdType, typename FeedbackObjType>
+    db::FeedbackValue FeedbackService::getFeedback(db::UserId userId, ObjIdType id)
     {
-        Session& session{ _db.getTLSSession() };
+        db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId) };
-        return starredObj && (starredObj->getSyncState() != SyncState::PendingRemove);
+        typename FeedbackObjType::pointer feedbackObj{ FeedbackObjType::find(session, id, userId) };
+        return feedbackObj ? feedbackObj->getValue() : db::FeedbackValue::None;
     }
 
-    template<typename ObjType, typename ObjIdType, typename StarredObjType>
-    Wt::WDateTime FeedbackService::getStarredDateTime(UserId userId, ObjIdType objId)
+    template<typename ObjType, typename ObjIdType, typename FeedbackObjType>
+    Wt::WDateTime FeedbackService::getFeedbackDateTime(db::UserId userId, ObjIdType id)
     {
-        Session& session{ _db.getTLSSession() };
+        db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId) };
-        if (starredObj && (starredObj->getSyncState() != SyncState::PendingRemove))
-            return starredObj->getDateTime();
+        typename FeedbackObjType::pointer feedbackObj{ FeedbackObjType::find(session, id, userId) };
+        if (feedbackObj && feedbackObj->getValue() == db::FeedbackValue::Loved)
+            return feedbackObj->getDateTime();
 
         return {};
     }
@@ -105,7 +97,7 @@ namespace lms::feedback
     template<typename ObjType, typename ObjIdType, typename RatedObjType>
     void FeedbackService::setRating(db::UserId userId, ObjIdType objectId, std::optional<db::Rating> rating)
     {
-        Session& session{ _db.getTLSSession() };
+        db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
         typename RatedObjType::pointer ratedObject{ RatedObjType::find(session, objectId, userId) };
@@ -114,7 +106,7 @@ namespace lms::feedback
             if (!ratedObject)
             {
                 typename ObjType::pointer obj{ ObjType::find(session, objectId) };
-                const User::pointer user{ User::find(session, userId) };
+                const db::User::pointer user{ db::User::find(session, userId) };
 
                 if (!obj || !user)
                     return;
@@ -135,7 +127,7 @@ namespace lms::feedback
     template<typename ObjType, typename ObjIdType, typename RatedObjType>
     std::optional<db::Rating> FeedbackService::getRating(db::UserId userId, ObjIdType objectId)
     {
-        Session& session{ _db.getTLSSession() };
+        db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         const typename RatedObjType::pointer ratedObj{ RatedObjType::find(session, objectId, userId) };
@@ -144,5 +136,4 @@ namespace lms::feedback
 
         return ratedObj->getRating();
     }
-
 } // namespace lms::feedback

@@ -33,6 +33,7 @@
 #include "database/objects/Directory.hpp"
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
+#include "database/objects/Listen.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Medium.hpp"
 #include "database/objects/Mood.hpp"
@@ -41,10 +42,10 @@
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackFeedback.hpp"
 #include "database/objects/User.hpp"
 #include "database/objects/Work.hpp"
 #include "services/feedback/IFeedbackService.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
 
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
@@ -98,7 +99,7 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("year", *originalYear);
         else if (const auto year{ track->getYear() })
             trackResponse.setAttribute("year", *year);
-        trackResponse.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.getUser()->getId(), track->getId()));
+        trackResponse.setAttribute("playCount", db::Listen::getCount(context.getDbSession(), context.getUser()->getId(), track->getId()));
 
         // maybe not available if user just removed the library without rescanning
         if (const db::MediaLibrary::pointer library{ track->getMediaLibrary() })
@@ -163,8 +164,8 @@ namespace lms::api::subsonic
         if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.getUser()->getId(), track->getId()) })
             trackResponse.setAttribute("userRating", *rating);
 
-        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.getUser()->getId(), track->getId()) }; dateTime.isValid())
-            trackResponse.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
+        if (const db::TrackFeedback::pointer feedback{ db::TrackFeedback::find(context.getDbSession(), track->getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == db::FeedbackValue::Loved)
+            trackResponse.setAttribute("starred", core::stringUtils::toISO8601String(feedback->getDateTime()));
 
         // Report the first genre for this track
         const auto genres{ track->getGenres() };
@@ -183,8 +184,8 @@ namespace lms::api::subsonic
         trackResponse.setAttribute("mediaType", "song");
 
         {
-            const Wt::WDateTime dateTime{ core::Service<scrobbling::IScrobblingService>::get()->getLastListenDateTime(context.getUser()->getId(), track->getId()) };
-            trackResponse.setAttribute("played", dateTime.isValid() ? core::stringUtils::toISO8601String(dateTime) : "");
+            const db::Listen::pointer listen{ db::Listen::getMostRecentListen(context.getDbSession(), context.getUser()->getId(), track->getId()) };
+            trackResponse.setAttribute("played", listen ? core::stringUtils::toISO8601String(listen->getDateTime()) : "");
         }
 
         {

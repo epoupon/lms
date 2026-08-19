@@ -237,4 +237,13 @@ namespace lms::ui
         }
     }
 
+    void AudioTranscodingResource::handleAbort(const Wt::Http::Request& request)
+    {
+        if (Wt::Http::ResponseContinuation * continuation{ request.continuation() })
+        {
+            if (auto handler{ Wt::cpp17::any_cast<std::shared_ptr<core::IResourceHandler>>(continuation->data()) })
+                handler->abort();
+        }
+    }
+
 } // namespace lms::ui

@@ -54,6 +54,7 @@ namespace lms::db
             ReleaseId release;                           // if set, artists involved in this release
             TrackId track;                               // if set, artists involved in this track
             std::optional<bool> mbidMatched;
+            bool sortNameNotEmpty{}; // if set, only links whose artist sort name is not empty
             TrackArtistLinkSortMethod sortMethod{ TrackArtistLinkSortMethod::None };
 
             FindParameters& setRange(std::optional<Range> _range)
@@ -84,6 +85,11 @@ namespace lms::db
             FindParameters& setMBIDMatched(std::optional<bool> _mbidMatched)
             {
                 mbidMatched = _mbidMatched;
+                return *this;
+            }
+            FindParameters& setSortNameNotEmpty(bool _sortNameNotEmpty)
+            {
+                sortNameNotEmpty = _sortNameNotEmpty;
                 return *this;
             }
             FindParameters& setSortMethod(TrackArtistLinkSortMethod _method)

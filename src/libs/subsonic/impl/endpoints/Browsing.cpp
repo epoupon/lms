@@ -31,13 +31,13 @@
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Genre.hpp"
+#include "database/objects/Listen.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Release.hpp"
+#include "database/objects/ReleaseFeedback.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
-#include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
 
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
@@ -79,9 +79,9 @@ namespace lms::api::subsonic
         {
             constexpr bool operator()(char lhs, char rhs) const
             {
-                if (lhs == '#' && std::isalpha(rhs))
+                if (lhs == '#' && std::isalpha(static_cast<unsigned char>(rhs)))
                     return false;
-                if (rhs == '#' && std::isalpha(lhs))
+                if (rhs == '#' && std::isalpha(static_cast<unsigned char>(lhs)))
                     return true;
 
                 return lhs < rhs;
@@ -100,10 +100,10 @@ namespace lms::api::subsonic
                 assert(!name.empty());
 
                 char sortChar;
-                if (name.empty() || !std::isalpha(name[0]))
+                if (name.empty() || !std::isalpha(static_cast<unsigned char>(name[0])))
                     sortChar = '#';
                 else
-                    sortChar = std::toupper(name[0]);
+                    sortChar = static_cast<char>(std::toupper(static_cast<unsigned char>(name[0])));
 
                 res[sortChar].push_back(directory);
             });
@@ -321,9 +321,9 @@ namespace lms::api::subsonic
 
         if (const Release::pointer release{ getReleaseFromDirectory(context.getDbSession(), directoryId) })
         {
-            directoryNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.getUser()->getId(), release->getId()));
-            if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.getUser()->getId(), release->getId()) }; dateTime.isValid())
-                directoryNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
+            directoryNode.setAttribute("playCount", Listen::getCount(context.getDbSession(), context.getUser()->getId(), release->getId()));
+            if (const ReleaseFeedback::pointer feedback{ ReleaseFeedback::find(context.getDbSession(), release->getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == FeedbackValue::Loved)
+                directoryNode.setAttribute("starred", core::stringUtils::toISO8601String(feedback->getDateTime()));
         }
 
         directoryNode.setAttribute("id", idToString(directory->getId()));
@@ -433,9 +433,10 @@ namespace lms::api::subsonic
             const auto artists{ Artist::find(context.getDbSession(), parameters) };
             for (const Artist::pointer& artist : artists)
             {
-                std::string_view sortName{ artist->getSortName() };
+                const std::string_view sortName{ artist->getSortName() };
+                const std::string_view effectiveSortName{ sortName.empty() ? artist->getName() : sortName };
 
-                const char sortChar{ (sortName.empty() || !std::isalpha(sortName[0])) ? '#' : static_cast<char>(std::toupper(sortName[0])) };
+                const char sortChar{ (effectiveSortName.empty() || !std::isalpha(static_cast<unsigned char>(effectiveSortName[0]))) ? '#' : static_cast<char>(std::toupper(static_cast<unsigned char>(effectiveSortName[0]))) };
                 artistsSortedByFirstChar[sortChar].push_back(artist->getId());
             }
 
@@ -640,8 +641,12 @@ namespace lms::api::subsonic
 
     Response handleGetTopSongs(RequestContext& context)
     {
-        // Mandatory params
-        std::string_view artistName{ getMandatoryParameterAs<std::string_view>(context.getParameters(), "artist") };
+        // "id" (topSongsByArtistId extension) takes precedence over "artist" when both are provided
+        const std::optional<ArtistId> artistId{ getParameterAs<ArtistId>(context.getParameters(), "id") };
+        std::optional<std::string_view> artistName;
+        if (!artistId)
+            artistName = getMandatoryParameterAs<std::string_view>(context.getParameters(), "artist");
+
         std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(50) };
         if (count > defaultMaxCountSize)
             throw ParameterValueTooHighGenericError{ "count", defaultMaxCountSize };
@@ -651,15 +656,26 @@ namespace lms::api::subsonic
         Response response{ Response::createOkResponse() };
         Response::Node& topSongs{ response.createNode("topSongs") };
 
-        const auto artists{ Artist::find(context.getDbSession(), artistName) };
-        if (artists.size() == 1)
+        Artist::pointer artist;
+        if (artistId)
         {
-            scrobbling::IScrobblingService::FindParameters params;
+            artist = Artist::find(context.getDbSession(), *artistId);
+        }
+        else
+        {
+            const auto artists{ Artist::find(context.getDbSession(), *artistName) };
+            if (artists.size() == 1)
+                artist = artists.front();
+        }
+
+        if (artist)
+        {
+            Listen::StatsFindParameters params;
             params.setUser(context.getUser()->getId());
             params.setRange(db::Range{ 0, count });
-            params.setArtist(artists.front()->getId());
+            params.setArtist(artist->getId());
 
-            const auto trackIds{ core::Service<scrobbling::IScrobblingService>::get()->getTopTracks(params) };
+            const auto trackIds{ Listen::getTopTracks(context.getDbSession(), params) };
             for (const TrackId trackId : trackIds)
             {
                 if (Track::pointer track{ Track::find(context.getDbSession(), trackId) })

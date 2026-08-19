@@ -35,5 +35,6 @@ namespace lms::ui
     private:
         void handleRequest(const Wt::Http::Request& request,
                            Wt::Http::Response& response) override;
+        void handleAbort(const Wt::Http::Request& request) override;
     };
 } // namespace lms::ui

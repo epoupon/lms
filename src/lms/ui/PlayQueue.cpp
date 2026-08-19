@@ -132,6 +132,7 @@ namespace lms::ui
         });
 
         _entriesContainer = bindNew<InfiniteScrollingContainer>("entries", Wt::WString::tr("Lms.PlayQueue.template.entry-container"));
+        _entriesContainer->setNoResultsMessage(Wt::WString::tr("Lms.PlayQueue.queue-is-empty"));
         _entriesContainer->onRequestElements.connect([this] {
             addSome();
             updateCurrentTrack(true);
@@ -576,6 +577,8 @@ namespace lms::ui
             _nextPlayPos.reset();
 
             _entriesContainer->remove(*entry);
+            if (_entriesContainer->getCount() == 0)
+                _entriesContainer->reset(); // re-fetch from the top: entries beyond the loaded batch may remain
 
             updateInfo();
         });
@@ -589,21 +592,21 @@ namespace lms::ui
                     loadTrack(*pos, true);
             });
 
-        auto isStarred{ [=] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); } };
+        auto hasFeedback{ [=] { return core::Service<feedback::IFeedbackService>::get()->getFeedback(LmsApp->getUserId(), trackId) == db::FeedbackValue::Loved; } };
 
-        Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
-        starBtn->clicked().connect([=] {
+        Wt::WPushButton* feedbackBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(hasFeedback() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
+        feedbackBtn->clicked().connect([=] {
             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-            if (isStarred())
+            if (hasFeedback())
             {
-                core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
-                starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+                core::Service<feedback::IFeedbackService>::get()->setFeedback(LmsApp->getUserId(), trackId, db::FeedbackValue::None);
+                feedbackBtn->setText(Wt::WString::tr("Lms.Explore.star"));
             }
             else
             {
-                core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
-                starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+                core::Service<feedback::IFeedbackService>::get()->setFeedback(LmsApp->getUserId(), trackId, db::FeedbackValue::Loved);
+                feedbackBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
             }
         });
 

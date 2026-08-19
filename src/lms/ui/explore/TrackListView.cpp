@@ -179,6 +179,7 @@ namespace lms::ui
         }
 
         _container = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.TrackList.template.entry-container"));
+        _container->setNoResultsMessage(Wt::WString::tr("Lms.Explore.TrackList.empty"));
         _container->onRequestElements.connect([this] {
             addSome();
         });

@@ -102,4 +102,9 @@ namespace lms::transcoding
 
         return {};
     }
+
+    void ResourceHandler::abort()
+    {
+        _transcoder.reset();
+    }
 } // namespace lms::transcoding

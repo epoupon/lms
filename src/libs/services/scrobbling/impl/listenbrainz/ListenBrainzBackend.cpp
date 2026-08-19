@@ -20,36 +20,18 @@
 #include "ListenBrainzBackend.hpp"
 
 #include "core/IConfig.hpp"
-#include "core/ILogger.hpp"
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Track.hpp"
+#include "database/objects/TrackArtistLink.hpp"
 
 #include "Utils.hpp"
 
 namespace lms::scrobbling::listenBrainz
 {
     using namespace db;
-
-    namespace
-    {
-        bool canBeScrobbled(Session& session, TrackId trackId, std::chrono::seconds duration)
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            const Track::pointer track{ Track::find(session, trackId) };
-            if (!track)
-                return false;
-
-            const bool res{ duration >= std::chrono::minutes(4) || (duration >= track->getDuration() / 2) };
-            if (!res)
-                LMS_LOG_LISTENBRAINZ(DEBUG, "Track cannot be scrobbled since played duration is too short: " << duration.count() << "s, total duration = " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << "s");
-
-            return res;
-        }
-    } // namespace
 
     ListenBrainzBackend::ListenBrainzBackend(boost::asio::io_context& ioContext, db::IDb& db)
         : _ioContext{ ioContext }
@@ -71,17 +53,51 @@ namespace lms::scrobbling::listenBrainz
         _listensSynchronizer.enqueListenNow(listen);
     }
 
-    void ListenBrainzBackend::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
+    void ListenBrainzBackend::listenFinished(const TimedListen& listen, std::optional<std::chrono::seconds> /*duration*/)
     {
-        if (duration && !canBeScrobbled(_db.getTLSSession(), listen.trackId, *duration))
-            return;
-
-        const TimedListen timedListen{ listen, Wt::WDateTime::currentDateTime() };
-        _listensSynchronizer.enqueListen(timedListen);
+        _listensSynchronizer.enqueListen(listen);
     }
 
-    void ListenBrainzBackend::addTimedListen(const TimedListen& timedListen)
+    void ListenBrainzBackend::addTimedListen(const TimedListen& listen)
     {
-        _listensSynchronizer.enqueListen(timedListen);
+        _listensSynchronizer.enqueListen(listen);
+    }
+
+    bool ListenBrainzBackend::canBeScrobbled(TrackId trackId, std::optional<std::chrono::seconds> duration) const
+    {
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+
+        const Track::pointer track{ Track::find(session, trackId) };
+        if (!track)
+            return false;
+
+        if (track->getArtistLinks(TrackArtistLinkType::Artist).empty())
+        {
+            LMS_LOG_LISTENBRAINZ(DEBUG, "Track cannot be scrobbled: no artist");
+            return false;
+        }
+
+        if (duration)
+        {
+            const bool longEnough{ *duration >= std::chrono::minutes(4) || (*duration >= track->getDuration() / 2) };
+            if (!longEnough)
+            {
+                LMS_LOG_LISTENBRAINZ(DEBUG, "Track cannot be scrobbled since played duration is too short: " << duration->count() << "s, total duration = " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << "s");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    void ListenBrainzBackend::requestImmediateImport(db::UserId userId)
+    {
+        _listensSynchronizer.requestImmediateImport(userId);
+    }
+
+    void ListenBrainzBackend::requestImmediateExport()
+    {
+        _listensSynchronizer.requestImmediateExport();
     }
 } // namespace lms::scrobbling::listenBrainz

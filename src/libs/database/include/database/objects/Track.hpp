@@ -95,7 +95,8 @@ namespace lms::db
             TrackSortMethod sortMethod{ TrackSortMethod::None };
             std::optional<Range> range;
             Wt::WDateTime writtenAfter;
-            UserId starringUser;                                     // only tracks starred by this user (uses their current feedback backend)
+            UserId feedbackUser;                                     // if valid, only tracks that have feedback from this user
+            std::optional<FeedbackValue> feedbackValue;              // if set, only tracks with feedback matching this value (any user, unless feedbackUser is also set)
             ArtistId artist;                                         // only tracks that involve this artist
             std::string artistName;                                  // only tracks that involve this artist name
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes; //    and for these link types
@@ -141,9 +142,14 @@ namespace lms::db
                 writtenAfter = _after;
                 return *this;
             }
-            FindParameters& setStarringUser(UserId _user)
+            FindParameters& setFeedbackUser(UserId _user)
             {
-                starringUser = _user;
+                feedbackUser = _user;
+                return *this;
+            }
+            FindParameters& setFeedbackValue(std::optional<FeedbackValue> _value)
+            {
+                feedbackValue = _value;
                 return *this;
             }
             FindParameters& setArtist(ArtistId _artist, core::EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {})

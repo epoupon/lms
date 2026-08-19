@@ -929,6 +929,30 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Artist_sortMethod_emptySortNameFallsBackOnName)
+    {
+        ScopedArtist artistBravo{ session, "Bravo" };     // no sort name -> falls back on "Bravo"
+        ScopedArtist artistAlpha{ session, "Alpha" };     // explicit sort name -> "Zulu"
+        ScopedArtist artistCharlie{ session, "Charlie" }; // no sort name -> falls back on "Charlie"
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            artistAlpha.get().modify()->setSortName("Zulu");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto allArtistsBySortName{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::SortName)) };
+
+            ASSERT_EQ(allArtistsBySortName.size(), 3);
+            EXPECT_EQ(allArtistsBySortName[0], artistBravo.getId());
+            EXPECT_EQ(allArtistsBySortName[1], artistCharlie.getId());
+            EXPECT_EQ(allArtistsBySortName[2], artistAlpha.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, Artist_nonReleaseTracks)
     {
         ScopedArtist artist{ session, "artist" };
@@ -1026,6 +1050,37 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Artist_sortDateAdded_tieBreakOnEffectiveSortName)
+    {
+        ScopedArtist artistZulu{ session, "Zulu" };   // no sort name -> falls back on "Zulu"
+        ScopedArtist artistAlpha{ session, "Alpha" }; // explicit sort name -> "Aardvark"
+
+        ScopedTrack trackZulu{ session };
+        ScopedTrack trackAlpha{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            artistAlpha.get().modify()->setSortName("Aardvark");
+
+            const Wt::WDateTime addedTime{ Wt::WDate{ 2021, 1, 2 } };
+            trackZulu.get().modify()->setAddedTime(addedTime);
+            trackAlpha.get().modify()->setAddedTime(addedTime);
+
+            session.create<TrackArtistLink>(trackZulu.get(), artistZulu.get(), TrackArtistLinkType::Artist);
+            session.create<TrackArtistLink>(trackAlpha.get(), artistAlpha.get(), TrackArtistLinkType::Artist);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::AddedDesc)) };
+            ASSERT_EQ(artists.size(), 2);
+            EXPECT_EQ(artists[0], artistAlpha.getId());
+            EXPECT_EQ(artists[1], artistZulu.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, Artist_sortLastWritten)
     {
         ScopedArtist artistA{ session, "artistA" };
@@ -1066,6 +1121,37 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Artist_sortLastWritten_tieBreakOnEffectiveSortName)
+    {
+        ScopedArtist artistZulu{ session, "Zulu" };   // no sort name -> falls back on "Zulu"
+        ScopedArtist artistAlpha{ session, "Alpha" }; // explicit sort name -> "Aardvark"
+
+        ScopedTrack trackZulu{ session };
+        ScopedTrack trackAlpha{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            artistAlpha.get().modify()->setSortName("Aardvark");
+
+            const Wt::WDateTime lastWriteTime{ Wt::WDate{ 2021, 1, 2 } };
+            trackZulu.get().modify()->setLastWriteTime(lastWriteTime);
+            trackAlpha.get().modify()->setLastWriteTime(lastWriteTime);
+
+            session.create<TrackArtistLink>(trackZulu.get(), artistZulu.get(), TrackArtistLinkType::Artist);
+            session.create<TrackArtistLink>(trackAlpha.get(), artistAlpha.get(), TrackArtistLinkType::Artist);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::LastWrittenDesc)) };
+            ASSERT_EQ(artists.size(), 2);
+            EXPECT_EQ(artists[0], artistAlpha.getId());
+            EXPECT_EQ(artists[1], artistZulu.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, Artist_updateArtwork)
     {
         ScopedArtist artist{ session, "MyArtist" };
@@ -1096,7 +1182,7 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Artist_findWithMBIDNameVariants)
+    TEST_F(DatabaseFixture, Artist_findWithMBIDMatchedNameOrSortNameVariants_name)
     {
         ScopedArtist artistA{ session, "ArtistA" };
         ScopedArtist artistB{ session, "ArtistB" };
@@ -1127,11 +1213,201 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             ArtistId lastRetrievedArtist;
-            const auto results{ Artist::findWithMBIDNameVariants(session, lastRetrievedArtist) };
+            const auto results{ Artist::findWithMBIDMatchedNameOrSortNameVariants(session, lastRetrievedArtist) };
 
             ASSERT_EQ(results.size(), 1);
             EXPECT_EQ(results[0]->getId(), artistA.getId());
             EXPECT_EQ(lastRetrievedArtist, artistA.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_findWithMBIDMatchedNameOrSortNameVariants_sortName)
+    {
+        ScopedArtist artistA{ session, "ArtistA" };
+        ScopedArtist artistB{ session, "ArtistB" };
+
+        ScopedTrack trackA1{ session };
+        ScopedTrack trackA2{ session };
+        ScopedTrack trackB1{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            {
+                auto link{ session.create<TrackArtistLink>(trackA1.get(), artistA.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistA");
+                link.modify()->setArtistSortName("ArtistA");
+            }
+            {
+                auto link{ session.create<TrackArtistLink>(trackA2.get(), artistA.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistA");
+                link.modify()->setArtistSortName("AlternateSortArtistA");
+            }
+
+            {
+                auto link{ session.create<TrackArtistLink>(trackB1.get(), artistB.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistB");
+                link.modify()->setArtistSortName("ArtistB");
+            }
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedArtist;
+            const auto results{ Artist::findWithMBIDMatchedNameOrSortNameVariants(session, lastRetrievedArtist) };
+
+            ASSERT_EQ(results.size(), 1);
+            EXPECT_EQ(results[0]->getId(), artistA.getId());
+            EXPECT_EQ(lastRetrievedArtist, artistA.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_findWithMBIDMatchedNameOrSortNameVariants_emptySortNameIgnored)
+    {
+        ScopedArtist artist{ session, "ArtistA" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            {
+                auto link{ session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistA");
+                link.modify()->setArtistSortName("ArtistA, Sort");
+            }
+            {
+                // no sort name tag on this track: must not count as a variant against the one above
+                auto link{ session.create<TrackArtistLink>(track2.get(), artist.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistA");
+            }
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedArtist;
+            const auto results{ Artist::findWithMBIDMatchedNameOrSortNameVariants(session, lastRetrievedArtist) };
+
+            ASSERT_EQ(results.size(), 0);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_findWithMBIDMatchedNameOrSortNameVariants_releaseOnly)
+    {
+        ScopedArtist artist{ session, "ArtistA" };
+        ScopedRelease release1{ session, "Release1" };
+        ScopedRelease release2{ session, "Release2" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            {
+                auto link{ session.create<ReleaseArtistLink>(release1.get(), artist.get(), true) };
+                link.modify()->setArtistName("ArtistA");
+            }
+            {
+                auto link{ session.create<ReleaseArtistLink>(release2.get(), artist.get(), true) };
+                link.modify()->setArtistName("AlternateArtistA");
+            }
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedArtist;
+            const auto results{ Artist::findWithMBIDMatchedNameOrSortNameVariants(session, lastRetrievedArtist) };
+
+            ASSERT_EQ(results.size(), 1);
+            EXPECT_EQ(results[0]->getId(), artist.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_findWithNonMBIDSortNameVariants)
+    {
+        ScopedArtist artistA{ session, "ArtistA" };
+        ScopedArtist artistB{ session, "ArtistB" };
+        ScopedArtist artistC{ session, "ArtistC", core::UUID::fromString("38811c52-85e3-4e2e-3319-ab7d9f2cfa5b") };
+
+        ScopedTrack trackA1{ session };
+        ScopedTrack trackA2{ session };
+        ScopedTrack trackB1{ session };
+        ScopedTrack trackC1{ session };
+        ScopedTrack trackC2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            {
+                auto link{ session.create<TrackArtistLink>(trackA1.get(), artistA.get(), TrackArtistLinkType::Artist, false) };
+                link.modify()->setArtistName("ArtistA");
+                link.modify()->setArtistSortName("ArtistA, Sort1");
+            }
+            {
+                auto link{ session.create<TrackArtistLink>(trackA2.get(), artistA.get(), TrackArtistLinkType::Artist, false) };
+                link.modify()->setArtistName("ArtistA");
+                link.modify()->setArtistSortName("ArtistA, Sort2");
+            }
+            {
+                auto link{ session.create<TrackArtistLink>(trackB1.get(), artistB.get(), TrackArtistLinkType::Artist, false) };
+                link.modify()->setArtistName("ArtistB");
+                link.modify()->setArtistSortName("ArtistB, Sort");
+            }
+            // artistC has an MBID: even with conflicting sort names, it must not be selected by this non-MBID query
+            {
+                auto link{ session.create<TrackArtistLink>(trackC1.get(), artistC.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistC");
+                link.modify()->setArtistSortName("ArtistC, Sort1");
+            }
+            {
+                auto link{ session.create<TrackArtistLink>(trackC2.get(), artistC.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistC");
+                link.modify()->setArtistSortName("ArtistC, Sort2");
+            }
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedArtist;
+            const auto results{ Artist::findWithNonMBIDSortNameVariants(session, lastRetrievedArtist) };
+
+            ASSERT_EQ(results.size(), 1);
+            EXPECT_EQ(results[0]->getId(), artistA.getId());
+            EXPECT_EQ(lastRetrievedArtist, artistA.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_findWithNonMBIDSortNameVariants_releaseOnly)
+    {
+        ScopedArtist artist{ session, "ArtistA" };
+        ScopedRelease release1{ session, "Release1" };
+        ScopedRelease release2{ session, "Release2" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            {
+                auto link{ session.create<ReleaseArtistLink>(release1.get(), artist.get(), false) };
+                link.modify()->setArtistName("ArtistA");
+                link.modify()->setArtistSortName("ArtistA, Sort1");
+            }
+            {
+                auto link{ session.create<ReleaseArtistLink>(release2.get(), artist.get(), false) };
+                link.modify()->setArtistName("ArtistA");
+                link.modify()->setArtistSortName("ArtistA, Sort2");
+            }
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedArtist;
+            const auto results{ Artist::findWithNonMBIDSortNameVariants(session, lastRetrievedArtist) };
+
+            ASSERT_EQ(results.size(), 1);
+            EXPECT_EQ(results[0]->getId(), artist.getId());
         }
     }
 } // namespace lms::db::tests

@@ -24,6 +24,8 @@
 #include <shared_mutex>
 #include <unordered_map>
 
+#include "core/EnumSet.hpp"
+
 #include "services/scrobbling/IScrobblingService.hpp"
 
 #include "IScrobblingBackend.hpp"
@@ -31,6 +33,10 @@
 namespace lms::scrobbling::lastFm
 {
     class LastFmBackend;
+}
+namespace lms::scrobbling::listenBrainz
+{
+    class ListenBrainzBackend;
 }
 
 namespace lms::scrobbling
@@ -50,20 +56,6 @@ namespace lms::scrobbling
         void addTimedListen(const TimedListen& listen) override;
         void visitNowPlayingListens(const std::function<void(Clock::time_point startedAt, const Listen&)>& visitor, db::UserId userId) override;
 
-        ArtistContainer getRecentArtists(const ArtistFindParameters& params) override;
-        ReleaseContainer getRecentReleases(const FindParameters& params) override;
-        TrackContainer getRecentTracks(const FindParameters& params) override;
-
-        std::size_t getCount(db::UserId userId, db::ReleaseId releaseId) override;
-        std::size_t getCount(db::UserId userId, db::TrackId trackId) override;
-
-        Wt::WDateTime getLastListenDateTime(db::UserId userId, db::ReleaseId releaseId) override;
-        Wt::WDateTime getLastListenDateTime(db::UserId userId, db::TrackId trackId) override;
-
-        ArtistContainer getTopArtists(const ArtistFindParameters& params) override;
-        ReleaseContainer getTopReleases(const FindParameters& params) override;
-        TrackContainer getTopTracks(const FindParameters& params) override;
-
         void initiateLastFmLink(db::UserId userId, std::string_view apiKey, std::string_view apiSecret,
                                 std::function<void(std::string_view authUrl)> onSuccess,
                                 std::function<void()> onFailure) override;
@@ -72,13 +64,21 @@ namespace lms::scrobbling
                                 std::function<void()> onSuccess,
                                 std::function<void()> onFailure) override;
 
-        std::optional<db::ScrobblingBackend> getUserBackend(db::UserId userId);
+        void requestImmediateImport(db::UserId userId, db::ScrobblingBackend backend) override;
+        void requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend) override;
+
+        core::EnumSet<db::ScrobblingBackend> getUserEnabledBackends(db::UserId userId);
+        void markPendingExports(db::UserId userId, db::ScrobblingBackend backend);
+
+        // Independent of which backends are enabled, since recording is now backend-agnostic (was previously InternalBackend's job)
+        std::optional<TimedListen> recordListen(const Listen& listen, const Wt::WDateTime& listenedAt, std::optional<std::chrono::seconds> duration);
 
         void insertNowPlayingEntry(const Listen& listen);
 
         db::IDb& _db;
         std::unordered_map<db::ScrobblingBackend, std::unique_ptr<IScrobblingBackend>> _scrobblingBackends;
-        lastFm::LastFmBackend* _lastFmBackend{}; // non-owning, owned via _scrobblingBackends
+        lastFm::LastFmBackend* _lastFmBackend{};
+        listenBrainz::ListenBrainzBackend* _listenBrainzBackend{};
 
         std::shared_mutex _nowPlayingEntriesMutex;
         struct NowPlayingEntry

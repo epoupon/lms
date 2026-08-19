@@ -78,15 +78,13 @@ namespace lms::db
             if (params.writtenAfter.isValid())
                 query.where("t.file_last_write > ?").bind(params.writtenAfter);
 
-            if (params.starringUser.isValid())
+            if (params.feedbackUser.isValid() || params.feedbackValue)
             {
-                query.join("starred_track s_t ON s_t.track_id = t.id")
-                    .join("user u ON u.id = s_t.user_id")
-                    .where("s_t.user_id = ?")
-                    .bind(params.starringUser)
-                    .where("s_t.sync_state <> ?")
-                    .bind(SyncState::PendingRemove)
-                    .where("s_t.backend = u.feedback_backend");
+                query.join("track_feedback t_f ON t_f.track_id = t.id");
+                if (params.feedbackUser.isValid())
+                    query.where("t_f.user_id = ?").bind(params.feedbackUser);
+                if (params.feedbackValue)
+                    query.where("t_f.value = ?").bind(static_cast<int>(*params.feedbackValue));
             }
 
             if (params.filters.clusters.size() == 1)
@@ -264,9 +262,9 @@ namespace lms::db
             case TrackSortMethod::Random:
                 query.orderBy("RANDOM()");
                 break;
-            case TrackSortMethod::StarredDateDesc:
-                assert(params.starringUser.isValid());
-                query.orderBy("s_t.date_time DESC");
+            case TrackSortMethod::FeedbackDateDesc:
+                assert(params.feedbackUser.isValid());
+                query.orderBy("t_f.date_time DESC");
                 break;
             case TrackSortMethod::Name:
                 query.orderBy("t.name COLLATE NOCASE");
@@ -862,12 +860,12 @@ namespace lms::db
 
     std::vector<TrackArtistLink::pointer> Track::getArtistLinks() const
     {
-        return utils::fetchQueryResults<TrackArtistLink::pointer>(_trackArtistLinks.find());
+        return utils::fetchQueryResults<TrackArtistLink::pointer>(_trackArtistLinks.find().orderBy("id"));
     }
 
     void Track::visitArtistLinks(const std::function<void(const ObjectPtr<TrackArtistLink>& artistLink)>& visitor) const
     {
-        utils::forEachQueryResult(_trackArtistLinks.find(), visitor);
+        utils::forEachQueryResult(_trackArtistLinks.find().orderBy("id"), visitor);
     }
 
     std::vector<ObjectPtr<TrackArtistLink>> Track::getArtistLinks(TrackArtistLinkType type) const
@@ -882,6 +880,7 @@ namespace lms::db
         auto query{ session()->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l from track_artist_link t_a_l") };
         query.where("t_a_l.track_id = ?").bind(getId());
         query.where("t_a_l.type = ?").bind(type);
+        query.orderBy("t_a_l.id");
 
         return utils::forEachQueryResult(query, visitor);
     }

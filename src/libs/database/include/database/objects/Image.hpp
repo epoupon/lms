@@ -27,10 +27,13 @@
 #include <Wt/WDateTime.h>
 
 #include "core/TaggedType.hpp"
+#include "core/media/ImageFormat.hpp"
+
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/DirectoryId.hpp"
 #include "database/objects/ImageId.hpp"
+#include "database/objects/detail/Types.hpp"
 
 namespace lms::db
 {
@@ -85,7 +88,7 @@ namespace lms::db
         std::size_t getFileSize() const { return _fileSize; }
         std::size_t getWidth() const { return _width; }
         std::size_t getHeight() const { return _height; }
-        std::string_view getMimeType() const { return _mimeType; }
+        std::optional<core::media::ImageFormat> getFormat() const;
 
         // setters
         void setAbsoluteFilePath(const std::filesystem::path& p);
@@ -93,7 +96,7 @@ namespace lms::db
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
         void setWidth(std::size_t width) { _width = width; }
         void setHeight(std::size_t height) { _height = height; }
-        void setMimeType(std::string_view mimeType) { _mimeType = mimeType; }
+        void setFormat(core::media::ImageFormat format);
         void setDirectory(const ObjectPtr<Directory>& directory) { _directory = getDboPtr(directory); }
 
         template<class Action>
@@ -106,7 +109,7 @@ namespace lms::db
 
             Wt::Dbo::field(a, _width, "width");
             Wt::Dbo::field(a, _height, "height");
-            Wt::Dbo::field(a, _mimeType, "mime_type");
+            Wt::Dbo::field(a, _format, "format");
 
             Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
         }
@@ -122,7 +125,7 @@ namespace lms::db
         int _fileSize{};
         int _width{};
         int _height{};
-        std::string _mimeType;
+        detail::ImageFormat _format{ detail::ImageFormat::Unknown };
 
         Wt::Dbo::ptr<Directory> _directory;
     };

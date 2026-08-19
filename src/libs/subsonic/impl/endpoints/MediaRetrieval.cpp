@@ -371,8 +371,8 @@ namespace lms::api::subsonic
             return;
         }
 
+        response.setMimeType(std::string{ core::media::getMimeType(image->getFormat()).str() });
         response.out().write(reinterpret_cast<const char*>(image->getData().data()), image->getData().size());
-        response.setMimeType(std::string{ image->getMimeType() });
     }
 
 } // namespace lms::api::subsonic

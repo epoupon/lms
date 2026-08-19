@@ -8,7 +8,7 @@
 			${artwork class="rounded d-block mx-auto"}
 		</div>
 		<div class="col">
-			<h2>${name}</h2>
+			<h2 class="text-break">${name}</h2>
 			${clusters class="mb-2"}
 			${<if-has-biography>}
 			${biography class="mb-2 Lms-multiline-clamp Lms-cursor-pointer"}

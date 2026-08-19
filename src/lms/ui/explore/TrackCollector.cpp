@@ -56,14 +56,15 @@ namespace lms::ui
                 break;
             }
 
-        case Mode::Starred:
+        case Mode::Feedback:
             {
                 db::Track::FindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
-                params.setSortMethod(db::TrackSortMethod::StarredDateDesc);
+                params.setSortMethod(db::TrackSortMethod::FeedbackDateDesc);
                 params.setRange(range);
-                params.setStarringUser(LmsApp->getUserId());
+                params.setFeedbackUser(LmsApp->getUserId());
+                params.setFeedbackValue(db::FeedbackValue::Loved);
                 std::size_t count{};
                 db::Track::find(LmsApp->getDbSession(), params, [&](const auto& t) { func(t); ++count; });
                 moreResults = (count == range.size);

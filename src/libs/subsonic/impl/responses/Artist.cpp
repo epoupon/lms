@@ -24,6 +24,7 @@
 #include "core/String.hpp"
 
 #include "database/objects/Artist.hpp"
+#include "database/objects/ArtistFeedback.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/TrackArtistLink.hpp"
@@ -84,8 +85,8 @@ namespace lms::api::subsonic
             artistNode.setAttribute("albumCount", count);
         }
 
-        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.getUser()->getId(), artist->getId()) }; dateTime.isValid())
-            artistNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
+        if (const ArtistFeedback::pointer feedback{ ArtistFeedback::find(context.getDbSession(), artist->getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == FeedbackValue::Loved)
+            artistNode.setAttribute("starred", core::stringUtils::toISO8601String(feedback->getDateTime()));
 
         if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.getUser()->getId(), artist->getId()) })
             artistNode.setAttribute("userRating", *rating);

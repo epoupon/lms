@@ -1,4 +1,4 @@
-FROM	alpine:3.24 AS build
+FROM	alpine:3.24.1 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -40,7 +40,7 @@ ARG	BUILD_PACKAGES=" \
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
 
 # FFmpeg
-ARG	FFMPEG_VERSION=6.1.5
+ARG	FFMPEG_VERSION=6.1.6
 RUN  \
 	DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
@@ -81,7 +81,7 @@ RUN \
 	make -j$(nproc) install 
 
 # WT
-ARG	WT_VERSION=4.13.3
+ARG	WT_VERSION=4.14.1
 ARG WT_DEBUG=OFF
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
@@ -103,7 +103,7 @@ RUN \
 	cp ./*.h ${PREFIX}/include/stb
 
 # TAGLIB
-ARG TAGLIB_VERSION=v2.3
+ARG TAGLIB_VERSION=v2.3.1
 RUN \
 	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/taglib/taglib/archive/${TAGLIB_VERSION}.tar.gz && \
@@ -147,7 +147,7 @@ RUN \
 	rm -rf /tmp/fakeroot/share/Wt/resources/themes
 
 ## Release Stage
-FROM		alpine:3.24 AS release
+FROM		alpine:3.24.1 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 
 ARG	RUNTIME_PACKAGES=" \

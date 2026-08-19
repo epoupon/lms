@@ -39,6 +39,7 @@ namespace lms::ui
 
     private:
         void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
+        void handleAbort(const Wt::Http::Request& request) override;
         virtual std::unique_ptr<zip::IZipper> createZipper() = 0;
     };
 

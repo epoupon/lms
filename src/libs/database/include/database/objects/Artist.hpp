@@ -66,8 +66,9 @@ namespace lms::db
             ArtistSortMethod sortMethod{ ArtistSortMethod::None };
             std::optional<Range> range;
             Wt::WDateTime writtenAfter;
-            UserId starringUser; // only artists starred by this user (uses their current feedback backend)
-            TrackId track;       // artists involved in this track
+            UserId feedbackUser;                        // if valid, only artists that have feedback from this user
+            std::optional<FeedbackValue> feedbackValue; // if set, only artists with feedback matching this value (any user, unless feedbackUser is also set)
+            TrackId track;                              // artists involved in this track
 
             FindParameters& setFilters(const Filters& _filters)
             {
@@ -104,9 +105,14 @@ namespace lms::db
                 writtenAfter = _after;
                 return *this;
             }
-            FindParameters& setStarringUser(UserId _user)
+            FindParameters& setFeedbackUser(UserId _user)
             {
-                starringUser = _user;
+                feedbackUser = _user;
+                return *this;
+            }
+            FindParameters& setFeedbackValue(std::optional<FeedbackValue> _value)
+            {
+                feedbackValue = _value;
                 return *this;
             }
             FindParameters& setTrack(TrackId _track)
@@ -131,7 +137,8 @@ namespace lms::db
         static std::vector<ArtistId> findIds(Session& session, const FindParameters& params);
         static std::vector<ArtistId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // No track related
         static bool exists(Session& session, ArtistId id);
-        static std::vector<pointer> findWithMBIDNameVariants(Session& session, ArtistId& lastRetrievedArtist, std::optional<Range> range = std::nullopt);
+        static std::vector<pointer> findWithMBIDMatchedNameOrSortNameVariants(Session& session, ArtistId& lastRetrievedArtist, std::optional<Range> range = std::nullopt);
+        static std::vector<pointer> findWithNonMBIDSortNameVariants(Session& session, ArtistId& lastRetrievedArtist, std::optional<Range> range = std::nullopt);
 
         // Updates
         static void updatePreferredArtwork(Session& session, ArtistId artistId, ArtworkId artworkId);

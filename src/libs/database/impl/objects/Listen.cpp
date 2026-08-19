@@ -48,12 +48,7 @@ namespace lms::db
             auto query{ session.getDboSession()->query<ArtistId>("SELECT a.id from artist a").join("track_artist_link t_a_l ON t_a_l.artist_id = a.id").join("listen l ON l.track_id = t_a_l.track_id") };
 
             if (params.user.isValid())
-            {
-                query.join("user u ON u.id = l.user_id")
-                    .where("l.user_id = ?")
-                    .bind(params.user)
-                    .where("l.backend = u.scrobbling_backend");
-            }
+                query.where("l.user_id = ?").bind(params.user);
 
             assert(!params.artist.isValid()); // poor check
 
@@ -165,12 +160,7 @@ namespace lms::db
             auto query{ session.getDboSession()->query<ReleaseId>("SELECT r.id from release r").join("track t ON t.release_id = r.id").join("listen l ON l.track_id = t.id") };
 
             if (params.user.isValid())
-            {
-                query.join("user u ON u.id = l.user_id")
-                    .where("l.user_id = ?")
-                    .bind(params.user)
-                    .where("l.backend = u.scrobbling_backend");
-            }
+                query.where("l.user_id = ?").bind(params.user);
 
             if (params.artist.isValid())
             {
@@ -250,12 +240,7 @@ namespace lms::db
             auto query{ session.getDboSession()->query<TrackId>("SELECT t.id from track t").join("listen l ON l.track_id = t.id") };
 
             if (params.user.isValid())
-            {
-                query.join("user u ON u.id = l.user_id")
-                    .where("l.user_id = ?")
-                    .bind(params.user)
-                    .where("l.backend = u.scrobbling_backend");
-            }
+                query.where("l.user_id = ?").bind(params.user);
 
             if (params.artist.isValid())
             {
@@ -330,18 +315,17 @@ namespace lms::db
         }
     } // namespace
 
-    Listen::Listen(ObjectPtr<User> user, ObjectPtr<Track> track, ScrobblingBackend backend, const Wt::WDateTime& dateTime)
+    Listen::Listen(ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime)
         : _dateTime{ Wt::WDateTime::fromTime_t(dateTime.toTime_t()) }
-        , _backend{ backend }
         , _user{ getDboPtr(user) }
         , _track{ getDboPtr(track) }
     {
     }
 
-    Listen::pointer Listen::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, ScrobblingBackend backend, const Wt::WDateTime& dateTime)
+    Listen::pointer Listen::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime)
     {
         session.checkWriteTransaction();
-        return session.getDboSession()->add(std::unique_ptr<Listen>{ new Listen{ user, track, backend, dateTime } });
+        return session.getDboSession()->add(std::unique_ptr<Listen>{ new Listen{ user, track, dateTime } });
     }
 
     std::size_t Listen::getCount(Session& session)
@@ -365,20 +349,14 @@ namespace lms::db
         if (parameters.user.isValid())
             query.where("user_id = ?").bind(parameters.user);
 
-        if (parameters.backend)
-            query.where("backend = ?").bind(*parameters.backend);
-
-        if (parameters.syncState)
-            query.where("sync_state = ?").bind(*parameters.syncState);
-
         return utils::execRangeQuery<ListenId>(query, parameters.range);
     }
 
-    Listen::pointer Listen::find(Session& session, UserId userId, TrackId trackId, ScrobblingBackend backend, const Wt::WDateTime& dateTime)
+    Listen::pointer Listen::find(Session& session, UserId userId, TrackId trackId, const Wt::WDateTime& dateTime)
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Listen>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId).where("backend = ?").bind(backend).where("date_time = ?").bind(Wt::WDateTime::fromTime_t(dateTime.toTime_t())));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<Listen>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId).where("date_time = ?").bind(Wt::WDateTime::fromTime_t(dateTime.toTime_t())));
     }
 
     std::vector<ArtistId> Listen::getTopArtists(Session& session, const ArtistStatsFindParameters& params)
@@ -508,7 +486,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) from listen l").join("user u ON u.id = l.user_id").where("l.track_id = ?").bind(trackId).where("l.user_id = ?").bind(userId).where("l.backend = u.scrobbling_backend"));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) from listen l").where("l.track_id = ?").bind(trackId).where("l.user_id = ?").bind(userId));
     }
 
     std::size_t Listen::getCount(Session& session, UserId userId, ReleaseId releaseId)
@@ -520,10 +498,9 @@ namespace lms::db
                                                                         " FROM ("
                                                                         " SELECT COUNT(l.track_id) AS count_result"
                                                                         " FROM track t"
-                                                                        " LEFT JOIN listen l ON t.id = l.track_id AND l.backend = (SELECT scrobbling_backend FROM user WHERE id = ?) AND l.user_id = ?"
+                                                                        " LEFT JOIN listen l ON t.id = l.track_id AND l.user_id = ?"
                                                                         " WHERE t.release_id = ?"
                                                                         " GROUP BY t.id)")
-                                                 .bind(userId)
                                                  .bind(userId)
                                                  .bind(releaseId));
     }
@@ -532,15 +509,11 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        // TODO not pending remove?
-
         // clang-format off
         auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
-                        .join("user u ON u.id = l.user_id")
                         .join("track t ON l.track_id = t.id")
                         .where("t.release_id = ?").bind(releaseId)
                         .where("l.user_id = ?").bind(userId)
-                        .where("l.backend = u.scrobbling_backend")
                         .orderBy("l.date_time DESC")
                         .limit(1)
         };
@@ -553,14 +526,10 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        // TODO not pending remove?
-
         // clang-format off
         auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
-                        .join("user u ON u.id = l.user_id")
                         .where("l.track_id = ?").bind(trackId)
                         .where("l.user_id = ?").bind(userId)
-                        .where("l.backend = u.scrobbling_backend")
                         .orderBy("l.date_time DESC")
                         .limit(1)
         };

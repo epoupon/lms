@@ -23,6 +23,7 @@
 #include <memory>
 #include <span>
 
+#include "core/media/ImageFormat.hpp"
 #include "image/IEncodedImage.hpp"
 #include "image/IRawImage.hpp"
 
@@ -38,8 +39,10 @@ namespace lms::image
     std::unique_ptr<IRawImage> decodeImage(std::span<const std::byte> encodedData);
     std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path);
 
-    std::unique_ptr<IEncodedImage> readImage(std::span<const std::byte> encodedData, std::string_view mimeType);
-    std::unique_ptr<IEncodedImage> readImage(const std::filesystem::path& path, std::string_view mimeType = ""); // mimeType may already been known, otherwise, it is guessed based on the file extension
+    std::unique_ptr<IEncodedImage> readImage(std::span<const std::byte> encodedData, core::media::ImageFormat format);
+    std::unique_ptr<IEncodedImage> readImage(const std::filesystem::path& path, core::media::ImageFormat format);
 
     std::unique_ptr<IEncodedImage> encodeToJPEG(const IRawImage& rawImage, unsigned quality);
+
+    bool canFormatBeDecoded(core::media::ImageFormat format);
 } // namespace lms::image

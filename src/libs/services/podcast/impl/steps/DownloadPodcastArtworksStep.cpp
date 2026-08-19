@@ -21,6 +21,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <system_error>
 
 #include "core/ILogger.hpp"
@@ -39,7 +40,7 @@ namespace lms::podcast
 {
     namespace
     {
-        void createPodcastArtwork(db::Session& session, db::PodcastId podcastId, const std::filesystem::path& filePath, std::string_view contentType)
+        void createPodcastArtwork(db::Session& session, db::PodcastId podcastId, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
         {
             auto transaction{ session.createWriteTransaction() };
 
@@ -47,7 +48,7 @@ namespace lms::podcast
             if (!dbPodcast)
                 return; // may have been deleted by admin
 
-            if (db::Artwork::pointer artwork{ utils::createArtworkFromImage(session, filePath, contentType) })
+            if (db::Artwork::pointer artwork{ utils::createArtworkFromImage(session, filePath, probedImage) })
                 dbPodcast.modify()->setArtwork(artwork);
         }
     } // namespace
@@ -125,9 +126,10 @@ namespace lms::podcast
             getExecutor().post([=, this] {
                 const std::string body{ msg.body() }; // API enforces a copy here :(
                 const auto bodySpan{ std::as_bytes(std::span{ body.data(), body.size() }) };
+                std::optional<image::ImageProperties> probedImage;
                 try
                 {
-                    image::probeImage(bodySpan);
+                    probedImage = image::probeImage(bodySpan);
                 }
                 catch (const image::Exception& e)
                 {
@@ -155,8 +157,7 @@ namespace lms::podcast
                 }
 
                 LMS_LOG(PODCAST, INFO, "Downloaded podcast artwork for podcast '" << podcast->getTitle());
-                const std::string* contentType{ msg.getHeader("Content-Type") };
-                createPodcastArtwork(getDb().getTLSSession(), podcastId, finalFilePath, contentType ? *contentType : "application/octet-stream");
+                createPodcastArtwork(getDb().getTLSSession(), podcastId, finalFilePath, *probedImage);
 
                 processNext();
             });

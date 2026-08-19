@@ -28,9 +28,6 @@
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/Podcast.hpp"
-#include "image/Exception.hpp"
-#include "image/Image.hpp"
-#include "image/Types.hpp"
 
 namespace lms::podcast::utils
 {
@@ -40,20 +37,7 @@ namespace lms::podcast::utils
         return podcast->getId().toString();
     }
 
-    static std::optional<image::ImageProperties> probeImage(const std::filesystem::path& path)
-    {
-        try
-        {
-            return image::probeImage(path);
-        }
-        catch (const image::Exception& e)
-        {
-            LMS_LOG(PODCAST, WARNING, "Failed to probe artwork image " << path << ": " << e.what());
-            return std::nullopt;
-        }
-    }
-
-    db::Artwork::pointer createArtworkFromImage(db::Session& session, const std::filesystem::path& filePath, std::string_view mimeType)
+    db::Artwork::pointer createArtworkFromImage(db::Session& session, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
     {
         std::error_code ec;
         const auto fileSize{ std::filesystem::file_size(filePath, ec) };
@@ -65,13 +49,13 @@ namespace lms::podcast::utils
 
         db::Image::pointer image{ session.create<db::Image>(filePath) };
         image.modify()->setFileSize(static_cast<std::size_t>(fileSize));
-        if (const std::optional<image::ImageProperties> imageProperties{ probeImage(filePath) })
+        if (probedImage.dimensions)
         {
-            image.modify()->setWidth(imageProperties->width);
-            image.modify()->setHeight(imageProperties->height);
+            image.modify()->setWidth(probedImage.dimensions->width);
+            image.modify()->setHeight(probedImage.dimensions->height);
         }
         image.modify()->setLastWriteTime(Wt::WDateTime::currentDateTime());
-        image.modify()->setMimeType(mimeType);
+        image.modify()->setFormat(probedImage.format);
 
         return session.create<db::Artwork>(image);
     }

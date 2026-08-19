@@ -76,6 +76,15 @@ namespace lms::ui
         }
     }
 
+    void DownloadResource::handleAbort(const Wt::Http::Request& request)
+    {
+        if (Wt::Http::ResponseContinuation * continuation{ request.continuation() })
+        {
+            if (auto zipper{ Wt::cpp17::any_cast<std::shared_ptr<zip::IZipper>>(continuation->data()) })
+                zipper->abort();
+        }
+    }
+
     namespace
     {
         std::string getArtistPathName(db::Artist::pointer artist)

@@ -21,7 +21,8 @@
 
 #include <cstddef>
 #include <span>
-#include <string_view>
+
+#include "core/media/ImageFormat.hpp"
 
 namespace lms::image
 {
@@ -33,6 +34,6 @@ namespace lms::image
         virtual ~IEncodedImage() = default;
 
         virtual std::span<const std::byte> getData() const = 0;
-        virtual std::string_view getMimeType() const = 0;
+        virtual core::media::ImageFormat getFormat() const = 0;
     };
 } // namespace lms::image

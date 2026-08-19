@@ -22,6 +22,8 @@
 #include <filesystem>
 #include <vector>
 
+#include "core/media/ImageFormat.hpp"
+
 #include "database/objects/ImageId.hpp"
 #include "database/objects/TrackEmbeddedImageId.hpp"
 #include "services/artwork/IArtworkService.hpp"
@@ -62,8 +64,8 @@ namespace lms::artwork
         std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width);
         std::shared_ptr<image::IEncodedImage> getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width);
 
-        std::unique_ptr<image::IEncodedImage> getFromImageFile(const std::filesystem::path& p, std::string_view mimeType, std::optional<image::ImageSize> width) const;
-        std::unique_ptr<image::IEncodedImage> getTrackImage(const std::filesystem::path& path, std::size_t index, std::optional<image::ImageSize> width) const;
+        std::unique_ptr<image::IEncodedImage> getFromImageFile(const std::filesystem::path& p, core::media::ImageFormat format, std::optional<image::ImageSize> width) const;
+        std::unique_ptr<image::IEncodedImage> getFromTrackImage(const std::filesystem::path& path, std::size_t index, core::media::ImageFormat format, std::optional<image::ImageSize> width) const;
 
         db::IDb& _db;
 

@@ -42,6 +42,7 @@ namespace lms::db::tests
             EXPECT_EQ(img->getWidth(), 0);
             EXPECT_EQ(img->getHeight(), 0);
             EXPECT_EQ(img->getFileSize(), 0);
+            EXPECT_EQ(img->getFormat(), std::nullopt);
         }
 
         {
@@ -53,6 +54,7 @@ namespace lms::db::tests
             img.modify()->setWidth(640);
             img.modify()->setHeight(480);
             img.modify()->setFileSize(1024 * 1024);
+            img.modify()->setFormat(core::media::ImageFormat::JPEG);
         }
 
         {
@@ -65,6 +67,7 @@ namespace lms::db::tests
             EXPECT_EQ(img->getWidth(), 640);
             EXPECT_EQ(img->getHeight(), 480);
             EXPECT_EQ(img->getFileSize(), 1024 * 1024);
+            EXPECT_EQ(img->getFormat(), core::media::ImageFormat::JPEG);
         }
 
         {

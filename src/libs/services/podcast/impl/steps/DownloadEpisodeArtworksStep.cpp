@@ -21,6 +21,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <system_error>
 
 #include "core/ILogger.hpp"
@@ -41,7 +42,7 @@ namespace lms::podcast
 {
     namespace
     {
-        void createEpisodeArtwork(db::Session& session, db::PodcastEpisodeId episodeId, const std::filesystem::path& filePath, std::string_view contentType)
+        void createEpisodeArtwork(db::Session& session, db::PodcastEpisodeId episodeId, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
         {
             auto transaction{ session.createWriteTransaction() };
 
@@ -49,7 +50,7 @@ namespace lms::podcast
             if (!episode)
                 return;
 
-            if (db::Artwork::pointer artwork{ utils::createArtworkFromImage(session, filePath, contentType) })
+            if (db::Artwork::pointer artwork{ utils::createArtworkFromImage(session, filePath, probedImage) })
                 episode.modify()->setArtwork(artwork);
         }
     } // namespace
@@ -127,9 +128,10 @@ namespace lms::podcast
             getExecutor().post([=, this] {
                 const std::string body{ msg.body() }; // API enforces a copy here :(
                 const auto bodySpan{ std::as_bytes(std::span{ body.data(), body.size() }) };
+                std::optional<image::ImageProperties> probedImage;
                 try
                 {
-                    image::probeImage(bodySpan);
+                    probedImage = image::probeImage(bodySpan);
                 }
                 catch (const image::Exception& e)
                 {
@@ -157,8 +159,7 @@ namespace lms::podcast
                 }
 
                 LMS_LOG(PODCAST, INFO, "Downloaded episode artwork for episode '" << episode->getTitle() << "'");
-                const std::string* contentType{ msg.getHeader("Content-Type") };
-                createEpisodeArtwork(getDb().getTLSSession(), episodeId, finalFilePath, contentType ? *contentType : "application/octet-stream");
+                createEpisodeArtwork(getDb().getTLSSession(), episodeId, finalFilePath, *probedImage);
 
                 processNext();
             });

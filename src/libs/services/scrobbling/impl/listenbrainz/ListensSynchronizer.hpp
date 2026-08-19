@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <unordered_map>
 
 #include <boost/asio/io_context.hpp>
@@ -49,44 +50,58 @@ namespace lms::scrobbling::listenBrainz
     {
     public:
         ListensSynchronizer(boost::asio::io_context& ioContext, db::IDb& db, core::http::IClient& client);
+        ~ListensSynchronizer();
+
+        ListensSynchronizer(const ListensSynchronizer&) = delete;
+        ListensSynchronizer& operator=(const ListensSynchronizer&) = delete;
 
         void enqueListen(const TimedListen& listen);
         void enqueListenNow(const Listen& listen);
+        void requestImmediateImport(db::UserId userId);
+        void requestImmediateExport();
 
     private:
         void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
         bool saveListen(const TimedListen& listen, db::SyncState scrobblingState);
+        void skipListen(const TimedListen& listen);
 
         void enquePendingListens();
+        void sendListenBatch(const std::string& listenBrainzToken, std::span<const TimedListen> listens);
 
         struct UserContext
         {
             UserContext(db::UserId id)
                 : userId{ id } {}
+            ~UserContext() = default;
 
             UserContext(const UserContext&) = delete;
-            UserContext(UserContext&&) = delete;
             UserContext& operator=(const UserContext&) = delete;
-            UserContext& operator=(UserContext&&) = delete;
 
             const db::UserId userId;
-            bool syncing{};
+
+            // Shared between the import (fetch from ListenBrainz) and submit (send to ListenBrainz) paths:
+            // cached total listen count on ListenBrainz for this user, kept roughly in sync by both.
             std::optional<std::size_t> listenCount{};
 
-            // resetted at each sync
-            std::string listenBrainzUserName; // need to be resolved first
-            Wt::WDateTime maxDateTime;
-            std::size_t fetchedListenCount{};
-            std::size_t matchedListenCount{};
-            std::size_t importedListenCount{};
+            // Import-only bookkeeping, reset at the start of each import cycle.
+            struct ImportState
+            {
+                bool importing{};
+                std::string listenBrainzUserName; // need to be resolved first
+                Wt::WDateTime maxDateTime;
+                std::size_t fetchedListenCount{};
+                std::size_t matchedListenCount{};
+                std::size_t importedListenCount{};
+                std::optional<std::size_t> pendingListenCount{}; // only committed to listenCount once the fetch actually completes
+            };
+            ImportState import;
         };
 
         UserContext& getUserContext(db::UserId userId);
-        bool isSyncing() const;
-        void scheduleSync(std::chrono::seconds fromNow);
-        void startSync();
-        void startSync(UserContext& context);
-        void onSyncEnded(UserContext& context);
+        void scheduleDeliveryFlush(std::chrono::seconds fromNow);
+        void flushPendingDeliveries();
+        void startImport(UserContext& context);
+        void onImportEnded(UserContext& context);
         void enqueValidateToken(UserContext& context);
         void enqueGetListenCount(UserContext& context);
         void enqueGetListens(UserContext& context);

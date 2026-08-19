@@ -51,20 +51,8 @@ namespace lms::db
 
         struct FindParameters
         {
-            std::optional<ScrobblingBackend> scrobblingBackend;
-            std::optional<FeedbackBackend> feedbackBackend;
             std::optional<Range> range;
 
-            FindParameters& setFeedbackBackend(FeedbackBackend _feedbackBackend)
-            {
-                feedbackBackend = _feedbackBackend;
-                return *this;
-            }
-            FindParameters& setScrobblingBackend(ScrobblingBackend _scrobblingBackend)
-            {
-                scrobblingBackend = _scrobblingBackend;
-                return *this;
-            }
             FindParameters& setRange(std::optional<Range> _range)
             {
                 range = _range;
@@ -80,8 +68,6 @@ namespace lms::db
         static inline constexpr UITheme defaultUITheme{ UITheme::Dark };
         static inline constexpr ReleaseSortMethod _defaultUIArtistReleaseSortMethod{ ReleaseSortMethod::OriginalDateDesc };
         static inline constexpr SubsonicArtistListMode defaultSubsonicArtistListMode{ SubsonicArtistListMode::AllArtists };
-        static inline constexpr ScrobblingBackend defaultScrobblingBackend{ ScrobblingBackend::Internal };
-        static inline constexpr FeedbackBackend defaultFeedbackBackend{ FeedbackBackend::Internal };
 
         User() = default;
 
@@ -115,8 +101,8 @@ namespace lms::db
         void setUIEnableInlineArtistRelationships(bool enable) { _uiEnableInlineArtistRelationships = enable; }
         void setUIInlineArtistRelationships(core::EnumSet<TrackArtistLinkType> types) { _uiInlineArtistRelationships = types; }
         void setSubsonicArtistListMode(SubsonicArtistListMode mode) { _subsonicArtistListMode = mode; }
-        void setFeedbackBackend(FeedbackBackend feedbackBackend) { _feedbackBackend = feedbackBackend; }
-        void setScrobblingBackend(ScrobblingBackend scrobblingBackend) { _scrobblingBackend = scrobblingBackend; }
+        void setFeedbackBackends(core::EnumSet<FeedbackBackend> backends);
+        void setScrobblingBackends(core::EnumSet<ScrobblingBackend> backends);
         void setListenBrainzToken(std::string_view token) { _listenbrainzToken = token; }
         void setLastFmApiKey(std::string_view key) { _lastFmApiKey = key; }
         void setLastFmApiSecret(std::string_view secret) { _lastFmApiSecret = secret; }
@@ -134,8 +120,8 @@ namespace lms::db
         bool getUIEnableInlineArtistRelationships() const { return _uiEnableInlineArtistRelationships; }
         core::EnumSet<TrackArtistLinkType> getUIInlineArtistRelationships() const { return _uiInlineArtistRelationships; }
         SubsonicArtistListMode getSubsonicArtistListMode() const { return _subsonicArtistListMode; }
-        FeedbackBackend getFeedbackBackend() const { return _feedbackBackend; }
-        ScrobblingBackend getScrobblingBackend() const { return _scrobblingBackend; }
+        core::EnumSet<FeedbackBackend> getFeedbackBackends() const { return _feedbackBackends; }
+        core::EnumSet<ScrobblingBackend> getScrobblingBackends() const { return _scrobblingBackends; }
         std::string_view getListenBrainzToken() const { return _listenbrainzToken; }
         std::string_view getLastFmApiKey() const { return _lastFmApiKey; }
         std::string_view getLastFmApiSecret() const { return _lastFmApiSecret; }
@@ -158,8 +144,8 @@ namespace lms::db
             Wt::Dbo::field(a, _uiArtistReleaseSortMethod, "ui_artist_release_sort_method");
             Wt::Dbo::field(a, _uiEnableInlineArtistRelationships, "ui_enable_inline_artist_relationships");
             Wt::Dbo::field(a, _uiInlineArtistRelationships, "ui_inline_artist_relationships");
-            Wt::Dbo::field(a, _feedbackBackend, "feedback_backend");
-            Wt::Dbo::field(a, _scrobblingBackend, "scrobbling_backend");
+            Wt::Dbo::field(a, _feedbackBackends, "feedback_backends");
+            Wt::Dbo::field(a, _scrobblingBackends, "scrobbling_backends");
             Wt::Dbo::field(a, _listenbrainzToken, "listenbrainz_token");
             Wt::Dbo::field(a, _lastFmApiKey, "lastfm_api_key");
             Wt::Dbo::field(a, _lastFmApiSecret, "lastfm_api_secret");
@@ -183,8 +169,8 @@ namespace lms::db
         ReleaseSortMethod _uiArtistReleaseSortMethod{ _defaultUIArtistReleaseSortMethod };
         bool _uiEnableInlineArtistRelationships{};
         core::EnumSet<TrackArtistLinkType> _uiInlineArtistRelationships{ TrackArtistLinkType::Composer, TrackArtistLinkType::Performer };
-        FeedbackBackend _feedbackBackend{ defaultFeedbackBackend };
-        ScrobblingBackend _scrobblingBackend{ defaultScrobblingBackend };
+        core::EnumSet<FeedbackBackend> _feedbackBackends;
+        core::EnumSet<ScrobblingBackend> _scrobblingBackends;
         std::string _listenbrainzToken;
         std::string _lastFmApiKey;
         std::string _lastFmApiSecret;

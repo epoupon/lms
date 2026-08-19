@@ -33,6 +33,8 @@
 #include "core/String.hpp"
 #include "core/http/UrlValidation.hpp"
 
+#include "WtHttpClient.hpp"
+
 #define LOG(sev, message) LMS_LOG(HTTP, sev, "[Http SendQueue] - " << message)
 
 namespace lms::core::stringUtils
@@ -66,24 +68,30 @@ namespace lms::core::http
     } // namespace
 
     SendQueue::SendQueue(boost::asio::io_context& ioContext, std::string_view baseUrl)
-        : _ioContext{ ioContext }
+        : SendQueue{ ioContext, baseUrl, std::make_unique<WtHttpClient>(ioContext) }
+    {
+    }
+
+    SendQueue::SendQueue(boost::asio::io_context& ioContext, std::string_view baseUrl, std::unique_ptr<IWtHttpClient> httpClient, RetryPolicy retryPolicy)
+        : _retryPolicy{ retryPolicy }
+        , _ioContext{ ioContext }
         , _baseUrl{ baseUrl }
         , _abortAllRequests{ false }
         , _state{ State::Idle }
-        , _client{ _ioContext }
+        , _httpClient{ std::move(httpClient) }
     {
-        _client.setFollowRedirect(true);
-        _client.setTimeout(std::chrono::seconds{ 5 });
+        _httpClient->setFollowRedirect(true);
+        _httpClient->setTimeout(std::chrono::seconds{ 5 });
 
         // not very efficient (response bodies are copied for each callback), but Wt's code already makes copies anyway
 
-        _client.bodyDataReceived().connect([this](const std::string& data) {
+        _httpClient->bodyDataReceived().connect([this](const std::string& data) {
             boost::asio::post(boost::asio::bind_executor(_strand, [this, data] {
                 onClientBodyDataReceived(data);
             }));
         });
 
-        _client.done().connect([this](Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg) {
+        _httpClient->done().connect([this](Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg) {
             boost::asio::post(boost::asio::bind_executor(_strand, [this, ec, msg = std::move(msg)] {
                 onClientDone(ec, msg);
             }));
@@ -119,7 +127,7 @@ namespace lms::core::http
             if (_state == State::Throttled)
                 _throttleTimer.cancel();
             else if (_state == State::Sending)
-                _client.abort();
+                _httpClient->abort();
 
             abortLatch.count_down();
         }));
@@ -166,6 +174,8 @@ namespace lms::core::http
                 std::unique_ptr<ClientRequest> request{ std::move(requests.front()) };
                 requests.pop_front();
 
+                request->bytesReceived = 0; // reset before each dispatch attempt, including retries
+
                 if (!sendRequest(*request))
                 {
                     if (request->getParameters().onFailureFunc)
@@ -197,17 +207,17 @@ namespace lms::core::http
             return false;
         }
 
-        _client.setMaximumResponseSize(request.getParameters().onChunkReceived ? 0 : request.getParameters().responseBufferSize);
+        _httpClient->setMaximumResponseSize(request.getParameters().onChunkReceived ? 0 : request.getParameters().responseBufferSize);
 
         bool res{};
         switch (request.getType())
         {
         case ClientRequest::Type::GET:
-            res = _client.get(url, request.getGETParameters().headers);
+            res = _httpClient->get(url, request.getGETParameters().headers);
             break;
 
         case ClientRequest::Type::POST:
-            res = _client.post(url, request.getPOSTParameters().message);
+            res = _httpClient->post(url, request.getPOSTParameters().message);
             break;
         }
 
@@ -222,11 +232,13 @@ namespace lms::core::http
         assert(_strand.running_in_this_thread());
         assert(_currentRequest);
 
+        _currentRequest->bytesReceived += data.size();
+
         if (_currentRequest->getParameters().onChunkReceived)
         {
             const auto byteSpan{ std::as_bytes(std::span{ data.data(), data.size() }) };
             if (_currentRequest->getParameters().onChunkReceived(byteSpan) == ClientRequestParameters::ChunckReceivedResult::Abort)
-                _client.abort();
+                _httpClient->abort();
         }
     }
 
@@ -239,11 +251,32 @@ namespace lms::core::http
         LOG(DEBUG, "Client done. ec = " << ec.category().name() << " - " << ec.message() << " (" << ec.value() << "), status = " << msg.status());
 
         if (_abortAllRequests || ec == boost::asio::error::operation_aborted)
+        {
             onClientAborted(std::move(_currentRequest));
-        else if (ec && (ec != boost::asio::ssl::error::stream_truncated))
+        }
+        else if (ec == boost::asio::ssl::error::stream_truncated)
+        {
+            const std::optional<std::size_t> contentLength{ headerReadAs<std::size_t>(msg, "Content-Length") };
+            const bool complete{ contentLength ? (*contentLength == _currentRequest->bytesReceived) : false };
+
+            LOG(DEBUG, "Stream truncated: status = " << msg.status()
+                                                     << ", Content-Length = " << (contentLength ? std::to_string(*contentLength) : std::string{ "<none>" })
+                                                     << ", bytes received = " << _currentRequest->bytesReceived
+                                                     << " -> " << (complete ? "verified complete" : "could not verify, will retry"));
+
+            if (complete)
+                onClientDoneSuccess(std::move(_currentRequest), msg); // full response received: let the normal status handling decide, same as a clean response would
+            else
+                onClientDoneError(std::move(_currentRequest), ec); // may still be in flight, worth retrying
+        }
+        else if (ec)
+        {
             onClientDoneError(std::move(_currentRequest), ec);
+        }
         else
+        {
             onClientDoneSuccess(std::move(_currentRequest), msg);
+        }
     }
 
     void SendQueue::onClientAborted(std::unique_ptr<ClientRequest> request)
@@ -263,9 +296,9 @@ namespace lms::core::http
         LOG(WARNING, "Retry " << request->retryCount << ", client error: '" << ec.message() << "'");
 
         // may be a network error, try again later
-        throttle(_defaultRetryWaitDuration);
+        throttle(_retryPolicy.defaultRetryWaitDuration);
 
-        if (request->retryCount++ < _maxRetryCount)
+        if (request->retryCount++ < _retryPolicy.maxRetryCount)
         {
             _sendQueue[request->getParameters().priority].emplace_front(std::move(request));
         }
@@ -294,7 +327,7 @@ namespace lms::core::http
             const std::chrono::seconds waitDuration{
                 headerReadAs<std::chrono::seconds>(msg, "X-RateLimit-Reset-In")
                     .value_or(headerReadAs<std::chrono::seconds>(msg, "Retry-After")
-                                  .value_or(_defaultRetryWaitDuration))
+                                  .value_or(_retryPolicy.defaultRetryWaitDuration))
             };
             throttle(waitDuration);
         }
@@ -320,7 +353,7 @@ namespace lms::core::http
 
     void SendQueue::throttle(std::chrono::seconds requestedDuration)
     {
-        const std::chrono::seconds duration{ std::clamp(requestedDuration, _minRetryWaitDuration, _maxRetryWaitDuration) };
+        const std::chrono::seconds duration{ std::clamp(requestedDuration, _retryPolicy.minRetryWaitDuration, _retryPolicy.maxRetryWaitDuration) };
         LOG(DEBUG, "Throttling for " << duration.count() << " seconds");
 
         _throttleTimer.expires_after(duration);

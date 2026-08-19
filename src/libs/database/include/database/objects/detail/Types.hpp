@@ -94,4 +94,16 @@ namespace lms::db::detail
         WMA9Pro = 20,
         WMA9Lossless = 21,
     };
+
+    enum class ImageFormat
+    {
+        Unknown = 0,
+
+        BMP = 1,
+        GIF = 2,
+        JPEG = 3,
+        PNG = 4,
+        SVG = 5,
+        WebP = 6,
+    };
 } // namespace lms::db::detail

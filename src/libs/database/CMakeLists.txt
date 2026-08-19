@@ -11,6 +11,7 @@ add_library(lmsdatabase STATIC
 	impl/objects/Image.cpp
 	impl/objects/Language.cpp
 	impl/objects/Listen.cpp
+	impl/objects/ListenBackendSync.cpp
 	impl/objects/MediaLibrary.cpp
 	impl/objects/Medium.cpp
 	impl/objects/Mood.cpp
@@ -25,9 +26,12 @@ add_library(lmsdatabase STATIC
 	impl/objects/Release.cpp
 	impl/objects/ScanSettings.cpp
 	impl/objects/ServerInfo.cpp
-	impl/objects/StarredArtist.cpp
-	impl/objects/StarredRelease.cpp
-	impl/objects/StarredTrack.cpp
+	impl/objects/ArtistFeedback.cpp
+	impl/objects/ArtistFeedbackBackendSync.cpp
+	impl/objects/ReleaseFeedback.cpp
+	impl/objects/ReleaseFeedbackBackendSync.cpp
+	impl/objects/TrackFeedback.cpp
+	impl/objects/TrackFeedbackBackendSync.cpp
 	impl/objects/Movement.cpp
 	impl/objects/Track.cpp
 	impl/objects/TrackArtistLink.cpp

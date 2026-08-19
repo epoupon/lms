@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <iosfwd>
+
 #include "core/TaggedType.hpp"
 
 #include "database/objects/Artist.hpp"
@@ -26,7 +28,9 @@
 namespace lms::scanner
 {
     struct Artist;
-}
+
+    std::ostream& operator<<(std::ostream& os, const db::Artist::pointer& artist);
+} // namespace lms::scanner
 
 namespace lms::scanner::helpers
 {

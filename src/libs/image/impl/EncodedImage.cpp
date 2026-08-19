@@ -21,83 +21,72 @@
 
 #include <filesystem>
 #include <fstream>
-#include <unordered_map>
 
 #include "core/ITraceLogger.hpp"
-#include "core/String.hpp"
 #include "image/Exception.hpp"
 
 namespace lms::image
 {
     namespace
     {
-        std::string_view extensionToMimeType(const std::filesystem::path& extension)
-        {
-            static const std::unordered_map<std::string_view, std::string_view> mimeTypesByExtension{
-                { ".bmp", "image/bmp" },
-                { ".gif", "image/gif" },
-                { ".jpeg", "image/jpeg" },
-                { ".jpg", "image/jpeg" },
-                { ".png", "image/png" },
-                { ".ppm", "image/x-portable-pixmap" },
-                { ".svg", "image/svg+xml" },
-            };
-
-            const auto it{ mimeTypesByExtension.find(core::stringUtils::stringToLower(extension.c_str())) };
-            if (it == std::cend(mimeTypesByExtension))
-                throw Exception{ "Unhandled image extension '" + extension.string() + "'" };
-            return it->second;
-        }
-
         std::vector<std::byte> fileToBuffer(const std::filesystem::path& p)
         {
             LMS_SCOPED_TRACE_DETAILED("Image", "ReadFile");
 
             std::ifstream ifs{ p, std::ios::binary };
             if (!ifs.is_open())
-                throw Exception{ "Cannot open file '" + p.string() + "' for reading purpose" };
+            {
+                const std::error_code ec{ errno, std::generic_category() };
+                throw IOFileException{ p, "Cannot open file", ec };
+            }
 
             std::vector<std::byte> data;
             // read file content
             ifs.seekg(0, std::ios::end);
             std::streamsize size = ifs.tellg();
             if (size < 0)
-                throw Exception{ "Cannot determine file size for '" + p.string() + "'" };
+            {
+                const std::error_code ec{ errno, std::generic_category() };
+                throw IOFileException{ p, "Cannot determine file size", ec };
+            }
 
             ifs.seekg(0, std::ios::beg);
             data.resize(size);
             if (!ifs.read(reinterpret_cast<char*>(data.data()), size))
-                throw Exception{ "Cannot read file content for '" + p.string() + "'" };
+            {
+                const std::error_code ec{ errno, std::generic_category() };
+                throw IOFileException{ p, "Cannot read file content", ec };
+            }
 
             return data;
         }
 
     } // namespace
 
-    std::unique_ptr<IEncodedImage> readImage(const std::filesystem::path& path, std::string_view mimeType)
+    std::unique_ptr<IEncodedImage> readImage(const std::filesystem::path& path, core::media::ImageFormat format)
     {
-        return std::make_unique<EncodedImage>(path, mimeType);
+        return std::make_unique<EncodedImage>(path, format);
     }
 
-    std::unique_ptr<IEncodedImage> readImage(std::span<const std::byte> encodedData, std::string_view mimeType)
+    std::unique_ptr<IEncodedImage> readImage(std::span<const std::byte> encodedData, core::media::ImageFormat format)
     {
-        return std::make_unique<EncodedImage>(encodedData, mimeType);
+        return std::make_unique<EncodedImage>(encodedData, format);
     }
 
-    EncodedImage::EncodedImage(std::vector<std::byte>&& data, std::string_view mimeType)
+    EncodedImage::EncodedImage(std::vector<std::byte>&& data, core::media::ImageFormat format)
         : _data{ std::move(data) }
-        , _mimeType(mimeType)
+        , _format{ format }
     {
     }
 
-    EncodedImage::EncodedImage(std::span<const std::byte> data, std::string_view mimeType)
+    EncodedImage::EncodedImage(std::span<const std::byte> data, core::media::ImageFormat format)
         : _data(std::cbegin(data), std::cend(data))
-        , _mimeType(mimeType)
+        , _format{ format }
     {
     }
 
-    EncodedImage::EncodedImage(const std::filesystem::path& p, std::string_view mimeType)
-        : EncodedImage::EncodedImage{ fileToBuffer(p), mimeType.empty() ? extensionToMimeType(p.extension()) : mimeType }
+    EncodedImage::EncodedImage(const std::filesystem::path& p, core::media::ImageFormat format)
+        : EncodedImage::EncodedImage{ fileToBuffer(p), format }
     {
     }
 } // namespace lms::image

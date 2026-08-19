@@ -304,4 +304,49 @@ namespace lms::db::detail
 
         return db::detail::ImageType::Unknown;
     }
+
+    std::optional<core::media::ImageFormat> getMediaImageFormat(db::detail::ImageFormat format)
+    {
+        switch (format)
+        {
+        case ImageFormat::BMP:
+            return core::media::ImageFormat::BMP;
+        case ImageFormat::GIF:
+            return core::media::ImageFormat::GIF;
+        case ImageFormat::JPEG:
+            return core::media::ImageFormat::JPEG;
+        case ImageFormat::PNG:
+            return core::media::ImageFormat::PNG;
+        case ImageFormat::SVG:
+            return core::media::ImageFormat::SVG;
+        case ImageFormat::WebP:
+            return core::media::ImageFormat::WebP;
+
+        case ImageFormat::Unknown:
+            break;
+        }
+
+        return std::nullopt;
+    }
+
+    db::detail::ImageFormat getDbImageFormat(core::media::ImageFormat format)
+    {
+        switch (format)
+        {
+        case core::media::ImageFormat::BMP:
+            return ImageFormat::BMP;
+        case core::media::ImageFormat::GIF:
+            return ImageFormat::GIF;
+        case core::media::ImageFormat::JPEG:
+            return ImageFormat::JPEG;
+        case core::media::ImageFormat::PNG:
+            return ImageFormat::PNG;
+        case core::media::ImageFormat::SVG:
+            return ImageFormat::SVG;
+        case core::media::ImageFormat::WebP:
+            return ImageFormat::WebP;
+        }
+
+        return ImageFormat::Unknown;
+    }
 } // namespace lms::db::detail

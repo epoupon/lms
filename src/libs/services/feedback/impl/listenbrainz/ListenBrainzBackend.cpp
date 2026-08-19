@@ -24,38 +24,12 @@
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/objects/StarredArtist.hpp"
-#include "database/objects/StarredRelease.hpp"
 #include "database/objects/Track.hpp"
 
 #include "Utils.hpp"
 
 namespace lms::feedback::listenBrainz
 {
-    namespace detail
-    {
-        template<typename StarredObjType>
-        void onStarred(db::Session& session, typename StarredObjType::IdType id)
-        {
-            auto transaction{ session.createWriteTransaction() };
-
-            if (auto starredObj{ StarredObjType::find(session, id) })
-            {
-                // maybe in the future this will be supported by ListenBrainz so set it to PendingAdd for all types
-                starredObj.modify()->setSyncState(db::SyncState::PendingAdd);
-            }
-        }
-
-        template<typename StarredObjType>
-        void onUnstarred(db::Session& session, typename StarredObjType::IdType id)
-        {
-            auto transaction{ session.createWriteTransaction() };
-
-            if (auto starredObj{ StarredObjType::find(session, id) })
-                starredObj.remove();
-        }
-    } // namespace detail
-
     ListenBrainzBackend::ListenBrainzBackend(boost::asio::io_context& ioContext, db::IDb& db)
         : _ioContext{ ioContext }
         , _db{ db }
@@ -71,33 +45,46 @@ namespace lms::feedback::listenBrainz
         LOG(INFO, "Stopped ListenBrainz feedback backend!");
     }
 
-    void ListenBrainzBackend::onStarred(db::StarredArtistId starredArtistId)
+    void ListenBrainzBackend::requestImmediateImport(db::UserId userId)
     {
-        detail::onStarred<db::StarredArtist>(_db.getTLSSession(), starredArtistId);
+        _feedbacksSynchronizer.requestImmediateImport(userId);
     }
 
-    void ListenBrainzBackend::onUnstarred(db::StarredArtistId starredArtistId)
+    void ListenBrainzBackend::requestImmediateExport()
     {
-        detail::onUnstarred<db::StarredArtist>(_db.getTLSSession(), starredArtistId);
+        _feedbacksSynchronizer.requestImmediateExport();
     }
 
-    void ListenBrainzBackend::onStarred(db::StarredReleaseId starredReleaseId)
+    bool ListenBrainzBackend::canBeFeedbacked(db::ArtistId /*artistId*/) const
     {
-        detail::onStarred<db::StarredRelease>(_db.getTLSSession(), starredReleaseId);
+        // not supported by LB
+        return false;
     }
 
-    void ListenBrainzBackend::onUnstarred(db::StarredReleaseId starredReleaseId)
+    bool ListenBrainzBackend::canBeFeedbacked(db::ReleaseId /*releaseId*/) const
     {
-        detail::onUnstarred<db::StarredRelease>(_db.getTLSSession(), starredReleaseId);
+        // not supported by LB
+        return false;
     }
 
-    void ListenBrainzBackend::onStarred(db::StarredTrackId starredTrackId)
+    bool ListenBrainzBackend::canBeFeedbacked(db::TrackId trackId) const
     {
-        _feedbacksSynchronizer.enqueFeedback(FeedbackType::Love, starredTrackId);
+        db::Session& session{ _db.getTLSSession() };
+        return utils::canBeFeedbacked(session, trackId);
     }
 
-    void ListenBrainzBackend::onUnstarred(db::StarredTrackId starredtrackId)
+    void ListenBrainzBackend::onFeedbackChanged(db::ArtistFeedbackId /*id*/)
     {
-        _feedbacksSynchronizer.enqueFeedback(FeedbackType::Erase, starredtrackId);
+        // nothing to do
+    }
+
+    void ListenBrainzBackend::onFeedbackChanged(db::ReleaseFeedbackId /*id*/)
+    {
+        // nothing to do
+    }
+
+    void ListenBrainzBackend::onFeedbackChanged(db::TrackFeedbackId id)
+    {
+        _feedbacksSynchronizer.enqueFeedback(id);
     }
 } // namespace lms::feedback::listenBrainz

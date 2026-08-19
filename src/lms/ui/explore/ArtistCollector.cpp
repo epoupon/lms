@@ -70,14 +70,15 @@ namespace lms::ui
                 break;
             }
 
-        case Mode::Starred:
+        case Mode::Feedback:
             {
                 db::Artist::FindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
-                params.setSortMethod(db::ArtistSortMethod::StarredDateDesc);
+                params.setSortMethod(db::ArtistSortMethod::FeedbackDateDesc);
                 params.setRange(range);
-                params.setStarringUser(LmsApp->getUserId());
+                params.setFeedbackUser(LmsApp->getUserId());
+                params.setFeedbackValue(db::FeedbackValue::Loved);
                 applyArtistType(params);
                 std::size_t count{};
                 db::Artist::find(LmsApp->getDbSession(), params, [&](const auto& a) { func(a); ++count; });

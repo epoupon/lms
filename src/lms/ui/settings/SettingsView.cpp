@@ -23,9 +23,10 @@
 #include "core/Service.hpp"
 
 #include "AudioSettingsView.hpp"
+#include "LastFmSettingsView.hpp"
+#include "ListenBrainzSettingsView.hpp"
 #include "LmsApplication.hpp"
 #include "PasswordSettingsView.hpp"
-#include "ServicesSettingsView.hpp"
 #include "SubsonicSettingsView.hpp"
 #include "UISettingsView.hpp"
 #include "common/PathRouter.hpp"
@@ -42,7 +43,8 @@ namespace lms::ui
         if (core::Service<core::IConfig>::get()->getBool("api-subsonic", true))
             router->add<SubsonicSettingsView>("/settings/subsonic", Wt::WString::tr("Lms.Settings.subsonic-api"));
 
-        router->add<ServicesSettingsView>("/settings/services", Wt::WString::tr("Lms.Settings.services"));
+        router->add<ListenBrainzSettingsView>("/settings/listenbrainz", Wt::WString::tr("Lms.Settings.listenbrainz"));
+        router->add<LastFmSettingsView>("/settings/lastfm", Wt::WString::tr("Lms.Settings.lastfm"));
 
         if (LmsApp->getAuthBackend() == AuthenticationBackend::Internal)
             router->add<PasswordSettingsView>("/settings/password", Wt::WString::tr("Lms.Settings.change-password"));
