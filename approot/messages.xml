@@ -14,8 +14,6 @@
 <message id="Lms.discard">Discard</message>
 <message id="Lms.edit">Edit</message>
 <message id="Lms.field-must-be-in-upper-case">This field must be in upper case</message>
-<message id="Lms.infinite-scrolling-container.limit-reached">Display limit reached — refine your search to see more results</message>
-<message id="Lms.infinite-scrolling-container.no-results">No results found</message>
 <message id="Lms.loading">Loading...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
@@ -243,6 +241,7 @@
 	<plural case="0">Language</plural>
 	<plural case="1">Languages</plural>
 </message>
+<message id="Lms.Explore.limit-reached">Display limit reached — refine your search to see more results</message>
 <message id="Lms.Explore.lyricist">
 	<plural case="0">Lyricist</plural>
 	<plural case="1">Lyricists</plural>
@@ -259,6 +258,7 @@
 <message id="Lms.Explore.most-played">Most played</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz Artist</message>
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz Release</message>
+<message id="Lms.Explore.no-results">No results found</message>
 <message id="Lms.Explore.performer">
 	<plural case="0">Performer</plural>
 	<plural case="1">Performers</plural>
@@ -334,6 +334,9 @@
 <message id="Lms.Explore.Release.type-secondary-soundtrack">Soundtrack</message>
 <message id="Lms.Explore.Release.type-secondary-spokenword">Spokenword</message>
 
+<!--Explore:TrackList-->
+<message id="Lms.Explore.TrackList.empty">This playlist is empty</message>
+
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Delete playlist?</message>
 <message id="Lms.Explore.TrackLists.type-owned">My Playlists</message>
@@ -355,6 +358,7 @@
 <message id="Lms.PlayQueue.clear">Clear</message>
 <message id="Lms.PlayQueue.create-tracklist">Create new playlist</message>
 <message id="Lms.PlayQueue.playqueue">Play Queue</message>
+<message id="Lms.PlayQueue.queue-is-empty">Your queue is empty</message>
 <message id="Lms.PlayQueue.radio-mode">Radio mode</message>
 <message id="Lms.PlayQueue.repeat">Repeat</message>
 <message id="Lms.PlayQueue.replace-tracklist">Replace existing playlist</message>

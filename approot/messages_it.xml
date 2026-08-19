@@ -14,8 +14,6 @@
 <message id="Lms.discard">Annulla</message>
 <message id="Lms.edit">Modifica</message>
 <message id="Lms.field-must-be-in-upper-case">Questo campo deve essere in maiuscolo</message>
-<message id="Lms.infinite-scrolling-container.limit-reached">Limite di visualizzazione raggiunto — affina la ricerca per vedere più risultati</message>
-<message id="Lms.infinite-scrolling-container.no-results">Nessun risultato trovato</message>
 <message id="Lms.loading">Caricamento...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
@@ -243,6 +241,7 @@
 	<plural case="0">Lingua</plural>
 	<plural case="1">Lingue</plural>
 </message>
+<message id="Lms.Explore.limit-reached">Limite di visualizzazione raggiunto — affina la ricerca per vedere più risultati</message>
 <message id="Lms.Explore.lyricist">
 	<plural case="0">Paroliere</plural>
 	<plural case="1">Parolieri</plural>
@@ -259,6 +258,7 @@
 <message id="Lms.Explore.most-played">Più ascoltati</message>
 <message id="Lms.Explore.musicbrainz-artist">Artista MusicBrainz</message>
 <message id="Lms.Explore.musicbrainz-release">Album MusicBrainz</message>
+<message id="Lms.Explore.no-results">Nessun risultato trovato</message>
 <message id="Lms.Explore.performer">
 	<plural case="0">Interprete</plural>
 	<plural case="1">Interpreti</plural>
@@ -334,6 +334,9 @@
 <message id="Lms.Explore.Release.type-secondary-soundtrack">Colonna sonora</message>
 <message id="Lms.Explore.Release.type-secondary-spokenword">Parola parlata</message>
 
+<!--Explore:TrackList-->
+<message id="Lms.Explore.TrackList.empty">Questa playlist è vuota</message>
+
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Eliminare la playlist?</message>
 <message id="Lms.Explore.TrackLists.type-owned">Le mie liste</message>
@@ -355,6 +358,7 @@
 <message id="Lms.PlayQueue.clear">Cancella</message>
 <message id="Lms.PlayQueue.create-tracklist">Crea nuova playlist</message>
 <message id="Lms.PlayQueue.playqueue">Coda di riproduzione</message>
+<message id="Lms.PlayQueue.queue-is-empty">La tua coda è vuota</message>
 <message id="Lms.PlayQueue.radio-mode">Modalità radio</message>
 <message id="Lms.PlayQueue.repeat">Ripeti</message>
 <message id="Lms.PlayQueue.replace-tracklist">Sostituisci playlist esistente</message>

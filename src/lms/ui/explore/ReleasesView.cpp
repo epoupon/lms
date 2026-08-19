@@ -83,6 +83,8 @@ namespace lms::ui
             });
 
         _container = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
+        _container->setNoResultsMessage(Wt::WString::tr("Lms.Explore.no-results"));
+        _container->setLimitReachedMessage(Wt::WString::tr("Lms.Explore.limit-reached"));
         _container->onRequestElements.connect([this] {
             addSome();
         });

@@ -132,6 +132,7 @@ namespace lms::ui
         });
 
         _entriesContainer = bindNew<InfiniteScrollingContainer>("entries", Wt::WString::tr("Lms.PlayQueue.template.entry-container"));
+        _entriesContainer->setNoResultsMessage(Wt::WString::tr("Lms.PlayQueue.queue-is-empty"));
         _entriesContainer->onRequestElements.connect([this] {
             addSome();
             updateCurrentTrack(true);
@@ -576,6 +577,8 @@ namespace lms::ui
             _nextPlayPos.reset();
 
             _entriesContainer->remove(*entry);
+            if (_entriesContainer->getCount() == 0)
+                _entriesContainer->reset(); // re-fetch from the top: entries beyond the loaded batch may remain
 
             updateInfo();
         });

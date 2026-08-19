@@ -80,6 +80,8 @@ namespace lms::ui
         }
 
         _container = bindNew<InfiniteScrollingContainer>("tracklists", Wt::WString::tr("Lms.Explore.TrackLists.template.container"));
+        _container->setNoResultsMessage(Wt::WString::tr("Lms.Explore.no-results"));
+        _container->setLimitReachedMessage(Wt::WString::tr("Lms.Explore.limit-reached"));
         _container->onRequestElements.connect([this] {
             addSome();
         });

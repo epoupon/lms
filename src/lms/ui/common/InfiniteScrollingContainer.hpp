@@ -62,6 +62,10 @@ namespace lms::ui
 
         void setHasMore(bool hasMore); // can be used to add elements afterwards
 
+        // Hints shown when a fetch round ends. Unset (default) means show nothing
+        void setNoResultsMessage(std::optional<Wt::WString> msg);
+        void setLimitReachedMessage(std::optional<Wt::WString> msg);
+
     private:
         void clear() override;
         void displayLoadingIndicator();
@@ -72,5 +76,7 @@ namespace lms::ui
         Wt::WContainerWidget* _elements;
         Wt::WTemplate* _loadingIndicator;
         bool _gotItems{};
+        std::optional<Wt::WString> _noResultsMsg;
+        std::optional<Wt::WString> _limitReachedMsg;
     };
 } // namespace lms::ui

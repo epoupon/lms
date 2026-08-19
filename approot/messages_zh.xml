@@ -14,8 +14,6 @@
 <message id="Lms.discard">撤销</message>
 <message id="Lms.edit">编辑</message>
 <message id="Lms.field-must-be-in-upper-case">此字段必须为大写</message>
-<message id="Lms.infinite-scrolling-container.limit-reached">已达到显示上限 — 请精简搜索条件以查看更多结果</message>
-<message id="Lms.infinite-scrolling-container.no-results">未找到结果</message>
 <message id="Lms.loading">加载中...</message>
 <message id="Lms.login">登陆</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> 注销</message>
@@ -226,6 +224,7 @@
 <message id="Lms.Explore.grouping">分组</message>
 <message id="Lms.Explore.label">厂牌</message>
 <message id="Lms.Explore.language">语言</message>
+<message id="Lms.Explore.limit-reached">已达到显示上限 — 请精简搜索条件以查看更多结果</message>
 <message id="Lms.Explore.lyricist">作词者</message>
 <message id="Lms.Explore.media-library">音乐库</message>
 <message id="Lms.Explore.mixer">混音师</message>
@@ -233,6 +232,7 @@
 <message id="Lms.Explore.most-played">播放最多</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz 歌手</message>
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz 专辑</message>
+<message id="Lms.Explore.no-results">未找到结果</message>
 <message id="Lms.Explore.performer">表演者</message>
 <message id="Lms.Explore.play">播放</message>
 <message id="Lms.Explore.play-last">最后播放</message>
@@ -293,6 +293,9 @@
 <message id="Lms.Explore.Release.type-secondary-soundtrack">原声带</message>
 <message id="Lms.Explore.Release.type-secondary-spokenword">朗诵</message>
 
+<!--Explore:TrackList-->
+<message id="Lms.Explore.TrackList.empty">此播放列表为空</message>
+
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">删除播放列表？</message>
 <message id="Lms.Explore.TrackLists.type-owned">我的播放列表</message>
@@ -314,6 +317,7 @@
 <message id="Lms.PlayQueue.clear">清除</message>
 <message id="Lms.PlayQueue.create-tracklist">创建新播放列表</message>
 <message id="Lms.PlayQueue.playqueue">播放队列</message>
+<message id="Lms.PlayQueue.queue-is-empty">您的播放队列为空</message>
 <message id="Lms.PlayQueue.radio-mode">广播模式</message>
 <message id="Lms.PlayQueue.repeat">循环播放</message>
 <message id="Lms.PlayQueue.replace-tracklist">替换现有播放列表</message>

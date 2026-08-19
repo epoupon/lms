@@ -14,8 +14,6 @@
 <message id="Lms.discard">Odrzuć</message>
 <message id="Lms.edit">Zmień</message>
 <message id="Lms.field-must-be-in-upper-case">Wartość musi się zaczynać wielką literą</message>
-<message id="Lms.infinite-scrolling-container.limit-reached">Osiągnięto limit wyświetlania — doprecyzuj wyszukiwanie, aby zobaczyć więcej wyników</message>
-<message id="Lms.infinite-scrolling-container.no-results">Brak wyników</message>
 <message id="Lms.loading">Wczytywanie...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Wyloguj</message>
@@ -265,6 +263,7 @@
 	<plural case="1">Języki</plural>
 	<plural case="2">Języków</plural>
 </message>
+<message id="Lms.Explore.limit-reached">Osiągnięto limit wyświetlania — doprecyzuj wyszukiwanie, aby zobaczyć więcej wyników</message>
 <message id="Lms.Explore.lyricist">
 	<plural case="0">Tekściarz</plural>
 	<plural case="1">Tekściarze</plural>
@@ -284,6 +283,7 @@
 <message id="Lms.Explore.most-played">Najczęściej odtwarzane</message>
 <message id="Lms.Explore.musicbrainz-artist">Artysta w MusicBrainz</message>
 <message id="Lms.Explore.musicbrainz-release">Wydanie w MusicBrainz</message>
+<message id="Lms.Explore.no-results">Brak wyników</message>
 <message id="Lms.Explore.performer">
 	<plural case="0">Wykonawca</plural>
 	<plural case="1">Wykonawcy</plural>
@@ -364,6 +364,9 @@
 <message id="Lms.Explore.Release.type-secondary-soundtrack">Ścieżka dźwiękowa</message>
 <message id="Lms.Explore.Release.type-secondary-spokenword">Mówione</message>
 
+<!--Explore:TrackList-->
+<message id="Lms.Explore.TrackList.empty">Ta lista odtwarzania jest pusta</message>
+
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Usunąć listę odtwarzania?</message>
 <message id="Lms.Explore.TrackLists.type-owned">Moje listy</message>
@@ -385,6 +388,7 @@
 <message id="Lms.PlayQueue.clear">Wyczyść</message>
 <message id="Lms.PlayQueue.create-tracklist">Utwórz nową listę odtwarzania</message>
 <message id="Lms.PlayQueue.playqueue">Odtwarzaj kolejkę</message>
+<message id="Lms.PlayQueue.queue-is-empty">Twoja kolejka jest pusta</message>
 <message id="Lms.PlayQueue.radio-mode">Tryb radiowy</message>
 <message id="Lms.PlayQueue.repeat">Powtarzaj</message>
 <message id="Lms.PlayQueue.replace-tracklist">Zastąp obecną listę</message>

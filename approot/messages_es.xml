@@ -14,8 +14,6 @@
 <message id="Lms.discard">Descartar</message>
 <message id="Lms.edit">Editar</message>
 <message id="Lms.field-must-be-in-upper-case">Este campo debe estar en mayúsculas</message>
-<message id="Lms.infinite-scrolling-container.limit-reached">Límite de visualización alcanzado — refine su búsqueda para ver más resultados</message>
-<message id="Lms.infinite-scrolling-container.no-results">No se han encontrado resultados</message>
 <message id="Lms.loading">Cargando...</message>
 <message id="Lms.login">Usuario</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Salir</message>
@@ -243,6 +241,7 @@
 	<plural case="0">Idioma</plural>
 	<plural case="1">Idiomas</plural>
 </message>
+<message id="Lms.Explore.limit-reached">Límite de visualización alcanzado — refine su búsqueda para ver más resultados</message>
 <message id="Lms.Explore.lyricist">
 	<plural case="0">Letrista</plural>
 	<plural case="1">Letristas</plural>
@@ -259,6 +258,7 @@
 <message id="Lms.Explore.most-played">Reproducidos frecuentemente</message>
 <message id="Lms.Explore.musicbrainz-artist">Artista de MusicBrainz</message>
 <message id="Lms.Explore.musicbrainz-release">Álbum de MusicBrainz</message>
+<message id="Lms.Explore.no-results">No se han encontrado resultados</message>
 <message id="Lms.Explore.performer">
 	<plural case="0">Intérprete</plural>
 	<plural case="1">Intérpretes</plural>
@@ -334,6 +334,9 @@
 <message id="Lms.Explore.Release.type-secondary-soundtrack">Banda sonora</message>
 <message id="Lms.Explore.Release.type-secondary-spokenword">Creación locutada</message>
 
+<!--Explore:TrackList-->
+<message id="Lms.Explore.TrackList.empty">Esta lista de reproducción está vacía</message>
+
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">¿Eliminar la lista de reproducción?</message>
 <message id="Lms.Explore.TrackLists.type-owned">Mis listas</message>
@@ -355,6 +358,7 @@
 <message id="Lms.PlayQueue.clear">Vaciar la lista</message>
 <message id="Lms.PlayQueue.create-tracklist">Crear una nueva lista de reproducción</message>
 <message id="Lms.PlayQueue.playqueue">Lista de reproducción</message>
+<message id="Lms.PlayQueue.queue-is-empty">Tu lista de reproducción está vacía</message>
 <message id="Lms.PlayQueue.radio-mode">Modo radio</message>
 <message id="Lms.PlayQueue.repeat">Repetir</message>
 <message id="Lms.PlayQueue.replace-tracklist">Reemplazar una lista de distribución existente</message>

@@ -14,8 +14,6 @@
 <message id="Lms.discard">Annuler</message>
 <message id="Lms.edit">Editer</message>
 <message id="Lms.field-must-be-in-upper-case">Ce champ doit être en majuscule</message>
-<message id="Lms.infinite-scrolling-container.limit-reached">Limite d'affichage atteinte — affinez votre recherche pour voir plus de résultats</message>
-<message id="Lms.infinite-scrolling-container.no-results">Aucun résultat</message>
 <message id="Lms.loading">Chargement...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Quitter</message>
@@ -243,6 +241,7 @@
 	<plural case="0">Langue</plural>
 	<plural case="1">Langues</plural>
 </message>
+<message id="Lms.Explore.limit-reached">Limite d'affichage atteinte — affinez votre recherche pour voir plus de résultats</message>
 <message id="Lms.Explore.lyricist">
 	<plural case="0">Parolier</plural>
 	<plural case="1">Paroliers</plural>
@@ -259,6 +258,7 @@
 <message id="Lms.Explore.most-played">Plus joués</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz Artist</message>
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz Release</message>
+<message id="Lms.Explore.no-results">Aucun résultat</message>
 <message id="Lms.Explore.performer">
 	<plural case="0">Interprète</plural>
 	<plural case="1">Interprètes</plural>
@@ -334,6 +334,9 @@
 <message id="Lms.Explore.Release.type-secondary-soundtrack">Bande son</message>
 <message id="Lms.Explore.Release.type-secondary-spokenword">Création parlée</message>
 
+<!--Explore:TrackList-->
+<message id="Lms.Explore.TrackList.empty">Cette liste de lecture est vide</message>
+
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Supprimer la liste de lecture ?</message>
 <message id="Lms.Explore.TrackLists.type-owned">Mes listes</message>
@@ -355,6 +358,7 @@
 <message id="Lms.PlayQueue.clear">Effacer</message>
 <message id="Lms.PlayQueue.create-tracklist">Créer une nouvelle liste de lecture</message>
 <message id="Lms.PlayQueue.playqueue">Liste de lecture</message>
+<message id="Lms.PlayQueue.queue-is-empty">Votre liste de lecture est vide</message>
 <message id="Lms.PlayQueue.radio-mode">Mode radio</message>
 <message id="Lms.PlayQueue.repeat">Repéter</message>
 <message id="Lms.PlayQueue.replace-tracklist">Remplacer une liste de lecture existante</message>
