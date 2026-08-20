@@ -32,7 +32,7 @@ namespace lms::audio::musicnn::benchmarks
     {
         std::filesystem::path getMusicNNModelPathFromEnv()
         {
-            const char* p{ std::getenv("LMS_MUSICNN_MODEL") };
+            const char* p{ std::getenv("LMS_MUSICNN_MODEL_PATH") };
             return p ? std::filesystem::path{ p } : std::filesystem::path{};
         }
 
@@ -52,7 +52,7 @@ namespace lms::audio::musicnn::benchmarks
         const std::filesystem::path path{ getMusicNNModelPathFromEnv() };
         if (path.empty())
         {
-            state.SkipWithMessage("LMS_MUSICNN_MODEL not set");
+            state.SkipWithMessage("LMS_MUSICNN_MODEL_PATH not set");
             return;
         }
 

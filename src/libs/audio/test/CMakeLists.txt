@@ -10,6 +10,10 @@ if (OnnxRuntime_FOUND)
     target_sources(test-audio PRIVATE
 		MusicNNModel.cpp
 		)
+
+	target_compile_definitions(test-audio PRIVATE
+		LMS_MUSICNN_DEFAULT_MODEL_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../models/MSD_musicnn_embedding.onnx"
+		)
 endif()
 
 target_include_directories(test-audio PRIVATE

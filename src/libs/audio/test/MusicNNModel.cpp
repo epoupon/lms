@@ -30,10 +30,15 @@ namespace lms::audio::musicnn::tests
 {
     namespace
     {
-        std::filesystem::path getMusicNNModelPathFromEnv()
+        std::filesystem::path getMusicNNModelPath()
         {
-            const char* p{ std::getenv("LMS_MUSICNN_MODEL") };
-            return p ? std::filesystem::path{ p } : std::filesystem::path{};
+            std::filesystem::path path;
+            if (const char* p{ std::getenv("LMS_MUSICNN_MODEL_PATH") })
+                path = p;
+            else
+                path = LMS_MUSICNN_DEFAULT_MODEL_PATH;
+
+            return std::filesystem::exists(path) ? path : std::filesystem::path{};
         }
 
         std::array<float, MusicNNModel::inputFrames * MusicNNModel::inputBands> makeRandomPatch()
@@ -52,20 +57,20 @@ namespace lms::audio::musicnn::tests
 
     TEST(MusicNNModel, CanConstruct)
     {
-        const std::filesystem::path path{ getMusicNNModelPathFromEnv() };
+        const std::filesystem::path path{ getMusicNNModelPath() };
 
         if (path.empty())
-            GTEST_SKIP() << "LMS_MUSICNN_MODEL not set";
+            GTEST_SKIP() << "MusicNN model not found (set LMS_MUSICNN_MODEL_PATH to override)";
 
         EXPECT_NO_THROW({ const MusicNNModel model{ path }; });
     }
 
     TEST(MusicNNModel, CanForward)
     {
-        const std::filesystem::path path{ getMusicNNModelPathFromEnv() };
+        const std::filesystem::path path{ getMusicNNModelPath() };
 
         if (path.empty())
-            GTEST_SKIP() << "LMS_MUSICNN_MODEL not set";
+            GTEST_SKIP() << "MusicNN model not found (set LMS_MUSICNN_MODEL_PATH to override)";
 
         const MusicNNModel model{ path };
         const auto patch{ makeRandomPatch() };
