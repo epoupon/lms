@@ -29,7 +29,7 @@
 #include "core/IOContextRunner.hpp"
 
 #include "audio/IAudioOutput.hpp"
-#include "audio/utils/IPcmDecodeStreamer.hpp"
+#include "audio/utils/IAudioDecodeStreamer.hpp"
 
 #include "services/jukebox/IJukeboxService.hpp"
 
@@ -101,6 +101,6 @@ namespace lms::jukebox
         std::unique_ptr<audio::IAudioOutputContext> _outputContext;
         std::unique_ptr<audio::IAudioOutputStream> _outputStream;
 
-        std::unique_ptr<audio::utils::IPcmDecodeStreamer> _decoder;
+        std::unique_ptr<audio::utils::IAudioDecodeStreamer> _decoder;
     };
 } // namespace lms::jukebox

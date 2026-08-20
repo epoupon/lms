@@ -169,12 +169,12 @@
 <message id="Lms.Admin.DebugTools.Db.export-query-profiling">Exportar datos de perfil de consultas</message>
 <message id="Lms.Admin.DebugTools.Db.db">Base de datos</message>
 
-<!--PcmDecodingStats-->
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.pcm-decoding-stats">Estadísticas de decodificación PCM</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.run">Ejecutar benchmark</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.download">Descargar resultados</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.running">Ejecutando…</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.benchmark-completed">Benchmark de decodificación PCM completado en {1}</message>
+<!--AudioDecodingStats-->
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.audio-decoding-stats">Estadísticas de decodificación de audio</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.run">Ejecutar benchmark</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.download">Descargar resultados</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.running">Ejecutando…</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.benchmark-completed">Benchmark de decodificación de audio completado en {1}</message>
 
 <!--Tracing-->
 <message id="Lms.Admin.DebugTools.Tracing.export-current-buffer">Exportar las trazas</message>

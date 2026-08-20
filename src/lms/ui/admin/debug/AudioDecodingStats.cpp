@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "PcmDecodingStats.hpp"
+#include "AudioDecodingStats.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -37,31 +37,31 @@
 #include <Wt/WString.h>
 #include <Wt/WText.h>
 
+#include "AudioDecodingBenchmark.hpp"
 #include "LmsApplication.hpp"
 #include "Notification.hpp"
-#include "PcmDecodingBenchmark.hpp"
 
 namespace lms::ui
 {
     namespace
     {
-        class PcmDecodingStatsResource : public Wt::WResource
+        class AudioDecodingStatsResource : public Wt::WResource
         {
         public:
-            PcmDecodingStatsResource(std::vector<PcmDecodingBenchmark::CodecResult> results, std::chrono::milliseconds elapsed, std::string filename)
+            AudioDecodingStatsResource(std::vector<AudioDecodingBenchmark::CodecResult> results, std::chrono::milliseconds elapsed, std::string filename)
                 : _results{ std::move(results) }
                 , _elapsed{ elapsed }
                 , _filename{ std::move(filename) }
             {
             }
 
-            ~PcmDecodingStatsResource() override
+            ~AudioDecodingStatsResource() override
             {
                 beingDeleted();
             }
 
-            PcmDecodingStatsResource(const PcmDecodingStatsResource&) = delete;
-            PcmDecodingStatsResource& operator=(const PcmDecodingStatsResource&) = delete;
+            AudioDecodingStatsResource(const AudioDecodingStatsResource&) = delete;
+            AudioDecodingStatsResource& operator=(const AudioDecodingStatsResource&) = delete;
 
         private:
             void handleRequest(const Wt::Http::Request&, Wt::Http::Response& response) override
@@ -76,18 +76,18 @@ namespace lms::ui
                 response.addHeader("Content-Disposition", "attachment; " + cdp);
 
                 response.out() << std::fixed << std::setprecision(1);
-                response.out() << "PCM decoding bench (elapsed: " << std::chrono::duration_cast<std::chrono::seconds>(_elapsed).count() << "s)\n\n";
+                response.out() << "Audio decoding bench (elapsed: " << std::chrono::duration_cast<std::chrono::seconds>(_elapsed).count() << "s)\n\n";
 
                 std::size_t totalTracks{};
                 float globalMin{ std::numeric_limits<float>::max() };
                 float globalMax{ std::numeric_limits<float>::lowest() };
                 float weightedMeanSum{};
 
-                for (const PcmDecodingBenchmark::CodecResult& r : _results)
+                for (const AudioDecodingBenchmark::CodecResult& r : _results)
                 {
                     response.out() << "=== " << r.codecName << " (" << r.tracks.size() << " track(s)) ===\n";
 
-                    for (const PcmDecodingBenchmark::TrackDecodeResult& t : r.tracks)
+                    for (const AudioDecodingBenchmark::TrackDecodeResult& t : r.tracks)
                     {
                         const long durationSec{ static_cast<long>(t.duration.count() / 1000) };
                         response.out() << "  " << t.path
@@ -114,7 +114,7 @@ namespace lms::ui
                     const float globalMean{ weightedMeanSum / static_cast<float>(totalTracks) };
 
                     float weightedVarianceSum{};
-                    for (const PcmDecodingBenchmark::CodecResult& r : _results)
+                    for (const AudioDecodingBenchmark::CodecResult& r : _results)
                     {
                         const float d{ r.meanRealTimeFactor - globalMean };
                         weightedVarianceSum += static_cast<float>(r.tracks.size()) * (r.stdDevRealTimeFactor * r.stdDevRealTimeFactor + d * d);
@@ -129,57 +129,57 @@ namespace lms::ui
                 }
             }
 
-            std::vector<PcmDecodingBenchmark::CodecResult> _results;
+            std::vector<AudioDecodingBenchmark::CodecResult> _results;
             std::chrono::milliseconds _elapsed{};
             std::string _filename;
         };
     } // namespace
 
-    PcmDecodingStats::PcmDecodingStats()
-        : Wt::WTemplate{ Wt::WString::tr("Lms.Admin.DebugTools.PcmDecodingStats.template") }
+    AudioDecodingStats::AudioDecodingStats()
+        : Wt::WTemplate{ Wt::WString::tr("Lms.Admin.DebugTools.AudioDecodingStats.template") }
         , _db{ LmsApp->getDb() }
     {
         addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-        _runBtn = bindNew<Wt::WPushButton>("run-btn", Wt::WString::tr("Lms.Admin.DebugTools.PcmDecodingStats.run"));
+        _runBtn = bindNew<Wt::WPushButton>("run-btn", Wt::WString::tr("Lms.Admin.DebugTools.AudioDecodingStats.run"));
         _downloadBtn = bindNew<Wt::WAnchor>("download-btn");
-        _downloadBtn->setText(Wt::WString::tr("Lms.Admin.DebugTools.PcmDecodingStats.download"));
+        _downloadBtn->setText(Wt::WString::tr("Lms.Admin.DebugTools.AudioDecodingStats.download"));
         _statusText = bindNew<Wt::WText>("status");
 
-        _runBtn->clicked().connect(this, &PcmDecodingStats::onRunClicked);
+        _runBtn->clicked().connect(this, &AudioDecodingStats::onRunClicked);
 
-        processState(PcmDecodingBenchmark::instance().getState());
+        processState(AudioDecodingBenchmark::instance().getState());
 
-        PcmDecodingBenchmark::instance().registerOnStateChanged(wApp->sessionId(), [this](PcmDecodingBenchmark::State oldState, PcmDecodingBenchmark::State newState) {
+        AudioDecodingBenchmark::instance().registerOnStateChanged(wApp->sessionId(), [this](AudioDecodingBenchmark::State oldState, AudioDecodingBenchmark::State newState) {
             onStateChanged(oldState, newState);
         });
     }
 
-    PcmDecodingStats::~PcmDecodingStats()
+    AudioDecodingStats::~AudioDecodingStats()
     {
-        PcmDecodingBenchmark::instance().unregisterOnStateChanged(wApp->sessionId());
+        AudioDecodingBenchmark::instance().unregisterOnStateChanged(wApp->sessionId());
     }
 
-    void PcmDecodingStats::onRunClicked()
+    void AudioDecodingStats::onRunClicked()
     {
-        PcmDecodingBenchmark::instance().start(_db);
+        AudioDecodingBenchmark::instance().start(_db);
     }
 
-    void PcmDecodingStats::processState(PcmDecodingBenchmark::State state)
+    void AudioDecodingStats::processState(AudioDecodingBenchmark::State state)
     {
         switch (state)
         {
-        case PcmDecodingBenchmark::State::Idle:
+        case AudioDecodingBenchmark::State::Idle:
             _runBtn->setEnabled(true);
             _downloadBtn->hide();
             _statusText->setText({});
             break;
-        case PcmDecodingBenchmark::State::Running:
+        case AudioDecodingBenchmark::State::Running:
             _runBtn->setEnabled(false);
             _downloadBtn->hide();
-            _statusText->setText(Wt::WString::tr("Lms.Admin.DebugTools.PcmDecodingStats.running"));
+            _statusText->setText(Wt::WString::tr("Lms.Admin.DebugTools.AudioDecodingStats.running"));
             break;
-        case PcmDecodingBenchmark::State::Completed:
+        case AudioDecodingBenchmark::State::Completed:
             _runBtn->setEnabled(true);
             _statusText->setText({});
             setupDownloadButton();
@@ -187,22 +187,22 @@ namespace lms::ui
         }
     }
 
-    void PcmDecodingStats::onStateChanged(PcmDecodingBenchmark::State oldState, PcmDecodingBenchmark::State newState)
+    void AudioDecodingStats::onStateChanged(AudioDecodingBenchmark::State oldState, AudioDecodingBenchmark::State newState)
     {
         processState(newState);
 
-        if (oldState == PcmDecodingBenchmark::State::Running && newState == PcmDecodingBenchmark::State::Completed)
+        if (oldState == AudioDecodingBenchmark::State::Running && newState == AudioDecodingBenchmark::State::Completed)
         {
             std::ostringstream oss;
-            oss << std::chrono::duration_cast<std::chrono::seconds>(PcmDecodingBenchmark::instance().getElapsed()).count() << "s";
-            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.DebugTools.PcmDecodingStats.benchmark-completed").arg(oss.str()));
+            oss << std::chrono::duration_cast<std::chrono::seconds>(AudioDecodingBenchmark::instance().getElapsed()).count() << "s";
+            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.DebugTools.AudioDecodingStats.benchmark-completed").arg(oss.str()));
         }
     }
 
-    void PcmDecodingStats::setupDownloadButton()
+    void AudioDecodingStats::setupDownloadButton()
     {
-        auto& bench{ PcmDecodingBenchmark::instance() };
-        auto resource{ std::make_shared<PcmDecodingStatsResource>(bench.getResults(), bench.getElapsed(), bench.getReportFilename()) };
+        auto& bench{ AudioDecodingBenchmark::instance() };
+        auto resource{ std::make_shared<AudioDecodingStatsResource>(bench.getResults(), bench.getElapsed(), bench.getReportFilename()) };
 
         Wt::WLink link{ resource };
         link.setTarget(Wt::LinkTarget::NewWindow);

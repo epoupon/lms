@@ -25,20 +25,20 @@
 
 #include <gtest/gtest.h>
 
-#include "audio/IPcmDecoder.hpp"
+#include "audio/IAudioDecoder.hpp"
 #include "audio/PcmTypes.hpp"
 
-#include "utils/PcmSpectralFrameDecoder.hpp"
+#include "utils/SpectralFrameDecoder.hpp"
 
 namespace lms::audio::tests
 {
     namespace
     {
-        // A mock IPcmDecoder that emits samples 0, 1, 2, 3, ... (as float) up to totalSamples,
-        class SequencePcmDecoder : public IPcmDecoder
+        // A mock IAudioDecoder that emits samples 0, 1, 2, 3, ... (as float) up to totalSamples,
+        class SequenceAudioDecoder : public IAudioDecoder
         {
         public:
-            SequencePcmDecoder(std::size_t totalSampleCount)
+            SequenceAudioDecoder(std::size_t totalSampleCount)
                 : _totalSampleCount{ totalSampleCount }
             {
             }
@@ -104,19 +104,19 @@ namespace lms::audio::tests
 
         constexpr std::size_t WindowSize{ 8 };
         constexpr std::size_t HopSize{ 4 };
-        using FrameDecoder = PcmSpectralFrameDecoder<WindowSize, float>;
+        using FrameDecoder = SpectralFrameDecoder<WindowSize, float>;
     } // namespace
 
-    TEST(SequencePcmDecoder, basic)
+    TEST(SequenceAudioDecoder, basic)
     {
         constexpr std::size_t decoderTotalSampleCount{ 32 };
-        SequencePcmDecoder decoder{ decoderTotalSampleCount };
+        SequenceAudioDecoder decoder{ decoderTotalSampleCount };
 
         std::size_t totalSampleReadCount{};
         while (true)
         {
             std::array<float, 16> buffer{};
-            std::array outputBuffers{ IPcmDecoder::WritableBuffer{ std::as_writable_bytes(std::span{ buffer }) } };
+            std::array outputBuffers{ IAudioDecoder::WritableBuffer{ std::as_writable_bytes(std::span{ buffer }) } };
             const std::size_t sampleReadCount{ decoder.readSamples(outputBuffers) };
             if (sampleReadCount == 0)
                 break;
@@ -130,9 +130,9 @@ namespace lms::audio::tests
         EXPECT_EQ(totalSampleReadCount, decoderTotalSampleCount);
     }
 
-    TEST(PcmSpectralFrameDecoder, firstFrameIsCenteredOnSample0)
+    TEST(SpectralFrameDecoder, firstFrameIsCenteredOnSample0)
     {
-        FrameDecoder frameDecoder{ std::make_unique<SequencePcmDecoder>(32), HopSize };
+        FrameDecoder frameDecoder{ std::make_unique<SequenceAudioDecoder>(32), HopSize };
         using Frame = std::array<float, WindowSize>;
         std::vector<Frame> frames;
 
@@ -149,9 +149,9 @@ namespace lms::audio::tests
         expectSpanEq<float, WindowSize>(frames[0], { 0.F, 0.F, 0.F, 0.F, 0.F, 1.F, 2.F, 3.F });
     }
 
-    TEST(PcmSpectralFrameDecoder, framesAdvanceByHopSize)
+    TEST(SpectralFrameDecoder, framesAdvanceByHopSize)
     {
-        FrameDecoder frameDecoder{ std::make_unique<SequencePcmDecoder>(16), HopSize };
+        FrameDecoder frameDecoder{ std::make_unique<SequenceAudioDecoder>(16), HopSize };
         using Frame = std::array<float, WindowSize>;
         std::vector<Frame> frames;
 
@@ -174,9 +174,9 @@ namespace lms::audio::tests
             { 0.F, 1.F, 2.F, 3.F, 4.F, 5.F, 6.F, 7.F });
     }
 
-    TEST(PcmSpectralFrameDecoder, skipFramesAdvancesState)
+    TEST(SpectralFrameDecoder, skipFramesAdvancesState)
     {
-        FrameDecoder frameDecoder{ std::make_unique<SequencePcmDecoder>(32), HopSize };
+        FrameDecoder frameDecoder{ std::make_unique<SequenceAudioDecoder>(32), HopSize };
         using Frame = std::array<float, WindowSize>;
         std::vector<Frame> frames;
 

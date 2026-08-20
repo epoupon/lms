@@ -19,20 +19,20 @@
 
 #pragma once
 
-#include "audio/IPcmDecoder.hpp"
+#include "audio/IAudioDecoder.hpp"
 
 #include "FFmpegTypes.hpp"
 
 namespace lms::audio::ffmpeg
 {
-    class PcmDecoder : public IPcmDecoder
+    class AudioDecoder : public IAudioDecoder
     {
     public:
-        PcmDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters);
-        ~PcmDecoder() override;
+        AudioDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters);
+        ~AudioDecoder() override;
 
-        PcmDecoder(const PcmDecoder&) = delete;
-        PcmDecoder& operator=(const PcmDecoder&) = delete;
+        AudioDecoder(const AudioDecoder&) = delete;
+        AudioDecoder& operator=(const AudioDecoder&) = delete;
 
     private:
         const PcmParameters& getParameters() const override;

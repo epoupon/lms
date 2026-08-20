@@ -31,7 +31,7 @@
 #include "audio/Exception.hpp"
 #include "audio/IAudioOutput.hpp"
 #include "audio/PcmTypes.hpp"
-#include "audio/utils/IPcmDecodeStreamer.hpp"
+#include "audio/utils/IAudioDecodeStreamer.hpp"
 
 namespace lms
 {
@@ -70,13 +70,13 @@ namespace lms
 
         void startDecodeAndPlay()
         {
-            audio::utils::PcmDecodeStreamerParameters params{
+            audio::utils::AudioDecodeStreamerParameters params{
                 .outputStream = *_outputStream,
                 .bufferCount = 2,
                 .bufferDuration = std::chrono::milliseconds{ 100 },
             };
 
-            _fileStreamer = audio::utils::createPcmDecodeStreamer(_ioContext, params);
+            _fileStreamer = audio::utils::createAudioDecodeStreamer(_ioContext, params);
             _fileStreamer->start(_filePath, _offset, [this](bool aborted) {
                 if (aborted)
                     std::cerr << "Playback aborted!" << std::endl;
@@ -115,7 +115,7 @@ namespace lms
         boost::asio::steady_timer _playTimer{ _ioContext };
 
         std::unique_ptr<audio::IAudioOutputStream> _outputStream;
-        std::shared_ptr<audio::utils::IPcmDecodeStreamer> _fileStreamer;
+        std::shared_ptr<audio::utils::IAudioDecodeStreamer> _fileStreamer;
     };
 } // namespace lms
 

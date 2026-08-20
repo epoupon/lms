@@ -23,8 +23,8 @@ add_executable(lms
 	ui/Utils.cpp
 	ui/admin/AdminView.cpp
 	ui/admin/debug/Database.cpp
-	ui/admin/debug/PcmDecodingBenchmark.cpp
-	ui/admin/debug/PcmDecodingStats.cpp
+	ui/admin/debug/AudioDecodingBenchmark.cpp
+	ui/admin/debug/AudioDecodingStats.cpp
 	ui/admin/debug/Tracing.cpp
 	ui/admin/About.cpp
 	ui/admin/DebugToolsView.cpp

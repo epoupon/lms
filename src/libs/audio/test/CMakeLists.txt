@@ -3,7 +3,7 @@ include(GoogleTest)
 add_executable(test-audio
 	MelFilterBank.cpp
 	MusicNNEmbeddings.cpp
-	PcmSpectralFrameDecoder.cpp
+	SpectralFrameDecoder.cpp
 	)
 
 if (OnnxRuntime_FOUND)

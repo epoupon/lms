@@ -167,12 +167,12 @@
 <message id="Lms.Admin.DebugTools.Db.export-query-profiling">导出查询分析数据</message>
 <message id="Lms.Admin.DebugTools.Db.db">数据库</message>
 
-<!--PcmDecodingStats-->
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.pcm-decoding-stats">PCM解码统计</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.run">运行基准测试</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.download">下载结果</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.running">运行中…</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.benchmark-completed">PCM解码基准测试已在{1}内完成</message>
+<!--AudioDecodingStats-->
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.audio-decoding-stats">音频解码统计</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.run">运行基准测试</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.download">下载结果</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.running">运行中…</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.benchmark-completed">音频解码基准测试已在{1}内完成</message>
 
 <!--Tracing-->
 <message id="Lms.Admin.DebugTools.Tracing.export-current-buffer">导出跟踪</message>

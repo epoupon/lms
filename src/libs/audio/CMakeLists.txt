@@ -12,12 +12,12 @@ endif()
 
 add_library(lmsaudio STATIC
 	impl/features/MelFilterBank.cpp
+	impl/ffmpeg/AudioDecoder.cpp
 	impl/ffmpeg/AudioFile.cpp
 	impl/ffmpeg/AudioFileInfo.cpp
 	impl/ffmpeg/AudioFileInfoParser.cpp
 	impl/ffmpeg/FFmpegTypes.cpp
 	impl/ffmpeg/ImageReader.cpp
-	impl/ffmpeg/PcmDecoder.cpp
 	impl/ffmpeg/TagReader.cpp
 	impl/ffmpeg/Transcoder.cpp
 	impl/ffmpeg/Utils.cpp
@@ -27,7 +27,7 @@ add_library(lmsaudio STATIC
 	impl/taglib/ImageReader.cpp
 	impl/taglib/TagReader.cpp
 	impl/taglib/Utils.cpp
-	impl/utils/PcmDecodeStreamer.cpp
+	impl/utils/AudioDecodeStreamer.cpp
 	impl/AudioFileInfoParser.cpp
 	impl/AudioOutput.cpp
 	impl/MusicNNEmbeddingExtractorCreator.cpp

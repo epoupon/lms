@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "PcmDecoder.hpp"
+#include "AudioDecoder.hpp"
 
 #include <algorithm>
 #include <array>
@@ -35,15 +35,15 @@ extern "C"
 #include "core/ILogger.hpp"
 
 #include "audio/Exception.hpp"
-#include "audio/IPcmDecoder.hpp"
+#include "audio/IAudioDecoder.hpp"
 
 #include "Exception.hpp"
 
 namespace lms::audio
 {
-    std::unique_ptr<IPcmDecoder> createPcmDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
+    std::unique_ptr<IAudioDecoder> createAudioDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
     {
-        return std::make_unique<ffmpeg::PcmDecoder>(filePath, offset, parameters);
+        return std::make_unique<ffmpeg::AudioDecoder>(filePath, offset, parameters);
     }
 } // namespace lms::audio
 
@@ -100,7 +100,7 @@ namespace lms::audio::ffmpeg
         }
     } // namespace
 
-    PcmDecoder::PcmDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
+    AudioDecoder::AudioDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
         : _parameters{ parameters }
     {
         if (_parameters.channelCount > AV_NUM_DATA_POINTERS)
@@ -200,14 +200,14 @@ namespace lms::audio::ffmpeg
         };
     }
 
-    PcmDecoder::~PcmDecoder() = default;
+    AudioDecoder::~AudioDecoder() = default;
 
-    const PcmParameters& PcmDecoder::getParameters() const
+    const PcmParameters& AudioDecoder::getParameters() const
     {
         return _parameters;
     }
 
-    std::size_t PcmDecoder::readSamples(std::span<WritableBuffer> outputChannelBuffers)
+    std::size_t AudioDecoder::readSamples(std::span<WritableBuffer> outputChannelBuffers)
     {
         if (_finished)
             return 0;
@@ -272,17 +272,17 @@ namespace lms::audio::ffmpeg
         return 0;
     }
 
-    bool PcmDecoder::finished() const
+    bool AudioDecoder::finished() const
     {
         return _finished;
     }
 
-    std::chrono::milliseconds PcmDecoder::getEstimatedDuration() const
+    std::chrono::milliseconds AudioDecoder::getEstimatedDuration() const
     {
         return _estimatedDuration;
     }
 
-    std::size_t PcmDecoder::computeSampleCountPerChannel(std::span<WritableBuffer> outputChannelBuffers) const
+    std::size_t AudioDecoder::computeSampleCountPerChannel(std::span<WritableBuffer> outputChannelBuffers) const
     {
         if (_parameters.planar)
         {
@@ -313,7 +313,7 @@ namespace lms::audio::ffmpeg
         return sampleCount;
     }
 
-    void PcmDecoder::feedDecoder()
+    void AudioDecoder::feedDecoder()
     {
         assert(!_eof);
 
@@ -354,7 +354,7 @@ namespace lms::audio::ffmpeg
         }
     }
 
-    bool PcmDecoder::inputFormatChanged(const AVFrame* frame) const
+    bool AudioDecoder::inputFormatChanged(const AVFrame* frame) const
     {
         const auto& c{ _resamplerInputConfig };
         if (frame->sample_rate != c.sampleRate
@@ -367,7 +367,7 @@ namespace lms::audio::ffmpeg
         return false;
     }
 
-    void PcmDecoder::reinitResamplerForFrame(const AVFrame* frame)
+    void AudioDecoder::reinitResamplerForFrame(const AVFrame* frame)
     {
         // The format change is caused by a corrupt/non-standard frame so the lost samples are likely garbled audio anyway.
         _resampleContext = createResampler(_parameters, frame->ch_layout, static_cast<AVSampleFormat>(frame->format), frame->sample_rate);
@@ -380,7 +380,7 @@ namespace lms::audio::ffmpeg
         };
     }
 
-    std::size_t PcmDecoder::resampleFrame(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel, const AVFrame* inputFrame)
+    std::size_t AudioDecoder::resampleFrame(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel, const AVFrame* inputFrame)
     {
         if (inputFrame && inputFormatChanged(inputFrame))
         {
@@ -412,12 +412,12 @@ namespace lms::audio::ffmpeg
         return static_cast<std::size_t>(outSampleCount);
     }
 
-    std::size_t PcmDecoder::drainResampler(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel)
+    std::size_t AudioDecoder::drainResampler(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel)
     {
         return resampleFrame(outputChannelBuffers, maxSamplesPerChannel, nullptr);
     }
 
-    std::size_t PcmDecoder::getEstimatedResamplerAvailableSamples() const
+    std::size_t AudioDecoder::getEstimatedResamplerAvailableSamples() const
     {
         const int64_t delayedInputSampleCount{ ::swr_get_delay(_resampleContext.get(), _resamplerInputConfig.sampleRate) };
         const int64_t sampleCount{ av_rescale_rnd(delayedInputSampleCount, _parameters.sampleRate, _resamplerInputConfig.sampleRate, AV_ROUND_UP) };
