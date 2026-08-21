@@ -21,22 +21,69 @@
 
 #include <taglib/taglib.h>
 
-#if (TAGLIB_MAJOR_VERSION >= 2)
-    #define LMS_TAGLIB_HAS_DSF 1
-    #define LMS_TAGLIB_HAS_ADTS 1
-#endif
+static_assert(TAGLIB_MAJOR_VERSION >= 2);
 
-// LMS_TAGLIB_HAS_MP4_ITEM_TYPE if version >= 2.0.1
-#if ((TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 0) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_PATCH_VERSION >= 1))
-    #define LMS_TAGLIB_HAS_MP4_ITEM_TYPE 1
-#endif
+#define LMS_TAGLIB_HAS_MP4_ITEM_TYPE (((TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 0) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_PATCH_VERSION >= 1))) // >= 2.0.1
 
-// LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES if version >= 2.0.2
-#if ((TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 0) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_PATCH_VERSION >= 2))
-    #define LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES 1
-#endif
+#define LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES (((TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 0) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_PATCH_VERSION >= 2))) // >= 2.0.2
 
-// LMS_TAGLIB_HAS_SHORTEN if version >= 2.1
+// taglib_config.h only exists from version >= 2.1
 #if ((TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION >= 1))
+    #include <taglib/taglib_config.h>
+    #define LMS_TAGLIB_HAS_BUILD_CONFIG 1
+#else
+    #define LMS_TAGLIB_HAS_BUILD_CONFIG 0
+#endif
+
+// Shorten support and taglib_config.h were both added within the same release
+#if LMS_TAGLIB_HAS_BUILD_CONFIG && defined(TAGLIB_WITH_SHORTEN)
     #define LMS_TAGLIB_HAS_SHORTEN 1
+#else
+    #define LMS_TAGLIB_HAS_SHORTEN 0
+#endif
+
+#if LMS_TAGLIB_HAS_BUILD_CONFIG
+    #if defined(TAGLIB_WITH_RIFF)
+        #define LMS_TAGLIB_HAS_RIFF 1
+    #else
+        #define LMS_TAGLIB_HAS_RIFF 0
+    #endif
+    #if defined(TAGLIB_WITH_APE)
+        #define LMS_TAGLIB_HAS_APE 1
+    #else
+        #define LMS_TAGLIB_HAS_APE 0
+    #endif
+    #if defined(TAGLIB_WITH_ASF)
+        #define LMS_TAGLIB_HAS_ASF 1
+    #else
+        #define LMS_TAGLIB_HAS_ASF 0
+    #endif
+    #if defined(TAGLIB_WITH_VORBIS)
+        #define LMS_TAGLIB_HAS_VORBIS 1
+    #else
+        #define LMS_TAGLIB_HAS_VORBIS 0
+    #endif
+    #if defined(TAGLIB_WITH_MP4)
+        #define LMS_TAGLIB_HAS_MP4 1
+    #else
+        #define LMS_TAGLIB_HAS_MP4 0
+    #endif
+    #if defined(TAGLIB_WITH_TRUEAUDIO)
+        #define LMS_TAGLIB_HAS_TRUEAUDIO 1
+    #else
+        #define LMS_TAGLIB_HAS_TRUEAUDIO 0
+    #endif
+    #if defined(TAGLIB_WITH_DSF)
+        #define LMS_TAGLIB_HAS_DSF 1
+    #else
+        #define LMS_TAGLIB_HAS_DSF 0
+    #endif
+#else
+    #define LMS_TAGLIB_HAS_RIFF 1
+    #define LMS_TAGLIB_HAS_APE 1
+    #define LMS_TAGLIB_HAS_ASF 1
+    #define LMS_TAGLIB_HAS_VORBIS 1
+    #define LMS_TAGLIB_HAS_MP4 1
+    #define LMS_TAGLIB_HAS_TRUEAUDIO 1
+    #define LMS_TAGLIB_HAS_DSF 1
 #endif

@@ -1,5 +1,5 @@
 pkg_check_modules(LIBAV IMPORTED_TARGET libavcodec libavutil libavformat libswresample)
-pkg_check_modules(Taglib REQUIRED IMPORTED_TARGET taglib)
+pkg_check_modules(Taglib REQUIRED IMPORTED_TARGET taglib>=2)
 pkg_check_modules(PulseAudio IMPORTED_TARGET libpulse)
 pkg_check_modules(ALSA IMPORTED_TARGET alsa)
 pkg_check_modules(OnnxRuntime IMPORTED_TARGET libonnxruntime)

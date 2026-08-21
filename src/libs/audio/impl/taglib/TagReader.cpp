@@ -23,27 +23,39 @@
 
 #include "TagLibDefs.hpp"
 
-#include <taglib/aifffile.h>
-#include <taglib/apefile.h>
-#include <taglib/apetag.h>
-#include <taglib/asffile.h>
-#include <taglib/flacfile.h>
 #include <taglib/id3v2tag.h>
-#include <taglib/mp4file.h>
-#include <taglib/mpcfile.h>
 #include <taglib/mpegfile.h>
-#include <taglib/oggflacfile.h>
-#include <taglib/opusfile.h>
-#include <taglib/speexfile.h>
 #include <taglib/synchronizedlyricsframe.h>
 #include <taglib/tag.h>
 #include <taglib/tfile.h>
 #include <taglib/tpropertymap.h>
-#include <taglib/trueaudiofile.h>
 #include <taglib/unsynchronizedlyricsframe.h>
-#include <taglib/vorbisfile.h>
-#include <taglib/wavfile.h>
-#include <taglib/wavpackfile.h>
+#if LMS_TAGLIB_HAS_RIFF
+    #include <taglib/aifffile.h>
+    #include <taglib/wavfile.h>
+#endif
+#if LMS_TAGLIB_HAS_APE
+    #include <taglib/apefile.h>
+    #include <taglib/apetag.h>
+    #include <taglib/mpcfile.h>
+    #include <taglib/wavpackfile.h>
+#endif
+#if LMS_TAGLIB_HAS_ASF
+    #include <taglib/asffile.h>
+#endif
+#if LMS_TAGLIB_HAS_VORBIS
+    #include <taglib/flacfile.h>
+    #include <taglib/oggflacfile.h>
+    #include <taglib/opusfile.h>
+    #include <taglib/speexfile.h>
+    #include <taglib/vorbisfile.h>
+#endif
+#if LMS_TAGLIB_HAS_MP4
+    #include <taglib/mp4file.h>
+#endif
+#if LMS_TAGLIB_HAS_TRUEAUDIO
+    #include <taglib/trueaudiofile.h>
+#endif
 #if LMS_TAGLIB_HAS_DSF
     #include <taglib/dsdifffile.h>
     #include <taglib/dsffile.h>
@@ -172,6 +184,7 @@ namespace lms::audio::taglib
             { TagType::Writer, { "WRITER" } },
         };
 
+#if LMS_TAGLIB_HAS_APE
         void mergeTagMaps(TagLib::PropertyMap& dst, ::TagLib::PropertyMap&& src)
         {
             for (auto&& [tag, values] : src)
@@ -180,6 +193,7 @@ namespace lms::audio::taglib
                     dst[tag] = std::move(values);
             }
         }
+#endif // LMS_TAGLIB_HAS_APE
 
         void dedupTagValues(TagLib::PropertyMap& propertyMap)
         {
@@ -223,12 +237,14 @@ namespace lms::audio::taglib
         }
 
         // Some tags may not be known by TagLib
+#if LMS_TAGLIB_HAS_APE
         auto getAPETags = [&](const ::TagLib::APE::Tag* apeTag) {
             if (!apeTag)
                 return;
 
             mergeTagMaps(_propertyMap, apeTag->properties());
         };
+#endif // LMS_TAGLIB_HAS_APE
 
         auto processID3v2Tags = [&](TagLib::ID3v2::Tag& id3v2Tags) {
             // Dedup values for some tags that may be written in both a standard tag and in a custom tag
@@ -291,8 +307,19 @@ namespace lms::audio::taglib
             }
         };
 
+        // MP3
+        if (TagLib::MPEG::File * mp3File{ dynamic_cast<TagLib::MPEG::File*>(&_file) })
+        {
+            if (mp3File->hasID3v2Tag())
+                processID3v2Tags(*mp3File->ID3v2Tag(false));
+
+#if LMS_TAGLIB_HAS_APE
+            getAPETags(mp3File->APETag());
+#endif // LMS_TAGLIB_HAS_APE
+        }
+#if LMS_TAGLIB_HAS_ASF
         // WMA
-        if (const ::TagLib::ASF::File * asfFile{ dynamic_cast<const ::TagLib::ASF::File*>(&_file) })
+        else if (const ::TagLib::ASF::File * asfFile{ dynamic_cast<const ::TagLib::ASF::File*>(&_file) })
         {
             if (const ::TagLib::ASF::Tag * tag{ asfFile->tag() })
             {
@@ -337,23 +364,17 @@ namespace lms::audio::taglib
                 }
             }
         }
-        // MP3
-        else if (TagLib::MPEG::File * mp3File{ dynamic_cast<TagLib::MPEG::File*>(&_file) })
-        {
-            if (mp3File->hasID3v2Tag())
-                processID3v2Tags(*mp3File->ID3v2Tag(false));
-
-            getAPETags(mp3File->APETag());
-        }
+#endif // LMS_TAGLIB_HAS_ASF
+#if LMS_TAGLIB_HAS_MP4
         // MP4
         else if (const ::TagLib::MP4::File * mp4File{ dynamic_cast<const ::TagLib::MP4::File*>(&_file) })
         {
             // Taglib does not expose rtng in properties
             if (const ::TagLib::MP4::Item rtngItem{ mp4File->tag()->item("rtng") }; rtngItem.isValid())
             {
-#if LMS_TAGLIB_HAS_MP4_ITEM_TYPE
+    #if LMS_TAGLIB_HAS_MP4_ITEM_TYPE
                 if (rtngItem.type() == ::TagLib::MP4::Item::Type::Byte)
-#endif
+    #endif
                     _propertyMap["ITUNESADVISORY"] = ::TagLib::String{ std::to_string(rtngItem.toByte()) };
             }
 
@@ -378,6 +399,8 @@ namespace lms::audio::taglib
                 }
             }
         }
+#endif // LMS_TAGLIB_HAS_MP4
+#if LMS_TAGLIB_HAS_APE
         // MPC
         else if (::TagLib::MPC::File * mpcFile{ dynamic_cast<TagLib::MPC::File*>(&_file) })
         {
@@ -388,12 +411,16 @@ namespace lms::audio::taglib
         {
             getAPETags(wavPackFile->APETag());
         }
+#endif // LMS_TAGLIB_HAS_APE
+#if LMS_TAGLIB_HAS_VORBIS
         // FLAC
         else if (TagLib::FLAC::File * flacFile{ dynamic_cast<TagLib::FLAC::File*>(&_file) })
         {
             if (flacFile->hasID3v2Tag()) // discouraged usage
                 processID3v2Tags(*flacFile->ID3v2Tag());
         }
+#endif // LMS_TAGLIB_HAS_VORBIS
+#if LMS_TAGLIB_HAS_RIFF
         else if (const TagLib::RIFF::AIFF::File * aiffFile{ dynamic_cast<const TagLib::RIFF::AIFF::File*>(&_file) })
         {
             if (aiffFile->hasID3v2Tag())
@@ -404,6 +431,7 @@ namespace lms::audio::taglib
             if (wavFile->hasID3v2Tag())
                 processID3v2Tags(*wavFile->ID3v2Tag());
         }
+#endif // LMS_TAGLIB_HAS_RIFF
     }
 
     TagReader::~TagReader() = default;

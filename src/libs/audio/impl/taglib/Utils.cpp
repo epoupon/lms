@@ -21,26 +21,42 @@
 
 #include "TagLibDefs.hpp"
 
-#include <taglib/aifffile.h>
-#include <taglib/apefile.h>
-#include <taglib/asffile.h>
 #include <taglib/audioproperties.h>
-#include <taglib/flacfile.h>
 #include <taglib/id3v2framefactory.h>
-#include <taglib/mp4file.h>
-#include <taglib/mpcfile.h>
 #include <taglib/mpegfile.h>
-#include <taglib/oggflacfile.h>
-#include <taglib/opusfile.h>
-#include <taglib/speexfile.h>
 #include <taglib/tfile.h>
 #include <taglib/tfilestream.h>
-#include <taglib/trueaudiofile.h>
-#include <taglib/vorbisfile.h>
-#include <taglib/wavfile.h>
-#include <taglib/wavpackfile.h>
+
+#if LMS_TAGLIB_HAS_RIFF
+    #include <taglib/aifffile.h>
+    #include <taglib/wavfile.h>
+#endif
+#if LMS_TAGLIB_HAS_APE
+    #include <taglib/apefile.h>
+    #include <taglib/mpcfile.h>
+    #include <taglib/wavpackfile.h>
+#endif
+#if LMS_TAGLIB_HAS_ASF
+    #include <taglib/asffile.h>
+#endif
+#if LMS_TAGLIB_HAS_VORBIS
+    #include <taglib/flacfile.h>
+    #include <taglib/oggflacfile.h>
+    #include <taglib/opusfile.h>
+    #include <taglib/speexfile.h>
+    #include <taglib/vorbisfile.h>
+#endif
+#if LMS_TAGLIB_HAS_MP4
+    #include <taglib/mp4file.h>
+#endif
+#if LMS_TAGLIB_HAS_TRUEAUDIO
+    #include <taglib/trueaudiofile.h>
+#endif
 #if LMS_TAGLIB_HAS_DSF
     #include <taglib/dsffile.h>
+#endif
+#if LMS_TAGLIB_HAS_SHORTEN
+    #include <taglib/shortenfile.h>
 #endif
 
 #include "core/ILogger.hpp"
@@ -56,33 +72,46 @@ namespace lms::audio::taglib::utils
         static const std::vector<std::filesystem::path> supportedExtensions{
             ".mp3",
             ".mp2",
+            ".aac",
+#if LMS_TAGLIB_HAS_VORBIS
             ".ogg",
             ".oga",
             ".flac",
             ".spx",
             ".opus",
+#endif
+#if LMS_TAGLIB_HAS_APE
             ".mpc",
             ".wv",
             ".ape",
+#endif
+#if LMS_TAGLIB_HAS_TRUEAUDIO
             ".tta",
+#endif
+#if LMS_TAGLIB_HAS_MP4
             ".m4a",
             ".m4r",
             ".m4b",
             ".m4p",
             ".3g2",
             ".m4v",
+#endif
+#if LMS_TAGLIB_HAS_ASF
             ".wma",
             ".asf",
+#endif
+#if LMS_TAGLIB_HAS_RIFF
             ".aif",
             ".aiff",
             ".afc",
             ".aifc",
             ".wav",
-#if LMS_TAGLIB_HAS_ADTS
-            ".aac",
 #endif
 #if LMS_TAGLIB_HAS_DSF
             ".dsf",
+#endif
+#if LMS_TAGLIB_HAS_SHORTEN
+            ".shn",
 #endif
         };
 
@@ -138,6 +167,7 @@ namespace lms::audio::taglib::utils
         // MP3
         if (ext == "MP3" || ext == "MP2" || ext == "AAC")
             file = std::make_unique<TagLib::MPEG::File>(stream, TagLib::ID3v2::FrameFactory::instance(), readAudioProperties, audioPropertiesStyle);
+#if LMS_TAGLIB_HAS_VORBIS
         // VORBIS
         else if (ext == "OGG")
             file = std::make_unique<TagLib::Ogg::Vorbis::File>(stream, readAudioProperties, audioPropertiesStyle);
@@ -154,6 +184,8 @@ namespace lms::audio::taglib::utils
             file = std::make_unique<TagLib::Ogg::Speex::File>(stream, readAudioProperties, audioPropertiesStyle);
         else if (ext == "OPUS")
             file = std::make_unique<TagLib::Ogg::Opus::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
+#if LMS_TAGLIB_HAS_APE
         // APE
         else if (ext == "MPC")
             file = std::make_unique<TagLib::MPC::File>(stream, readAudioProperties, audioPropertiesStyle);
@@ -161,23 +193,36 @@ namespace lms::audio::taglib::utils
             file = std::make_unique<TagLib::WavPack::File>(stream, readAudioProperties, audioPropertiesStyle);
         else if (ext == "APE")
             file = std::make_unique<TagLib::APE::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
+#if LMS_TAGLIB_HAS_TRUEAUDIO
         // TRUEAUDIO
         else if (ext == "TTA")
             file = std::make_unique<TagLib::TrueAudio::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
+#if LMS_TAGLIB_HAS_MP4
         // MP4
         else if (ext == "M4A" || ext == "M4R" || ext == "M4B" || ext == "M4P" || ext == "MP4" || ext == "3G2" || ext == "M4V")
             file = std::make_unique<TagLib::MP4::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
+#if LMS_TAGLIB_HAS_ASF
         // ASF
         else if (ext == "WMA" || ext == "ASF")
             file = std::make_unique<TagLib::ASF::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
+#if LMS_TAGLIB_HAS_RIFF
         // RIFF
         else if (ext == "AIF" || ext == "AIFF" || ext == "AFC" || ext == "AIFC")
             file = std::make_unique<TagLib::RIFF::AIFF::File>(stream, readAudioProperties, audioPropertiesStyle);
         else if (ext == "WAV")
             file = std::make_unique<TagLib::RIFF::WAV::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
 #if LMS_TAGLIB_HAS_DSF
         else if (ext == "DSF")
             file = std::make_unique<TagLib::DSF::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
+#if LMS_TAGLIB_HAS_SHORTEN
+        else if (ext == "SHN")
+            file = std::make_unique<TagLib::Shorten::File>(stream, readAudioProperties, audioPropertiesStyle);
 #endif
 
         if (file && !file->isValid())
@@ -193,6 +238,7 @@ namespace lms::audio::taglib::utils
 
         if (TagLib::MPEG::File::isSupported(stream))
             file = std::make_unique<TagLib::MPEG::File>(stream, TagLib::ID3v2::FrameFactory::instance(), readAudioProperties, audioPropertiesStyle);
+#if LMS_TAGLIB_HAS_VORBIS
         // VORBIS
         else if (TagLib::Ogg::Vorbis::File::isSupported(stream))
             file = std::make_unique<TagLib::Ogg::Vorbis::File>(stream, readAudioProperties, audioPropertiesStyle);
@@ -204,6 +250,8 @@ namespace lms::audio::taglib::utils
             file = std::make_unique<TagLib::Ogg::Speex::File>(stream, readAudioProperties, audioPropertiesStyle);
         else if (TagLib::Ogg::Opus::File::isSupported(stream))
             file = std::make_unique<TagLib::Ogg::Opus::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
+#if LMS_TAGLIB_HAS_APE
         // APE
         else if (TagLib::MPC::File::isSupported(stream))
             file = std::make_unique<TagLib::MPC::File>(stream, readAudioProperties, audioPropertiesStyle);
@@ -211,23 +259,36 @@ namespace lms::audio::taglib::utils
             file = std::make_unique<TagLib::WavPack::File>(stream, readAudioProperties, audioPropertiesStyle);
         else if (TagLib::APE::File::isSupported(stream))
             file = std::make_unique<TagLib::APE::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
+#if LMS_TAGLIB_HAS_TRUEAUDIO
         // TRUEAUDIO
         else if (TagLib::TrueAudio::File::isSupported(stream))
             file = std::make_unique<TagLib::TrueAudio::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
+#if LMS_TAGLIB_HAS_MP4
         // MP4
         else if (TagLib::MP4::File::isSupported(stream))
             file = std::make_unique<TagLib::MP4::File>(stream, readAudioProperties, audioPropertiesStyle);
-        //_ASF
+#endif
+#if LMS_TAGLIB_HAS_ASF
+        // ASF
         else if (TagLib::ASF::File::isSupported(stream))
             file = std::make_unique<TagLib::ASF::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
+#if LMS_TAGLIB_HAS_RIFF
         // RIFF
         else if (TagLib::RIFF::AIFF::File::isSupported(stream))
             file = std::make_unique<TagLib::RIFF::AIFF::File>(stream, readAudioProperties, audioPropertiesStyle);
         else if (TagLib::RIFF::WAV::File::isSupported(stream))
             file = std::make_unique<TagLib::RIFF::WAV::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
 #if LMS_TAGLIB_HAS_DSF
         else if (TagLib::DSF::File::isSupported(stream))
             file = std::make_unique<TagLib::DSF::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif
+#if LMS_TAGLIB_HAS_SHORTEN
+        else if (TagLib::Shorten::File::isSupported(stream))
+            file = std::make_unique<TagLib::Shorten::File>(stream, readAudioProperties, audioPropertiesStyle);
 #endif
 
         if (file && !file->isValid())

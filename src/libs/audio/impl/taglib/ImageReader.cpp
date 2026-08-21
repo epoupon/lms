@@ -21,22 +21,33 @@
 
 #include "TagLibDefs.hpp"
 
-#include <taglib/aifffile.h>
-#include <taglib/apetag.h>
-#include <taglib/asffile.h>
 #include <taglib/attachedpictureframe.h>
-#include <taglib/flacfile.h>
-#include <taglib/flacpicture.h>
 #include <taglib/id3v2tag.h>
-#include <taglib/mp4coverart.h>
-#include <taglib/mp4file.h>
-#include <taglib/mpcfile.h>
 #include <taglib/mpegfile.h>
-#include <taglib/opusfile.h>
 #include <taglib/tfile.h>
-#include <taglib/vorbisfile.h>
-#include <taglib/wavfile.h>
-#include <taglib/wavpackfile.h>
+
+#if LMS_TAGLIB_HAS_RIFF
+    #include <taglib/aifffile.h>
+    #include <taglib/wavfile.h>
+#endif
+#if LMS_TAGLIB_HAS_APE
+    #include <taglib/apetag.h>
+    #include <taglib/mpcfile.h>
+    #include <taglib/wavpackfile.h>
+#endif
+#if LMS_TAGLIB_HAS_ASF
+    #include <taglib/asffile.h>
+#endif
+#if LMS_TAGLIB_HAS_VORBIS
+    #include <taglib/flacfile.h>
+    #include <taglib/flacpicture.h>
+    #include <taglib/opusfile.h>
+    #include <taglib/vorbisfile.h>
+#endif
+#if LMS_TAGLIB_HAS_MP4
+    #include <taglib/mp4coverart.h>
+    #include <taglib/mp4file.h>
+#endif
 
 #include "core/String.hpp"
 
@@ -95,6 +106,7 @@ namespace lms::audio::taglib
             return core::media::ImageType::Unknown;
         }
 
+#if LMS_TAGLIB_HAS_ASF
         core::media::ImageType imageTypeFromfromASF(TagLib::ASF::Picture::Type type)
         {
             switch (type)
@@ -145,7 +157,9 @@ namespace lms::audio::taglib
 
             return core::media::ImageType::Unknown;
         }
+#endif // LMS_TAGLIB_HAS_ASF
 
+#if LMS_TAGLIB_HAS_VORBIS
         core::media::ImageType imageTypeFromfromFLAC(TagLib::FLAC::Picture::Type type)
         {
             switch (type)
@@ -196,7 +210,9 @@ namespace lms::audio::taglib
 
             return core::media::ImageType::Unknown;
         }
+#endif // LMS_TAGLIB_HAS_VORBIS
 
+#if LMS_TAGLIB_HAS_MP4
         const char* mp4ImageFormatToMimeType(TagLib::MP4::CoverArt::Format format)
         {
             switch (format)
@@ -215,8 +231,9 @@ namespace lms::audio::taglib
 
             return "application/octet-stream";
         }
+#endif // LMS_TAGLIB_HAS_MP4
 
-#if LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES
+#if LMS_TAGLIB_HAS_APE && LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES
         core::media::ImageType imageTypeFromAPEPictureType(std::string_view pictureType)
         {
             if (core::stringUtils::stringCaseInsensitiveContains(pictureType, "front"))
@@ -226,7 +243,7 @@ namespace lms::audio::taglib
 
             return core::media::ImageType::Unknown;
         }
-#endif // LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES
+#endif // LMS_TAGLIB_HAS_APE && LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES
 
         void visitID3V2Images(const ::TagLib::ID3v2::Tag& id3v2Tags, const ImageReader::ImageVisitor& visitor)
         {
@@ -250,6 +267,7 @@ namespace lms::audio::taglib
             }
         }
 
+#if LMS_TAGLIB_HAS_ASF
         void visitASFImages(const ::TagLib::ASF::Tag& asfTags, const ImageReader::ImageVisitor& visitor)
         {
             for (const ::TagLib::ASF::Attribute& attribute : asfTags.attribute("WM/Picture"))
@@ -270,17 +288,19 @@ namespace lms::audio::taglib
                 visitor(image);
             }
         }
+#endif // LMS_TAGLIB_HAS_ASF
 
+#if LMS_TAGLIB_HAS_MP4
         void visitMP4Images(const ::TagLib::MP4::File& mp4File, const ImageReader::ImageVisitor& visitor)
         {
             const ::TagLib::MP4::Item coverItem{ mp4File.tag()->item("covr") };
             if (!coverItem.isValid())
                 return;
 
-#if LMS_TAGLIB_HAS_MP4_ITEM_TYPE
+    #if LMS_TAGLIB_HAS_MP4_ITEM_TYPE
             if (coverItem.type() != ::TagLib::MP4::Item::Type::CoverArtList)
                 return;
-#endif
+    #endif
             ::TagLib::MP4::CoverArtList coverArtList{ coverItem.toCoverArtList() };
 
             bool firstCover{ true };
@@ -300,7 +320,9 @@ namespace lms::audio::taglib
                 visitor(image);
             }
         }
+#endif // LMS_TAGLIB_HAS_MP4
 
+#if LMS_TAGLIB_HAS_VORBIS
         void visitFLACImages(const ::TagLib::List<TagLib::FLAC::Picture*>& pictureList, const ImageReader::ImageVisitor& visitor)
         {
             for (TagLib::FLAC::Picture* flacPicture : pictureList)
@@ -317,10 +339,12 @@ namespace lms::audio::taglib
                 visitor(image);
             }
         }
+#endif // LMS_TAGLIB_HAS_VORBIS
 
+#if LMS_TAGLIB_HAS_APE
         void visitAPEImages([[maybe_unused]] const ::TagLib::APE::Tag& apeTags, [[maybe_unused]] const ImageReader::ImageVisitor& visitor)
         {
-#if LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES
+    #if LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES
             const ::TagLib::List<TagLib::VariantMap> pictureProperties{ apeTags.complexProperties("PICTURE") };
             for (const ::TagLib::VariantMap& pictureProperty : pictureProperties)
             {
@@ -342,8 +366,9 @@ namespace lms::audio::taglib
                 if (!image.data.empty())
                     visitor(image);
             }
-#endif // LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES
+    #endif // LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES
         }
+#endif // LMS_TAGLIB_HAS_APE
     } // namespace
 
     ImageReader::ImageReader(::TagLib::File& file)
@@ -361,17 +386,22 @@ namespace lms::audio::taglib
             if (mp3File->hasID3v2Tag())
                 visitID3V2Images(*mp3File->ID3v2Tag(), visitor);
         }
+#if LMS_TAGLIB_HAS_MP4
         // MP4
         else if (const TagLib::MP4::File * mp4File{ dynamic_cast<const TagLib::MP4::File*>(&_file) })
         {
             visitMP4Images(*mp4File, visitor);
         }
+#endif // LMS_TAGLIB_HAS_MP4
+#if LMS_TAGLIB_HAS_ASF
         // WMA
         else if (const TagLib::ASF::File * asfFile{ dynamic_cast<const TagLib::ASF::File*>(&_file) })
         {
             if (const ::TagLib::ASF::Tag * tag{ asfFile->tag() })
                 visitASFImages(*tag, visitor);
         }
+#endif // LMS_TAGLIB_HAS_ASF
+#if LMS_TAGLIB_HAS_VORBIS
         // FLAC
         else if (TagLib::FLAC::File * flacFile{ dynamic_cast<TagLib::FLAC::File*>(&_file) })
         {
@@ -390,6 +420,8 @@ namespace lms::audio::taglib
         {
             visitFLACImages(opusFile->tag()->pictureList(), visitor);
         }
+#endif // LMS_TAGLIB_HAS_VORBIS
+#if LMS_TAGLIB_HAS_RIFF
         // Aiff
         else if (const TagLib::RIFF::AIFF::File * aiffFile{ dynamic_cast<TagLib::RIFF::AIFF::File*>(&_file) })
         {
@@ -402,6 +434,8 @@ namespace lms::audio::taglib
             if (wavFile->hasID3v2Tag())
                 visitID3V2Images(*wavFile->ID3v2Tag(), visitor);
         }
+#endif // LMS_TAGLIB_HAS_RIFF
+#if LMS_TAGLIB_HAS_APE
         // MPC
         else if (TagLib::MPC::File * mpcFile{ dynamic_cast<TagLib::MPC::File*>(&_file) })
         {
@@ -414,5 +448,6 @@ namespace lms::audio::taglib
             if (wavPackFile->hasAPETag())
                 visitAPEImages(*wavPackFile->APETag(), visitor);
         }
+#endif // LMS_TAGLIB_HAS_APE
     }
 } // namespace lms::audio::taglib
