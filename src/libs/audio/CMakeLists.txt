@@ -30,6 +30,7 @@ add_library(lmsaudio STATIC
 	impl/utils/AudioDecodeStreamer.cpp
 	impl/AudioFileInfoParser.cpp
 	impl/AudioOutput.cpp
+	impl/Init.cpp
 	impl/MusicNNEmbeddingExtractorCreator.cpp
 	impl/PcmTypes.cpp
 	impl/TagReader.cpp

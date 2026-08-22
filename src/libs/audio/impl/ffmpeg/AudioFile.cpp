@@ -57,121 +57,6 @@ namespace lms::audio::ffmpeg
 #endif // LMS_FFMPEG_HAS_AV_DICT_ITERATE
         }
 
-        std::optional<core::media::Container> avdemuxerToContainerType(std::string_view name)
-        {
-            if (name == "aiff" || name == "aifc" || name == "aif")
-                return core::media::Container::AIFF;
-            if (name == "ape")
-                return core::media::Container::APE;
-            if (name.starts_with("asf"))
-                return core::media::Container::ASF;
-            if (name == "dsf")
-                return core::media::Container::DSF;
-            if (name == "flac")
-                return core::media::Container::FLAC;
-            if (name.find("mp4") != std::string_view::npos)
-                return core::media::Container::MP4;
-            if (name.starts_with("mpc"))
-                return core::media::Container::MPC;
-            if (name == "mp3")
-                return core::media::Container::MPEG;
-            if (name == "ogg")
-                return core::media::Container::Ogg;
-            if (name == "shn")
-                return core::media::Container::Shorten;
-            if (name == "tta")
-                return core::media::Container::TrueAudio;
-            if (name == "wav")
-                return core::media::Container::WAV;
-            if (name == "wv")
-                return core::media::Container::WavPack;
-
-            return std::nullopt;
-        }
-
-        std::optional<core::media::Codec> avcodecToCodecType(AVCodecID codec)
-        {
-            switch (codec)
-            {
-            case AV_CODEC_ID_AAC:
-                return core::media::Codec::AAC;
-            case AV_CODEC_ID_AC3:
-                return core::media::Codec::AC3;
-            case AV_CODEC_ID_ALAC:
-                return core::media::Codec::ALAC;
-            case AV_CODEC_ID_APE:
-                return core::media::Codec::APE;
-            case AV_CODEC_ID_DSD_LSBF:
-            case AV_CODEC_ID_DSD_LSBF_PLANAR:
-            case AV_CODEC_ID_DSD_MSBF:
-            case AV_CODEC_ID_DSD_MSBF_PLANAR:
-                return core::media::Codec::DSD;
-            case AV_CODEC_ID_EAC3:
-                return core::media::Codec::EAC3;
-            case AV_CODEC_ID_FLAC:
-                return core::media::Codec::FLAC;
-            case AV_CODEC_ID_MP3:
-                return core::media::Codec::MP3;
-            case AV_CODEC_ID_MP4ALS:
-                return core::media::Codec::MP4ALS;
-            case AV_CODEC_ID_MUSEPACK7:
-                return core::media::Codec::MPC7;
-            case AV_CODEC_ID_MUSEPACK8:
-                return core::media::Codec::MPC8;
-            case AV_CODEC_ID_OPUS:
-                return core::media::Codec::Opus;
-            case AV_CODEC_ID_PCM_S16LE:
-            case AV_CODEC_ID_PCM_S16BE:
-            case AV_CODEC_ID_PCM_U16LE:
-            case AV_CODEC_ID_PCM_U16BE:
-            case AV_CODEC_ID_PCM_S8:
-            case AV_CODEC_ID_PCM_U8:
-            case AV_CODEC_ID_PCM_S32LE:
-            case AV_CODEC_ID_PCM_S32BE:
-            case AV_CODEC_ID_PCM_U32LE:
-            case AV_CODEC_ID_PCM_U32BE:
-            case AV_CODEC_ID_PCM_S24LE:
-            case AV_CODEC_ID_PCM_S24BE:
-            case AV_CODEC_ID_PCM_U24LE:
-            case AV_CODEC_ID_PCM_U24BE:
-            case AV_CODEC_ID_PCM_S16LE_PLANAR:
-            case AV_CODEC_ID_PCM_F32BE:
-            case AV_CODEC_ID_PCM_F32LE:
-            case AV_CODEC_ID_PCM_F64BE:
-            case AV_CODEC_ID_PCM_F64LE:
-            case AV_CODEC_ID_PCM_S8_PLANAR:
-            case AV_CODEC_ID_PCM_S24LE_PLANAR:
-            case AV_CODEC_ID_PCM_S32LE_PLANAR:
-            case AV_CODEC_ID_PCM_S16BE_PLANAR:
-            case AV_CODEC_ID_PCM_S64LE:
-            case AV_CODEC_ID_PCM_S64BE:
-            case AV_CODEC_ID_PCM_F16LE:
-            case AV_CODEC_ID_PCM_F24LE:
-            case AV_CODEC_ID_PCM_MULAW:
-            case AV_CODEC_ID_PCM_ALAW:
-            case AV_CODEC_ID_ADPCM_G726:
-            case AV_CODEC_ID_ADPCM_G722:
-            case AV_CODEC_ID_ADPCM_G726LE:
-                return core::media::Codec::PCM;
-            case AV_CODEC_ID_SHORTEN:
-                return core::media::Codec::Shorten;
-            case AV_CODEC_ID_VORBIS:
-                return core::media::Codec::Vorbis;
-            case AV_CODEC_ID_WAVPACK:
-                return core::media::Codec::WavPack;
-            case AV_CODEC_ID_WMALOSSLESS:
-                return core::media::Codec::WMA9Lossless;
-            case AV_CODEC_ID_WMAPRO:
-                return core::media::Codec::WMA9Pro;
-            case AV_CODEC_ID_WMAV1:
-                return core::media::Codec::WMA1;
-            case AV_CODEC_ID_WMAV2:
-                return core::media::Codec::WMA2;
-
-            default:
-                return std::nullopt;
-            }
-        }
     } // namespace
 
     AudioFile::AudioFile(const std::filesystem::path& p)
@@ -179,7 +64,7 @@ namespace lms::audio::ffmpeg
     {
         LMS_SCOPED_TRACE_DETAILED("MetaData", "FFmpegParseFile");
 
-        utils::init();
+        assert(utils::isInit());
 
         int error{ avformat_open_input(&_context, _p.c_str(), nullptr, nullptr) };
         if (error < 0)
@@ -211,7 +96,7 @@ namespace lms::audio::ffmpeg
     {
         ContainerInfo info;
 
-        info.container = avdemuxerToContainerType(_context->iformat->name);
+        info.container = utils::containerFromFormatName(_context->iformat->name);
         info.containerName = _context->iformat->name;
 
         if (_context->bit_rate > 0)
@@ -363,7 +248,7 @@ namespace lms::audio::ffmpeg
         res.emplace();
 
         res->index = streamIndex;
-        res->codec = avcodecToCodecType(avstream->codecpar->codec_id);
+        res->codec = utils::codecFromAVCodecId(avstream->codecpar->codec_id);
         res->codecName = ::avcodec_get_name(avstream->codecpar->codec_id);
 
         if (avstream->codecpar->bit_rate)

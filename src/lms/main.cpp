@@ -38,6 +38,7 @@
 
 #include "audio/IAudioOutput.hpp"
 #include "audio/IMusicNNEmbeddingExtractor.hpp"
+#include "audio/Init.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/ServerInfo.hpp"
@@ -401,6 +402,8 @@ namespace lms
                 LMS_LOG(MAIN, INFO, "locale set to '" << locale << "'");
             else
                 LMS_LOG(MAIN, WARNING, "Cannot set locale from system");
+
+            audio::init();
 
             // Make sure the working directory exists
             const std::filesystem::path workingDirectoryPath{ config->getPath("working-dir", "/var/lms") };

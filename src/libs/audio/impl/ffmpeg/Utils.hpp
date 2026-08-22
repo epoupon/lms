@@ -20,13 +20,27 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <span>
+#include <string_view>
+
+extern "C"
+{
+#include <libavcodec/codec_id.h>
+}
+
+#include "core/media/Codec.hpp"
+#include "core/media/Container.hpp"
 
 namespace lms::audio::ffmpeg::utils
 {
     std::string averrorToString(int error);
 
-    std::span<const std::filesystem::path> getSupportedExtensions();
+    std::span<const std::filesystem::path> getSupportedDemuxerExtensions();
+
+    std::optional<core::media::Container> containerFromFormatName(std::string_view name);
+    std::optional<core::media::Codec> codecFromAVCodecId(AVCodecID codec);
 
     void init();
+    bool isInit();
 } // namespace lms::audio::ffmpeg::utils

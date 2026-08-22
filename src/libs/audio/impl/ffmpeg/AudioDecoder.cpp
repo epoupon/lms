@@ -106,7 +106,7 @@ namespace lms::audio::ffmpeg
         if (_parameters.channelCount > AV_NUM_DATA_POINTERS)
             throw Exception{ "Channel count exceeds maximum supported channels" };
 
-        utils::init();
+        assert(utils::isInit());
 
         // TODO: use AudioFile wrapper?
         {

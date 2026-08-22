@@ -21,15 +21,19 @@
 
 #include <boost/program_options.hpp>
 
+#include "core/ILogger.hpp"
+
 #include "audio/Exception.hpp"
 #include "audio/IMusicNNEmbeddingExtractor.hpp"
-#include "core/ILogger.hpp"
+#include "audio/Init.hpp"
 
 int main(int argc, char* argv[])
 {
     try
     {
         using namespace lms;
+        audio::init();
+
         namespace program_options = boost::program_options;
 
         program_options::options_description options{ "Options" };

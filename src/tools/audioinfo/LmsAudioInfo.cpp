@@ -35,6 +35,7 @@
 #include "audio/IAudioFileInfoParser.hpp"
 #include "audio/IImageReader.hpp"
 #include "audio/ITagReader.hpp"
+#include "audio/Init.hpp"
 
 namespace lms::audio
 {
@@ -161,6 +162,8 @@ int main(int argc, char* argv[])
     try
     {
         using namespace lms;
+        audio::init();
+
         namespace program_options = boost::program_options;
 
         program_options::options_description options{ "Options" };

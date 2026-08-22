@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,22 +17,14 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "AudioFileInfoParser.hpp"
+#include "audio/Init.hpp"
 
-#include <memory>
+#include "ffmpeg/Utils.hpp"
 
-#include "AudioFileInfo.hpp"
-#include "Utils.hpp"
-
-namespace lms::audio::ffmpeg
+namespace lms::audio
 {
-    std::unique_ptr<IAudioFileInfo> AudioFileInfoParser::parse(const std::filesystem::path& p, const AudioFileInfoParseOptions& parseOptions) const
+    void init()
     {
-        return std::make_unique<AudioFileInfo>(p, parseOptions);
+        ffmpeg::utils::init();
     }
-
-    std::span<const std::filesystem::path> AudioFileInfoParser::getSupportedExtensions() const
-    {
-        return utils::getSupportedDemuxerExtensions();
-    }
-} // namespace lms::audio::ffmpeg
+} // namespace lms::audio

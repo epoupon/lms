@@ -95,23 +95,6 @@ namespace lms::core::stringUtils
         }
 
         template<typename StringType>
-        std::string joinStrings(std::span<const StringType> strings, std::string_view delimiter)
-        {
-            std::string res;
-            bool first{ true };
-
-            for (const StringType& str : strings)
-            {
-                if (!first)
-                    res += delimiter;
-                res += str;
-                first = false;
-            }
-
-            return res;
-        }
-
-        template<typename StringType>
         std::vector<std::string_view> splitString(std::string_view str, std::span<const StringType> separators)
         {
             std::vector<std::string_view> res;
@@ -246,26 +229,6 @@ namespace lms::core::stringUtils
     std::vector<std::string_view> splitString(std::string_view str, std::span<const std::string> separators)
     {
         return detail::splitString(str, separators);
-    }
-
-    std::string joinStrings(std::span<const std::string_view> strings, std::string_view delimiter)
-    {
-        return detail::joinStrings(strings, delimiter);
-    }
-
-    std::string joinStrings(std::span<const std::string> strings, std::string_view delimiter)
-    {
-        return detail::joinStrings(strings, delimiter);
-    }
-
-    std::string joinStrings(std::span<const std::string> strings, char delimiter)
-    {
-        return detail::joinStrings(strings, std::string_view{ &delimiter, 1 });
-    }
-
-    std::string joinStrings(std::span<const std::string_view> strings, char delimiter)
-    {
-        return detail::joinStrings(strings, std::string_view{ &delimiter, 1 });
     }
 
     std::string escapeAndJoinStrings(std::span<const std::string_view> strings, char delimiter, char escapeChar)

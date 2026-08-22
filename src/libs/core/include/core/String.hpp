@@ -44,10 +44,20 @@ namespace lms::core::stringUtils
     [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, std::span<const std::string_view> separators);
     [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, std::span<const std::string> separators);
 
-    [[nodiscard]] std::string joinStrings(std::span<const std::string> strings, std::string_view delimiter);
-    [[nodiscard]] std::string joinStrings(std::span<const std::string_view> strings, std::string_view delimiter);
-    [[nodiscard]] std::string joinStrings(std::span<const std::string> strings, char delimiter);
-    [[nodiscard]] std::string joinStrings(std::span<const std::string_view> strings, char delimiter);
+    template<typename StringContainer, typename Delimiter>
+    [[nodiscard]] std::string joinStrings(const StringContainer& strings, const Delimiter& delimiter)
+    {
+        std::string result;
+        bool first{ true };
+        for (const auto& str : strings)
+        {
+            if (!first)
+                result += delimiter;
+            result += str;
+            first = false;
+        }
+        return result;
+    }
 
     [[nodiscard]] std::string escapeAndJoinStrings(std::span<const std::string_view> strings, char delimiter, char escapeChar);
     [[nodiscard]] std::vector<std::string> splitEscapedStrings(std::string_view string, char delimiter, char escapeChar);

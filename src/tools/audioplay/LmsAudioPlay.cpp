@@ -30,6 +30,7 @@
 
 #include "audio/Exception.hpp"
 #include "audio/IAudioOutput.hpp"
+#include "audio/Init.hpp"
 #include "audio/PcmTypes.hpp"
 #include "audio/utils/IAudioDecodeStreamer.hpp"
 
@@ -124,6 +125,8 @@ int main(int argc, char* argv[])
     try
     {
         using namespace lms;
+        audio::init();
+
         namespace program_options = boost::program_options;
 
         program_options::options_description options{ "Options" };
