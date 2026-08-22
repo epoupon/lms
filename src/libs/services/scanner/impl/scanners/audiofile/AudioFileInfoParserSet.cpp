@@ -50,6 +50,7 @@ namespace lms::scanner
         parserSet.taglibParser = audio::createAudioFileInfoParser(audio::AudioFileInfoParserBackend::TagLib);
         parserSet.ffmpegParser = audio::createAudioFileInfoParser(audio::AudioFileInfoParserBackend::FFmpeg);
 
+        // TagLib decides what to scan, ffmpeg is only used as a fallback
         const auto extensions{ parserSet.taglibParser->getSupportedExtensions() };
         parserSet.supportedExtensions.assign(std::cbegin(extensions), std::cend(extensions));
 
