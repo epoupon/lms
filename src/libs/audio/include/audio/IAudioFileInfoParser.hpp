@@ -22,6 +22,8 @@
 #include <filesystem>
 #include <span>
 
+#include "core/LiteralString.hpp"
+
 namespace lms::audio
 {
     class IAudioFileInfo;
@@ -58,4 +60,6 @@ namespace lms::audio
     };
     static inline constexpr AudioFileInfoParserBackend defaultAudioFileInfoParserBackend{ AudioFileInfoParserBackend::TagLib };
     std::unique_ptr<IAudioFileInfoParser> createAudioFileInfoParser(AudioFileInfoParserBackend backend = defaultAudioFileInfoParserBackend);
+
+    core::LiteralString audioFileInfoParserBackendToString(AudioFileInfoParserBackend backend);
 } // namespace lms::audio

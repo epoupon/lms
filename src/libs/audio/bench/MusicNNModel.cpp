@@ -30,10 +30,15 @@ namespace lms::audio::musicnn::benchmarks
 {
     namespace
     {
-        std::filesystem::path getMusicNNModelPathFromEnv()
+        std::filesystem::path getMusicNNModelPath()
         {
-            const char* p{ std::getenv("LMS_MUSICNN_MODEL_PATH") };
-            return p ? std::filesystem::path{ p } : std::filesystem::path{};
+            std::filesystem::path path;
+            if (const char* p{ std::getenv("LMS_MUSICNN_MODEL_PATH") })
+                path = p;
+            else
+                path = LMS_MUSICNN_DEFAULT_MODEL_PATH;
+
+            return std::filesystem::exists(path) ? path : std::filesystem::path{};
         }
 
         std::array<float, MusicNNModel::inputFrames * MusicNNModel::inputBands> makeRandomPatch()
@@ -49,10 +54,10 @@ namespace lms::audio::musicnn::benchmarks
 
     static void BM_MusicNNModel_forward(benchmark::State& state)
     {
-        const std::filesystem::path path{ getMusicNNModelPathFromEnv() };
+        const std::filesystem::path path{ getMusicNNModelPath() };
         if (path.empty())
         {
-            state.SkipWithMessage("LMS_MUSICNN_MODEL_PATH not set");
+            state.SkipWithMessage("MusicNN model not found (set LMS_MUSICNN_MODEL_PATH to override)");
             return;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,25 +17,19 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cstdlib>
+#include <gtest/gtest.h>
 
-#include <benchmark/benchmark.h>
-
-#include "audio/Init.hpp"
 #include "core/ILogger.hpp"
 #include "core/Service.hpp"
+
+#include "audio/Init.hpp"
 
 int main(int argc, char** argv)
 {
     lms::core::Service<lms::core::logging::ILogger> logger{ lms::core::logging::createLogger(lms::core::logging::Severity::ERROR) };
     lms::audio::init();
 
-    ::benchmark::Initialize(&argc, argv);
-    if (::benchmark::ReportUnrecognizedArguments(argc, argv))
-        return EXIT_FAILURE;
+    ::testing::InitGoogleTest(&argc, argv);
 
-    ::benchmark::RunSpecifiedBenchmarks();
-    ::benchmark::Shutdown();
-
-    return EXIT_SUCCESS;
+    return RUN_ALL_TESTS();
 }
