@@ -28,6 +28,11 @@ namespace lms::audio::tests
         return std::filesystem::path{ LMS_TEST_DATA_DIR } / fileName;
     }
 
+    std::ostream& operator<<(std::ostream& os, const TestAudioFile& file)
+    {
+        return os << file.name;
+    }
+
     std::span<const TestAudioFile> getTestAudioFiles()
     {
         static constexpr std::array files{

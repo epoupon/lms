@@ -2,6 +2,7 @@ include(GoogleTest)
 
 add_executable(test-audio
 	Audio.cpp
+	AudioDecoder.cpp
 	AudioFileInfoParser.cpp
 	MelFilterBank.cpp
 	MusicNNEmbeddings.cpp

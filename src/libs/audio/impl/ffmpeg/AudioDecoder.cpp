@@ -45,6 +45,11 @@ namespace lms::audio
     {
         return std::make_unique<ffmpeg::AudioDecoder>(filePath, offset, parameters);
     }
+
+    bool isDecodingSupported(core::media::Container container, core::media::Codec codec)
+    {
+        return ffmpeg::utils::isDemuxingSupported(container) && ffmpeg::utils::isDecodingSupported(codec);
+    }
 } // namespace lms::audio
 
 namespace lms::audio::ffmpeg

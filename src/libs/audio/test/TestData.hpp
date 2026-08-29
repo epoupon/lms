@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <filesystem>
+#include <ostream>
 #include <span>
 #include <string_view>
 
@@ -48,6 +49,8 @@ namespace lms::audio::tests
 
         std::filesystem::path getPath() const;
     };
+
+    std::ostream& operator<<(std::ostream& os, const TestAudioFile& file);
 
     std::span<const TestAudioFile> getTestAudioFiles();
 } // namespace lms::audio::tests
