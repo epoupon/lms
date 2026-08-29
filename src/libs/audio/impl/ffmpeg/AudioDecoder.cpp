@@ -159,7 +159,7 @@ namespace lms::audio::ffmpeg
         }
 
         {
-            _estimatedDuration = std::chrono::milliseconds{ _context->duration == AV_NOPTS_VALUE ? 0 : _context->duration / AV_TIME_BASE * 1'000 };
+            _estimatedDuration = std::chrono::milliseconds{ _context->duration == AV_NOPTS_VALUE ? 0 : _context->duration * 1'000 / AV_TIME_BASE };
             if (_estimatedDuration > offset)
                 _estimatedDuration = _estimatedDuration - std::chrono::duration_cast<std::chrono::milliseconds>(offset);
             else

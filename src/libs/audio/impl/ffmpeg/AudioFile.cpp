@@ -101,7 +101,7 @@ namespace lms::audio::ffmpeg
 
         if (_context->bit_rate > 0)
             info.bitrate = _context->bit_rate;
-        info.duration = std::chrono::milliseconds{ _context->duration == AV_NOPTS_VALUE ? 0 : _context->duration / AV_TIME_BASE * 1'000 };
+        info.duration = std::chrono::milliseconds{ _context->duration == AV_NOPTS_VALUE ? 0 : _context->duration * 1'000 / AV_TIME_BASE };
 
         return info;
     }
