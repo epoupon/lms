@@ -151,7 +151,7 @@ namespace lms::audio::ffmpeg::utils
                     core::media::Container container;
                 };
 
-                constexpr std::array<ExtensionContainer, 19> candidates{
+                constexpr std::array candidates{
                     ExtensionContainer{ ".aac", core::media::Container::MPEG }, // raw ADTS AAC, bundled under MPEG like taglib does
                     ExtensionContainer{ ".aif", core::media::Container::AIFF },
                     ExtensionContainer{ ".aifc", core::media::Container::AIFF },
@@ -168,6 +168,7 @@ namespace lms::audio::ffmpeg::utils
                     ExtensionContainer{ ".ogg", core::media::Container::Ogg },
                     ExtensionContainer{ ".opus", core::media::Container::Ogg },
                     ExtensionContainer{ ".shn", core::media::Container::Shorten },
+                    ExtensionContainer{ ".tta", core::media::Container::TrueAudio },
                     ExtensionContainer{ ".wav", core::media::Container::WAV },
                     ExtensionContainer{ ".wma", core::media::Container::ASF },
                     ExtensionContainer{ ".wv", core::media::Container::WavPack },
@@ -327,6 +328,16 @@ namespace lms::audio::ffmpeg::utils
     std::span<const std::filesystem::path> getSupportedDemuxerExtensions()
     {
         return getCapabilities().getSupportedDemuxerExtensions();
+    }
+
+    bool isDemuxingSupported(core::media::Container container)
+    {
+        return getCapabilities().isDemuxingSupported(container);
+    }
+
+    bool isDecodingSupported(core::media::Codec codec)
+    {
+        return getCapabilities().isDecodingSupported(codec);
     }
 
     void init()

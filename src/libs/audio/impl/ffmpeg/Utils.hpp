@@ -38,6 +38,9 @@ namespace lms::audio::ffmpeg::utils
 
     std::span<const std::filesystem::path> getSupportedDemuxerExtensions();
 
+    bool isDemuxingSupported(core::media::Container container);
+    bool isDecodingSupported(core::media::Codec codec);
+
     std::optional<core::media::Container> containerFromFormatName(std::string_view name);
     std::optional<core::media::Codec> codecFromAVCodecId(AVCodecID codec);
 
