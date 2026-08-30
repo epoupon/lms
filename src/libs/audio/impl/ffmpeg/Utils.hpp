@@ -35,6 +35,8 @@ extern "C"
 
 #include "audio/PcmTypes.hpp"
 
+#include "FFmpegTypes.hpp"
+
 namespace lms::audio::ffmpeg::utils
 {
     std::string averrorToString(int error);
@@ -45,6 +47,12 @@ namespace lms::audio::ffmpeg::utils
     bool isDecodingSupported(core::media::Codec codec);
     bool isMuxingSupported(core::media::Container container);
     bool isEncodingSupported(core::media::Codec codec);
+
+    bool isCodecMuxingSupported(core::media::Container container, core::media::Codec codec);
+
+    // nullptr if not supported by this build (see isEncodingSupported/isMuxingSupported)
+    const AVCodec* getEncoderForCodec(core::media::Codec codec);
+    const char* getMuxerNameForContainer(core::media::Container container);
 
     std::optional<core::media::Container> containerFromFormatName(std::string_view name);
     std::optional<core::media::Codec> codecFromAVCodecId(AVCodecID codec);

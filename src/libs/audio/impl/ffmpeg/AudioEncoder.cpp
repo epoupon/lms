@@ -145,8 +145,7 @@ namespace lms::audio::ffmpeg
         if (encoder.capabilities & AV_CODEC_CAP_EXPERIMENTAL)
             _encoderContext->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
-        LMS_LOG(TRANSCODING, DEBUG, "Using encoder '" << encoder.name << "', sample format = " << ::av_get_sample_fmt_name(sampleFormat)
-                                                      << ", sample rate = " << sampleRate << ", channel count = " << _encoderContext->ch_layout.nb_channels);
+        LMS_LOG(TRANSCODING, DEBUG, "Using encoder '" << encoder.name << "', sample format = " << ::av_get_sample_fmt_name(sampleFormat) << ", sample rate = " << sampleRate << ", channel count = " << _encoderContext->ch_layout.nb_channels);
 
         const int error{ ::avcodec_open2(_encoderContext.get(), &encoder, nullptr) };
         if (error < 0)

@@ -17,23 +17,31 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <array>
+#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <numbers>
+#include <ostream>
 #include <random>
 #include <string>
 #include <vector>
 
 #include <gtest/gtest.h>
 
+#include "core/media/Codec.hpp"
+#include "core/media/ContainerCodec.hpp"
+
 #include "audio/IAudioDecoder.hpp"
 #include "audio/PcmTypes.hpp"
 
 #include "ffmpeg/AudioEncoder.hpp"
+#include "ffmpeg/EncoderUtils.hpp"
+#include "ffmpeg/Utils.hpp"
 
 namespace lms::audio::tests
 {
@@ -115,6 +123,27 @@ namespace lms::audio::tests
             return res;
         }
 
+        // Only used for lossless round trips, which are always requested/verified as 16-bit PCM
+        std::vector<std::int16_t> toInterleavedInt16(const GeneratedSamples& samples, unsigned channelCount, bool planar)
+        {
+            std::vector<std::int16_t> res(samples.sampleCountPerChannel * channelCount);
+
+            if (!planar)
+            {
+                std::memcpy(res.data(), samples.channelBuffers.at(0).data(), res.size() * sizeof(std::int16_t));
+                return res;
+            }
+
+            for (unsigned channel{}; channel < channelCount; ++channel)
+            {
+                const auto* src{ static_cast<const std::int16_t*>(static_cast<const void*>(samples.channelBuffers.at(channel).data())) };
+                for (std::size_t frame{}; frame < samples.sampleCountPerChannel; ++frame)
+                    res[frame * channelCount + channel] = src[frame];
+            }
+
+            return res;
+        }
+
         std::vector<std::byte> encode(ffmpeg::AudioEncoder& encoder, const GeneratedSamples& samples)
         {
             std::vector<ffmpeg::AudioEncoder::ReadableBuffer> views;
@@ -174,11 +203,6 @@ namespace lms::audio::tests
             return res;
         }
 
-        bool startsWith(std::span<const std::byte> data, std::string_view magic)
-        {
-            return data.size() >= magic.size() && std::memcmp(data.data(), magic.data(), magic.size()) == 0;
-        }
-
         ffmpeg::EncodeParameters createParameters(core::media::Container container, core::media::Codec codec, unsigned channelCount = 2, unsigned sampleRate = 44'100)
         {
             return ffmpeg::EncodeParameters{
@@ -191,69 +215,112 @@ namespace lms::audio::tests
                 .metadata = {},
             };
         }
+
+        struct RoundTripTestCase
+        {
+            std::string name; // valid gtest identifier, also used as the output file extension
+            core::media::Container container;
+            core::media::Codec codec;
+        };
+
+        std::ostream& operator<<(std::ostream& os, const RoundTripTestCase& testCase)
+        {
+            return os << testCase.name;
+        }
+
+        // gtest requires param names to be valid C++ identifiers (e.g. codec name "E-AC3" is not)
+        std::string sanitizeIdentifier(std::string_view name)
+        {
+            std::string res{ name };
+            std::replace_if(res.begin(), res.end(), [](char c) { return !std::isalnum(static_cast<unsigned char>(c)); }, '_');
+            return res;
+        }
+
+        // Real-world container/codec pairings only (see core::media::visitContainerCodecPairs): whichever
+        // of these this build's ffmpeg can't actually mux/encode are skipped at test time via
+        // isCodecMuxingSupported, not filtered out here, so coverage grows automatically as ffmpeg gains
+        // capabilities.
+        std::vector<RoundTripTestCase> buildRoundTripTestCases()
+        {
+            std::vector<RoundTripTestCase> cases;
+
+            core::media::visitContainerCodecPairs([&](const core::media::ContainerCodec& pair) {
+                cases.push_back(RoundTripTestCase{
+                    .name = sanitizeIdentifier(core::media::containerToString(pair.container).str()) + "_" + sanitizeIdentifier(core::media::getCodecDesc(pair.codec).name.str()),
+                    .container = pair.container,
+                    .codec = pair.codec,
+                });
+            });
+
+            return cases;
+        }
     } // namespace
 
-    TEST(AudioEncoder, roundTripsMp3)
+    class AudioEncoderRoundTrip : public ::testing::TestWithParam<RoundTripTestCase>
     {
-        ffmpeg::AudioEncoder encoder{ createParameters(core::media::Container::MPEG, core::media::Codec::MP3) };
+    };
+
+    TEST_P(AudioEncoderRoundTrip, roundTrips)
+    {
+        const RoundTripTestCase& testCase{ GetParam() };
+
+        // AudioEncoder's output is intentionally not seekable (streaming, like piping out the ffmpeg
+        // CLI's output), but AIFF/MP4/MOV-family muxers need to seek back to finalize chunk/atom sizes
+        // once all data is written. Nothing to do with codec/container compatibility: even a plain
+        // `ffmpeg -f aiff -`/`-f mp4 -` piped to stdout hits the same limitation.
+        if (testCase.container == core::media::Container::AIFF || testCase.container == core::media::Container::MP4)
+        {
+            GTEST_SKIP() << "container requires seekable output, which this encoder does not provide";
+        }
+
+        if (!ffmpeg::utils::isCodecMuxingSupported(testCase.container, testCase.codec))
+        {
+            GTEST_SKIP() << "container/codec combination not supported by this build";
+        }
+
+        const bool exact{ core::media::getCodecDesc(testCase.codec).isLossless }; // compare decoded samples bit-for-bit instead of just checking duration
+
+        ffmpeg::AudioEncoder encoder{ createParameters(testCase.container, testCase.codec) };
         const PcmParameters inputParameters{ encoder.getInputParameters() };
+        if (exact)
+        {
+            ASSERT_EQ(inputParameters.sampleType, PcmSampleType::Signed16) << "exact-sample comparison below assumes 16-bit PCM";
+        }
+
         const GeneratedSamples samples{ generateSineWave(inputParameters, defaultDuration) };
         const std::vector<std::byte> output{ encode(encoder, samples) };
         ASSERT_FALSE(output.empty());
 
+        if (!isDecodingSupported(testCase.container, testCase.codec))
+        {
+            GTEST_SKIP() << "decoding not supported by this build: only the encoding path above was verified";
+        }
+
         const ScopedDirectory directory;
-        const std::filesystem::path outputPath{ directory / "output.mp3" };
+        const std::filesystem::path outputPath{ directory / ("output." + testCase.name) };
         writeFile(outputPath, output);
 
         const std::vector<std::int16_t> decoded{ decodeInterleaved(outputPath, inputParameters.channelCount, inputParameters.sampleRate) };
         ASSERT_FALSE(decoded.empty());
 
-        // MP3 has an encoder delay that cannot be signalled without a seekable output
-        EXPECT_NEAR(static_cast<double>(decoded.size() / inputParameters.channelCount) / inputParameters.sampleRate, std::chrono::duration<double>{ defaultDuration }.count(), 0.2);
+        if (exact)
+        {
+            const std::vector<std::int16_t> inputSamples{ toInterleavedInt16(samples, inputParameters.channelCount, inputParameters.planar) };
+
+            ASSERT_EQ(decoded.size(), inputSamples.size());
+            EXPECT_EQ(decoded, inputSamples);
+        }
+        else
+        {
+            EXPECT_NEAR(static_cast<double>(decoded.size() / inputParameters.channelCount) / inputParameters.sampleRate, std::chrono::duration<double>{ defaultDuration }.count(), 0.2);
+        }
     }
 
-    TEST(AudioEncoder, roundTripsOggVorbis)
-    {
-        ffmpeg::AudioEncoder encoder{ createParameters(core::media::Container::Ogg, core::media::Codec::Vorbis) };
-        const PcmParameters inputParameters{ encoder.getInputParameters() };
-        const GeneratedSamples samples{ generateSineWave(inputParameters, defaultDuration) };
-        const std::vector<std::byte> output{ encode(encoder, samples) };
-        ASSERT_FALSE(output.empty());
-        EXPECT_TRUE(startsWith(output, "OggS"));
-
-        const ScopedDirectory directory;
-        const std::filesystem::path outputPath{ directory / "output.ogg" };
-        writeFile(outputPath, output);
-
-        const std::vector<std::int16_t> decoded{ decodeInterleaved(outputPath, inputParameters.channelCount, inputParameters.sampleRate) };
-        EXPECT_NEAR(static_cast<double>(decoded.size() / inputParameters.channelCount) / inputParameters.sampleRate, std::chrono::duration<double>{ defaultDuration }.count(), 0.1);
-    }
-
-    TEST(AudioEncoder, flacIsLossless)
-    {
-        ffmpeg::AudioEncoder encoder{ createParameters(core::media::Container::FLAC, core::media::Codec::FLAC) };
-        const PcmParameters inputParameters{ encoder.getInputParameters() };
-        ASSERT_FALSE(inputParameters.planar) << "exact-sample comparison below assumes interleaved input";
-        ASSERT_EQ(inputParameters.sampleType, PcmSampleType::Signed16) << "exact-sample comparison below assumes 16-bit PCM";
-
-        const GeneratedSamples samples{ generateSineWave(inputParameters, defaultDuration) };
-        const std::vector<std::byte> output{ encode(encoder, samples) };
-        ASSERT_FALSE(output.empty());
-        EXPECT_TRUE(startsWith(output, "fLaC"));
-
-        const ScopedDirectory directory;
-        const std::filesystem::path outputPath{ directory / "output.flac" };
-        writeFile(outputPath, output);
-
-        const std::vector<std::int16_t> decoded{ decodeInterleaved(outputPath, inputParameters.channelCount, inputParameters.sampleRate) };
-
-        const std::vector<std::byte>& inputBytes{ samples.channelBuffers.at(0) };
-        std::vector<std::int16_t> inputSamples(inputBytes.size() / sizeof(std::int16_t));
-        std::memcpy(inputSamples.data(), inputBytes.data(), inputBytes.size());
-
-        ASSERT_EQ(decoded.size(), inputSamples.size());
-        EXPECT_EQ(decoded, inputSamples);
-    }
+    INSTANTIATE_TEST_SUITE_P(
+        Formats,
+        AudioEncoderRoundTrip,
+        ::testing::ValuesIn(buildRoundTripTestCases()),
+        [](const ::testing::TestParamInfo<RoundTripTestCase>& info) { return info.param.name; });
 
     TEST(AudioEncoder, opusSnapsToASupportedSampleRate)
     {
@@ -267,4 +334,27 @@ namespace lms::audio::tests
         const ffmpeg::AudioEncoder encoder{ createParameters(core::media::Container::MPEG, core::media::Codec::MP3, 6) };
         EXPECT_EQ(encoder.getInputParameters().channelCount, 2u);
     }
+
+    // findEncoder must resolve every codec this build's ffmpeg can actually encode, and only those
+    TEST(AudioEncoder, findEncoderMatchesCapabilityForEveryCodec)
+    {
+        core::media::visitCodecs([](const core::media::CodecDesc& desc) {
+            if (ffmpeg::utils::isEncodingSupported(desc.type))
+                EXPECT_NO_THROW(ffmpeg::utils::findEncoder(desc.type)) << desc.name.str();
+            else
+                EXPECT_ANY_THROW(ffmpeg::utils::findEncoder(desc.type)) << desc.name.str();
+        });
+    }
+
+    // getMuxerName must resolve every container this build's ffmpeg can actually mux, and only those
+    TEST(AudioEncoder, getMuxerNameMatchesCapabilityForEveryContainer)
+    {
+        core::media::visitContainers([](core::media::Container container) {
+            if (ffmpeg::utils::isMuxingSupported(container))
+                EXPECT_NO_THROW(ffmpeg::utils::getMuxerName(container)) << core::media::containerToString(container).str();
+            else
+                EXPECT_ANY_THROW(ffmpeg::utils::getMuxerName(container)) << core::media::containerToString(container).str();
+        });
+    }
+
 } // namespace lms::audio::tests

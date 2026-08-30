@@ -108,55 +108,16 @@ namespace lms::audio::ffmpeg::utils
 
     const char* getMuxerName(core::media::Container container)
     {
-        if (!isMuxingSupported(container))
+        const char* name{ getMuxerNameForContainer(container) };
+        if (!name)
             throw Exception{ "Container type " + std::string{ core::media::containerToString(container).str() } + " is not supported by this build" };
 
-        switch (container)
-        {
-        case core::media::Container::FLAC:
-            return "flac";
-        case core::media::Container::Ogg:
-            return "ogg";
-        case core::media::Container::MPEG:
-            return "mp3";
-
-        default:
-            break;
-        }
-
-        throw Exception{ "Unsupported container type " + std::string{ core::media::containerToString(container).str() } };
+        return name;
     }
 
     const AVCodec* findEncoder(core::media::Codec codec)
     {
-        const AVCodec* encoder{};
-
-        switch (codec)
-        {
-        case core::media::Codec::MP3:
-            encoder = ::avcodec_find_encoder_by_name("libmp3lame");
-            break;
-
-        case core::media::Codec::Opus:
-            encoder = ::avcodec_find_encoder_by_name("libopus");
-            if (!encoder)
-                encoder = ::avcodec_find_encoder_by_name("opus");
-            break;
-
-        case core::media::Codec::Vorbis:
-            encoder = ::avcodec_find_encoder_by_name("libvorbis");
-            if (!encoder)
-                encoder = ::avcodec_find_encoder_by_name("vorbis");
-            break;
-
-        case core::media::Codec::FLAC:
-            encoder = ::avcodec_find_encoder_by_name("flac");
-            break;
-
-        default:
-            throw Exception{ "Unhandled codec type " + codecToString(codec) };
-        }
-
+        const AVCodec* encoder{ getEncoderForCodec(codec) };
         if (!encoder)
             throw Exception{ "No encoder available for codec " + codecToString(codec) + ": check the FFmpeg libraries this build is linked against" };
 

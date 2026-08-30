@@ -20,10 +20,13 @@
 #include "Utils.hpp"
 #include "core/String.hpp"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <ranges>
+#include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 extern "C"
@@ -36,6 +39,7 @@ extern "C"
 
 #include "core/ILogger.hpp"
 #include "core/LiteralString.hpp"
+#include "core/media/ContainerCodec.hpp"
 
 #include "audio/Exception.hpp"
 
@@ -91,6 +95,27 @@ namespace lms::audio::ffmpeg::utils
             }
         }
 
+        // When several registered muxers/encoders classify to the same Container/Codec, pick a specific,
+        // deliberate one instead of depending on ffmpeg's internal iteration order
+        constexpr std::array preferredMuxerNames{
+            std::pair{ core::media::Container::ASF, std::string_view{ "asf" } }, // not "asf_stream"
+            std::pair{ core::media::Container::Ogg, std::string_view{ "ogg" } }, // not "oga"/"ogv"/"opus"/"spx"
+        };
+
+        constexpr std::array preferredEncoderNames{
+            std::pair{ core::media::Codec::AC3, std::string_view{ "ac3" } },          // not "ac3_fixed"
+            std::pair{ core::media::Codec::MP3, std::string_view{ "libmp3lame" } },   // not "libshine"
+            std::pair{ core::media::Codec::Opus, std::string_view{ "libopus" } },     // not the experimental native "opus"
+            std::pair{ core::media::Codec::Vorbis, std::string_view{ "libvorbis" } }, // not the experimental native "vorbis"
+        };
+
+        template<typename Key, typename Table>
+        std::optional<std::string_view> findPreferredName(const Table& table, Key key)
+        {
+            const auto it{ std::find_if(std::cbegin(table), std::cend(table), [&](const auto& entry) { return entry.first == key; }) };
+            return it != std::cend(table) ? std::optional{ it->second } : std::nullopt;
+        }
+
         class AvCapabilities
         {
         public:
@@ -99,17 +124,22 @@ namespace lms::audio::ffmpeg::utils
                 ::av_log_set_callback(avLogCallback);
 
                 void* opaque{};
-                while (const AVInputFormat * fmt{ ::av_demuxer_iterate(&opaque) })
+                while (const AVInputFormat * inputFormat{ ::av_demuxer_iterate(&opaque) })
                 {
-                    if (const auto c{ containerFromFormatName(fmt->name) })
+                    if (const auto c{ containerFromFormatName(inputFormat->name) })
                         _supportedDemuxers.insert(*c);
                 }
 
                 opaque = nullptr;
-                while (const AVOutputFormat * fmt{ ::av_muxer_iterate(&opaque) })
+                while (const AVOutputFormat * outputFormat{ ::av_muxer_iterate(&opaque) })
                 {
-                    if (const auto c{ containerFromFormatName(fmt->name) })
-                        _supportedMuxers.insert(*c);
+                    if (const auto container{ containerFromFormatName(outputFormat->name) })
+                    {
+                        _supportedMuxers.insert(*container);
+                        // Some containers (Ogg) register a distinct muxer name per codec (ogg/opus/spx/...), each only self-reporting its own default codec via avformat_query_codec: keep them
+                        // all, and resolve which one to use per call site (see getMuxerNameForContainer and isCodecMuxingSupported below), instead of collapsing to one choice up front.
+                        _muxersByContainer.emplace(*container, outputFormat);
+                    }
                 }
 
                 opaque = nullptr;
@@ -118,14 +148,27 @@ namespace lms::audio::ffmpeg::utils
                     if (avCodec->type != AVMEDIA_TYPE_AUDIO)
                         continue;
 
-                    const auto c{ codecFromAVCodecId(avCodec->id) };
-                    if (!c)
+                    const auto codec{ codecFromAVCodecId(avCodec->id) };
+                    if (!codec)
                         continue;
 
                     if (::av_codec_is_decoder(avCodec))
-                        _supportedDecoders.insert(*c);
-                    if (::av_codec_is_encoder(avCodec))
-                        _supportedEncoders.insert(*c);
+                        _supportedDecoders.insert(*codec);
+
+                    if (::av_codec_is_encoder(avCodec) && *codec != core::media::Codec::PCM) // PCM has one AVCodecID per bit depth/endianness combination, not handled
+                    {
+                        _supportedEncoders.insert(*codec);
+
+                        if (const auto preferred{ findPreferredName(preferredEncoderNames, *codec) })
+                        {
+                            if (*preferred == avCodec->name)
+                                _encoderByCodec[*codec] = avCodec;
+                        }
+                        else
+                        {
+                            _encoderByCodec.try_emplace(*codec, avCodec);
+                        }
+                    }
                 }
 
                 _supportedDemuxerExtensions = buildSupportedDemuxerExtensions();
@@ -148,44 +191,65 @@ namespace lms::audio::ffmpeg::utils
 
             std::span<const std::filesystem::path> getSupportedDemuxerExtensions() const { return _supportedDemuxerExtensions; }
 
+            const AVCodec* getEncoderForCodec(core::media::Codec codec) const
+            {
+                const auto it{ _encoderByCodec.find(codec) };
+                return it != _encoderByCodec.end() ? it->second : nullptr;
+            }
+
+            const char* getMuxerNameForContainer(core::media::Container container) const
+            {
+                const auto [rangeBegin, rangeEnd]{ _muxersByContainer.equal_range(container) };
+                if (rangeBegin == rangeEnd)
+                    return nullptr;
+
+                if (const auto preferred{ findPreferredName(preferredMuxerNames, container) })
+                {
+                    const auto it{ std::find_if(rangeBegin, rangeEnd, [&](const auto& entry) { return *preferred == entry.second->name; }) };
+                    if (it != rangeEnd)
+                        return it->second->name;
+                }
+
+                return rangeBegin->second->name;
+            }
+
+            bool isCodecMuxingSupported(core::media::Container container, core::media::Codec codec) const
+            {
+                const auto [rangeBegin, rangeEnd]{ _muxersByContainer.equal_range(container) };
+                if (rangeBegin == rangeEnd)
+                    return false;
+
+                const auto encoderIt{ _encoderByCodec.find(codec) };
+                if (encoderIt == _encoderByCodec.end())
+                    return false;
+
+                const AVCodecID codecId{ encoderIt->second->id };
+
+                for (auto it{ rangeBegin }; it != rangeEnd; ++it)
+                {
+                    if (::avformat_query_codec(it->second, codecId, FF_COMPLIANCE_NORMAL) > 0)
+                        return true;
+                }
+
+                return false;
+            }
+
         private:
             [[nodiscard]] std::vector<std::filesystem::path> buildSupportedDemuxerExtensions() const
             {
-                struct ExtensionContainer
-                {
-                    std::string_view extension;
-                    core::media::Container container;
-                };
-
-                constexpr std::array candidates{
-                    ExtensionContainer{ ".aac", core::media::Container::MPEG }, // raw ADTS AAC, bundled under MPEG like taglib does
-                    ExtensionContainer{ ".aif", core::media::Container::AIFF },
-                    ExtensionContainer{ ".aifc", core::media::Container::AIFF },
-                    ExtensionContainer{ ".aiff", core::media::Container::AIFF },
-                    ExtensionContainer{ ".alac", core::media::Container::MP4 }, // ALAC is muxed in MP4, same as .m4a
-                    ExtensionContainer{ ".ape", core::media::Container::APE },
-                    ExtensionContainer{ ".dsf", core::media::Container::DSF },
-                    ExtensionContainer{ ".flac", core::media::Container::FLAC },
-                    ExtensionContainer{ ".m4a", core::media::Container::MP4 },
-                    ExtensionContainer{ ".m4b", core::media::Container::MP4 },
-                    ExtensionContainer{ ".mp3", core::media::Container::MPEG },
-                    ExtensionContainer{ ".mpc", core::media::Container::MPC },
-                    ExtensionContainer{ ".oga", core::media::Container::Ogg },
-                    ExtensionContainer{ ".ogg", core::media::Container::Ogg },
-                    ExtensionContainer{ ".opus", core::media::Container::Ogg },
-                    ExtensionContainer{ ".shn", core::media::Container::Shorten },
-                    ExtensionContainer{ ".tta", core::media::Container::TrueAudio },
-                    ExtensionContainer{ ".wav", core::media::Container::WAV },
-                    ExtensionContainer{ ".wma", core::media::Container::ASF },
-                    ExtensionContainer{ ".wv", core::media::Container::WavPack },
-                };
-
                 std::vector<std::filesystem::path> result;
-                for (const auto& [extension, container] : candidates)
-                {
-                    if (isDemuxingSupported(container))
-                        result.emplace_back(extension);
-                }
+
+                core::media::visitContainerCodecPairs([&](const core::media::ContainerCodec& pair) {
+                    if (!isDemuxingSupported(pair.container))
+                        return;
+
+                    for (const std::string_view extension : pair.extensions)
+                    {
+                        if (std::find(std::cbegin(result), std::cend(result), extension) == std::cend(result))
+                            result.emplace_back(extension);
+                    }
+                });
+
                 return result;
             }
 
@@ -194,6 +258,8 @@ namespace lms::audio::ffmpeg::utils
             std::unordered_set<core::media::Codec> _supportedDecoders;
             std::unordered_set<core::media::Codec> _supportedEncoders;
             std::vector<std::filesystem::path> _supportedDemuxerExtensions;
+            std::unordered_multimap<core::media::Container, const AVOutputFormat*> _muxersByContainer;
+            std::unordered_map<core::media::Codec, const AVCodec*> _encoderByCodec;
         };
 
         const AvCapabilities& getCapabilities()
@@ -231,7 +297,7 @@ namespace lms::audio::ffmpeg::utils
             return core::media::Container::MPC;
         if (name == "mp3" || name == "aac") // raw ADTS AAC has no container of its own; taglib bundles it under MPEG too
             return core::media::Container::MPEG;
-        if (name == "ogg" || name == "opus") // "opus" is a separate, Ogg-Opus-specific muxer name
+        if (name == "ogg" || name == "oga" || name == "opus") // "oga"/"opus" are separate, codec-specific Ogg muxer names (default FLAC/Opus respectively)
             return core::media::Container::Ogg;
         if (name == "shn")
             return core::media::Container::Shorten;
@@ -354,6 +420,21 @@ namespace lms::audio::ffmpeg::utils
     bool isEncodingSupported(core::media::Codec codec)
     {
         return getCapabilities().isEncodingSupported(codec);
+    }
+
+    bool isCodecMuxingSupported(core::media::Container container, core::media::Codec codec)
+    {
+        return getCapabilities().isCodecMuxingSupported(container, codec);
+    }
+
+    const AVCodec* getEncoderForCodec(core::media::Codec codec)
+    {
+        return getCapabilities().getEncoderForCodec(codec);
+    }
+
+    const char* getMuxerNameForContainer(core::media::Container container)
+    {
+        return getCapabilities().getMuxerNameForContainer(container);
     }
 
     PcmSampleType toPcmSampleType(::AVSampleFormat format)

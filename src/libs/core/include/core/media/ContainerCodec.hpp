@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,28 +20,23 @@
 #pragma once
 
 #include <functional>
+#include <span>
+#include <string_view>
 
-#include "core/LiteralString.hpp"
+#include "core/media/Codec.hpp"
+#include "core/media/Container.hpp"
 
 namespace lms::core::media
 {
-    enum class Container
+    struct ContainerCodec
     {
-        AIFF,
-        APE, // Monkey's Audio
-        ASF, // Advanced Systems Format
-        DSF,
-        FLAC,
-        MP4,
-        MPC, // Musepack
-        MPEG,
-        Ogg,
-        Shorten,
-        TrueAudio,
-        WAV,
-        WavPack,
+        Container container;
+        Codec codec;
+        std::span<const std::string_view> extensions; // leading dot (ex: ".flac")
     };
 
-    void visitContainers(const std::function<void(Container)>& visitor);
-    core::LiteralString containerToString(Container type);
+    void visitContainerCodecPairs(const std::function<void(const ContainerCodec&)>& visitor);
+
+    // extension must be in canonical form (leading dot, lowercase, ex: ".flac"), same as ContainerCodec::extensions
+    void visitContainerCodecPairsForExtension(std::string_view extension, const std::function<void(const ContainerCodec&)>& visitor);
 } // namespace lms::core::media
