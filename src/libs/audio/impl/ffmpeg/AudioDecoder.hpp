@@ -44,6 +44,7 @@ namespace lms::audio::ffmpeg
 
         std::size_t computeSampleCountPerChannel(std::span<WritableBuffer> outputChannelBuffers) const;
         void feedDecoder();
+        void sendPendingPacket();
         bool inputFormatChanged(const AVFrame* frame) const;
         void reinitResamplerForFrame(const AVFrame* frame);
         std::size_t resampleFrame(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel, const AVFrame* inputFrame);
