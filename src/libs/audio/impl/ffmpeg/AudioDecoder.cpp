@@ -56,26 +56,9 @@ namespace lms::audio::ffmpeg
 {
     namespace
     {
-        ::AVSampleFormat toAvSampleFormat(PcmSampleType type, bool planar)
-        {
-            switch (type)
-            {
-            case PcmSampleType::Signed16:
-                return planar ? AV_SAMPLE_FMT_S16P : AV_SAMPLE_FMT_S16;
-            case PcmSampleType::Signed32:
-                return planar ? AV_SAMPLE_FMT_S32P : AV_SAMPLE_FMT_S32;
-            case PcmSampleType::Float32:
-                return planar ? AV_SAMPLE_FMT_FLTP : AV_SAMPLE_FMT_FLT;
-            case PcmSampleType::Float64:
-                return planar ? AV_SAMPLE_FMT_DBLP : AV_SAMPLE_FMT_DBL;
-            }
-
-            throw Exception{ "Unsupported PcmSampleType" };
-        }
-
         SwrContextPtr createResampler(const PcmParameters& params, const AVChannelLayout& inLayout, AVSampleFormat inFmt, int inSampleRate)
         {
-            const ::AVSampleFormat outFmt{ toAvSampleFormat(params.sampleType, params.planar) };
+            const ::AVSampleFormat outFmt{ utils::toAvSampleFormat(params.sampleType, params.planar) };
             AVChannelLayout outLayout;
             ::av_channel_layout_default(&outLayout, static_cast<int>(params.channelCount));
 
@@ -294,7 +277,7 @@ namespace lms::audio::ffmpeg
             if (outputChannelBuffers.size() != _parameters.channelCount)
                 throw Exception{ "Expected " + std::to_string(_parameters.channelCount) + " buffers for planar output" };
 
-            const int bytesPerSample{ av_get_bytes_per_sample(toAvSampleFormat(_parameters.sampleType, true)) };
+            const int bytesPerSample{ av_get_bytes_per_sample(utils::toAvSampleFormat(_parameters.sampleType, true)) };
             if (bytesPerSample <= 0)
                 throw Exception{ "Invalid bytes per sample for output format" };
 
@@ -309,7 +292,7 @@ namespace lms::audio::ffmpeg
         if (outputChannelBuffers.size() != 1)
             throw Exception{ "Expected a single buffer for interleaved output" };
 
-        const int bytesPerSample = av_get_bytes_per_sample(toAvSampleFormat(_parameters.sampleType, false));
+        const int bytesPerSample = av_get_bytes_per_sample(utils::toAvSampleFormat(_parameters.sampleType, false));
         if (bytesPerSample <= 0)
             throw Exception{ "Invalid bytes per sample for output format" };
 

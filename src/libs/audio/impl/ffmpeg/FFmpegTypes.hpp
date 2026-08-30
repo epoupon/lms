@@ -24,10 +24,15 @@
 
 extern "C"
 {
+    struct AVAudioFifo;
+    struct AVChannelLayout;
+    struct AVCodec;
     struct AVCodecContext;
     struct AVFormatContext;
     struct AVFrame;
+    struct AVIOContext;
     struct AVPacket;
+    struct AVStream;
 
     struct SwrContext;
 }
@@ -45,6 +50,25 @@ namespace lms::audio::ffmpeg
         void operator()(AVFormatContext* ctx) const noexcept;
     };
     using AVFormatContextPtr = std::unique_ptr<AVFormatContext, AvFormatContextDeleter>;
+
+    // Output format contexts must not be closed using avformat_close_input
+    struct AvFormatContextOutputDeleter
+    {
+        void operator()(AVFormatContext* ctx) const noexcept;
+    };
+    using AVFormatContextOutputPtr = std::unique_ptr<AVFormatContext, AvFormatContextOutputDeleter>;
+
+    struct AvIOContextDeleter
+    {
+        void operator()(AVIOContext* ctx) const noexcept;
+    };
+    using AVIOContextPtr = std::unique_ptr<AVIOContext, AvIOContextDeleter>;
+
+    struct AvAudioFifoDeleter
+    {
+        void operator()(AVAudioFifo* fifo) const noexcept;
+    };
+    using AVAudioFifoPtr = std::unique_ptr<AVAudioFifo, AvAudioFifoDeleter>;
 
     struct AvFrameDeleter
     {

@@ -37,6 +37,10 @@ extern "C"
 #include "core/ILogger.hpp"
 #include "core/LiteralString.hpp"
 
+#include "audio/Exception.hpp"
+
+#include "Exception.hpp"
+
 namespace lms::audio::ffmpeg::utils
 {
     namespace
@@ -139,6 +143,8 @@ namespace lms::audio::ffmpeg::utils
 
             bool isDemuxingSupported(core::media::Container container) const { return _supportedDemuxers.contains(container); }
             bool isDecodingSupported(core::media::Codec codec) const { return _supportedDecoders.contains(codec); }
+            bool isMuxingSupported(core::media::Container container) const { return _supportedMuxers.contains(container); }
+            bool isEncodingSupported(core::media::Codec codec) const { return _supportedEncoders.contains(codec); }
 
             std::span<const std::filesystem::path> getSupportedDemuxerExtensions() const { return _supportedDemuxerExtensions; }
 
@@ -338,6 +344,57 @@ namespace lms::audio::ffmpeg::utils
     bool isDecodingSupported(core::media::Codec codec)
     {
         return getCapabilities().isDecodingSupported(codec);
+    }
+
+    bool isMuxingSupported(core::media::Container container)
+    {
+        return getCapabilities().isMuxingSupported(container);
+    }
+
+    bool isEncodingSupported(core::media::Codec codec)
+    {
+        return getCapabilities().isEncodingSupported(codec);
+    }
+
+    PcmSampleType toPcmSampleType(::AVSampleFormat format)
+    {
+        switch (format)
+        {
+        case AV_SAMPLE_FMT_S16:
+        case AV_SAMPLE_FMT_S16P:
+            return PcmSampleType::Signed16;
+        case AV_SAMPLE_FMT_S32:
+        case AV_SAMPLE_FMT_S32P:
+            return PcmSampleType::Signed32;
+        case AV_SAMPLE_FMT_FLT:
+        case AV_SAMPLE_FMT_FLTP:
+            return PcmSampleType::Float32;
+        case AV_SAMPLE_FMT_DBL:
+        case AV_SAMPLE_FMT_DBLP:
+            return PcmSampleType::Float64;
+
+        default:
+            break;
+        }
+
+        throw Exception{ "Unsupported sample format " + std::string{ ::av_get_sample_fmt_name(format) ? ::av_get_sample_fmt_name(format) : "?" } };
+    }
+
+    ::AVSampleFormat toAvSampleFormat(PcmSampleType type, bool planar)
+    {
+        switch (type)
+        {
+        case PcmSampleType::Signed16:
+            return planar ? AV_SAMPLE_FMT_S16P : AV_SAMPLE_FMT_S16;
+        case PcmSampleType::Signed32:
+            return planar ? AV_SAMPLE_FMT_S32P : AV_SAMPLE_FMT_S32;
+        case PcmSampleType::Float32:
+            return planar ? AV_SAMPLE_FMT_FLTP : AV_SAMPLE_FMT_FLT;
+        case PcmSampleType::Float64:
+            return planar ? AV_SAMPLE_FMT_DBLP : AV_SAMPLE_FMT_DBL;
+        }
+
+        throw Exception{ "Unsupported PcmSampleType" };
     }
 
     void init()

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,14 +19,8 @@
 
 #pragma once
 
-#include <filesystem>
-#include <optional>
-#include <span>
-#include <string_view>
-
 extern "C"
 {
-#include <libavcodec/codec_id.h>
 #include <libavutil/samplefmt.h>
 }
 
@@ -35,23 +29,18 @@ extern "C"
 
 #include "audio/PcmTypes.hpp"
 
+#include "FFmpegTypes.hpp"
+
 namespace lms::audio::ffmpeg::utils
 {
-    std::string averrorToString(int error);
+    // Throw if the container cannot be muxed
+    const char* getMuxerName(core::media::Container container);
 
-    std::span<const std::filesystem::path> getSupportedDemuxerExtensions();
+    // Throw if no encoder is available for this codec
+    const AVCodec* findEncoder(core::media::Codec codec);
 
-    bool isDemuxingSupported(core::media::Container container);
-    bool isDecodingSupported(core::media::Codec codec);
-    bool isMuxingSupported(core::media::Container container);
-    bool isEncodingSupported(core::media::Codec codec);
-
-    std::optional<core::media::Container> containerFromFormatName(std::string_view name);
-    std::optional<core::media::Codec> codecFromAVCodecId(AVCodecID codec);
-
-    PcmSampleType toPcmSampleType(::AVSampleFormat format);
-    ::AVSampleFormat toAvSampleFormat(PcmSampleType type, bool planar);
-
-    void init();
-    bool isInit();
+    // These pick the closest configuration the encoder actually supports
+    ::AVSampleFormat pickSampleFormat(const AVCodec& encoder, PcmSampleType desiredSampleType);
+    int pickSampleRate(const AVCodec& encoder, unsigned desiredSampleRate);
+    void pickChannelLayout(const AVCodec& encoder, unsigned desiredChannelCount, AVChannelLayout& layout);
 } // namespace lms::audio::ffmpeg::utils
