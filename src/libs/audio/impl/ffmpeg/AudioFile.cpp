@@ -35,8 +35,6 @@ extern "C"
 #include "Exception.hpp"
 #include "Utils.hpp"
 
-#define LMS_FFMPEG_HAS_AV_DICT_ITERATE (LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 37, 100))
-
 namespace lms::audio::ffmpeg
 {
     namespace
@@ -46,15 +44,9 @@ namespace lms::audio::ffmpeg
             if (!dictionnary)
                 return;
 
-#if LMS_FFMPEG_HAS_AV_DICT_ITERATE
             const AVDictionaryEntry* tag{ NULL };
             while ((tag = av_dict_iterate(dictionnary, tag)))
                 res[core::stringUtils::stringToUpper(tag->key)] = tag->value;
-#else
-            AVDictionaryEntry* tag{};
-            while ((tag = av_dict_get(dictionnary, "", tag, AV_DICT_IGNORE_SUFFIX)))
-                res[core::stringUtils::stringToUpper(tag->key)] = tag->value;
-#endif // LMS_FFMPEG_HAS_AV_DICT_ITERATE
         }
 
     } // namespace
@@ -258,13 +250,8 @@ namespace lms::audio::ffmpeg
         else if (avstream->codecpar->bits_per_raw_sample)
             res->bitsPerSample = static_cast<std::size_t>(avstream->codecpar->bits_per_raw_sample);
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
-        if (avstream->codecpar->channels)
-            res->channelCount = static_cast<std::size_t>(avstream->codecpar->channels);
-#else
         if (avstream->codecpar->ch_layout.nb_channels)
             res->channelCount = static_cast<std::size_t>(avstream->codecpar->ch_layout.nb_channels);
-#endif
         assert(!res->codecName.empty()); // doc says it is never NULL
         if (avstream->codecpar->sample_rate)
             res->sampleRate = static_cast<std::size_t>(avstream->codecpar->sample_rate);

@@ -35,7 +35,7 @@ __Note__: this installation process and the default values of the configuration 
 ### Build dependencies
 __Notes__:
 * a C++20 compiler is needed
-* ffmpeg version 4 minimum is required
+* ffmpeg version 7.1 minimum is required
 ```sh
 apt-get install build-essential cmake libboost-program-options-dev libboost-system-dev libavutil-dev libavformat-dev libswresample-dev ffmpeg libconfig++-dev libstb-dev libtag-dev libpugixml-dev libgtest-dev libarchive-dev libxxhash-dev libssl-dev
 ```
