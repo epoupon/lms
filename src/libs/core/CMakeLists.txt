@@ -22,8 +22,6 @@ add_library(lmscore STATIC
 	impl/media/ImageType.cpp
 	impl/media/MimeType.cpp
 	impl/ArchiveZipper.cpp
-	impl/ChildProcess.cpp
-	impl/ChildProcessManager.cpp
 	impl/Config.cpp
 	impl/FileResourceHandler.cpp
 	impl/JobScheduler.cpp
