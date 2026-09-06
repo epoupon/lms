@@ -31,6 +31,7 @@ extern "C"
     struct AVFormatContext;
     struct AVFrame;
     struct AVIOContext;
+    struct AVOutputFormat;
     struct AVPacket;
     struct AVStream;
 

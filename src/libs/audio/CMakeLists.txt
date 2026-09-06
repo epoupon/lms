@@ -17,7 +17,6 @@ add_library(lmsaudio STATIC
 	impl/ffmpeg/AudioFile.cpp
 	impl/ffmpeg/AudioFileInfo.cpp
 	impl/ffmpeg/AudioFileInfoParser.cpp
-	impl/ffmpeg/EncoderUtils.cpp
 	impl/ffmpeg/FFmpegTypes.cpp
 	impl/ffmpeg/ImageReader.cpp
 	impl/ffmpeg/TagReader.cpp

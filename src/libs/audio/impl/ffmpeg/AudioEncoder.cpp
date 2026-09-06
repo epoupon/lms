@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <span>
 
 extern "C"
 {
@@ -40,7 +41,6 @@ extern "C"
 
 #include "audio/Exception.hpp"
 
-#include "EncoderUtils.hpp"
 #include "Exception.hpp"
 #include "Utils.hpp"
 
@@ -71,6 +71,92 @@ namespace lms::audio::ffmpeg
 
             return PcmSampleType::Signed32;
         }
+
+        // From the most to the least desirable, assuming we never want to lose precision if we can avoid it
+        std::array<PcmSampleType, 4> getSampleTypePreferences(PcmSampleType desiredSampleType)
+        {
+            switch (desiredSampleType)
+            {
+            case PcmSampleType::Signed16:
+                return { PcmSampleType::Signed16, PcmSampleType::Signed32, PcmSampleType::Float32, PcmSampleType::Float64 };
+            case PcmSampleType::Signed32:
+                return { PcmSampleType::Signed32, PcmSampleType::Float64, PcmSampleType::Float32, PcmSampleType::Signed16 };
+            case PcmSampleType::Float32:
+                return { PcmSampleType::Float32, PcmSampleType::Float64, PcmSampleType::Signed32, PcmSampleType::Signed16 };
+            case PcmSampleType::Float64:
+                return { PcmSampleType::Float64, PcmSampleType::Float32, PcmSampleType::Signed32, PcmSampleType::Signed16 };
+            }
+
+            throw Exception{ "Unsupported PcmSampleType" };
+        }
+
+        ::AVSampleFormat pickSampleFormat(core::media::Codec codec, const AVCodec& encoder, PcmSampleType desiredSampleType)
+        {
+            const std::span<const ::AVSampleFormat> supportedFormats{ utils::getSupportedSampleFormats(codec) };
+            if (supportedFormats.empty())
+                return utils::toAvSampleFormat(desiredSampleType, false);
+
+            for (const PcmSampleType sampleType : getSampleTypePreferences(desiredSampleType))
+            {
+                for (const bool planar : { false, true })
+                {
+                    const ::AVSampleFormat candidate{ utils::toAvSampleFormat(sampleType, planar) };
+                    if (std::find(std::cbegin(supportedFormats), std::cend(supportedFormats), candidate) != std::cend(supportedFormats))
+                        return candidate;
+                }
+            }
+
+            throw Exception{ "Encoder '" + std::string{ encoder.name } + "' does not support any usable sample format" };
+        }
+
+        int pickSampleRate(core::media::Codec codec, unsigned desiredSampleRate)
+        {
+            const std::span<const int> supportedSampleRates{ utils::getSupportedSampleRates(codec) };
+            if (supportedSampleRates.empty())
+                return static_cast<int>(desiredSampleRate);
+
+            // Prefer not to downsample: pick the lowest supported rate that is high enough
+            const int desired{ static_cast<int>(desiredSampleRate) };
+            int best{};
+            for (const int sampleRate : supportedSampleRates)
+            {
+                if (sampleRate >= desired && (best == 0 || sampleRate < best))
+                    best = sampleRate;
+            }
+
+            if (best != 0)
+                return best;
+
+            return *std::max_element(std::cbegin(supportedSampleRates), std::cend(supportedSampleRates));
+        }
+
+        void pickChannelLayout(core::media::Codec codec, unsigned desiredChannelCount, AVChannelLayout& layout)
+        {
+            const std::span<const AVChannelLayout* const> supportedLayouts{ utils::getSupportedChannelLayouts(codec) };
+            if (supportedLayouts.empty())
+            {
+                ::av_channel_layout_default(&layout, static_cast<int>(desiredChannelCount));
+                return;
+            }
+
+            const int desired{ static_cast<int>(desiredChannelCount) };
+            const AVChannelLayout* best{};
+            int bestScore{};
+            for (const AVChannelLayout* candidate : supportedLayouts)
+            {
+                // Prefer not to upmix: any layout narrower than requested beats any wider one
+                const int score{ candidate->nb_channels <= desired ? desired - candidate->nb_channels : 1'000 + candidate->nb_channels - desired };
+                if (!best || score < bestScore)
+                {
+                    best = candidate;
+                    bestScore = score;
+                }
+            }
+
+            const int error{ ::av_channel_layout_copy(&layout, best) };
+            if (error < 0)
+                throw FFmpegException{ "Cannot copy channel layout", error };
+        }
     } // namespace
 
     AudioEncoder::AudioEncoder(const EncodeParameters& parameters)
@@ -90,8 +176,10 @@ namespace lms::audio::ffmpeg
     void AudioEncoder::createOutputContext(const EncodeParameters& parameters)
     {
         {
+            const AVOutputFormat* muxer{ utils::findMuxer(parameters.container, parameters.codec) };
+
             ::AVFormatContext* context{};
-            const int error{ ::avformat_alloc_output_context2(&context, nullptr, utils::getMuxerName(parameters.container), nullptr) };
+            const int error{ ::avformat_alloc_output_context2(&context, muxer, nullptr, nullptr) };
             if (error < 0 || !context)
                 throw FFmpegException{ "Cannot allocate output context", error };
 
@@ -124,9 +212,9 @@ namespace lms::audio::ffmpeg
         if (!_encoderContext)
             throw Exception{ "Cannot allocate encoder context" };
 
-        const ::AVSampleFormat sampleFormat{ utils::pickSampleFormat(encoder, bitsPerSampleToPcmSampleType(parameters.bitsPerSample)) };
-        const int sampleRate{ utils::pickSampleRate(encoder, parameters.sampleRate) };
-        utils::pickChannelLayout(encoder, parameters.channelCount, _encoderContext->ch_layout);
+        const ::AVSampleFormat sampleFormat{ pickSampleFormat(parameters.codec, encoder, bitsPerSampleToPcmSampleType(parameters.bitsPerSample)) };
+        const int sampleRate{ pickSampleRate(parameters.codec, parameters.sampleRate) };
+        pickChannelLayout(parameters.codec, parameters.channelCount, _encoderContext->ch_layout);
 
         _encoderContext->sample_fmt = sampleFormat;
         _encoderContext->sample_rate = sampleRate;
@@ -135,7 +223,7 @@ namespace lms::audio::ffmpeg
         if (parameters.bitrate && !core::media::getCodecDesc(parameters.codec).isLossless)
             _encoderContext->bit_rate = *parameters.bitrate;
 
-        if (parameters.bitsPerSample && sampleFormat == AV_SAMPLE_FMT_S32)
+        if (parameters.bitsPerSample && ::av_get_bytes_per_sample(sampleFormat) == 4)
             _encoderContext->bits_per_raw_sample = static_cast<int>(*parameters.bitsPerSample);
 
         if (_formatContext->oformat->flags & AVFMT_GLOBALHEADER)

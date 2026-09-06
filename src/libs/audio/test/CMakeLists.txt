@@ -9,6 +9,8 @@ add_executable(test-audio
 	MusicNNEmbeddings.cpp
 	SpectralFrameDecoder.cpp
 	TestData.cpp
+	TestUtils.cpp
+	Transcoder.cpp
 	)
 
 target_compile_definitions(test-audio PRIVATE

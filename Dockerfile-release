@@ -53,8 +53,7 @@ RUN \
 	--disable-autodetect \
 	--disable-debug \
 	--disable-doc \
-	--disable-ffplay \
-	--disable-ffprobe \
+	--disable-programs \
 	--disable-openssl \
 	--disable-postproc \
 	--disable-pixelutils \
@@ -127,7 +126,7 @@ RUN \
 # Now copy all the stuff installed in a new folder (/tmp/fakeroot/)
 RUN \
 	mkdir -p /tmp/fakeroot/bin && \
-	for bin in ${PREFIX}/bin/ffmpeg ${PREFIX}/bin/lms*; \
+	for bin in ${PREFIX}/bin/lms*; \
 	do \
 	strip --strip-all $bin && \
 	cp $bin /tmp/fakeroot/bin/; \

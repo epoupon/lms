@@ -33,6 +33,8 @@ extern "C"
 {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/avstring.h>
+#include <libavutil/channel_layout.h>
 #include <libavutil/error.h>
 #include <libavutil/log.h>
 }
@@ -95,25 +97,203 @@ namespace lms::audio::ffmpeg::utils
             }
         }
 
-        // When several registered muxers/encoders classify to the same Container/Codec, pick a specific,
-        // deliberate one instead of depending on ffmpeg's internal iteration order
-        constexpr std::array preferredMuxerNames{
-            std::pair{ core::media::Container::ASF, std::string_view{ "asf" } }, // not "asf_stream"
-            std::pair{ core::media::Container::Ogg, std::string_view{ "ogg" } }, // not "oga"/"ogv"/"opus"/"spx"
-        };
+        constexpr std::size_t maxAlternateNames{ 2 };
+        using CandidateNames = std::array<core::LiteralString, maxAlternateNames>;
 
-        constexpr std::array preferredEncoderNames{
-            std::pair{ core::media::Codec::AC3, std::string_view{ "ac3" } },          // not "ac3_fixed"
-            std::pair{ core::media::Codec::MP3, std::string_view{ "libmp3lame" } },   // not "libshine"
-            std::pair{ core::media::Codec::Opus, std::string_view{ "libopus" } },     // not the experimental native "opus"
-            std::pair{ core::media::Codec::Vorbis, std::string_view{ "libvorbis" } }, // not the experimental native "vorbis"
-        };
-
-        template<typename Key, typename Table>
-        std::optional<std::string_view> findPreferredName(const Table& table, Key key)
+        // One entry per Codec that we want to support, preferred first
+        struct EncoderNames
         {
-            const auto it{ std::find_if(std::cbegin(table), std::cend(table), [&](const auto& entry) { return entry.first == key; }) };
-            return it != std::cend(table) ? std::optional{ it->second } : std::nullopt;
+            core::media::Codec codec;
+            CandidateNames names;
+        };
+
+        constexpr std::array encoderNamesByCodec{
+            EncoderNames{ .codec = core::media::Codec::AAC, .names = { "aac" } },
+            EncoderNames{ .codec = core::media::Codec::AC3, .names = { "ac3", "ac3_fixed" } },
+            EncoderNames{ .codec = core::media::Codec::ALAC, .names = { "alac" } },
+            EncoderNames{ .codec = core::media::Codec::EAC3, .names = { "eac3" } },
+            EncoderNames{ .codec = core::media::Codec::FLAC, .names = { "flac" } },
+            EncoderNames{ .codec = core::media::Codec::MP3, .names = { "libmp3lame", "libshine" } },
+            EncoderNames{ .codec = core::media::Codec::Opus, .names = { "libopus", "opus" } },
+            EncoderNames{ .codec = core::media::Codec::TrueAudio, .names = { "tta" } },
+            EncoderNames{ .codec = core::media::Codec::Vorbis, .names = { "libvorbis", "vorbis" } },
+            EncoderNames{ .codec = core::media::Codec::WavPack, .names = { "wavpack" } },
+            EncoderNames{ .codec = core::media::Codec::WMA1, .names = { "wmav1" } },
+            EncoderNames{ .codec = core::media::Codec::WMA2, .names = { "wmav2" } },
+        };
+
+        struct ContainerCodecFormat
+        {
+            core::media::Container container;
+            core::media::Codec codec;
+            CandidateNames demuxerNames;
+            CandidateNames muxerNames; // empty means we don't support it (like requires a seekable output)
+        };
+
+        constexpr std::array containerCodecFormats{
+            ContainerCodecFormat{ .container = core::media::Container::AIFF, .codec = core::media::Codec::PCM, .demuxerNames = { "aiff" }, .muxerNames = {} },
+            ContainerCodecFormat{ .container = core::media::Container::APE, .codec = core::media::Codec::APE, .demuxerNames = { "ape" }, .muxerNames = { "ape" } },
+            ContainerCodecFormat{ .container = core::media::Container::ASF, .codec = core::media::Codec::WMA1, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
+            ContainerCodecFormat{ .container = core::media::Container::ASF, .codec = core::media::Codec::WMA2, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
+            ContainerCodecFormat{ .container = core::media::Container::ASF, .codec = core::media::Codec::WMA9Pro, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
+            ContainerCodecFormat{ .container = core::media::Container::ASF, .codec = core::media::Codec::WMA9Lossless, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
+            ContainerCodecFormat{ .container = core::media::Container::DSF, .codec = core::media::Codec::DSD, .demuxerNames = { "dsf" }, .muxerNames = { "dsf" } },
+            ContainerCodecFormat{ .container = core::media::Container::FLAC, .codec = core::media::Codec::FLAC, .demuxerNames = { "flac" }, .muxerNames = { "flac" } },
+            ContainerCodecFormat{ .container = core::media::Container::MP4, .codec = core::media::Codec::AAC, .demuxerNames = { "mp4" }, .muxerNames = {} },
+            ContainerCodecFormat{ .container = core::media::Container::MP4, .codec = core::media::Codec::ALAC, .demuxerNames = { "mp4" }, .muxerNames = {} },
+            ContainerCodecFormat{ .container = core::media::Container::MPC, .codec = core::media::Codec::MPC7, .demuxerNames = { "mpc" }, .muxerNames = { "mpc" } },
+            ContainerCodecFormat{ .container = core::media::Container::MPC, .codec = core::media::Codec::MPC8, .demuxerNames = { "mpc8" }, .muxerNames = { "mpc8" } },
+            ContainerCodecFormat{ .container = core::media::Container::MPEG, .codec = core::media::Codec::MP3, .demuxerNames = { "mp3" }, .muxerNames = { "mp3" } },
+            ContainerCodecFormat{ .container = core::media::Container::MPEG, .codec = core::media::Codec::AAC, .demuxerNames = { "aac" }, .muxerNames = { "adts" } },
+            ContainerCodecFormat{ .container = core::media::Container::Ogg, .codec = core::media::Codec::FLAC, .demuxerNames = { "ogg" }, .muxerNames = { "ogg", "oga" } },
+            ContainerCodecFormat{ .container = core::media::Container::Ogg, .codec = core::media::Codec::Vorbis, .demuxerNames = { "ogg" }, .muxerNames = { "ogg" } },
+            ContainerCodecFormat{ .container = core::media::Container::Ogg, .codec = core::media::Codec::Opus, .demuxerNames = { "ogg" }, .muxerNames = { "ogg", "opus" } },
+            ContainerCodecFormat{ .container = core::media::Container::Shorten, .codec = core::media::Codec::Shorten, .demuxerNames = { "shn" }, .muxerNames = { "shn" } },
+            ContainerCodecFormat{ .container = core::media::Container::TrueAudio, .codec = core::media::Codec::TrueAudio, .demuxerNames = { "tta" }, .muxerNames = { "tta" } },
+            ContainerCodecFormat{ .container = core::media::Container::WAV, .codec = core::media::Codec::PCM, .demuxerNames = { "wav" }, .muxerNames = { "wav" } },
+            ContainerCodecFormat{ .container = core::media::Container::WavPack, .codec = core::media::Codec::WavPack, .demuxerNames = { "wv" }, .muxerNames = { "wv" } },
+        };
+
+        const AVInputFormat* findFirstAvailableDemuxer(const CandidateNames& names)
+        {
+            for (const core::LiteralString& name : names)
+            {
+                if (!name.empty())
+                {
+                    if (const AVInputFormat * demuxer{ ::av_find_input_format(name.c_str()) })
+                        return demuxer;
+                }
+            }
+
+            return nullptr;
+        }
+
+        const AVOutputFormat* findFirstAvailableMuxer(const CandidateNames& names)
+        {
+            for (const core::LiteralString& name : names)
+            {
+                if (!name.empty())
+                {
+                    if (const AVOutputFormat * muxer{ ::av_guess_format(name.c_str(), nullptr, nullptr) })
+                        return muxer;
+                }
+            }
+
+            return nullptr;
+        }
+
+        const AVCodec* findFirstAvailableEncoder(const CandidateNames& names)
+        {
+            for (const core::LiteralString& name : names)
+            {
+                if (!name.empty())
+                {
+                    if (const AVCodec * encoder{ ::avcodec_find_encoder_by_name(name.c_str()) })
+                        return encoder;
+                }
+            }
+
+            return nullptr;
+        }
+
+        template<typename T>
+        std::span<const T> getSupportedConfig(const AVCodec& encoder, ::AVCodecConfig config)
+        {
+            const void* values{};
+            int count{};
+            if (::avcodec_get_supported_config(nullptr, &encoder, config, 0, &values, &count) < 0 || !values)
+                return {};
+
+            return std::span<const T>{ static_cast<const T*>(values), static_cast<std::size_t>(count) };
+        }
+
+        struct EncoderInfo
+        {
+            const AVCodec* encoder;
+            std::vector<::AVSampleFormat> supportedSampleFormats;        // empty means the encoder does not restrict this
+            std::vector<int> supportedSampleRates;                       // empty means the encoder does not restrict this
+            std::vector<const AVChannelLayout*> supportedChannelLayouts; // empty means the encoder does not restrict this
+        };
+
+        EncoderInfo buildEncoderInfo(const AVCodec& encoder)
+        {
+            EncoderInfo info{};
+            info.encoder = &encoder;
+
+            const std::span<const ::AVSampleFormat> formats{ getSupportedConfig<::AVSampleFormat>(encoder, AV_CODEC_CONFIG_SAMPLE_FORMAT) };
+            info.supportedSampleFormats.assign(std::cbegin(formats), std::cend(formats));
+
+            const std::span<const int> sampleRates{ getSupportedConfig<int>(encoder, AV_CODEC_CONFIG_SAMPLE_RATE) };
+            info.supportedSampleRates.assign(std::cbegin(sampleRates), std::cend(sampleRates));
+
+            for (const AVChannelLayout& layout : getSupportedConfig<AVChannelLayout>(encoder, AV_CODEC_CONFIG_CHANNEL_LAYOUT))
+                info.supportedChannelLayouts.push_back(&layout);
+
+            return info;
+        }
+
+        // Lightweight views so the encoder capability lists can be streamed straight into LMS_LOG's
+        // ostream, without building an intermediate std::vector<std::string> just to join it back
+        struct SampleFormatList
+        {
+            std::span<const ::AVSampleFormat> formats;
+        };
+
+        struct SampleRateList
+        {
+            std::span<const int> sampleRates;
+        };
+
+        struct ChannelLayoutList
+        {
+            std::span<const AVChannelLayout* const> layouts;
+        };
+
+        std::ostream& operator<<(std::ostream& os, SampleFormatList list)
+        {
+            if (list.formats.empty())
+                return os << "any";
+
+            for (std::size_t i{}; i < list.formats.size(); ++i)
+            {
+                if (i > 0)
+                    os << ' ';
+                os << (::av_get_sample_fmt_name(list.formats[i]) ? ::av_get_sample_fmt_name(list.formats[i]) : "?");
+            }
+
+            return os;
+        }
+
+        std::ostream& operator<<(std::ostream& os, SampleRateList list)
+        {
+            if (list.sampleRates.empty())
+                return os << "any";
+
+            for (std::size_t i{}; i < list.sampleRates.size(); ++i)
+            {
+                if (i > 0)
+                    os << ' ';
+                os << list.sampleRates[i];
+            }
+
+            return os;
+        }
+
+        std::ostream& operator<<(std::ostream& os, ChannelLayoutList list)
+        {
+            if (list.layouts.empty())
+                return os << "any";
+
+            std::array<char, 64> buffer{};
+            for (std::size_t i{}; i < list.layouts.size(); ++i)
+            {
+                if (i > 0)
+                    os << ' ';
+                ::av_channel_layout_describe(list.layouts[i], buffer.data(), buffer.size());
+                os << buffer.data();
+            }
+
+            return os;
         }
 
         class AvCapabilities
@@ -123,143 +303,138 @@ namespace lms::audio::ffmpeg::utils
             {
                 ::av_log_set_callback(avLogCallback);
 
+                std::unordered_set<core::media::Codec> supportedDecoders;
+
                 void* opaque{};
-                while (const AVInputFormat * inputFormat{ ::av_demuxer_iterate(&opaque) })
-                {
-                    if (const auto c{ containerFromFormatName(inputFormat->name) })
-                        _supportedDemuxers.insert(*c);
-                }
-
-                opaque = nullptr;
-                while (const AVOutputFormat * outputFormat{ ::av_muxer_iterate(&opaque) })
-                {
-                    if (const auto container{ containerFromFormatName(outputFormat->name) })
-                    {
-                        _supportedMuxers.insert(*container);
-                        // Some containers (Ogg) register a distinct muxer name per codec (ogg/opus/spx/...), each only self-reporting its own default codec via avformat_query_codec: keep them
-                        // all, and resolve which one to use per call site (see getMuxerNameForContainer and isCodecMuxingSupported below), instead of collapsing to one choice up front.
-                        _muxersByContainer.emplace(*container, outputFormat);
-                    }
-                }
-
-                opaque = nullptr;
                 while (const AVCodec * avCodec{ ::av_codec_iterate(&opaque) })
                 {
-                    if (avCodec->type != AVMEDIA_TYPE_AUDIO)
-                        continue;
-
-                    const auto codec{ codecFromAVCodecId(avCodec->id) };
-                    if (!codec)
-                        continue;
-
-                    if (::av_codec_is_decoder(avCodec))
-                        _supportedDecoders.insert(*codec);
-
-                    if (::av_codec_is_encoder(avCodec) && *codec != core::media::Codec::PCM) // PCM has one AVCodecID per bit depth/endianness combination, not handled
+                    if (avCodec->type == AVMEDIA_TYPE_AUDIO && ::av_codec_is_decoder(avCodec))
                     {
-                        _supportedEncoders.insert(*codec);
-
-                        if (const auto preferred{ findPreferredName(preferredEncoderNames, *codec) })
-                        {
-                            if (*preferred == avCodec->name)
-                                _encoderByCodec[*codec] = avCodec;
-                        }
-                        else
-                        {
-                            _encoderByCodec.try_emplace(*codec, avCodec);
-                        }
+                        if (const auto codec{ codecFromAVCodecId(avCodec->id) })
+                            supportedDecoders.insert(*codec);
                     }
                 }
 
-                _supportedDemuxerExtensions = buildSupportedDemuxerExtensions();
+                for (const EncoderNames& entry : encoderNamesByCodec)
+                {
+                    const AVCodec* encoder{ findFirstAvailableEncoder(entry.names) };
+                    if (!encoder)
+                        continue;
+
+                    EncoderInfo info{ buildEncoderInfo(*encoder) };
+                    LMS_LOG(AUDIO, INFO, "Codec " << core::media::getCodecDesc(entry.codec).name.str() << ", encoder '" << encoder->name << "': sample formats = [" << SampleFormatList{ info.supportedSampleFormats } << "], sample rates = [" << SampleRateList{ info.supportedSampleRates } << "], channel layouts = [" << ChannelLayoutList{ info.supportedChannelLayouts } << "]");
+
+                    _encoderInfoByCodec[entry.codec] = std::move(info);
+                }
+
+                for (const ContainerCodecFormat& entry : containerCodecFormats)
+                {
+                    if (const AVOutputFormat * muxer{ resolveMuxerForCodec(entry.codec, entry.muxerNames) })
+                        _muxerByContainerCodec[entry.container][entry.codec] = muxer;
+
+                    if (!findFirstAvailableDemuxer(entry.demuxerNames))
+                        continue;
+
+                    _supportedDemuxerFormats.push_back(entry);
+
+                    if (supportedDecoders.contains(entry.codec))
+                        _decodableCodecsByContainer[entry.container].insert(entry.codec);
+
+                    core::media::visitExtensionsForContainerCodec(entry.container, entry.codec, [&](std::string_view extension) {
+                        if (std::find(std::cbegin(_supportedDemuxerExtensions), std::cend(_supportedDemuxerExtensions), extension) == std::cend(_supportedDemuxerExtensions))
+                            _supportedDemuxerExtensions.emplace_back(extension);
+                    });
+                }
 
                 auto containerName{ [](core::media::Container c) { return std::string{ core::media::containerToString(c).str() }; } };
                 auto codecName{ [](core::media::Codec c) { return std::string{ core::media::getCodecDesc(c).name.str() }; } };
-                auto extensionName{ [](const std::filesystem::path& p) { return p.string(); } };
 
-                LMS_LOG(AUDIO, INFO, "Supported demuxers: " << core::stringUtils::joinStrings(_supportedDemuxers | std::views::transform(containerName), ' '));
-                LMS_LOG(AUDIO, INFO, "Supported muxers: " << core::stringUtils::joinStrings(_supportedMuxers | std::views::transform(containerName), ' '));
-                LMS_LOG(AUDIO, INFO, "Supported decoders: " << core::stringUtils::joinStrings(_supportedDecoders | std::views::transform(codecName), ' '));
-                LMS_LOG(AUDIO, INFO, "Supported encoders: " << core::stringUtils::joinStrings(_supportedEncoders | std::views::transform(codecName), ' '));
-                LMS_LOG(AUDIO, INFO, "Supported demuxer extensions: " << core::stringUtils::joinStrings(_supportedDemuxerExtensions | std::views::transform(extensionName), ' '));
+                std::vector<std::string> decodablePairs;
+                for (const auto& [container, codecs] : _decodableCodecsByContainer)
+                {
+                    for (const core::media::Codec codec : codecs)
+                        decodablePairs.push_back(containerName(container) + "/" + codecName(codec));
+                }
+
+                std::vector<std::string> encodablePairs;
+                for (const auto& [container, codecs] : _muxerByContainerCodec)
+                {
+                    for (const auto& [codec, muxer] : codecs)
+                        encodablePairs.push_back(containerName(container) + "/" + codecName(codec));
+                }
+
+                LMS_LOG(AUDIO, INFO, "Supported decoding: " << core::stringUtils::joinStrings(decodablePairs, ' '));
+                LMS_LOG(AUDIO, INFO, "Supported encoding: " << core::stringUtils::joinStrings(encodablePairs, ' '));
+                LMS_LOG(AUDIO, INFO, "Supported demuxer extensions: " << core::stringUtils::joinStrings(_supportedDemuxerExtensions | std::views::transform([](const std::filesystem::path& p) { return p.c_str(); }), ' '));
             }
 
-            bool isDemuxingSupported(core::media::Container container) const { return _supportedDemuxers.contains(container); }
-            bool isDecodingSupported(core::media::Codec codec) const { return _supportedDecoders.contains(codec); }
-            bool isMuxingSupported(core::media::Container container) const { return _supportedMuxers.contains(container); }
-            bool isEncodingSupported(core::media::Codec codec) const { return _supportedEncoders.contains(codec); }
+            bool isDecodingSupported(core::media::Container container, core::media::Codec codec) const
+            {
+                const auto it{ _decodableCodecsByContainer.find(container) };
+                return it != _decodableCodecsByContainer.end() && it->second.contains(codec);
+            }
 
             std::span<const std::filesystem::path> getSupportedDemuxerExtensions() const { return _supportedDemuxerExtensions; }
 
             const AVCodec* getEncoderForCodec(core::media::Codec codec) const
             {
-                const auto it{ _encoderByCodec.find(codec) };
-                return it != _encoderByCodec.end() ? it->second : nullptr;
+                const auto it{ _encoderInfoByCodec.find(codec) };
+                return it != _encoderInfoByCodec.end() ? it->second.encoder : nullptr;
             }
 
-            const char* getMuxerNameForContainer(core::media::Container container) const
+            std::span<const ::AVSampleFormat> getSupportedSampleFormats(core::media::Codec codec) const
             {
-                const auto [rangeBegin, rangeEnd]{ _muxersByContainer.equal_range(container) };
-                if (rangeBegin == rangeEnd)
+                const auto it{ _encoderInfoByCodec.find(codec) };
+                return it != _encoderInfoByCodec.end() ? std::span{ it->second.supportedSampleFormats } : std::span<const ::AVSampleFormat>{};
+            }
+
+            std::span<const int> getSupportedSampleRates(core::media::Codec codec) const
+            {
+                const auto it{ _encoderInfoByCodec.find(codec) };
+                return it != _encoderInfoByCodec.end() ? std::span{ it->second.supportedSampleRates } : std::span<const int>{};
+            }
+
+            std::span<const AVChannelLayout* const> getSupportedChannelLayouts(core::media::Codec codec) const
+            {
+                const auto it{ _encoderInfoByCodec.find(codec) };
+                return it != _encoderInfoByCodec.end() ? std::span{ it->second.supportedChannelLayouts } : std::span<const AVChannelLayout* const>{};
+            }
+
+            const AVOutputFormat* findMuxerForCodec(core::media::Container container, core::media::Codec codec) const
+            {
+                const auto containerIt{ _muxerByContainerCodec.find(container) };
+                if (containerIt == _muxerByContainerCodec.end())
                     return nullptr;
 
-                if (const auto preferred{ findPreferredName(preferredMuxerNames, container) })
-                {
-                    const auto it{ std::find_if(rangeBegin, rangeEnd, [&](const auto& entry) { return *preferred == entry.second->name; }) };
-                    if (it != rangeEnd)
-                        return it->second->name;
-                }
-
-                return rangeBegin->second->name;
+                const auto codecIt{ containerIt->second.find(codec) };
+                return codecIt != containerIt->second.end() ? codecIt->second : nullptr;
             }
 
-            bool isCodecMuxingSupported(core::media::Container container, core::media::Codec codec) const
+            std::optional<core::media::Container> containerFromDemuxerName(const char* iformatName) const
             {
-                const auto [rangeBegin, rangeEnd]{ _muxersByContainer.equal_range(container) };
-                if (rangeBegin == rangeEnd)
-                    return false;
-
-                const auto encoderIt{ _encoderByCodec.find(codec) };
-                if (encoderIt == _encoderByCodec.end())
-                    return false;
-
-                const AVCodecID codecId{ encoderIt->second->id };
-
-                for (auto it{ rangeBegin }; it != rangeEnd; ++it)
+                for (const ContainerCodecFormat& entry : _supportedDemuxerFormats)
                 {
-                    if (::avformat_query_codec(it->second, codecId, FF_COMPLIANCE_NORMAL) > 0)
-                        return true;
+                    for (const core::LiteralString& candidate : entry.demuxerNames)
+                    {
+                        if (!candidate.empty() && ::av_match_name(candidate.c_str(), iformatName))
+                            return entry.container;
+                    }
                 }
 
-                return false;
+                return std::nullopt;
             }
 
         private:
-            [[nodiscard]] std::vector<std::filesystem::path> buildSupportedDemuxerExtensions() const
+            const AVOutputFormat* resolveMuxerForCodec(core::media::Codec codec, const CandidateNames& muxerNames) const
             {
-                std::vector<std::filesystem::path> result;
-
-                core::media::visitContainerCodecPairs([&](const core::media::ContainerCodec& pair) {
-                    if (!isDemuxingSupported(pair.container))
-                        return;
-
-                    for (const std::string_view extension : pair.extensions)
-                    {
-                        if (std::find(std::cbegin(result), std::cend(result), extension) == std::cend(result))
-                            result.emplace_back(extension);
-                    }
-                });
-
-                return result;
+                return _encoderInfoByCodec.contains(codec) ? findFirstAvailableMuxer(muxerNames) : nullptr;
             }
 
-            std::unordered_set<core::media::Container> _supportedDemuxers;
-            std::unordered_set<core::media::Container> _supportedMuxers;
-            std::unordered_set<core::media::Codec> _supportedDecoders;
-            std::unordered_set<core::media::Codec> _supportedEncoders;
             std::vector<std::filesystem::path> _supportedDemuxerExtensions;
-            std::unordered_multimap<core::media::Container, const AVOutputFormat*> _muxersByContainer;
-            std::unordered_map<core::media::Codec, const AVCodec*> _encoderByCodec;
+            std::vector<ContainerCodecFormat> _supportedDemuxerFormats;
+            std::unordered_map<core::media::Codec, EncoderInfo> _encoderInfoByCodec;
+            std::unordered_map<core::media::Container, std::unordered_map<core::media::Codec, const AVOutputFormat*>> _muxerByContainerCodec;
+            std::unordered_map<core::media::Container, std::unordered_set<core::media::Codec>> _decodableCodecsByContainer;
         };
 
         const AvCapabilities& getCapabilities()
@@ -279,36 +454,9 @@ namespace lms::audio::ffmpeg::utils
         return "Unknown error";
     }
 
-    std::optional<core::media::Container> containerFromFormatName(std::string_view name)
+    std::optional<core::media::Container> containerFromDemuxerName(const char* name)
     {
-        if (name == "aiff" || name == "aifc" || name == "aif")
-            return core::media::Container::AIFF;
-        if (name == "ape")
-            return core::media::Container::APE;
-        if (name.starts_with("asf"))
-            return core::media::Container::ASF;
-        if (name == "dsf")
-            return core::media::Container::DSF;
-        if (name == "flac")
-            return core::media::Container::FLAC;
-        if (name.find("mp4") != std::string_view::npos || name == "mov") // "mov" is a separate muxer name, same underlying format family
-            return core::media::Container::MP4;
-        if (name.starts_with("mpc"))
-            return core::media::Container::MPC;
-        if (name == "mp3" || name == "aac") // raw ADTS AAC has no container of its own; taglib bundles it under MPEG too
-            return core::media::Container::MPEG;
-        if (name == "ogg" || name == "oga" || name == "opus") // "oga"/"opus" are separate, codec-specific Ogg muxer names (default FLAC/Opus respectively)
-            return core::media::Container::Ogg;
-        if (name == "shn")
-            return core::media::Container::Shorten;
-        if (name == "tta")
-            return core::media::Container::TrueAudio;
-        if (name == "wav")
-            return core::media::Container::WAV;
-        if (name == "wv")
-            return core::media::Container::WavPack;
-
-        return std::nullopt;
+        return getCapabilities().containerFromDemuxerName(name);
     }
 
     std::optional<core::media::Codec> codecFromAVCodecId(AVCodecID codec)
@@ -402,39 +550,47 @@ namespace lms::audio::ffmpeg::utils
         return getCapabilities().getSupportedDemuxerExtensions();
     }
 
-    bool isDemuxingSupported(core::media::Container container)
+    bool isDecodingSupported(core::media::Container container, core::media::Codec codec)
     {
-        return getCapabilities().isDemuxingSupported(container);
-    }
-
-    bool isDecodingSupported(core::media::Codec codec)
-    {
-        return getCapabilities().isDecodingSupported(codec);
-    }
-
-    bool isMuxingSupported(core::media::Container container)
-    {
-        return getCapabilities().isMuxingSupported(container);
-    }
-
-    bool isEncodingSupported(core::media::Codec codec)
-    {
-        return getCapabilities().isEncodingSupported(codec);
+        return getCapabilities().isDecodingSupported(container, codec);
     }
 
     bool isCodecMuxingSupported(core::media::Container container, core::media::Codec codec)
     {
-        return getCapabilities().isCodecMuxingSupported(container, codec);
+        return getCapabilities().findMuxerForCodec(container, codec) != nullptr;
     }
 
-    const AVCodec* getEncoderForCodec(core::media::Codec codec)
+    const AVCodec* findEncoder(core::media::Codec codec)
     {
-        return getCapabilities().getEncoderForCodec(codec);
+        const AVCodec* encoder{ getCapabilities().getEncoderForCodec(codec) };
+        if (!encoder)
+            throw Exception{ "No encoder available for codec " + std::string{ core::media::getCodecDesc(codec).name.str() } + ": check the FFmpeg libraries this build is linked against" };
+
+        return encoder;
     }
 
-    const char* getMuxerNameForContainer(core::media::Container container)
+    const AVOutputFormat* findMuxer(core::media::Container container, core::media::Codec codec)
     {
-        return getCapabilities().getMuxerNameForContainer(container);
+        const AVOutputFormat* muxer{ getCapabilities().findMuxerForCodec(container, codec) };
+        if (!muxer)
+            throw Exception{ "Codec " + std::string{ core::media::getCodecDesc(codec).name.str() } + " cannot be muxed into container " + std::string{ core::media::containerToString(container).str() } + ": not supported by this build" };
+
+        return muxer;
+    }
+
+    std::span<const ::AVSampleFormat> getSupportedSampleFormats(core::media::Codec codec)
+    {
+        return getCapabilities().getSupportedSampleFormats(codec);
+    }
+
+    std::span<const int> getSupportedSampleRates(core::media::Codec codec)
+    {
+        return getCapabilities().getSupportedSampleRates(codec);
+    }
+
+    std::span<const AVChannelLayout* const> getSupportedChannelLayouts(core::media::Codec codec)
+    {
+        return getCapabilities().getSupportedChannelLayouts(codec);
     }
 
     PcmSampleType toPcmSampleType(::AVSampleFormat format)

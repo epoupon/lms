@@ -88,7 +88,7 @@ namespace lms::audio::ffmpeg
     {
         ContainerInfo info;
 
-        info.container = utils::containerFromFormatName(_context->iformat->name);
+        info.container = utils::containerFromDemuxerName(_context->iformat->name);
         info.containerName = _context->iformat->name;
 
         if (_context->bit_rate > 0)

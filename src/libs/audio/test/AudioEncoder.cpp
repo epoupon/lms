@@ -24,10 +24,8 @@
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
-#include <fstream>
 #include <numbers>
 #include <ostream>
-#include <random>
 #include <string>
 #include <vector>
 
@@ -40,38 +38,15 @@
 #include "audio/PcmTypes.hpp"
 
 #include "ffmpeg/AudioEncoder.hpp"
-#include "ffmpeg/EncoderUtils.hpp"
 #include "ffmpeg/Utils.hpp"
+
+#include "TestUtils.hpp"
 
 namespace lms::audio::tests
 {
     namespace
     {
         constexpr std::chrono::milliseconds defaultDuration{ 3'000 };
-
-        class ScopedDirectory
-        {
-        public:
-            ScopedDirectory()
-                : _path{ std::filesystem::temp_directory_path() / ("lms-audioencoder-test-" + std::to_string(std::random_device{}())) }
-            {
-                std::filesystem::create_directories(_path);
-            }
-
-            ~ScopedDirectory()
-            {
-                std::error_code ec;
-                std::filesystem::remove_all(_path, ec);
-            }
-
-            ScopedDirectory(const ScopedDirectory&) = delete;
-            ScopedDirectory& operator=(const ScopedDirectory&) = delete;
-
-            std::filesystem::path operator/(std::string_view fileName) const { return _path / fileName; }
-
-        private:
-            std::filesystem::path _path;
-        };
 
         // Generates a sine wave directly in whatever PCM layout the encoder negotiated
         struct GeneratedSamples
@@ -167,42 +142,6 @@ namespace lms::audio::tests
             return res;
         }
 
-        void writeFile(const std::filesystem::path& path, std::span<const std::byte> data)
-        {
-            std::ofstream os{ path, std::ios::binary };
-            os.write(static_cast<const char*>(static_cast<const void*>(data.data())), static_cast<std::streamsize>(data.size()));
-        }
-
-        std::vector<std::int16_t> decodeInterleaved(const std::filesystem::path& path, unsigned channelCount, unsigned sampleRate)
-        {
-            const PcmParameters pcmParameters{
-                .channelCount = channelCount,
-                .sampleRate = sampleRate,
-                .sampleType = PcmSampleType::Signed16,
-                .byteOrder = std::endian::native,
-                .planar = false,
-            };
-
-            const std::unique_ptr<IAudioDecoder> decoder{ createAudioDecoder(path, std::chrono::microseconds{ 0 }, pcmParameters) };
-
-            constexpr std::size_t decodeSampleCount{ 8'192 };
-            std::vector<std::byte> buffer(decodeSampleCount * channelCount * sizeof(std::int16_t));
-            std::array<IAudioDecoder::WritableBuffer, 1> buffers{ std::span{ buffer } };
-
-            std::vector<std::int16_t> res;
-            while (!decoder->finished())
-            {
-                const std::size_t sampleCount{ decoder->readSamples(buffers) };
-                if (sampleCount == 0)
-                    break;
-
-                const auto* samples{ static_cast<const std::int16_t*>(static_cast<const void*>(buffer.data())) };
-                res.insert(std::end(res), samples, samples + sampleCount * channelCount);
-            }
-
-            return res;
-        }
-
         ffmpeg::EncodeParameters createParameters(core::media::Container container, core::media::Codec codec, unsigned channelCount = 2, unsigned sampleRate = 44'100)
         {
             return ffmpeg::EncodeParameters{
@@ -236,10 +175,6 @@ namespace lms::audio::tests
             return res;
         }
 
-        // Real-world container/codec pairings only (see core::media::visitContainerCodecPairs): whichever
-        // of these this build's ffmpeg can't actually mux/encode are skipped at test time via
-        // isCodecMuxingSupported, not filtered out here, so coverage grows automatically as ffmpeg gains
-        // capabilities.
         std::vector<RoundTripTestCase> buildRoundTripTestCases()
         {
             std::vector<RoundTripTestCase> cases;
@@ -256,22 +191,13 @@ namespace lms::audio::tests
         }
     } // namespace
 
-    class AudioEncoderRoundTrip : public ::testing::TestWithParam<RoundTripTestCase>
+    class AudioEncoder : public ::testing::TestWithParam<RoundTripTestCase>
     {
     };
 
-    TEST_P(AudioEncoderRoundTrip, roundTrips)
+    TEST_P(AudioEncoder, roundTrips)
     {
         const RoundTripTestCase& testCase{ GetParam() };
-
-        // AudioEncoder's output is intentionally not seekable (streaming, like piping out the ffmpeg
-        // CLI's output), but AIFF/MP4/MOV-family muxers need to seek back to finalize chunk/atom sizes
-        // once all data is written. Nothing to do with codec/container compatibility: even a plain
-        // `ffmpeg -f aiff -`/`-f mp4 -` piped to stdout hits the same limitation.
-        if (testCase.container == core::media::Container::AIFF || testCase.container == core::media::Container::MP4)
-        {
-            GTEST_SKIP() << "container requires seekable output, which this encoder does not provide";
-        }
 
         if (!ffmpeg::utils::isCodecMuxingSupported(testCase.container, testCase.codec))
         {
@@ -296,7 +222,7 @@ namespace lms::audio::tests
             GTEST_SKIP() << "decoding not supported by this build: only the encoding path above was verified";
         }
 
-        const ScopedDirectory directory;
+        const ScopedTmpDirectory directory;
         const std::filesystem::path outputPath{ directory / ("output." + testCase.name) };
         writeFile(outputPath, output);
 
@@ -317,8 +243,8 @@ namespace lms::audio::tests
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        Formats,
-        AudioEncoderRoundTrip,
+        audio,
+        AudioEncoder,
         ::testing::ValuesIn(buildRoundTripTestCases()),
         [](const ::testing::TestParamInfo<RoundTripTestCase>& info) { return info.param.name; });
 
@@ -335,25 +261,14 @@ namespace lms::audio::tests
         EXPECT_EQ(encoder.getInputParameters().channelCount, 2u);
     }
 
-    // findEncoder must resolve every codec this build's ffmpeg can actually encode, and only those
-    TEST(AudioEncoder, findEncoderMatchesCapabilityForEveryCodec)
+    TEST(AudioEncoder, findMuxerMatchesCapabilityForEveryContainerCodecPair)
     {
-        core::media::visitCodecs([](const core::media::CodecDesc& desc) {
-            if (ffmpeg::utils::isEncodingSupported(desc.type))
-                EXPECT_NO_THROW(ffmpeg::utils::findEncoder(desc.type)) << desc.name.str();
+        core::media::visitContainerCodecPairs([](const core::media::ContainerCodec& pair) {
+            const std::string caseName{ std::string{ core::media::containerToString(pair.container).str() } + "_" + std::string{ core::media::getCodecDesc(pair.codec).name.str() } };
+            if (ffmpeg::utils::isCodecMuxingSupported(pair.container, pair.codec))
+                EXPECT_NO_THROW(ffmpeg::utils::findMuxer(pair.container, pair.codec)) << caseName;
             else
-                EXPECT_ANY_THROW(ffmpeg::utils::findEncoder(desc.type)) << desc.name.str();
-        });
-    }
-
-    // getMuxerName must resolve every container this build's ffmpeg can actually mux, and only those
-    TEST(AudioEncoder, getMuxerNameMatchesCapabilityForEveryContainer)
-    {
-        core::media::visitContainers([](core::media::Container container) {
-            if (ffmpeg::utils::isMuxingSupported(container))
-                EXPECT_NO_THROW(ffmpeg::utils::getMuxerName(container)) << core::media::containerToString(container).str();
-            else
-                EXPECT_ANY_THROW(ffmpeg::utils::getMuxerName(container)) << core::media::containerToString(container).str();
+                EXPECT_ANY_THROW(ffmpeg::utils::findMuxer(pair.container, pair.codec)) << caseName;
         });
     }
 

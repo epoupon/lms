@@ -87,4 +87,18 @@ namespace lms::core::media
                 visitor(pair);
         }
     }
+
+    void visitExtensionsForContainerCodec(Container container, Codec codec, const std::function<void(std::string_view)>& visitor)
+    {
+        for (const ContainerCodec& pair : containerCodecPairs)
+        {
+            if (pair.container != container || pair.codec != codec)
+                continue;
+
+            for (std::string_view extension : pair.extensions)
+                visitor(extension);
+
+            return;
+        }
+    }
 } // namespace lms::core::media

@@ -39,4 +39,7 @@ namespace lms::core::media
 
     // extension must be in canonical form (leading dot, lowercase, ex: ".flac"), same as ContainerCodec::extensions
     void visitContainerCodecPairsForExtension(std::string_view extension, const std::function<void(const ContainerCodec&)>& visitor);
+
+    // Visits the extensions registered for exactly this (container, codec) pair
+    void visitExtensionsForContainerCodec(Container container, Codec codec, const std::function<void(std::string_view)>& visitor);
 } // namespace lms::core::media

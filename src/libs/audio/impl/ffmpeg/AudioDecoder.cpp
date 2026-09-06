@@ -38,6 +38,7 @@ extern "C"
 #include "audio/IAudioDecoder.hpp"
 
 #include "Exception.hpp"
+#include "Utils.hpp"
 
 namespace lms::audio
 {
@@ -48,7 +49,7 @@ namespace lms::audio
 
     bool isDecodingSupported(core::media::Container container, core::media::Codec codec)
     {
-        return ffmpeg::utils::isDemuxingSupported(container) && ffmpeg::utils::isDecodingSupported(codec);
+        return ffmpeg::utils::isDecodingSupported(container, codec);
     }
 } // namespace lms::audio
 
@@ -86,6 +87,12 @@ namespace lms::audio::ffmpeg
 
             return resampleContext;
         }
+
+        // Can av_seek_frame be trusted for this container's demuxer?
+        bool isSeekingSupported(core::media::Container container)
+        {
+            return container != core::media::Container::WavPack;
+        }
     } // namespace
 
     AudioDecoder::AudioDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
@@ -96,7 +103,7 @@ namespace lms::audio::ffmpeg
 
         assert(utils::isInit());
 
-        // TODO: use AudioFile wrapper?
+        // TODO: merge all this with AudioFile
         {
             ::AVFormatContext* context{};
             int error{ ::avformat_open_input(&context, filePath.c_str(), nullptr, nullptr) };
@@ -138,12 +145,18 @@ namespace lms::audio::ffmpeg
             using OffsetPeriod = decltype(offset)::period;
             constexpr AVRational offsetTimebase{ static_cast<int>(OffsetPeriod::num), static_cast<int>(OffsetPeriod::den) };
 
-            const int64_t targetTimestamp{ static_cast<int64_t>(av_rescale_q(offset.count(), offsetTimebase, stream->time_base)) };
-            const int seekError{ ::av_seek_frame(_context.get(), _inputStreamIndex, targetTimestamp, AVSEEK_FLAG_BACKWARD) };
-            if (seekError < 0)
+            _seekTargetTimestamp = static_cast<int64_t>(av_rescale_q(offset.count(), offsetTimebase, stream->time_base));
+            if (stream->start_time != AV_NOPTS_VALUE)
+                _seekTargetTimestamp += stream->start_time;
+
+            if (const auto container{ utils::containerFromDemuxerName(_context->iformat->name) }; !container || isSeekingSupported(*container))
             {
-                LMS_LOG(AUDIO, WARNING, "Failed to seek to offset: " << utils::averrorToString(seekError));
+                const int seekError{ ::av_seek_frame(_context.get(), _inputStreamIndex, _seekTargetTimestamp, AVSEEK_FLAG_BACKWARD) };
+                if (seekError < 0)
+                    LMS_LOG(AUDIO, WARNING, "Failed to seek to offset: " << utils::averrorToString(seekError));
             }
+
+            _startTrimPending = true;
         }
 
         {
@@ -356,6 +369,34 @@ namespace lms::audio::ffmpeg
         }
     }
 
+    int AudioDecoder::computeStartTrimSampleCount(const AVFrame* frame)
+    {
+        if (!_startTrimPending)
+            return 0;
+
+        std::int64_t framePts{ frame->best_effort_timestamp != AV_NOPTS_VALUE ? frame->best_effort_timestamp : frame->pts };
+        if (framePts == AV_NOPTS_VALUE)
+        {
+            LMS_LOG(AUDIO, DEBUG, "No timestamp available on decoded frame: cannot trim the seek overshoot");
+            _startTrimPending = false;
+            return 0;
+        }
+
+        const AVStream* stream{ _context->streams[_inputStreamIndex] };
+        const std::int64_t skipSampleCount{ ::av_rescale_q(_seekTargetTimestamp - framePts, stream->time_base, AVRational{ 1, frame->sample_rate }) };
+        if (skipSampleCount <= 0)
+        {
+            _startTrimPending = false;
+            return 0;
+        }
+
+        if (skipSampleCount >= frame->nb_samples)
+            return frame->nb_samples;
+
+        _startTrimPending = false;
+        return static_cast<int>(skipSampleCount);
+    }
+
     bool AudioDecoder::inputFormatChanged(const AVFrame* frame) const
     {
         const auto& c{ _resamplerInputConfig };
@@ -390,23 +431,34 @@ namespace lms::audio::ffmpeg
             reinitResamplerForFrame(inputFrame);
         }
 
-        std::array<std::uint8_t*, AV_NUM_DATA_POINTERS> outData{};
-        for (std::size_t i{}; i < outputChannelBuffers.size(); ++i)
-            outData[i] = static_cast<std::uint8_t*>(static_cast<void*>(outputChannelBuffers[i].data()));
-
+        int inputSampleCount{};
         std::array<const std::uint8_t*, AV_NUM_DATA_POINTERS> inData{};
         if (inputFrame)
         {
+            const int skipSampleCount{ computeStartTrimSampleCount(inputFrame) };
+            if (skipSampleCount >= inputFrame->nb_samples)
+                return 0;
+
+            inputSampleCount = inputFrame->nb_samples - skipSampleCount;
+
+            const auto sampleFormat{ static_cast<AVSampleFormat>(inputFrame->format) };
+            const int planeSampleSize{ ::av_get_bytes_per_sample(sampleFormat) * (::av_sample_fmt_is_planar(sampleFormat) ? 1 : inputFrame->ch_layout.nb_channels) };
+            const int skipByteCount{ skipSampleCount * planeSampleSize };
+
             for (int i{}; i < AV_NUM_DATA_POINTERS; ++i)
-                inData[i] = inputFrame->data[i];
+                inData[i] = inputFrame->data[i] ? inputFrame->data[i] + skipByteCount : nullptr;
         }
+
+        std::array<std::uint8_t*, AV_NUM_DATA_POINTERS> outData{};
+        for (std::size_t i{}; i < outputChannelBuffers.size(); ++i)
+            outData[i] = static_cast<std::uint8_t*>(static_cast<void*>(outputChannelBuffers[i].data()));
 
         const int outSampleCount{ ::swr_convert(
             _resampleContext.get(),
             outData.data(),
             static_cast<int>(maxSamplesPerChannel),
             inputFrame ? inData.data() : nullptr,
-            inputFrame ? inputFrame->nb_samples : 0) };
+            inputSampleCount) };
 
         if (outSampleCount < 0)
             throw FFmpegException{ inputFrame ? "swr_convert failed" : "swr_convert (drain) failed", outSampleCount };

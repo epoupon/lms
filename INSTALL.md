@@ -35,9 +35,10 @@ __Note__: this installation process and the default values of the configuration 
 ### Build dependencies
 __Notes__:
 * a C++20 compiler is needed
-* ffmpeg version 7.1 minimum is required
+* ffmpeg version 7.1 minimum is required (only the libraries: the `ffmpeg` command line tool is not used)
+* the `libavcodec` build must provide the `libmp3lame`, `libopus` and `libvorbis` encoders in order to transcode to these formats
 ```sh
-apt-get install build-essential cmake libboost-program-options-dev libboost-system-dev libavutil-dev libavformat-dev libswresample-dev ffmpeg libconfig++-dev libstb-dev libtag-dev libpugixml-dev libgtest-dev libarchive-dev libxxhash-dev libssl-dev
+apt-get install build-essential cmake libboost-program-options-dev libboost-system-dev libavcodec-dev libavutil-dev libavformat-dev libswresample-dev libconfig++-dev libstb-dev libtag-dev libpugixml-dev libgtest-dev libarchive-dev libxxhash-dev libssl-dev
 ```
 __Optional dependencies__:
 * `libpam0g-dev`: used to handle PAM authentication
@@ -150,7 +151,7 @@ server {
     proxy_buffer_size 4k;
     proxy_read_timeout 10m;
     proxy_send_timeout 10m;
-	keepalive_timeout 10m;
+	  keepalive_timeout 10m;
 
     location / {
       proxy_set_header        Host $host;
