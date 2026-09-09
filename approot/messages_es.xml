@@ -447,6 +447,7 @@
 <message id="Lms.Settings.transcoding-output-format.mp3">MP3</message>
 <message id="Lms.Settings.transcoding-output-format.ogg_opus">Ogg/Opus</message>
 <message id="Lms.Settings.transcoding-output-format.ogg_vorbis">Ogg/Vorbis</message>
+<message id="Lms.Settings.transcoding-output-format-not-supported">Este formato no es compatible</message>
 <message id="Lms.Settings.user-interface">Interfaz de usuario</message>
 
 <!--Wt-->
