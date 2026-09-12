@@ -19,6 +19,16 @@
 
 #pragma once
 
+namespace lms::core
+{
+    // Return type for visitor callbacks that support stopping the iteration early
+    enum VisitorResult
+    {
+        Break,
+        Continue,
+    };
+} // namespace lms::core
+
 namespace lms::core::utils
 {
     template<class... Ts>

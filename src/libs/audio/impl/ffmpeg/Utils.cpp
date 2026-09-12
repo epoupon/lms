@@ -41,7 +41,7 @@ extern "C"
 
 #include "core/ILogger.hpp"
 #include "core/LiteralString.hpp"
-#include "core/media/ContainerCodec.hpp"
+#include "core/media/AudioFormat.hpp"
 
 #include "audio/Exception.hpp"
 
@@ -122,36 +122,35 @@ namespace lms::audio::ffmpeg::utils
             EncoderNames{ .codec = core::media::Codec::WMA2, .names = { "wmav2" } },
         };
 
-        struct ContainerCodecFormat
+        struct AudioFormatCapability
         {
-            core::media::Container container;
-            core::media::Codec codec;
+            core::media::AudioFormat format;
             CandidateNames demuxerNames;
             CandidateNames muxerNames; // empty means we don't support it (like requires a seekable output)
         };
 
-        constexpr std::array containerCodecFormats{
-            ContainerCodecFormat{ .container = core::media::Container::AIFF, .codec = core::media::Codec::PCM, .demuxerNames = { "aiff" }, .muxerNames = {} },
-            ContainerCodecFormat{ .container = core::media::Container::APE, .codec = core::media::Codec::APE, .demuxerNames = { "ape" }, .muxerNames = { "ape" } },
-            ContainerCodecFormat{ .container = core::media::Container::ASF, .codec = core::media::Codec::WMA1, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
-            ContainerCodecFormat{ .container = core::media::Container::ASF, .codec = core::media::Codec::WMA2, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
-            ContainerCodecFormat{ .container = core::media::Container::ASF, .codec = core::media::Codec::WMA9Pro, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
-            ContainerCodecFormat{ .container = core::media::Container::ASF, .codec = core::media::Codec::WMA9Lossless, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
-            ContainerCodecFormat{ .container = core::media::Container::DSF, .codec = core::media::Codec::DSD, .demuxerNames = { "dsf" }, .muxerNames = { "dsf" } },
-            ContainerCodecFormat{ .container = core::media::Container::FLAC, .codec = core::media::Codec::FLAC, .demuxerNames = { "flac" }, .muxerNames = { "flac" } },
-            ContainerCodecFormat{ .container = core::media::Container::MP4, .codec = core::media::Codec::AAC, .demuxerNames = { "mp4" }, .muxerNames = {} },
-            ContainerCodecFormat{ .container = core::media::Container::MP4, .codec = core::media::Codec::ALAC, .demuxerNames = { "mp4" }, .muxerNames = {} },
-            ContainerCodecFormat{ .container = core::media::Container::MPC, .codec = core::media::Codec::MPC7, .demuxerNames = { "mpc" }, .muxerNames = { "mpc" } },
-            ContainerCodecFormat{ .container = core::media::Container::MPC, .codec = core::media::Codec::MPC8, .demuxerNames = { "mpc8" }, .muxerNames = { "mpc8" } },
-            ContainerCodecFormat{ .container = core::media::Container::MPEG, .codec = core::media::Codec::MP3, .demuxerNames = { "mp3" }, .muxerNames = { "mp3" } },
-            ContainerCodecFormat{ .container = core::media::Container::MPEG, .codec = core::media::Codec::AAC, .demuxerNames = { "aac" }, .muxerNames = { "adts" } },
-            ContainerCodecFormat{ .container = core::media::Container::Ogg, .codec = core::media::Codec::FLAC, .demuxerNames = { "ogg" }, .muxerNames = { "ogg", "oga" } },
-            ContainerCodecFormat{ .container = core::media::Container::Ogg, .codec = core::media::Codec::Vorbis, .demuxerNames = { "ogg" }, .muxerNames = { "ogg" } },
-            ContainerCodecFormat{ .container = core::media::Container::Ogg, .codec = core::media::Codec::Opus, .demuxerNames = { "ogg" }, .muxerNames = { "ogg", "opus" } },
-            ContainerCodecFormat{ .container = core::media::Container::Shorten, .codec = core::media::Codec::Shorten, .demuxerNames = { "shn" }, .muxerNames = { "shn" } },
-            ContainerCodecFormat{ .container = core::media::Container::TrueAudio, .codec = core::media::Codec::TrueAudio, .demuxerNames = { "tta" }, .muxerNames = { "tta" } },
-            ContainerCodecFormat{ .container = core::media::Container::WAV, .codec = core::media::Codec::PCM, .demuxerNames = { "wav" }, .muxerNames = { "wav" } },
-            ContainerCodecFormat{ .container = core::media::Container::WavPack, .codec = core::media::Codec::WavPack, .demuxerNames = { "wv" }, .muxerNames = { "wv" } },
+        constexpr std::array audioFormatCapabilities{
+            AudioFormatCapability{ .format = { core::media::Container::AIFF, core::media::Codec::PCM }, .demuxerNames = { "aiff" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::APE, core::media::Codec::APE }, .demuxerNames = { "ape" }, .muxerNames = { "ape" } },
+            AudioFormatCapability{ .format = { core::media::Container::ASF, core::media::Codec::WMA1 }, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
+            AudioFormatCapability{ .format = { core::media::Container::ASF, core::media::Codec::WMA2 }, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
+            AudioFormatCapability{ .format = { core::media::Container::ASF, core::media::Codec::WMA9Pro }, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
+            AudioFormatCapability{ .format = { core::media::Container::ASF, core::media::Codec::WMA9Lossless }, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
+            AudioFormatCapability{ .format = { core::media::Container::DSF, core::media::Codec::DSD }, .demuxerNames = { "dsf" }, .muxerNames = { "dsf" } },
+            AudioFormatCapability{ .format = { core::media::Container::FLAC, core::media::Codec::FLAC }, .demuxerNames = { "flac" }, .muxerNames = { "flac" } },
+            AudioFormatCapability{ .format = { core::media::Container::MP4, core::media::Codec::AAC }, .demuxerNames = { "mp4" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::MP4, core::media::Codec::ALAC }, .demuxerNames = { "mp4" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::MPC, core::media::Codec::MPC7 }, .demuxerNames = { "mpc" }, .muxerNames = { "mpc" } },
+            AudioFormatCapability{ .format = { core::media::Container::MPC, core::media::Codec::MPC8 }, .demuxerNames = { "mpc8" }, .muxerNames = { "mpc8" } },
+            AudioFormatCapability{ .format = { core::media::Container::MPEG, core::media::Codec::MP3 }, .demuxerNames = { "mp3" }, .muxerNames = { "mp3" } },
+            AudioFormatCapability{ .format = { core::media::Container::MPEG, core::media::Codec::AAC }, .demuxerNames = { "aac" }, .muxerNames = { "adts" } },
+            AudioFormatCapability{ .format = { core::media::Container::Ogg, core::media::Codec::FLAC }, .demuxerNames = { "ogg" }, .muxerNames = { "ogg", "oga" } },
+            AudioFormatCapability{ .format = { core::media::Container::Ogg, core::media::Codec::Vorbis }, .demuxerNames = { "ogg" }, .muxerNames = { "ogg" } },
+            AudioFormatCapability{ .format = { core::media::Container::Ogg, core::media::Codec::Opus }, .demuxerNames = { "ogg" }, .muxerNames = { "ogg", "opus" } },
+            AudioFormatCapability{ .format = { core::media::Container::Shorten, core::media::Codec::Shorten }, .demuxerNames = { "shn" }, .muxerNames = { "shn" } },
+            AudioFormatCapability{ .format = { core::media::Container::TrueAudio, core::media::Codec::TrueAudio }, .demuxerNames = { "tta" }, .muxerNames = { "tta" } },
+            AudioFormatCapability{ .format = { core::media::Container::WAV, core::media::Codec::PCM }, .demuxerNames = { "wav" }, .muxerNames = { "wav" } },
+            AudioFormatCapability{ .format = { core::media::Container::WavPack, core::media::Codec::WavPack }, .demuxerNames = { "wv" }, .muxerNames = { "wv" } },
         };
 
         const AVInputFormat* findFirstAvailableDemuxer(const CandidateNames& names)
@@ -232,8 +231,6 @@ namespace lms::audio::ffmpeg::utils
             return info;
         }
 
-        // Lightweight views so the encoder capability lists can be streamed straight into LMS_LOG's
-        // ostream, without building an intermediate std::vector<std::string> just to join it back
         struct SampleFormatList
         {
             std::span<const ::AVSampleFormat> formats;
@@ -327,23 +324,24 @@ namespace lms::audio::ffmpeg::utils
                     _encoderInfoByCodec[entry.codec] = std::move(info);
                 }
 
-                for (const ContainerCodecFormat& entry : containerCodecFormats)
+                for (const AudioFormatCapability& entry : audioFormatCapabilities)
                 {
-                    if (const AVOutputFormat * muxer{ resolveMuxerForCodec(entry.codec, entry.muxerNames) })
-                        _muxerByContainerCodec[entry.container][entry.codec] = muxer;
+                    if (const AVOutputFormat * muxer{ resolveMuxerForCodec(entry.format.codec, entry.muxerNames) })
+                        _muxerByContainerCodec[entry.format.container][entry.format.codec] = muxer;
 
                     if (!findFirstAvailableDemuxer(entry.demuxerNames))
                         continue;
 
                     _supportedDemuxerFormats.push_back(entry);
 
-                    if (supportedDecoders.contains(entry.codec))
-                        _decodableCodecsByContainer[entry.container].insert(entry.codec);
+                    if (supportedDecoders.contains(entry.format.codec))
+                        _decodableCodecsByContainer[entry.format.container].insert(entry.format.codec);
 
-                    core::media::visitExtensionsForContainerCodec(entry.container, entry.codec, [&](std::string_view extension) {
+                    for (std::string_view extension : core::media::getExtensionsForAudioFormat(entry.format))
+                    {
                         if (std::find(std::cbegin(_supportedDemuxerExtensions), std::cend(_supportedDemuxerExtensions), extension) == std::cend(_supportedDemuxerExtensions))
                             _supportedDemuxerExtensions.emplace_back(extension);
-                    });
+                    }
                 }
 
                 auto containerName{ [](core::media::Container c) { return std::string{ core::media::containerToString(c).str() }; } };
@@ -412,12 +410,12 @@ namespace lms::audio::ffmpeg::utils
 
             std::optional<core::media::Container> containerFromDemuxerName(const char* iformatName) const
             {
-                for (const ContainerCodecFormat& entry : _supportedDemuxerFormats)
+                for (const AudioFormatCapability& entry : _supportedDemuxerFormats)
                 {
                     for (const core::LiteralString& candidate : entry.demuxerNames)
                     {
                         if (!candidate.empty() && ::av_match_name(candidate.c_str(), iformatName))
-                            return entry.container;
+                            return entry.format.container;
                     }
                 }
 
@@ -431,7 +429,7 @@ namespace lms::audio::ffmpeg::utils
             }
 
             std::vector<std::filesystem::path> _supportedDemuxerExtensions;
-            std::vector<ContainerCodecFormat> _supportedDemuxerFormats;
+            std::vector<AudioFormatCapability> _supportedDemuxerFormats;
             std::unordered_map<core::media::Codec, EncoderInfo> _encoderInfoByCodec;
             std::unordered_map<core::media::Container, std::unordered_map<core::media::Codec, const AVOutputFormat*>> _muxerByContainerCodec;
             std::unordered_map<core::media::Container, std::unordered_set<core::media::Codec>> _decodableCodecsByContainer;

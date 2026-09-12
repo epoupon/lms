@@ -23,23 +23,26 @@
 #include <span>
 #include <string_view>
 
+#include "core/Utils.hpp"
 #include "core/media/Codec.hpp"
 #include "core/media/Container.hpp"
 
 namespace lms::core::media
 {
-    struct ContainerCodec
+    using ExtensionSpan = std::span<const std::string_view>; // leading dot (ex: ".flac")
+
+    struct AudioFormat
     {
         Container container;
         Codec codec;
-        std::span<const std::string_view> extensions; // leading dot (ex: ".flac")
     };
 
-    void visitContainerCodecPairs(const std::function<void(const ContainerCodec&)>& visitor);
+    // visitor returns core::Break to stop the iteration early
+    void visitAudioFormats(const std::function<core::VisitorResult(const AudioFormat&, ExtensionSpan)>& visitor);
 
-    // extension must be in canonical form (leading dot, lowercase, ex: ".flac"), same as ContainerCodec::extensions
-    void visitContainerCodecPairsForExtension(std::string_view extension, const std::function<void(const ContainerCodec&)>& visitor);
+    // extension must be in canonical form (leading dot, lowercase, ex: ".flac")
+    void visitAudioFormatsForExtension(std::string_view extension, const std::function<void(const AudioFormat&)>& visitor);
 
-    // Visits the extensions registered for exactly this (container, codec) pair
-    void visitExtensionsForContainerCodec(Container container, Codec codec, const std::function<void(std::string_view)>& visitor);
+    // Returns the extensions registered for exactly this audio format (empty if none)
+    ExtensionSpan getExtensionsForAudioFormat(AudioFormat format);
 } // namespace lms::core::media

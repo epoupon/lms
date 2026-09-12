@@ -23,6 +23,7 @@
 
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
+#include "core/media/AudioFormat.hpp"
 
 #include "audio/ITranscoder.hpp"
 #include "audio/TranscodeTypes.hpp"
@@ -34,13 +35,6 @@ namespace lms::api::subsonic::detail
 {
     namespace
     {
-        constexpr std::array supportedTranscodeFormats{
-            SupportedTranscodeFormat{ .format = { .container = core::media::Container::MPEG, .codec = core::media::Codec::MP3 }, .legacyName = "mp3", .dbFormat = db::TranscodingOutputFormat::MP3 },
-            SupportedTranscodeFormat{ .format = { .container = core::media::Container::Ogg, .codec = core::media::Codec::Vorbis }, .legacyName = "vorbis", .dbFormat = db::TranscodingOutputFormat::OGG_VORBIS },
-            SupportedTranscodeFormat{ .format = { .container = core::media::Container::Ogg, .codec = core::media::Codec::Opus }, .legacyName = "opus", .dbFormat = db::TranscodingOutputFormat::OGG_OPUS },
-            SupportedTranscodeFormat{ .format = { .container = core::media::Container::FLAC, .codec = core::media::Codec::FLAC }, .legacyName = "flac", .dbFormat = std::nullopt /* no db counterpart */ },
-        };
-
         bool isMatchingContainerName(core::media::Container container, std::string_view containerStr)
         {
             using namespace std::literals; // for "..."sv
@@ -50,10 +44,10 @@ namespace lms::api::subsonic::detail
             constexpr std::array asfNames{ "asf"sv, "wma"sv };
             constexpr std::array dsfNames{ "dsf"sv };
             constexpr std::array mpcNames{ "mpc"sv, "mpp"sv, "mp"sv };
-            constexpr std::array mpegNames{ "mp3"sv, "mp2"sv, "mpeg"sv };
+            constexpr std::array mpegNames{ "mp3"sv, "mp2"sv, "mpeg"sv, "aac"sv, "adts"sv }; // "aac"/"adts" mean raw ADTS AAC here, not MP4-boxed AAC
             constexpr std::array oggNames{ "ogg"sv, "oga"sv };
             constexpr std::array flacNames{ "flac"sv };
-            constexpr std::array mp4Names{ "aac"sv, "adts"sv, "m4a"sv, "mp4"sv, "m4b"sv, "m4p"sv };
+            constexpr std::array mp4Names{ "m4a"sv, "mp4"sv, "m4b"sv, "m4p"sv };
             constexpr std::array shortenNames{ "shn"sv };
             constexpr std::array trueAudioNames{ "tta"sv };
             constexpr std::array wavNames{ "wav"sv };
@@ -459,7 +453,7 @@ namespace lms::api::subsonic::detail
             if (profile.protocol != "http")
                 return std::nullopt;
 
-            const SupportedTranscodeFormat* transcodeFormat{ selectSupportedTranscodeOutputFormatByNames(profile.container, profile.audioCodec) };
+            const std::optional<audio::TranscodeOutputFormat> transcodeFormat{ findSupportedTranscodeOutputFormat(profile.container, profile.audioCodec) };
             if (!transcodeFormat)
                 return std::nullopt;
 
@@ -470,7 +464,7 @@ namespace lms::api::subsonic::detail
 
             if (core::media::getCodecDesc(source.codec).isLossless)
             {
-                if (!core::media::getCodecDesc(transcodeFormat->format.codec).isLossless)
+                if (!core::media::getCodecDesc(transcodeFormat->codec).isLossless)
                 {
                     // If coming from lossless source, maximize the bitrate if going to a non lossless source
                     // otherwise, pick a good enough value as we don't want to keep the original bitrate which does not make sense for lossy codecs
@@ -491,7 +485,7 @@ namespace lms::api::subsonic::detail
             {
                 // source is lossy
 
-                if (core::media::getCodecDesc(transcodeFormat->format.codec).isLossless)
+                if (core::media::getCodecDesc(transcodeFormat->codec).isLossless)
                     return std::nullopt; // not compatible with lossless codecs
 
                 // let's pick the same bitrate as the lossy source
@@ -504,12 +498,12 @@ namespace lms::api::subsonic::detail
             if (profile.maxAudioChannels && source.channelCount > *profile.maxAudioChannels)
                 transcodedStream.audioChannels = *profile.maxAudioChannels;
 
-            if (const CodecProfile * codecProfile{ getAudioCodecProfile(codecProfiles, transcodeFormat->format.codec) })
+            if (const CodecProfile * codecProfile{ getAudioCodecProfile(codecProfiles, transcodeFormat->codec) })
             {
                 for (const Limitation& limitation : codecProfile->limitations)
                 {
                     const AdjustResult result{ applyLimitation(source, limitation, transcodedStream) };
-                    if (limitation.name == Limitation::Type::AudioBitrate && core::media::getCodecDesc(transcodeFormat->format.codec).isLossless && result.type == AdjustResult::Type::Adjusted)
+                    if (limitation.name == Limitation::Type::AudioBitrate && core::media::getCodecDesc(transcodeFormat->codec).isLossless && result.type == AdjustResult::Type::Adjusted)
                         return std::nullopt; // not compatible with lossless codecs
 
                     if (result.type == AdjustResult::Type::CannotAdjust)
@@ -518,7 +512,7 @@ namespace lms::api::subsonic::detail
             }
 
             // Lossy codecs have no meaningful PCM bit depth: don't report the source's bit depth as if it still applied
-            if (!core::media::getCodecDesc(transcodeFormat->format.codec).isLossless)
+            if (!core::media::getCodecDesc(transcodeFormat->codec).isLossless)
                 transcodedStream.audioBitdepth.reset();
 
             return transcodedStream;
@@ -570,39 +564,29 @@ namespace lms::api::subsonic::detail
         return "unknown";
     }
 
-    const SupportedTranscodeFormat* selectSupportedTranscodeOutputFormatByNames(std::string_view containerName, std::string_view codecName)
+    std::optional<audio::TranscodeOutputFormat> findAudioFormatByName(std::string_view containerName, std::string_view codecName)
     {
-        const auto it{ std::find_if(std::cbegin(supportedTranscodeFormats), std::cend(supportedTranscodeFormats), [&](const SupportedTranscodeFormat& candidate) {
-            return isMatchingCodecName(candidate.format.codec, codecName) && isMatchingContainerName(candidate.format.container, containerName)
-                && audio::isEncodingSupported(candidate.format.container, candidate.format.codec);
-        }) };
-        if (it == std::cend(supportedTranscodeFormats))
-            return nullptr;
+        std::optional<audio::TranscodeOutputFormat> result;
 
-        return &(*it);
+        core::media::visitAudioFormats([&](const core::media::AudioFormat& format, core::media::ExtensionSpan) {
+            if (!isMatchingContainerName(format.container, containerName) || !isMatchingCodecName(format.codec, codecName))
+                return core::Continue;
+
+            result = audio::TranscodeOutputFormat{ format.container, format.codec };
+            return core::Break;
+        });
+
+        return result;
     }
 
-    const SupportedTranscodeFormat* selectSupportedTranscodeOutputFormatByLegacyName(std::string_view legacyFormatName)
+    std::optional<audio::TranscodeOutputFormat> findSupportedTranscodeOutputFormat(std::string_view containerName, std::string_view codecName)
     {
-        const auto it{ std::find_if(std::cbegin(supportedTranscodeFormats), std::cend(supportedTranscodeFormats), [&](const SupportedTranscodeFormat& candidate) {
-            return core::stringUtils::stringCaseInsensitiveEqual(candidate.legacyName, legacyFormatName)
-                && audio::isEncodingSupported(candidate.format.container, candidate.format.codec);
-        }) };
-        if (it == std::cend(supportedTranscodeFormats))
-            return nullptr;
+        std::optional<audio::TranscodeOutputFormat> result{ findAudioFormatByName(containerName, codecName) };
 
-        return &(*it);
-    }
+        if (result && !audio::isEncodingSupported(result->container, result->codec))
+            result.reset();
 
-    const SupportedTranscodeFormat* selectSupportedTranscodeOutputFormatByDbFormat(db::TranscodingOutputFormat dbFormat)
-    {
-        const auto it{ std::find_if(std::cbegin(supportedTranscodeFormats), std::cend(supportedTranscodeFormats), [&](const SupportedTranscodeFormat& candidate) {
-            return candidate.dbFormat == dbFormat && audio::isEncodingSupported(candidate.format.container, candidate.format.codec);
-        }) };
-        if (it == std::cend(supportedTranscodeFormats))
-            return nullptr;
-
-        return &(*it);
+        return result;
     }
 
     TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const audio::AudioProperties& source)

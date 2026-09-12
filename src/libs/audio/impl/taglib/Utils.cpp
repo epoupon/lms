@@ -65,7 +65,7 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
-#include "core/media/ContainerCodec.hpp"
+#include "core/media/AudioFormat.hpp"
 
 #include "audio/Exception.hpp"
 
@@ -164,15 +164,17 @@ namespace lms::audio::taglib::utils
         {
             std::vector<std::filesystem::path> result;
 
-            core::media::visitContainerCodecPairs([&](const core::media::ContainerCodec& pair) {
-                if (!isContainerSupported(pair.container))
-                    return;
+            core::media::visitAudioFormats([&](const core::media::AudioFormat& format, core::media::ExtensionSpan extensions) {
+                if (!isContainerSupported(format.container))
+                    return core::Continue;
 
-                for (const std::string_view extension : pair.extensions)
+                for (const std::string_view extension : extensions)
                 {
                     if (std::find(std::cbegin(result), std::cend(result), extension) == std::cend(result))
                         result.emplace_back(extension);
                 }
+
+                return core::Continue;
             });
 
             return result;
@@ -234,11 +236,11 @@ namespace lms::audio::taglib::utils
 
         // Extensions can be ambiguous (e.g. .oga is both Ogg+FLAC and Ogg+Vorbis): try every candidate
         // pairing for this extension, in table order, until one actually validates
-        core::media::visitContainerCodecPairsForExtension(ext, [&](const core::media::ContainerCodec& pair) {
-            if (file || !isContainerSupported(pair.container))
+        core::media::visitAudioFormatsForExtension(ext, [&](const core::media::AudioFormat& format) {
+            if (file || !isContainerSupported(format.container))
                 return;
 
-            std::unique_ptr<TagLib::File> candidate{ createFile(stream, pair.container, pair.codec, readAudioProperties, audioPropertiesStyle) };
+            std::unique_ptr<TagLib::File> candidate{ createFile(stream, format.container, format.codec, readAudioProperties, audioPropertiesStyle) };
             if (candidate && candidate->isValid())
                 file = std::move(candidate);
         });

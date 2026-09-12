@@ -31,8 +31,7 @@
 
 #include <gtest/gtest.h>
 
-#include "core/media/Codec.hpp"
-#include "core/media/ContainerCodec.hpp"
+#include "core/media/AudioFormat.hpp"
 
 #include "audio/IAudioDecoder.hpp"
 #include "audio/PcmTypes.hpp"
@@ -179,12 +178,13 @@ namespace lms::audio::tests
         {
             std::vector<RoundTripTestCase> cases;
 
-            core::media::visitContainerCodecPairs([&](const core::media::ContainerCodec& pair) {
+            core::media::visitAudioFormats([&](const core::media::AudioFormat& format, core::media::ExtensionSpan) {
                 cases.push_back(RoundTripTestCase{
-                    .name = sanitizeIdentifier(core::media::containerToString(pair.container).str()) + "_" + sanitizeIdentifier(core::media::getCodecDesc(pair.codec).name.str()),
-                    .container = pair.container,
-                    .codec = pair.codec,
+                    .name = sanitizeIdentifier(core::media::containerToString(format.container).str()) + "_" + sanitizeIdentifier(core::media::getCodecDesc(format.codec).name.str()),
+                    .container = format.container,
+                    .codec = format.codec,
                 });
+                return core::Continue;
             });
 
             return cases;
@@ -261,14 +261,15 @@ namespace lms::audio::tests
         EXPECT_EQ(encoder.getInputParameters().channelCount, 2u);
     }
 
-    TEST(AudioEncoder, findMuxerMatchesCapabilityForEveryContainerCodecPair)
+    TEST(AudioEncoder, findMuxerMatchesCapabilityForEveryAudioFormat)
     {
-        core::media::visitContainerCodecPairs([](const core::media::ContainerCodec& pair) {
-            const std::string caseName{ std::string{ core::media::containerToString(pair.container).str() } + "_" + std::string{ core::media::getCodecDesc(pair.codec).name.str() } };
-            if (ffmpeg::utils::isCodecMuxingSupported(pair.container, pair.codec))
-                EXPECT_NO_THROW(ffmpeg::utils::findMuxer(pair.container, pair.codec)) << caseName;
+        core::media::visitAudioFormats([](const core::media::AudioFormat& format, core::media::ExtensionSpan) {
+            const std::string caseName{ std::string{ core::media::containerToString(format.container).str() } + "_" + std::string{ core::media::getCodecDesc(format.codec).name.str() } };
+            if (ffmpeg::utils::isCodecMuxingSupported(format.container, format.codec))
+                EXPECT_NO_THROW(ffmpeg::utils::findMuxer(format.container, format.codec)) << caseName;
             else
-                EXPECT_ANY_THROW(ffmpeg::utils::findMuxer(pair.container, pair.codec)) << caseName;
+                EXPECT_ANY_THROW(ffmpeg::utils::findMuxer(format.container, format.codec)) << caseName;
+            return core::Continue;
         });
     }
 

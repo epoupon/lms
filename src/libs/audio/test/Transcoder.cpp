@@ -25,10 +25,7 @@
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
-#include <fstream>
 #include <functional>
-#include <numbers>
-#include <random>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -36,7 +33,7 @@
 
 #include <boost/asio/io_context.hpp>
 
-#include "core/media/ContainerCodec.hpp"
+#include "core/media/AudioFormat.hpp"
 #include "core/media/MimeType.hpp"
 
 #include "audio/Exception.hpp"
@@ -109,9 +106,12 @@ namespace lms::audio::tests
         {
             static const std::optional<SupportedOutputFormat> format = [] {
                 std::optional<SupportedOutputFormat> result;
-                core::media::visitContainerCodecPairs([&](const core::media::ContainerCodec& pair) {
-                    if (!result && core::media::getCodecDesc(pair.codec).isLossless && isEncodingSupported(pair.container, pair.codec))
-                        result = SupportedOutputFormat{ pair.container, pair.codec, pair.extensions.front() };
+                core::media::visitAudioFormats([&](const core::media::AudioFormat& candidate, core::media::ExtensionSpan extensions) {
+                    if (!core::media::getCodecDesc(candidate.codec).isLossless || !isEncodingSupported(candidate.container, candidate.codec))
+                        return core::Continue;
+
+                    result = SupportedOutputFormat{ candidate.container, candidate.codec, extensions.front() };
+                    return core::Break;
                 });
                 return result;
             }();
