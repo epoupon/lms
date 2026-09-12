@@ -23,7 +23,10 @@
 
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
+#include "core/media/AudioFormat.hpp"
 
+#include "audio/IAudioDecoder.hpp"
+#include "audio/ITranscoder.hpp"
 #include "audio/TranscodeTypes.hpp"
 
 #include "SubsonicResponse.hpp"
@@ -33,13 +36,6 @@ namespace lms::api::subsonic::detail
 {
     namespace
     {
-        constexpr std::array supportedTranscodeOutputFormats{
-            audio::TranscodeOutputFormat{ .container = core::media::Container::MPEG, .codec = core::media::Codec::MP3 },
-            audio::TranscodeOutputFormat{ .container = core::media::Container::Ogg, .codec = core::media::Codec::Vorbis },
-            audio::TranscodeOutputFormat{ .container = core::media::Container::Ogg, .codec = core::media::Codec::Opus },
-            audio::TranscodeOutputFormat{ .container = core::media::Container::FLAC, .codec = core::media::Codec::FLAC },
-        };
-
         bool isMatchingContainerName(core::media::Container container, std::string_view containerStr)
         {
             using namespace std::literals; // for "..."sv
@@ -49,10 +45,10 @@ namespace lms::api::subsonic::detail
             constexpr std::array asfNames{ "asf"sv, "wma"sv };
             constexpr std::array dsfNames{ "dsf"sv };
             constexpr std::array mpcNames{ "mpc"sv, "mpp"sv, "mp"sv };
-            constexpr std::array mpegNames{ "mp3"sv, "mp2"sv, "mpeg"sv };
+            constexpr std::array mpegNames{ "mp3"sv, "mp2"sv, "mpeg"sv, "aac"sv, "adts"sv }; // "aac"/"adts" mean raw ADTS AAC here, not MP4-boxed AAC
             constexpr std::array oggNames{ "ogg"sv, "oga"sv };
             constexpr std::array flacNames{ "flac"sv };
-            constexpr std::array mp4Names{ "aac"sv, "adts"sv, "m4a"sv, "mp4"sv, "m4b"sv, "m4p"sv };
+            constexpr std::array mp4Names{ "m4a"sv, "mp4"sv, "m4b"sv, "m4p"sv };
             constexpr std::array shortenNames{ "shn"sv };
             constexpr std::array trueAudioNames{ "tta"sv };
             constexpr std::array wavNames{ "wav"sv };
@@ -458,7 +454,7 @@ namespace lms::api::subsonic::detail
             if (profile.protocol != "http")
                 return std::nullopt;
 
-            const audio::TranscodeOutputFormat* transcodeFormat{ selectTranscodeOutputFormat(profile.container, profile.audioCodec) };
+            const std::optional<audio::TranscodeOutputFormat> transcodeFormat{ findSupportedTranscodeOutputFormat(profile.container, profile.audioCodec) };
             if (!transcodeFormat)
                 return std::nullopt;
 
@@ -569,16 +565,29 @@ namespace lms::api::subsonic::detail
         return "unknown";
     }
 
-    const audio::TranscodeOutputFormat* selectTranscodeOutputFormat(std::string_view containerName, std::string_view codecName)
+    std::optional<audio::TranscodeOutputFormat> findAudioFormatByName(std::string_view containerName, std::string_view codecName)
     {
-        // Find a supported output format
-        const auto it{ std::find_if(std::cbegin(supportedTranscodeOutputFormats), std::cend(supportedTranscodeOutputFormats), [&](const audio::TranscodeOutputFormat& format) {
-            return isMatchingCodecName(format.codec, codecName) && isMatchingContainerName(format.container, containerName);
-        }) };
-        if (it == std::cend(supportedTranscodeOutputFormats))
-            return nullptr;
+        std::optional<audio::TranscodeOutputFormat> result;
 
-        return &(*it);
+        core::media::visitAudioFormats([&](const core::media::AudioFormat& format, core::media::ExtensionSpan) {
+            if (!isMatchingContainerName(format.container, containerName) || !isMatchingCodecName(format.codec, codecName))
+                return core::Continue;
+
+            result = audio::TranscodeOutputFormat{ format.container, format.codec };
+            return core::Break;
+        });
+
+        return result;
+    }
+
+    std::optional<audio::TranscodeOutputFormat> findSupportedTranscodeOutputFormat(std::string_view containerName, std::string_view codecName)
+    {
+        std::optional<audio::TranscodeOutputFormat> result{ findAudioFormatByName(containerName, codecName) };
+
+        if (result && !audio::isEncodingSupported(result->container, result->codec))
+            result.reset();
+
+        return result;
     }
 
     TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const audio::AudioProperties& source)
@@ -589,6 +598,12 @@ namespace lms::api::subsonic::detail
             return DirectPlayResult{};
 
         LMS_LOG(API_SUBSONIC, DEBUG, "Direct play not possible: no compatible direct play profile found");
+
+        if (!audio::isDecodingSupported(source.container, source.codec))
+        {
+            LMS_LOG(API_SUBSONIC, DEBUG, "Cannot transcode: source format not supported for decoding by this build: container = " << core::media::containerToString(source.container) << ", codec = " << core::media::getCodecDesc(source.codec).name);
+            return FailureResult{ "Source audio format is not supported for decoding by this server" };
+        }
 
         // Check transcoding profiles, we have to select the first one we can handle, order is important
         for (const TranscodingProfile& profile : clientInfo.transcodingProfiles)

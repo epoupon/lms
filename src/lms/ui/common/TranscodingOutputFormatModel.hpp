@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -16,24 +16,19 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
-#include <filesystem>
 #include <memory>
 
-#include <boost/asio/io_context.hpp>
+#include <Wt/WValidator.h>
 
-#include "IChildProcess.hpp"
+#include "database/objects/Types.hpp"
 
-namespace lms::core
+#include "ValueStringModel.hpp"
+
+namespace lms::ui
 {
-    class IChildProcessManager
-    {
-    public:
-        virtual ~IChildProcessManager() = default;
-
-        virtual std::unique_ptr<IChildProcess> spawnChildProcess(const std::filesystem::path& path, const IChildProcess::Args& args) = 0;
-    };
-
-    std::unique_ptr<IChildProcessManager> createChildProcessManager(boost::asio::io_context& ioContext);
-} // namespace lms::core
+    std::shared_ptr<ValueStringModel<db::TranscodingOutputFormat>> createTranscodingOutputFormatModel();
+    std::unique_ptr<Wt::WValidator> createTranscodingOutputFormatValidator(std::shared_ptr<ValueStringModel<db::TranscodingOutputFormat>> model);
+} // namespace lms::ui

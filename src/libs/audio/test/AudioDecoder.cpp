@@ -80,7 +80,7 @@ namespace lms::audio::tests
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        Formats,
+        audio,
         AudioDecoderTest,
         ::testing::ValuesIn(getTestAudioFiles()),
         [](const ::testing::TestParamInfo<TestAudioFile>& info) { return std::string{ info.param.name }; });

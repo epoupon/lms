@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include "core/LiteralString.hpp"
 
 namespace lms::core::media
@@ -40,5 +42,6 @@ namespace lms::core::media
         WavPack,
     };
 
+    void visitContainers(const std::function<void(Container)>& visitor);
     core::LiteralString containerToString(Container type);
 } // namespace lms::core::media

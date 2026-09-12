@@ -25,6 +25,8 @@ extern "C"
 #include <libavcodec/avcodec.h>
 #include <libavcodec/packet.h>
 #include <libavformat/avformat.h>
+#include <libavformat/avio.h>
+#include <libavutil/audio_fifo.h>
 #include <libswresample/swresample.h>
 }
 
@@ -42,6 +44,28 @@ namespace lms::audio::ffmpeg
             return;
 
         ::avformat_close_input(&ctx);
+    }
+
+    void AvFormatContextOutputDeleter::operator()(AVFormatContext* ctx) const noexcept
+    {
+        if (ctx)
+            ::avformat_free_context(ctx);
+    }
+
+    void AvIOContextDeleter::operator()(AVIOContext* ctx) const noexcept
+    {
+        if (!ctx)
+            return;
+
+        // the buffer may have been reallocated by libavformat, so we must free the current one
+        ::av_freep(&ctx->buffer);
+        ::avio_context_free(&ctx);
+    }
+
+    void AvAudioFifoDeleter::operator()(AVAudioFifo* fifo) const noexcept
+    {
+        if (fifo)
+            ::av_audio_fifo_free(fifo);
     }
 
     void AvFrameDeleter::operator()(AVFrame* frame) const noexcept

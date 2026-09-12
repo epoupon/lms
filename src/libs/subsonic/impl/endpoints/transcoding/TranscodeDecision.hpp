@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -71,6 +72,7 @@ namespace lms::api::subsonic
         using TranscodeDecisionResult = std::variant<DirectPlayResult, TranscodeResult, FailureResult>;
         TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const audio::AudioProperties& source);
 
-        const audio::TranscodeOutputFormat* selectTranscodeOutputFormat(std::string_view containerName, std::string_view codecName);
+        std::optional<audio::TranscodeOutputFormat> findAudioFormatByName(std::string_view containerName, std::string_view codecName);
+        std::optional<audio::TranscodeOutputFormat> findSupportedTranscodeOutputFormat(std::string_view containerName, std::string_view codecName);
     } // namespace detail
 } // namespace lms::api::subsonic

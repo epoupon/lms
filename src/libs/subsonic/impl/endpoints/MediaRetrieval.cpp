@@ -20,6 +20,7 @@
 #include "MediaRetrieval.hpp"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 
 #include "core/FileResourceHandlerCreator.hpp"
@@ -27,7 +28,11 @@
 #include "core/IResourceHandler.hpp"
 #include "core/String.hpp"
 #include "core/media/Codec.hpp"
+#include "core/media/Container.hpp"
 #include "core/media/MimeType.hpp"
+
+#include "audio/ITranscoder.hpp"
+#include "audio/TranscodeTypes.hpp"
 
 #include "database/Session.hpp"
 #include "database/objects/PodcastEpisodeId.hpp"
@@ -50,59 +55,41 @@ namespace lms::api::subsonic
 {
     namespace
     {
-        struct OutputFormat
+        struct SupportedTranscodeFormat
         {
-            std::string_view name;
-            core::media::Container container;
-            core::media::Codec codec;
-        };
-        constexpr std::array outputFormats{
-            OutputFormat{ .name = "mp3", .container = core::media::Container::MPEG, .codec = core::media::Codec::MP3 },
-            OutputFormat{ .name = "opus", .container = core::media::Container::Ogg, .codec = core::media::Codec::Opus },
-            OutputFormat{ .name = "vorbis", .container = core::media::Container::Ogg, .codec = core::media::Codec::Vorbis },
-            OutputFormat{ .name = "flac", .container = core::media::Container::FLAC, .codec = core::media::Codec::FLAC },
+            audio::TranscodeOutputFormat format;
+            std::string_view legacyName;
+            std::optional<db::TranscodingOutputFormat> dbFormat;
         };
 
-        std::optional<OutputFormat> getOutputFormatByName(std::string_view format)
-        {
-            std::optional<OutputFormat> res;
+        constexpr std::array supportedTranscodeFormats{
+            SupportedTranscodeFormat{ .format = { .container = core::media::Container::MPEG, .codec = core::media::Codec::MP3 }, .legacyName = "mp3", .dbFormat = db::TranscodingOutputFormat::MP3 },
+            SupportedTranscodeFormat{ .format = { .container = core::media::Container::Ogg, .codec = core::media::Codec::Vorbis }, .legacyName = "vorbis", .dbFormat = db::TranscodingOutputFormat::OGG_VORBIS },
+            SupportedTranscodeFormat{ .format = { .container = core::media::Container::Ogg, .codec = core::media::Codec::Opus }, .legacyName = "opus", .dbFormat = db::TranscodingOutputFormat::OGG_OPUS },
+            SupportedTranscodeFormat{ .format = { .container = core::media::Container::FLAC, .codec = core::media::Codec::FLAC }, .legacyName = "flac", .dbFormat = std::nullopt /* no db counterpart */ },
+        };
 
-            const auto itFormat{ std::find_if(outputFormats.begin(), outputFormats.end(), [&format, &res](const OutputFormat& outputFormat) {
-                if (core::stringUtils::stringCaseInsensitiveEqual(format, outputFormat.name))
-                {
-                    res = outputFormat;
-                    return true;
-                }
-                return false;
+        const SupportedTranscodeFormat* selectSupportedTranscodeOutputFormatByLegacyName(std::string_view legacyFormatName)
+        {
+            const auto it{ std::find_if(std::cbegin(supportedTranscodeFormats), std::cend(supportedTranscodeFormats), [&](const SupportedTranscodeFormat& candidate) {
+                return core::stringUtils::stringCaseInsensitiveEqual(candidate.legacyName, legacyFormatName)
+                    && audio::isEncodingSupported(candidate.format.container, candidate.format.codec);
             }) };
-            if (itFormat != outputFormats.end())
-                res = *itFormat;
+            if (it == std::cend(supportedTranscodeFormats))
+                return nullptr;
 
-            return res;
+            return &(*it);
         }
 
-        OutputFormat userTranscodeFormatToOutputFormat(db::TranscodingOutputFormat format)
+        const SupportedTranscodeFormat* selectSupportedTranscodeOutputFormatByDbFormat(db::TranscodingOutputFormat dbFormat)
         {
-            std::optional<OutputFormat> res;
+            const auto it{ std::find_if(std::cbegin(supportedTranscodeFormats), std::cend(supportedTranscodeFormats), [&](const SupportedTranscodeFormat& candidate) {
+                return candidate.dbFormat == dbFormat && audio::isEncodingSupported(candidate.format.container, candidate.format.codec);
+            }) };
+            if (it == std::cend(supportedTranscodeFormats))
+                return nullptr;
 
-            switch (format)
-            {
-            case db::TranscodingOutputFormat::MP3:
-                res = getOutputFormatByName("mp3");
-                break;
-            case db::TranscodingOutputFormat::OGG_OPUS:
-                res = getOutputFormatByName("opus");
-                break;
-            case db::TranscodingOutputFormat::OGG_VORBIS:
-                res = getOutputFormatByName("vorbis");
-                break;
-            }
-
-            if (!res)
-                throw InternalErrorGenericError{ "User's default transcoding format is invalid" };
-
-            LMS_LOG(API_SUBSONIC, DEBUG, "Using user's default transcoding format: " << res->name);
-            return *res;
+            return &(*it);
         }
 
         struct StreamParameters
@@ -139,23 +126,24 @@ namespace lms::api::subsonic
             if (format == "raw")   // raw => no transcoding
                 return parameters; // TODO: what if offset is not 0?
 
-            std::optional<OutputFormat> requestedFormat;
+            std::optional<SupportedTranscodeFormat> requestedFormat;
 
             if (!format.empty())
             {
-                requestedFormat = getOutputFormatByName(format);
-                if (!requestedFormat)
-                    LMS_LOG(API_SUBSONIC, ERROR, "Format '" << format << "' is not recognized: ignoring");
+                if (const auto* found{ selectSupportedTranscodeOutputFormatByLegacyName(format) })
+                    requestedFormat = *found;
+                else
+                    LMS_LOG(API_SUBSONIC, ERROR, "Format '" << format << "' is not available (unrecognized name, or not supported by this build): ignoring");
             }
 
-            if (!requestedFormat)
+            if (!requestedFormat && context.getUser()->getSubsonicEnableTranscodingByDefault())
             {
-                if (context.getUser()->getSubsonicEnableTranscodingByDefault())
-                    requestedFormat = userTranscodeFormatToOutputFormat(context.getUser()->getSubsonicDefaultTranscodingOutputFormat());
+                if (const auto* found{ selectSupportedTranscodeOutputFormatByDbFormat(context.getUser()->getSubsonicDefaultTranscodingOutputFormat()) })
+                    requestedFormat = *found;
             }
 
             // Extra checks when requesting a lossless format
-            if (requestedFormat && core::media::getCodecDesc(requestedFormat->codec).isLossless)
+            if (requestedFormat && core::media::getCodecDesc(requestedFormat->format.codec).isLossless)
             {
                 if (!core::media::getCodecDesc(audioFileInfo.audioProperties.codec).isLossless && maxBitRate > 0)
                     throw BadParameterGenericError{ "maxBitRate", "Cannot limit bitrate when requesting a lossless format from a lossy source" };
@@ -174,7 +162,7 @@ namespace lms::api::subsonic
 
             // Check if the input file is compatible with the requested format
             std::optional<std::size_t> bitrate;
-            if (requestedFormat && requestedFormat->container == audioFileInfo.audioProperties.container && requestedFormat->codec == audioFileInfo.audioProperties.codec)
+            if (requestedFormat && requestedFormat->format.container == audioFileInfo.audioProperties.container && requestedFormat->format.codec == audioFileInfo.audioProperties.codec)
             {
                 //  same codec => check if compatible with max bitrate
                 if (maxBitRate == 0 || audioFileInfo.audioProperties.bitrate <= maxBitRate)
@@ -192,10 +180,13 @@ namespace lms::api::subsonic
             audio::TranscodeParameters& transcodeParameters{ parameters.transcodeParameters.emplace() };
 
             if (!requestedFormat) // no format provided => use user's default
-                requestedFormat = userTranscodeFormatToOutputFormat(context.getUser()->getSubsonicDefaultTranscodingOutputFormat());
-
-            assert(requestedFormat);
-            if (!core::media::getCodecDesc(requestedFormat->codec).isLossless)
+            {
+                if (const auto* found{ selectSupportedTranscodeOutputFormatByDbFormat(context.getUser()->getSubsonicDefaultTranscodingOutputFormat()) })
+                    requestedFormat = *found;
+                else
+                    throw InternalErrorGenericError{ "User's default transcoding format is not supported" };
+            }
+            if (!core::media::getCodecDesc(requestedFormat->format.codec).isLossless)
             {
                 // Try to keep a bitrate as close as possible to the source one
                 // If the source is lossless, we need to pick a default bitrate
@@ -220,12 +211,12 @@ namespace lms::api::subsonic
 
             transcodeParameters.outputParameters.bitrate = bitrate;
             transcodeParameters.outputParameters.format.emplace();
-            transcodeParameters.outputParameters.format->container = requestedFormat->container;
-            transcodeParameters.outputParameters.format->codec = requestedFormat->codec;
+            transcodeParameters.outputParameters.format->container = requestedFormat->format.container;
+            transcodeParameters.outputParameters.format->codec = requestedFormat->format.codec;
 
             transcodeParameters.outputParameters.stripMetadata = false; // We want clients to use metadata (offline use, replay gain, etc.)
 
-            LMS_LOG(API_SUBSONIC, DEBUG, "Transcoding to format '" << requestedFormat->name << "'" << (bitrate ? (" with bitrate " + std::to_string(*bitrate) + " bps") : ""));
+            LMS_LOG(API_SUBSONIC, DEBUG, "Transcoding to format '" << requestedFormat->legacyName << "'" << (bitrate ? (" with bitrate " + std::to_string(*bitrate) + " bps") : ""));
 
             return parameters;
         }

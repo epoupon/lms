@@ -45,6 +45,7 @@ namespace lms::audio::ffmpeg
         std::size_t computeSampleCountPerChannel(std::span<WritableBuffer> outputChannelBuffers) const;
         void feedDecoder();
         void sendPendingPacket();
+        int computeStartTrimSampleCount(const AVFrame* frame);
         bool inputFormatChanged(const AVFrame* frame) const;
         void reinitResamplerForFrame(const AVFrame* frame);
         std::size_t resampleFrame(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel, const AVFrame* inputFrame);
@@ -60,6 +61,11 @@ namespace lms::audio::ffmpeg
         AVFormatContextPtr _context;
         std::chrono::milliseconds _estimatedDuration{};
         int _inputStreamIndex{};
+
+        // Seeking lands on the packet boundary before the requested offset: the extra samples are dropped
+        std::int64_t _seekTargetTimestamp{};
+        bool _startTrimPending{};
+
         AVCodecContextPtr _decoderContext;
         AVFramePtr _decodedFrame;
         AVPacketPtr _inputPacket;

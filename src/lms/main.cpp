@@ -26,7 +26,6 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-#include "core/IChildProcessManager.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/IOContextRunner.hpp"
@@ -69,7 +68,7 @@ namespace lms
         {
             const unsigned long configHttpServerThreadCount{ core::Service<core::IConfig>::get()->getULong("http-server-thread-count", 0) };
 
-            // Reserve at least 2 threads since we still have some blocking IO (for example when reading from ffmpeg)
+            // Reserve at least 2 threads since we still have some blocking IO
             return configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(2, std::thread::hardware_concurrency());
         }
 
@@ -466,8 +465,6 @@ namespace lms
 
             const std::size_t loginThrottlerMaxEntries{ config->getULong("login-throttler-max-entries", 10'000) };
             // Service initialization order is important (reverse-order for deinit)
-            core::Service<core::IChildProcessManager> childProcessManagerService{ core::createChildProcessManager(ioContext) };
-
             const ui::AuthenticationBackend uiAuthenticationBackend{ getUIAuthenticationBackend() };
             core::Service<auth::IAuthTokenService> authTokenService{ auth::createAuthTokenService(*database, config->getULong("login-throttler-max-entriees", 10'000)) };
             core::Service<auth::IPasswordService> authPasswordService;

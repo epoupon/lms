@@ -1,4 +1,4 @@
-pkg_check_modules(LIBAV IMPORTED_TARGET libavcodec libavutil libavformat libswresample)
+pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET libavcodec libavutil libavformat libswresample)
 pkg_check_modules(Taglib REQUIRED IMPORTED_TARGET taglib>=2)
 pkg_check_modules(PulseAudio IMPORTED_TARGET libpulse)
 pkg_check_modules(ALSA IMPORTED_TARGET alsa)
@@ -13,6 +13,7 @@ endif()
 add_library(lmsaudio STATIC
 	impl/features/MelFilterBank.cpp
 	impl/ffmpeg/AudioDecoder.cpp
+	impl/ffmpeg/AudioEncoder.cpp
 	impl/ffmpeg/AudioFile.cpp
 	impl/ffmpeg/AudioFileInfo.cpp
 	impl/ffmpeg/AudioFileInfoParser.cpp

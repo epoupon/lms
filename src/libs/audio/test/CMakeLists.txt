@@ -3,11 +3,14 @@ include(GoogleTest)
 add_executable(test-audio
 	Audio.cpp
 	AudioDecoder.cpp
+	AudioEncoder.cpp
 	AudioFileInfoParser.cpp
 	MelFilterBank.cpp
 	MusicNNEmbeddings.cpp
 	SpectralFrameDecoder.cpp
 	TestData.cpp
+	TestUtils.cpp
+	Transcoder.cpp
 	)
 
 target_compile_definitions(test-audio PRIVATE

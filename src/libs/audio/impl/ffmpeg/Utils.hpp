@@ -27,10 +27,15 @@
 extern "C"
 {
 #include <libavcodec/codec_id.h>
+#include <libavutil/samplefmt.h>
 }
 
 #include "core/media/Codec.hpp"
 #include "core/media/Container.hpp"
+
+#include "audio/PcmTypes.hpp"
+
+#include "FFmpegTypes.hpp"
 
 namespace lms::audio::ffmpeg::utils
 {
@@ -38,11 +43,25 @@ namespace lms::audio::ffmpeg::utils
 
     std::span<const std::filesystem::path> getSupportedDemuxerExtensions();
 
-    bool isDemuxingSupported(core::media::Container container);
-    bool isDecodingSupported(core::media::Codec codec);
+    bool isDecodingSupported(core::media::Container container, core::media::Codec codec);
+    bool isCodecMuxingSupported(core::media::Container container, core::media::Codec codec);
 
-    std::optional<core::media::Container> containerFromFormatName(std::string_view name);
+    // Throw if no encoder is available for this codec
+    const AVCodec* findEncoder(core::media::Codec codec);
+
+    // Throw if this specific container/codec pairing cannot be muxed
+    const AVOutputFormat* findMuxer(core::media::Container container, core::media::Codec codec);
+
+    // Empty means the encoder does not restrict this (or there is no encoder for this codec)
+    std::span<const ::AVSampleFormat> getSupportedSampleFormats(core::media::Codec codec);
+    std::span<const int> getSupportedSampleRates(core::media::Codec codec);
+    std::span<const AVChannelLayout* const> getSupportedChannelLayouts(core::media::Codec codec);
+
+    std::optional<core::media::Container> containerFromDemuxerName(const char* name);
     std::optional<core::media::Codec> codecFromAVCodecId(AVCodecID codec);
+
+    PcmSampleType toPcmSampleType(::AVSampleFormat format);
+    ::AVSampleFormat toAvSampleFormat(PcmSampleType type, bool planar);
 
     void init();
     bool isInit();

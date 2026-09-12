@@ -24,6 +24,8 @@
 #include <memory>
 #include <string_view>
 
+#include <boost/asio/io_context.hpp>
+
 #include "TranscodeTypes.hpp"
 
 namespace lms::audio
@@ -42,7 +44,12 @@ namespace lms::audio
         virtual const TranscodeOutputParameters& getOutputParameters() const = 0;
 
         virtual bool finished() const = 0;
+
+        // A unique id associated with this transcoder (useful for log)
+        virtual std::size_t getDebugId() const = 0;
     };
 
-    std::unique_ptr<ITranscoder> createTranscoder(const TranscodeParameters& parameters);
+    std::unique_ptr<ITranscoder> createTranscoder(boost::asio::io_context& ioContext, const TranscodeParameters& parameters);
+
+    bool isEncodingSupported(core::media::Container container, core::media::Codec codec);
 } // namespace lms::audio

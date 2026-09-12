@@ -28,6 +28,10 @@
 #include <Wt/WText.h>
 
 #include "core/String.hpp"
+#include "core/media/Codec.hpp"
+#include "core/media/Container.hpp"
+
+#include "audio/ITranscoder.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
@@ -589,5 +593,30 @@ namespace lms::ui::utils
         }
 
         return TrackDisplayInfo{ .title = std::string{ track->getName() }, .workName = std::nullopt };
+    }
+
+    // Silent: also used to just probe support (e.g. filtering settings dropdowns), where an
+    // unsupported format is a routine, expected outcome, not an error worth logging
+    std::optional<audio::TranscodeOutputFormat> toSupportedTranscodeOutputFormat(db::TranscodingOutputFormat format)
+    {
+        std::optional<audio::TranscodeOutputFormat> res;
+
+        switch (format)
+        {
+        case db::TranscodingOutputFormat::MP3:
+            res = audio::TranscodeOutputFormat{ core::media::Container::MPEG, core::media::Codec::MP3 };
+            break;
+        case db::TranscodingOutputFormat::OGG_OPUS:
+            res = audio::TranscodeOutputFormat{ core::media::Container::Ogg, core::media::Codec::Opus };
+            break;
+        case db::TranscodingOutputFormat::OGG_VORBIS:
+            res = audio::TranscodeOutputFormat{ core::media::Container::Ogg, core::media::Codec::Vorbis };
+            break;
+        }
+
+        if (res && !audio::isEncodingSupported(res->container, res->codec))
+            res.reset();
+
+        return res;
     }
 } // namespace lms::ui::utils

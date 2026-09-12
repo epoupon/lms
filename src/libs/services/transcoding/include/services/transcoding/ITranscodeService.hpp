@@ -35,7 +35,7 @@ namespace lms::transcoding
     public:
         virtual ~ITranscodeService() = default;
 
-        virtual std::unique_ptr<core::IResourceHandler> createTranscodeResourceHandler(const audio::TranscodeParameters& parameters, bool estimateContentLength = false) = 0;
+        virtual std::shared_ptr<core::IResourceHandler> createTranscodeResourceHandler(const audio::TranscodeParameters& parameters, bool estimateContentLength = false) = 0;
     };
 
     std::unique_ptr<ITranscodeService> createTranscodeService();

@@ -20,20 +20,19 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
+
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/strand.hpp>
 
 #include "audio/ITranscoder.hpp"
-
-namespace lms::core
-{
-    class IChildProcess;
-}
 
 namespace lms::audio::ffmpeg
 {
     class Transcoder : public ITranscoder
     {
     public:
-        Transcoder(const TranscodeParameters& parameters);
+        Transcoder(boost::asio::io_context& ioContext, const TranscodeParameters& parameters);
         ~Transcoder() override;
         Transcoder(const Transcoder&) = delete;
         Transcoder& operator=(const Transcoder&) = delete;
@@ -46,13 +45,16 @@ namespace lms::audio::ffmpeg
         const TranscodeOutputParameters& getOutputParameters() const override { return _outputParams; }
 
         bool finished() const override;
-        static void init();
-        void start();
+        std::size_t getDebugId() const override { return _debugId; }
+
+        // Owns everything the posted handlers touch, so that aborting cannot destroy it from under them
+        class Engine;
 
         static std::atomic<std::size_t> _nextDebugId;
         const std::size_t _debugId;
         const TranscodeInputParameters _inputParams;
         const TranscodeOutputParameters _outputParams;
-        std::unique_ptr<core::IChildProcess> _childProcess;
+        boost::asio::strand<boost::asio::io_context::executor_type> _strand;
+        std::shared_ptr<Engine> _engine;
     };
 } // namespace lms::audio::ffmpeg
