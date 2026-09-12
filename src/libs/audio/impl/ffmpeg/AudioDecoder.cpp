@@ -93,6 +93,20 @@ namespace lms::audio::ffmpeg
         {
             return container != core::media::Container::WavPack;
         }
+
+        void checkDecodedFormatIsSupported(const ::AVFormatContext& formatContext, const ::AVCodec& decoder, const std::filesystem::path& filePath)
+        {
+            const std::optional<core::media::Container> container{ utils::containerFromDemuxerName(formatContext.iformat->name) };
+            const std::optional<core::media::Codec> codec{ utils::codecFromAVCodecId(decoder.id) };
+
+            if (container && codec && utils::isDecodingSupported(*container, *codec))
+                return;
+
+            const std::string containerName{ container ? std::string{ core::media::containerToString(*container).str() } : std::string{ "unknown" } };
+            const std::string codecName{ codec ? std::string{ core::media::getCodecDesc(*codec).name.str() } : std::string{ "unknown" } };
+            LMS_LOG(AUDIO, ERROR, "Unsupported format in " << filePath << ": container = " << containerName << ", codec = " << codecName);
+            throw Exception{ "Format not supported by this build (container = " + containerName + ", codec = " + codecName + ")" };
+        }
     } // namespace
 
     AudioDecoder::AudioDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
@@ -137,6 +151,8 @@ namespace lms::audio::ffmpeg
             LMS_LOG(AUDIO, ERROR, "Cannot find best audio stream in " << filePath << ": " << utils::averrorToString(_inputStreamIndex));
             throw FFmpegException{ "Cannot find best audio stream in '" + filePath.string() + "'", _inputStreamIndex };
         }
+
+        checkDecodedFormatIsSupported(*_context, *decoder, filePath);
 
         if (offset.count() > 0)
         {

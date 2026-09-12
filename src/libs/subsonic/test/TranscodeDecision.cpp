@@ -277,6 +277,34 @@ namespace lms::api::subsonic
 
                     .expected = { detail::DirectPlayResult{} },
                 },
+
+                // direct play never needs the server to decode anything (the source bytes are streamed as-is),
+                // so it must succeed even for a source format this build can't decode at all
+                {
+                    .name = "DirectPlayNotGatedByDecodingSupport",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = std::nullopt,
+                        .directPlayProfiles = {
+                            { .containers = { "wav" }, .audioCodecs = {}, .protocols = {}, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {},
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::WAV,
+                        .codec = core::media::Codec::MP3, // never a registered WAV/MP3 pair: guaranteed unsupported for decoding, on any build
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 128'000,
+                        .channelCount = 2,
+                        .sampleRate = 44'100,
+                        .bitsPerSample = std::nullopt,
+                    },
+
+                    .expected = { detail::DirectPlayResult{} },
+                },
             };
         }
 
@@ -1288,6 +1316,35 @@ namespace lms::api::subsonic
                     },
 
                     .expected = { detail::FailureResult{ "No compatible direct play or transcoding profile found" } },
+                },
+
+                // transcoding always needs the server to decode the source first: if this build can't decode
+                // it at all, no transcoding profile could ever succeed, so we must fail fast with a precise
+                // reason instead of iterating a transcoding-profile loop that could never work
+                {
+                    .name = "SourceDecodingNotSupported",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = std::nullopt,
+                        .directPlayProfiles = {},
+                        .transcodingProfiles = {
+                            { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = std::nullopt },
+                        },
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::WAV,
+                        .codec = core::media::Codec::MP3, // never a registered WAV/MP3 pair: guaranteed unsupported for decoding, on any build
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 128'000,
+                        .channelCount = 2,
+                        .sampleRate = 44'100,
+                        .bitsPerSample = std::nullopt,
+                    },
+
+                    .expected = { detail::FailureResult{ "Source audio format is not supported for decoding by this server" } },
                 },
 
                 // MP4-boxed AAC must NOT match a client's "aac"-only container declaration: "aac" means raw ADTS,

@@ -358,4 +358,13 @@ namespace lms::audio::tests
         boost::asio::io_context ioContext;
         EXPECT_THROW(createTranscoder(ioContext, parameters), Exception);
     }
+
+    TEST(Transcoder, unsupportedOutputFormatThrows)
+    {
+        const TestAudioFile& file{ getFirstSupportedTestAudioFile() };
+
+        boost::asio::io_context ioContext;
+        // MP4/AAC muxing is deliberately disabled (requires a seekable output), so this is unsupported on any build
+        EXPECT_THROW(createTranscoder(ioContext, createParameters(file, core::media::Container::MP4, core::media::Codec::AAC)), Exception);
+    }
 } // namespace lms::audio::tests

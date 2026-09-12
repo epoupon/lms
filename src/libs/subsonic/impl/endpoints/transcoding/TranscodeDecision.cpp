@@ -25,6 +25,7 @@
 #include "core/String.hpp"
 #include "core/media/AudioFormat.hpp"
 
+#include "audio/IAudioDecoder.hpp"
 #include "audio/ITranscoder.hpp"
 #include "audio/TranscodeTypes.hpp"
 
@@ -597,6 +598,12 @@ namespace lms::api::subsonic::detail
             return DirectPlayResult{};
 
         LMS_LOG(API_SUBSONIC, DEBUG, "Direct play not possible: no compatible direct play profile found");
+
+        if (!audio::isDecodingSupported(source.container, source.codec))
+        {
+            LMS_LOG(API_SUBSONIC, DEBUG, "Cannot transcode: source format not supported for decoding by this build: container = " << core::media::containerToString(source.container) << ", codec = " << core::media::getCodecDesc(source.codec).name);
+            return FailureResult{ "Source audio format is not supported for decoding by this server" };
+        }
 
         // Check transcoding profiles, we have to select the first one we can handle, order is important
         for (const TranscodingProfile& profile : clientInfo.transcodingProfiles)
