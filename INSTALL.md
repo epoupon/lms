@@ -146,12 +146,11 @@ server {
 
     access_log            /var/log/nginx/myserver.access.log;
 
-    proxy_request_buffering off;
     proxy_buffering off;
-    proxy_buffer_size 4k;
-    proxy_read_timeout 10m;
+    proxy_read_timeout 60m;
+    send_timeout 60m;
     proxy_send_timeout 10m;
-	  keepalive_timeout 10m;
+    keepalive_timeout 10m;
 
     location / {
       proxy_set_header        Host $host;
@@ -160,11 +159,10 @@ server {
       proxy_set_header        X-Forwarded-Proto $scheme;
 
       proxy_pass          http://localhost:5082/;
-      proxy_read_timeout  120;
     }
 }
 ```
-__Note__: to mitigate brute force login attempts, _LMS_ uses an internal login throttler based on the client IP address. The `Client-IP` or `X-Forwarded-For` headers are used to determine the real IP adress, so make sure to properly configure your reverse proxy to filter or even erase the values.
+__Note__: _LMS_ throttles logins by client IP, read from the `original-ip-header` header (`X-Forwarded-For` by default) - trusted only from addresses in `trusted-proxies`. Make sure `trusted-proxies` matches your reverse proxy, which must set/overwrite this header itself (as above).
 # Run
 ```sh
 systemctl start lms

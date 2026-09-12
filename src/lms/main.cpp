@@ -199,7 +199,11 @@ namespace lms
             // Reverse proxy
             if (config.getBool("behind-reverse-proxy", false))
             {
-                pt.put("server.application-settings.trusted-proxy-config.original-ip-header", config.getString("original-ip-header", "X-Forwarded-For"));
+                // https://www.webtoolkit.eu/wt/doc/reference/html/overview.html says original-ip-header is in trusted-proxy-config
+                // but Wt's actual parser (still true as of Wt 4.14.0) reads it as a sibling of <trusted-proxy-config> instead...
+                const std::string originalIpHeader{ config.getString("original-ip-header", "X-Forwarded-For") };
+                pt.put("server.application-settings.original-ip-header", originalIpHeader);
+                pt.put("server.application-settings.trusted-proxy-config.original-ip-header", originalIpHeader);
                 config.visitStrings("trusted-proxies", [&](std::string_view trustedProxy) {
                     pt.add("server.application-settings.trusted-proxy-config.trusted-proxies.proxy", std::string{ trustedProxy });
                 },
