@@ -8,6 +8,7 @@ add_executable(test-core
 	LiteralString.cpp
 	PartialDateTime.cpp
 	Path.cpp
+	Random.cpp
 	RecursiveSharedMutex.cpp
 	SendQueue.cpp
 	Service.cpp

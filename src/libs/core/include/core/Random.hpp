@@ -25,23 +25,32 @@
 
 namespace lms::core::random
 {
-    using RandGenerator = std::mt19937;
-    RandGenerator& getRandGenerator();
+    using PseudoRandomGenerator = std::mt19937;
+    PseudoRandomGenerator& getPseudoRandomGenerator();
 
-    RandGenerator createSeededGenerator(uint_fast32_t seed);
+    using NonDeterministicRandomGenerator = std::random_device;
+    NonDeterministicRandomGenerator& getNonDeterministicRandomGenerator();
 
-    template<typename T>
-    T getRandom(T min, T max)
+    template<typename Generator, typename T>
+        requires std::is_integral_v<T>
+    T generate(Generator& generator, T min, T max)
     {
-        std::uniform_int_distribution<> dist{ min, max };
-        return dist(getRandGenerator());
+        std::uniform_int_distribution<T> dist{ min, max };
+        return dist(generator);
+    }
+
+    template<typename Generator, typename T>
+        requires std::is_floating_point_v<T>
+    T generate(Generator& generator, T min, T max)
+    {
+        std::uniform_real_distribution<T> dist{ min, max };
+        return dist(generator);
     }
 
     template<typename T>
-    T getRealRandom(T min, T max)
+    T generate(T min, T max)
     {
-        std::uniform_real_distribution<> dist{ min, max };
-        return dist(getRandGenerator());
+        return generate(getPseudoRandomGenerator(), min, max);
     }
 
     template<typename RandomEngine, typename Container>
@@ -65,7 +74,7 @@ namespace lms::core::random
     template<typename Container>
     void shuffleContainer(Container& container)
     {
-        std::shuffle(std::begin(container), std::end(container), getRandGenerator());
+        std::shuffle(std::begin(container), std::end(container), getPseudoRandomGenerator());
     }
 
     template<typename RandomEngine, typename Container>
@@ -80,6 +89,6 @@ namespace lms::core::random
         if (container.empty())
             return std::end(container);
 
-        return std::next(std::begin(container), getRandom(0, static_cast<int>(container.size() - 1)));
+        return std::next(std::begin(container), generate(0, static_cast<int>(container.size() - 1)));
     }
 } // namespace lms::core::random

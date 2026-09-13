@@ -122,7 +122,7 @@ namespace lms
             track.modify()->setName("Track-" + core::UUID::generate().toString());
             track.modify()->setMedium(medium);
             track.modify()->setTrackNumber(i);
-            track.modify()->setDuration(std::chrono::seconds{ core::random::getRandom(30, 300) });
+            track.modify()->setDuration(std::chrono::seconds{ core::random::generate(30, 300) });
             track.modify()->setRelease(release);
             track.modify()->setTrackMBID(core::UUID::generate());
             track.modify()->setRecordingMBID(core::UUID::generate());
@@ -139,7 +139,7 @@ namespace lms
                 using T = typename std::decay_t<decltype(pool)>::value_type;
                 std::vector<std::size_t> indices(pool.size());
                 std::iota(indices.begin(), indices.end(), std::size_t{});
-                std::shuffle(indices.begin(), indices.end(), core::random::getRandGenerator());
+                std::shuffle(indices.begin(), indices.end(), core::random::getPseudoRandomGenerator());
                 const std::size_t count{ std::min(n, pool.size()) };
                 std::vector<T> picked;
                 picked.reserve(count);
@@ -162,7 +162,7 @@ namespace lms
                 audio::TrackMusicNNEmbeddings embeddings;
                 std::normal_distribution<float> embeddingDist{ 0.0F, 1.0F };
                 for (auto& v : embeddings.mean.values)
-                    v = embeddingDist(core::random::getRandGenerator());
+                    v = embeddingDist(core::random::getPseudoRandomGenerator());
                 std::vector<std::byte> blob(sizeof(audio::TrackMusicNNEmbeddings));
                 audio::trackMusicNNEmbeddingsToBlob(embeddings, blob);
                 TrackMusicNNEmbeddings::pointer entry{ context.session.create<TrackMusicNNEmbeddings>(track) };

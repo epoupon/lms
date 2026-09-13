@@ -102,7 +102,7 @@ namespace lms::core
     UUID UUID::generate()
     {
         std::uniform_int_distribution<std::uint8_t> dist{ 0, 255 };
-        auto& rng{ random::getRandGenerator() };
+        auto& rng{ random::getNonDeterministicRandomGenerator() };
         std::array<std::byte, binarySize> bytes{};
         for (auto& b : bytes)
             b = static_cast<std::byte>(dist(rng));
