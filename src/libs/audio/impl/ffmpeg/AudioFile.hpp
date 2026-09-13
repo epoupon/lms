@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include "core/Utils.hpp"
 #include "core/media/Codec.hpp"
 #include "core/media/Container.hpp"
 
@@ -81,7 +82,7 @@ namespace lms::audio::ffmpeg
         std::optional<StreamInfo> getBestStreamInfo() const;
         std::optional<std::size_t> getBestStreamIndex() const;
         bool hasAttachedPictures() const;
-        void visitAttachedPictures(std::function<void(const PictureView&, const MetadataMap&)> func) const;
+        void visitAttachedPictures(std::function<core::VisitorResult(const PictureView&, const MetadataMap&)> func) const;
 
     private:
         std::optional<StreamInfo> getStreamInfo(std::size_t streamIndex) const;

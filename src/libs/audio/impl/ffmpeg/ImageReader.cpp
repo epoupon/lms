@@ -49,7 +49,7 @@ namespace lms::audio::ffmpeg
             else if (metaDataHasKeyword(metaData, "back"))
                 image.type = core::media::ImageType::BackCover;
 
-            visitor(image);
+            return visitor(image);
         });
     }
 } // namespace lms::audio::ffmpeg

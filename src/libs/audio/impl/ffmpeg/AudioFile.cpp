@@ -171,7 +171,7 @@ namespace lms::audio::ffmpeg
         return false;
     }
 
-    void AudioFile::visitAttachedPictures(std::function<void(const PictureView&, const MetadataMap&)> func) const
+    void AudioFile::visitAttachedPictures(std::function<core::VisitorResult(const PictureView&, const MetadataMap&)> func) const
     {
         static const std::unordered_map<int, std::string> codecMimeMap{
             { AV_CODEC_ID_BMP, "image/bmp" },
@@ -214,7 +214,8 @@ namespace lms::audio::ffmpeg
             const ::AVPacket& pkt{ avstream->attached_pic };
 
             picture.data = std::span{ reinterpret_cast<const std::byte*>(pkt.data), static_cast<std::size_t>(pkt.size) };
-            func(picture, metadata);
+            if (func(picture, metadata) == core::Break)
+                break;
         }
     }
 

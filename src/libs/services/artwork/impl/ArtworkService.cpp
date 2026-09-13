@@ -122,7 +122,7 @@ namespace lms::artwork
             assert(audioFileInfo->getImageReader());
             audioFileInfo->getImageReader()->visitImages([&](const audio::Image& parsedImage) {
                 if (currentIndex++ != index)
-                    return;
+                    return core::Continue;
 
                 try
                 {
@@ -141,6 +141,8 @@ namespace lms::artwork
                 {
                     LMS_LOG(COVER, ERROR, "Cannot decode image from track " << p << ": " << e.what());
                 }
+
+                return core::Break;
             });
         }
         catch (const audio::Exception& e)

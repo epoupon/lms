@@ -109,7 +109,7 @@ namespace lms::audio::tests
             ASSERT_TRUE(imageReader);
 
             std::size_t imageCount{};
-            imageReader->visitImages([&](const Image&) { ++imageCount; });
+            imageReader->visitImages([&](const Image&) { ++imageCount; return core::Continue; });
             EXPECT_GT(imageCount, 0U);
         }
     }

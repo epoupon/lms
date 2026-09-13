@@ -132,6 +132,8 @@ namespace lms::audio
         imageReader.visitImages([](const Image& image) {
             std::cout << "Image:\n"
                       << image << "\n";
+
+            return core::Continue;
         });
     }
 

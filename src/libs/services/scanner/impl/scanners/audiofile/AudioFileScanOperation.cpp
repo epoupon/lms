@@ -644,6 +644,8 @@ namespace lms::scanner
                 }
 
                 index++;
+
+                return core::Continue;
             });
         }
         catch (const audio::IOFileException& e)

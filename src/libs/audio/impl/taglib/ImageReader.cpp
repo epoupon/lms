@@ -263,7 +263,8 @@ namespace lms::audio::taglib
                 image.description = attachedPictureFrame->description().to8Bit(true);
                 image.mimeType = attachedPictureFrame->mimeType().to8Bit(true);
                 image.data = pictureData;
-                visitor(image);
+                if (visitor(image) == core::Break)
+                    break;
             }
         }
 
@@ -285,7 +286,8 @@ namespace lms::audio::taglib
                 image.mimeType = asfPicture.mimeType().to8Bit(true);
                 image.data = pictureData;
 
-                visitor(image);
+                if (visitor(image) == core::Break)
+                    break;
             }
         }
 #endif // LMS_TAGLIB_HAS_ASF
@@ -317,7 +319,8 @@ namespace lms::audio::taglib
                 image.type = firstCover ? core::media::ImageType::FrontCover : core::media::ImageType::Unknown;
                 firstCover = false;
 
-                visitor(image);
+                if (visitor(image) == core::Break)
+                    break;
             }
         }
 #endif // LMS_TAGLIB_HAS_MP4
@@ -336,7 +339,8 @@ namespace lms::audio::taglib
                 image.mimeType = flacPicture->mimeType().to8Bit(true);
                 image.data = pictureData;
 
-                visitor(image);
+                if (visitor(image) == core::Break)
+                    break;
             }
         }
 #endif // LMS_TAGLIB_HAS_VORBIS
@@ -364,7 +368,10 @@ namespace lms::audio::taglib
                 }
 
                 if (!image.data.empty())
-                    visitor(image);
+                {
+                    if (visitor(image) == core::Break)
+                        break;
+                }
             }
     #endif // LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES
         }
