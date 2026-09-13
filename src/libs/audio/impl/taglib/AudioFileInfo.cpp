@@ -99,7 +99,7 @@ namespace lms::audio::taglib
                 }
 
                 audioProperties.duration = std::chrono::milliseconds{ properties->lengthInMilliseconds() };
-                if (audioProperties.duration == decltype(audioProperties.duration)::zero())
+                if (audioProperties.duration <= decltype(audioProperties.duration)::zero())
                 {
                     LMS_LOG(AUDIO, DEBUG, "Cannot determine duration in " << filePath);
                     return std::nullopt;
