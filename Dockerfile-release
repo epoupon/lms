@@ -102,7 +102,7 @@ RUN \
 	cp ./*.h ${PREFIX}/include/stb
 
 # TAGLIB
-ARG TAGLIB_VERSION=v2.3.1
+ARG TAGLIB_VERSION=v2.3.2
 RUN \
 	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/taglib/taglib/archive/${TAGLIB_VERSION}.tar.gz && \
