@@ -20,12 +20,10 @@
 #pragma once
 
 #include <span>
-#include <vector>
 
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
-#include "database/objects/TrackListId.hpp"
 
 namespace lms::ui
 {
@@ -53,7 +51,6 @@ namespace lms::ui
         void processCommand(Command command, std::span<const db::ReleaseId> releases);
         void processCommand(Command command, std::span<const db::TrackId> tracks);
 
-        void processCommand(Command command, db::TrackListId trackList);
         void playAtIndex(std::span<const db::TrackId> trackIds, std::size_t index);
 
         void setMaxTrackCountToEnqueue(std::size_t maxTrackCount) { _maxTrackCountToEnqueue = maxTrackCount; }

@@ -19,6 +19,8 @@
 
 #include "TrackListView.hpp"
 
+#include <algorithm>
+
 #include <Wt/WPushButton.h>
 
 #include "core/String.hpp"
@@ -57,10 +59,6 @@ namespace lms::ui
         addFunction("id", &Wt::WTemplate::Functions::id);
 
         wApp->internalPathChanged().connect(this, [this] {
-            refreshView();
-        });
-
-        _filters.updated().connect([this] {
             refreshView();
         });
 
@@ -117,22 +115,31 @@ namespace lms::ui
             }
         }
 
+        _trackIds.clear();
+        {
+            db::Track::FindParameters params;
+            params.setTrackList(_trackListId);
+            params.setSortMethod(db::TrackSortMethod::TrackList);
+            params.setRange(db::Range{ 0, _maxCount });
+            _trackIds = db::Track::findIds(LmsApp->getDbSession(), params);
+        }
+
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
             ->clicked()
-            .connect([this, trackListId] {
-                _playQueueController.processCommand(PlayQueueController::Command::Play, *trackListId);
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::Play, _trackIds);
             });
 
         bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
             ->clicked()
-            .connect([this, trackListId] {
-                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, *trackListId);
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, _trackIds);
             });
 
         bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
             ->clicked()
-            .connect([this, trackListId] {
-                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, *trackListId);
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, _trackIds);
             });
 
         if (LmsApp->areDownloadsEnabled())
@@ -189,18 +196,15 @@ namespace lms::ui
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        db::Track::FindParameters params;
-        params.setFilters(_filters.getDbFilters());
-        params.setTrackList(_trackListId);
-        params.setSortMethod(db::TrackSortMethod::TrackList);
-        params.setRange(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize });
+        const std::size_t startIndex{ static_cast<std::size_t>(_container->getCount()) };
+        const std::size_t endIndex{ std::min(startIndex + _batchSize, _trackIds.size()) };
 
-        std::size_t count{};
-        db::Track::find(LmsApp->getDbSession(), params, [&](const db::Track::pointer& track) {
-            _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
-            ++count;
-        });
+        for (std::size_t index{ startIndex }; index < endIndex; ++index)
+        {
+            if (const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), _trackIds[index]) })
+                _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters, _trackIds, index));
+        }
 
-        _container->setHasMore(count == _batchSize);
+        _container->setHasMore(endIndex < _trackIds.size());
     }
 } // namespace lms::ui

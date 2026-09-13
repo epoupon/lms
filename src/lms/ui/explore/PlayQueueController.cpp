@@ -86,20 +86,6 @@ namespace lms::ui
             return res;
         }
 
-        std::vector<db::TrackId> getTrackListTracks(db::Session& session, db::TrackListId trackListId, const Filters& filters, std::size_t maxTrackCount)
-        {
-            assert(maxTrackCount);
-
-            auto transaction{ session.createReadTransaction() };
-
-            db::Track::FindParameters params;
-            params.setTrackList(trackListId);
-            params.setFilters(filters.getDbFilters());
-            params.setRange(db::Range{ 0, maxTrackCount });
-            params.setSortMethod(db::TrackSortMethod::TrackList);
-
-            return db::Track::findIds(session, params);
-        }
     } // namespace
 
     PlayQueueController::PlayQueueController(Filters& filters, PlayQueue& playQueue)
@@ -138,12 +124,6 @@ namespace lms::ui
             _playQueue.playOrAddLast(trackIds);
             break;
         }
-    }
-
-    void PlayQueueController::processCommand(Command command, db::TrackListId trackListId)
-    {
-        const std::vector<db::TrackId> tracks{ getTrackListTracks(LmsApp->getDbSession(), trackListId, _filters, _maxTrackCountToEnqueue) };
-        processCommand(command, tracks);
     }
 
     void PlayQueueController::playAtIndex(std::span<const db::TrackId> trackIds, std::size_t index)

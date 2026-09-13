@@ -227,6 +227,11 @@ namespace lms::ui::TrackListHelpers
 
     std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters)
     {
+        return createEntry(track, playQueueController, filters, {}, 0);
+    }
+
+    std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters, std::span<const db::TrackId> orderedTrackIds, std::size_t trackIndex)
+    {
         auto entry{ std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Tracks.template.entry")) };
         auto* entryPtr{ entry.get() };
 
@@ -274,22 +279,28 @@ namespace lms::ui::TrackListHelpers
 
         entry->bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
+        auto playTrack{ [trackId, orderedTrackIds, trackIndex, &playQueueController] {
+            if (!orderedTrackIds.empty())
+            {
+                playQueueController.playAtIndex(orderedTrackIds, trackIndex);
+            }
+            else
+            {
+                const db::TrackId trackIds[]{ trackId };
+                playQueueController.processCommand(PlayQueueController::Command::Play, trackIds);
+            }
+        } };
+
         Wt::WPushButton* playBtn{ entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML) };
         playBtn->setAttributeValue("aria-label", Wt::WString::tr("Lms.play-item").arg(displayInfo.title));
-        playBtn->clicked().connect([trackId, &playQueueController] {
-            db::TrackId trackIds[]{ trackId };
-            playQueueController.processCommand(PlayQueueController::Command::Play, trackIds);
-        });
+        playBtn->clicked().connect(playTrack);
 
         entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML)
             ->setAttributeValue("aria-label", Wt::WString::tr("Lms.more"));
 
         entry->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
             ->clicked()
-            .connect([trackId, &playQueueController] {
-                db::TrackId trackIds[]{ trackId };
-                playQueueController.processCommand(PlayQueueController::Command::Play, trackIds);
-            });
+            .connect(playTrack);
         entry->bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"))
             ->clicked()
             .connect([=, &playQueueController] {
