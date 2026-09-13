@@ -462,7 +462,7 @@ namespace lms::ui
 
         PathRouter* mainRouter{ main->bindNew<PathRouter>("contents") };
 
-        _playQueue = mainRouter->add<PlayQueue>("/playqueue", Wt::WString::tr("Lms.PlayQueue.playqueue"));
+        _playQueue = mainRouter->add<PlayQueue>("/playqueue", Wt::WString::tr("Lms.PlayQueue.playqueue"), *filters);
 
         Explore* explore{ mainRouter->add<Explore>("/artists", Wt::WString::tr("Lms.Explore.artists"), *filters, *_playQueue) };
         mainRouter->addRoute("/artist", std::nullopt, explore);
