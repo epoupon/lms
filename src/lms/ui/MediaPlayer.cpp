@@ -40,6 +40,7 @@
 
 #include "LmsApplication.hpp"
 #include "Utils.hpp"
+#include "WebStorage.hpp"
 #include "resource/ArtworkResource.hpp"
 #include "resource/AudioFileResource.hpp"
 #include "resource/AudioTranscodingResource.hpp"
@@ -48,6 +49,8 @@ namespace lms::ui
 {
     namespace
     {
+        constexpr std::string_view settingsStorageKey{ "lms.mediaplayer.settings" };
+
         std::string settingsToJSString(const MediaPlayer::Settings& settings)
         {
             namespace Json = Wt::Json;
@@ -187,7 +190,6 @@ namespace lms::ui
         , scrobbleListenNow{ this, "scrobbleListenNow" }
         , scrobbleListenFinished{ this, "scrobbleListenFinished" }
         , playbackEnded{ this, "playbackEnded" }
-        , _settingsLoaded{ this, "settingsLoaded" }
     {
         addFunction("tr", &Wt::WTemplate::Functions::tr);
 
@@ -202,14 +204,6 @@ namespace lms::ui
         _playQueue->setLink(Wt::WLink{ Wt::LinkType::InternalPath, "/playqueue" });
         _playQueue->setToolTip(tr("Lms.PlayQueue.playqueue"));
 
-        _settingsLoaded.connect([this](const std::string& settings) {
-            LMS_LOG(UI, DEBUG, "Settings loaded! '" << settings << "'");
-
-            _settings = settingsfromJSString(settings);
-
-            settingsLoaded.emit();
-        });
-
         {
             Settings defaultSettings;
 
@@ -222,6 +216,15 @@ namespace lms::ui
             LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
             doJavaScript(oss.str());
         }
+
+        LmsApp->getWebStorage().getItem(*this, settingsStorageKey, [this](std::optional<std::string> value) {
+            const Settings settings{ value ? settingsfromJSString(*value) : Settings{} };
+
+            _settings = settings;
+            pushSettingsToJs(settings);
+
+            settingsLoaded.emit();
+        });
     }
 
     MediaPlayer::~MediaPlayer() = default;
@@ -324,14 +327,18 @@ namespace lms::ui
     void MediaPlayer::setSettings(const Settings& settings)
     {
         _settings = settings;
+        pushSettingsToJs(settings);
 
-        {
-            std::ostringstream oss;
-            oss << jsRef() + ".mediaplayer.setSettings(settings = " << settingsToJSString(settings) << ")";
+        LmsApp->getWebStorage().setItem(settingsStorageKey, settingsToJSString(settings));
+    }
 
-            LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
-            doJavaScript(oss.str());
-        }
+    void MediaPlayer::pushSettingsToJs(const Settings& settings)
+    {
+        std::ostringstream oss;
+        oss << jsRef() + ".mediaplayer.setSettings(settings = " << settingsToJSString(settings) << ")";
+
+        LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
+        doJavaScript(oss.str());
     }
 
     void MediaPlayer::onPlayQueueUpdated(std::size_t trackCount)

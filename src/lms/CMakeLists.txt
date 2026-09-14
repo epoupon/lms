@@ -21,6 +21,7 @@ add_executable(lms
 	ui/State.cpp
 	ui/Tooltip.cpp
 	ui/Utils.cpp
+	ui/WebStorage.cpp
 	ui/admin/AdminView.cpp
 	ui/admin/debug/Database.cpp
 	ui/admin/debug/AudioDecodingBenchmark.cpp

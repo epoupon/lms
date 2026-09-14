@@ -107,7 +107,7 @@ class LMSMediaPlayer {
 		});
 
 		this.#initVolume();
-		this.#initDefaultSettings(defaultSettings);
+		this.#settings = defaultSettings;
 
 		this.#elems.volumeslider.addEventListener("input", () => {
 			this.#setVolume(this.#elems.volumeslider.value);
@@ -296,17 +296,6 @@ class LMSMediaPlayer {
 		this.#setVolume(this.#elems.volumeslider.value);
 	}
 
-	#initDefaultSettings = function (defaultSettings) {
-		if (typeof (Storage) !== "undefined" && localStorage.settings) {
-			this.#settings = Object.assign(defaultSettings, JSON.parse(localStorage.settings));
-		}
-		else {
-			this.#settings = defaultSettings;
-		}
-
-		Wt.emit(this.#root, "settingsLoaded", JSON.stringify(this.#settings));
-	}
-
 	#setVolume(volume) {
 		this.#elems.lastvolume = this.#elems.audio.volume;
 
@@ -483,10 +472,6 @@ class LMSMediaPlayer {
 
 	setSettings(settings) {
 		this.#settings = settings;
-
-		if (typeof (Storage) !== "undefined") {
-			localStorage.settings = JSON.stringify(this.#settings);
-		}
 	}
 }
 
