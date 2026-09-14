@@ -88,8 +88,7 @@ class LMSMediaPlayer {
 		this.#elems.audio.addEventListener("waiting", this.#pauseTimer.bind(this));
 
 		this.#elems.audio.addEventListener("timeupdate", () => {
-			this.#elems.progress.style.width = "" + ((this.#offset + this.#elems.audio.currentTime) / this.#duration) * 100 + "%";
-			this.#elems.curtime.innerHTML = this.#durationToString(this.#offset + this.#elems.audio.currentTime);
+			this.#updateProgress();
 		});
 
 		this.#elems.audio.addEventListener("ended", () => {
@@ -246,6 +245,12 @@ class LMSMediaPlayer {
 		}
 	}
 
+	#updateProgress() {
+		const position = this.#offset + this.#elems.audio.currentTime;
+		this.#elems.progress.style.width = "" + (position / this.#duration) * 100 + "%";
+		this.#elems.curtime.innerHTML = this.#durationToString(position);
+	}
+
 	#durationToString(duration) {
 		const seconds = parseInt(duration, 10);
 		const h = Math.floor(seconds / 3600);
@@ -362,6 +367,8 @@ class LMSMediaPlayer {
 				this.#elems.audio.currentTime = seekTime;
 				break;
 		}
+
+		this.#updateProgress();
 
 		if (wasPlaying)
 			this.#playTrack();
