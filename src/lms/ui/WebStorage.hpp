@@ -33,7 +33,7 @@ namespace Wt
 {
     class WApplication;
     class WObject;
-}
+} // namespace Wt
 
 namespace lms::ui
 {
