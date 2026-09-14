@@ -29,6 +29,8 @@
 
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
+#include "core/media/Codec.hpp"
+
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
@@ -51,7 +53,27 @@ namespace lms::ui
     {
         constexpr std::string_view settingsStorageKey{ "lms.mediaplayer.settings" };
 
-        std::string settingsToJSString(const MediaPlayer::Settings& settings)
+        Wt::WString transcodingOutputFormatToLabel(MediaPlayer::Format format)
+        {
+            const std::optional<audio::TranscodeOutputFormat> outputFormat{ utils::toSupportedTranscodeOutputFormat(format) };
+            if (!outputFormat)
+                return Wt::WString::fromUTF8("?");
+
+            return Wt::WString::fromUTF8(core::media::getCodecDesc(outputFormat->codec).longName.c_str());
+        }
+
+        Wt::WString transcodingActiveLabel(const MediaPlayer::Settings::Transcoding& transcoding)
+        {
+            if (transcoding.mode == MediaPlayer::Settings::Transcoding::Mode::Never)
+                return {};
+
+            return Wt::WString::tr("Lms.Player.transcoding-active")
+                .arg(transcodingOutputFormatToLabel(transcoding.format))
+                .arg(static_cast<unsigned>(transcoding.bitrate) / 1000);
+        }
+
+        // Also persisted to the browser's local storage, so keep it free of derived/localized fields that would go stale there
+        Wt::Json::Object settingsToJSObject(const MediaPlayer::Settings& settings)
         {
             namespace Json = Wt::Json;
 
@@ -73,7 +95,12 @@ namespace lms::ui
                 res["replayGain"] = std::move(replayGain);
             }
 
-            return Json::serialize(res);
+            return res;
+        }
+
+        std::string settingsToJSString(const MediaPlayer::Settings& settings)
+        {
+            return Wt::Json::serialize(settingsToJSObject(settings));
         }
 
         std::optional<MediaPlayer::Settings::Transcoding::Mode> transcodingModeFromString(const std::string& str)
@@ -335,7 +362,10 @@ namespace lms::ui
     void MediaPlayer::pushSettingsToJs(const Settings& settings)
     {
         std::ostringstream oss;
-        oss << jsRef() + ".mediaplayer.setSettings(settings = " << settingsToJSString(settings) << ")";
+        oss << jsRef() + ".mediaplayer.setSettings(settings = " << settingsToJSString(settings)
+            << ", transcodingActiveLabel = \"";
+        core::stringUtils::writeJSEscapedString(oss, transcodingActiveLabel(settings.transcoding).toUTF8());
+        oss << "\")";
 
         LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
         doJavaScript(oss.str());

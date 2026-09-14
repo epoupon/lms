@@ -346,7 +346,7 @@
 <message id="Lms.Explore.Search.search-placeholder">Ricerca...</message>
 
 <!--Player-->
-<message id="Lms.Player.transcoding-active">Transcodifica attiva</message>
+<message id="Lms.Player.transcoding-active">Transcodifica attiva ({1}, {2} kbps)</message>
 <message id="Lms.Player.now-playing">In riproduzione</message>
 <message id="Lms.Player.previous">Precedente</message>
 <message id="Lms.Player.play-pause">Riproduci / pausa</message>

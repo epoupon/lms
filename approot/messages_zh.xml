@@ -305,7 +305,7 @@
 <message id="Lms.Explore.Search.search-placeholder">搜索...</message>
 
 <!--Player-->
-<message id="Lms.Player.transcoding-active">转码已启用</message>
+<message id="Lms.Player.transcoding-active">转码已启用（{1}，{2} kbps）</message>
 <message id="Lms.Player.now-playing">正在播放</message>
 <message id="Lms.Player.previous">上一首</message>
 <message id="Lms.Player.play-pause">播放 / 暂停</message>
