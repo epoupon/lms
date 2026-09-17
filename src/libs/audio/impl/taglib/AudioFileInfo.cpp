@@ -234,6 +234,23 @@ namespace lms::audio::taglib
                 case ::TagLib::MP4::Properties::Codec::ALAC:
                     audioProperties.codec = core::media::Codec::ALAC;
                     break;
+    #if LMS_TAGLIB_HAS_MP4_EXTENDED_CODECS
+                case ::TagLib::MP4::Properties::Codec::AC3:
+                    audioProperties.codec = core::media::Codec::AC3;
+                    break;
+                case ::TagLib::MP4::Properties::Codec::EAC3:
+                    audioProperties.codec = core::media::Codec::EAC3;
+                    break;
+                case ::TagLib::MP4::Properties::Codec::FLAC:
+                    audioProperties.codec = core::media::Codec::FLAC;
+                    break;
+                case ::TagLib::MP4::Properties::Codec::Opus:
+                    audioProperties.codec = core::media::Codec::Opus;
+                    break;
+                case ::TagLib::MP4::Properties::Codec::DTS:
+                    LMS_LOG(AUDIO, DEBUG, "Unhandled MP4 codec (DTS) in " << filePath);
+                    return std::nullopt;
+    #endif // LMS_TAGLIB_HAS_MP4_EXTENDED_CODECS
                 case ::TagLib::MP4::Properties::Codec::Unknown:
                     LMS_LOG(AUDIO, DEBUG, "Unhandled MP4 codec in " << filePath);
                     return std::nullopt;
