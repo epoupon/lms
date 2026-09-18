@@ -19,8 +19,12 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
+#include "audio/IAudioFileInfoParser.hpp"
+
 #include "scanners/IFileScanner.hpp"
-#include "scanners/audiofile/AudioFileInfoParserSet.hpp"
 #include "scanners/audiofile/TrackMetadataParser.hpp"
 
 namespace lms::db
@@ -50,6 +54,8 @@ namespace lms::scanner
         db::IDb& _db;
         const ScannerSettings& _settings;
         const TrackMetadataParser _trackMetadataParser;
-        const AudioFileInfoParserSet _audioFileInfoParserSet;
+        const std::unique_ptr<audio::IAudioFileInfoParser> _parser;
+        const std::vector<std::filesystem::path> _supportedExtensions;
+        const audio::AudioFileInfoParseOptions::AudioPropertiesReadStyle _audioPropertiesReadStyle;
     };
 } // namespace lms::scanner

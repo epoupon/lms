@@ -25,6 +25,7 @@
 #include "core/media/ImageType.hpp"
 
 #include "audio/AudioProperties.hpp"
+#include "audio/IAudioFileInfoParser.hpp"
 #include "image/Types.hpp"
 
 #include "scanners/FileScanOperationBase.hpp"
@@ -40,7 +41,6 @@ namespace lms::db
 
 namespace lms::scanner
 {
-    struct AudioFileInfoParserSet;
     class TrackMetadataParser;
 
     struct ImageInfo
@@ -57,7 +57,7 @@ namespace lms::scanner
     class AudioFileScanOperation : public FileScanOperationBase
     {
     public:
-        AudioFileScanOperation(FileToScan&& fileToScan, db::IDb& db, const ScannerSettings& settings, const AudioFileInfoParserSet& audioFileInfoParserSet, const TrackMetadataParser& metadataParser);
+        AudioFileScanOperation(FileToScan&& fileToScan, db::IDb& db, const ScannerSettings& settings, const audio::IAudioFileInfoParser& parser, audio::AudioFileInfoParseOptions::AudioPropertiesReadStyle audioPropertiesReadStyle, const TrackMetadataParser& metadataParser);
         ~AudioFileScanOperation() override;
         AudioFileScanOperation(const AudioFileScanOperation&) = delete;
         AudioFileScanOperation& operator=(const AudioFileScanOperation&) = delete;
@@ -67,7 +67,8 @@ namespace lms::scanner
         void scan() override;
         OperationResult processResult() override;
 
-        const AudioFileInfoParserSet& _audioFileInfoParserSet;
+        const audio::IAudioFileInfoParser& _parser;
+        const audio::AudioFileInfoParseOptions::AudioPropertiesReadStyle _audioPropertiesReadStyle;
         const TrackMetadataParser& _metadataParser;
 
         struct AudioFileInfo

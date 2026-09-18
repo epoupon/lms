@@ -652,10 +652,7 @@ namespace lms::audio::ffmpeg::utils
         assert(!isInitialized);
 
         LMS_LOG(AUDIO, INFO, "Initializing ffmpeg backend...");
-        LMS_LOG(AUDIO, INFO, "Using libavutil " << avVersionToString(::avutil_version())
-                                                 << ", libavcodec " << avVersionToString(::avcodec_version())
-                                                 << ", libavformat " << avVersionToString(::avformat_version())
-                                                 << ", libswresample " << avVersionToString(::swresample_version()));
+        LMS_LOG(AUDIO, INFO, "Using libavutil " << avVersionToString(::avutil_version()) << ", libavcodec " << avVersionToString(::avcodec_version()) << ", libavformat " << avVersionToString(::avformat_version()) << ", libswresample " << avVersionToString(::swresample_version()));
         isInitialized = true;
         getCapabilities(); // init
         LMS_LOG(AUDIO, INFO, "ffmpeg backend init done");
