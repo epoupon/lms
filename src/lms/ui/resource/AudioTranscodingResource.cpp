@@ -19,6 +19,7 @@
 
 #include "AudioTranscodingResource.hpp"
 
+#include <cassert>
 #include <optional>
 
 #include <Wt/Http/Response.h>
@@ -38,6 +39,7 @@
 #include "services/transcoding/ITranscodeService.hpp"
 
 #include "LmsApplication.hpp"
+#include "Utils.hpp"
 
 #define TRANSCODE_LOG(severity, message) LMS_LOG(UI, severity, "Audio transcode resource: " << message)
 
@@ -119,23 +121,6 @@ namespace lms::ui
             return res;
         }
 
-        std::optional<audio::TranscodeOutputFormat> audioFormatToTranscodingFormat(db::TranscodingOutputFormat format)
-        {
-            switch (format)
-            {
-            case db::TranscodingOutputFormat::MP3:
-                return audio::TranscodeOutputFormat{ core::media::Container::MPEG, core::media::Codec::MP3 };
-            case db::TranscodingOutputFormat::OGG_OPUS:
-                return audio::TranscodeOutputFormat{ core::media::Container::Ogg, core::media::Codec::Opus };
-            case db::TranscodingOutputFormat::OGG_VORBIS:
-                return audio::TranscodeOutputFormat{ core::media::Container::Ogg, core::media::Codec::Vorbis };
-            }
-
-            TRANSCODE_LOG(ERROR, "Cannot convert from db audio format to transcoding format");
-
-            return std::nullopt;
-        }
-
         template<typename T>
         std::optional<T> readParameterAs(const Wt::Http::Request& request, const std::string& parameterName)
         {
@@ -171,9 +156,12 @@ namespace lms::ui
                 return std::nullopt;
             }
 
-            const std::optional<audio::TranscodeOutputFormat> outputFormat{ audioFormatToTranscodingFormat(*format) };
+            const std::optional<audio::TranscodeOutputFormat> outputFormat{ utils::toSupportedTranscodeOutputFormat(*format) };
             if (!outputFormat)
+            {
+                TRANSCODE_LOG(ERROR, "Format is unknown or not supported");
                 return std::nullopt;
+            }
 
             // optional parameter
             std::size_t offset{ readParameterAs<std::size_t>(request, "offset").value_or(0) };
@@ -223,18 +211,21 @@ namespace lms::ui
         {
             if (const auto& parameters{ readTranscodingParameters(request) })
                 resourceHandler = core::Service<transcoding::ITranscodeService>::get()->createTranscodeResourceHandler(*parameters);
+            else
+            {
+                response.setStatus(404);
+                return;
+            }
         }
         else
         {
             resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<core::IResourceHandler>>(continuation->data());
         }
 
-        if (resourceHandler)
-        {
-            continuation = resourceHandler->processRequest(request, response);
-            if (continuation)
-                continuation->setData(resourceHandler);
-        }
+        assert(resourceHandler);
+        continuation = resourceHandler->processRequest(request, response);
+        if (continuation)
+            continuation->setData(resourceHandler);
     }
 
     void AudioTranscodingResource::handleAbort(const Wt::Http::Request& request)

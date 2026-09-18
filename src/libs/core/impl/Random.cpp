@@ -22,17 +22,19 @@
 namespace lms::core::random
 {
 
-    RandGenerator& getRandGenerator()
+    PseudoRandomGenerator& getPseudoRandomGenerator()
     {
         static thread_local std::random_device rd;
-        static thread_local RandGenerator randGenerator(rd());
+        static thread_local PseudoRandomGenerator randGenerator(rd());
 
         return randGenerator;
     }
 
-    RandGenerator createSeededGenerator(uint_fast32_t seed)
+    NonDeterministicRandomGenerator& getNonDeterministicRandomGenerator()
     {
-        return RandGenerator{ seed };
+        static thread_local NonDeterministicRandomGenerator randomDevice;
+
+        return randomDevice;
     }
 
 } // namespace lms::core::random

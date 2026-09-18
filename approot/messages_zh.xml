@@ -167,12 +167,12 @@
 <message id="Lms.Admin.DebugTools.Db.export-query-profiling">导出查询分析数据</message>
 <message id="Lms.Admin.DebugTools.Db.db">数据库</message>
 
-<!--PcmDecodingStats-->
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.pcm-decoding-stats">PCM解码统计</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.run">运行基准测试</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.download">下载结果</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.running">运行中…</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.benchmark-completed">PCM解码基准测试已在{1}内完成</message>
+<!--AudioDecodingStats-->
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.audio-decoding-stats">音频解码统计</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.run">运行基准测试</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.download">下载结果</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.running">运行中…</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.benchmark-completed">音频解码基准测试已在{1}内完成</message>
 
 <!--Tracing-->
 <message id="Lms.Admin.DebugTools.Tracing.export-current-buffer">导出跟踪</message>
@@ -305,7 +305,7 @@
 <message id="Lms.Explore.Search.search-placeholder">搜索...</message>
 
 <!--Player-->
-<message id="Lms.Player.transcoding-active">转码已启用</message>
+<message id="Lms.Player.transcoding-active">转码已启用（{1}，{2} kbps）</message>
 <message id="Lms.Player.now-playing">正在播放</message>
 <message id="Lms.Player.previous">上一首</message>
 <message id="Lms.Player.play-pause">播放 / 暂停</message>
@@ -406,6 +406,7 @@
 <message id="Lms.Settings.transcoding-output-format.mp3">MP3</message>
 <message id="Lms.Settings.transcoding-output-format.ogg_opus">Ogg/Opus</message>
 <message id="Lms.Settings.transcoding-output-format.ogg_vorbis">Ogg/Vorbis</message>
+<message id="Lms.Settings.transcoding-output-format-not-supported">此格式不受支持</message>
 <message id="Lms.Settings.user-interface">用户界面</message>
 
 <!--Wt-->

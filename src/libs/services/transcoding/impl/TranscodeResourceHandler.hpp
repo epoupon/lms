@@ -23,15 +23,19 @@
 #include <memory>
 #include <optional>
 
+#include <boost/asio/io_context.hpp>
+
 #include "audio/ITranscoder.hpp"
 #include "core/IResourceHandler.hpp"
 
 namespace lms::transcoding
 {
-    class ResourceHandler final : public core::IResourceHandler
+    class ResourceHandler final
+        : public core::IResourceHandler,
+          public std::enable_shared_from_this<ResourceHandler>
     {
     public:
-        ResourceHandler(const audio::TranscodeParameters& parameters, std::optional<std::size_t> estimatedContentLength);
+        ResourceHandler(boost::asio::io_context& ioContext, const audio::TranscodeParameters& parameters, std::optional<std::size_t> estimatedContentLength);
         ~ResourceHandler() override;
 
         ResourceHandler(const ResourceHandler&) = delete;

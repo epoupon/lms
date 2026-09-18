@@ -116,13 +116,13 @@ namespace lms::ui
         Wt::JSignal<> playbackEnded;
 
     private:
+        void pushSettingsToJs(const Settings& settings);
+
         std::unique_ptr<AudioFileResource> _audioFileResource;
         std::unique_ptr<AudioTranscodingResource> _audioTranscodingResource;
 
         std::optional<db::TrackId> _trackIdLoaded;
         std::optional<Settings> _settings;
-
-        Wt::JSignal<std::string> _settingsLoaded;
 
         Wt::WText* _title{};
         Wt::WAnchor* _release{};

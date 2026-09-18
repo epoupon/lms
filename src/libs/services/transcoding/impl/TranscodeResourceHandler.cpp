@@ -28,17 +28,19 @@ namespace lms::transcoding
 {
     // TODO set some nice HTTP return code
 
-    ResourceHandler::ResourceHandler(const audio::TranscodeParameters& parameters, std::optional<std::size_t> estimatedContentLength)
+#define LOG(severity, message) LMS_LOG(TRANSCODING, severity, "[" << _transcoder->getDebugId() << "] - " << message)
+
+    ResourceHandler::ResourceHandler(boost::asio::io_context& ioContext, const audio::TranscodeParameters& parameters, std::optional<std::size_t> estimatedContentLength)
         : _estimatedContentLength{ estimatedContentLength }
     {
         try
         {
-            _transcoder = createTranscoder(parameters);
+            _transcoder = createTranscoder(ioContext, parameters);
 
             if (_estimatedContentLength)
-                LMS_LOG(TRANSCODING, DEBUG, "Estimated content length = " << *_estimatedContentLength);
+                LOG(DEBUG, "Estimated content length = " << *_estimatedContentLength);
             else
-                LMS_LOG(TRANSCODING, DEBUG, "Not using estimated content length");
+                LOG(DEBUG, "Not using estimated content length");
         }
         catch (audio::Exception& e)
         {
@@ -59,11 +61,11 @@ namespace lms::transcoding
         if (_estimatedContentLength)
             response.setContentLength(*_estimatedContentLength);
         response.setMimeType(std::string{ _transcoder->getOutputMimeType() });
-        LMS_LOG(TRANSCODING, DEBUG, "Transcoder finished = " << _transcoder->finished() << ", total served bytes = " << _totalServedByteCount << ", mime type = " << _transcoder->getOutputMimeType());
+        LOG(DEBUG, "Transcoder finished = " << _transcoder->finished() << ", total served bytes = " << _totalServedByteCount << ", mime type = " << _transcoder->getOutputMimeType());
 
         if (_bytesReadyCount > 0)
         {
-            LMS_LOG(TRANSCODING, DEBUG, "Writing " << _bytesReadyCount << " bytes back to client");
+            LOG(DEBUG, "Writing " << _bytesReadyCount << " bytes back to client");
 
             response.out().write(reinterpret_cast<const char*>(_buffer.data()), _bytesReadyCount);
             _totalServedByteCount += _bytesReadyCount;
@@ -74,11 +76,13 @@ namespace lms::transcoding
         {
             Wt::Http::ResponseContinuation* continuation{ response.createContinuation() };
             continuation->waitForMoreData();
-            _transcoder->asyncRead(_buffer.data(), _buffer.size(), [this, continuation](std::size_t nbBytesRead) {
-                LMS_LOG(TRANSCODING, DEBUG, "Have " << nbBytesRead << " more bytes to send back");
 
-                assert(_bytesReadyCount == 0);
-                _bytesReadyCount = nbBytesRead;
+            const std::size_t debugId{ _transcoder->getDebugId() };
+            _transcoder->asyncRead(_buffer.data(), _buffer.size(), [self{ shared_from_this() }, continuation{ continuation->shared_from_this() }, debugId](std::size_t nbBytesRead) {
+                LMS_LOG(TRANSCODING, DEBUG, "[" << debugId << "] - Have " << nbBytesRead << " more bytes to send back");
+
+                assert(self->_bytesReadyCount == 0);
+                self->_bytesReadyCount = nbBytesRead;
                 continuation->haveMoreData();
             });
 
@@ -90,7 +94,7 @@ namespace lms::transcoding
         {
             const std::size_t padSize{ *_estimatedContentLength - _totalServedByteCount };
 
-            LMS_LOG(TRANSCODING, DEBUG, "Adding " << padSize << " padding bytes");
+            LOG(DEBUG, "Adding " << padSize << " padding bytes");
 
             for (std::size_t i{}; i < padSize; ++i)
                 response.out().put(0);
@@ -98,13 +102,16 @@ namespace lms::transcoding
             _totalServedByteCount += padSize;
         }
 
-        LMS_LOG(TRANSCODING, DEBUG, "Transcoding finished. Total served byte count = " << _totalServedByteCount);
+        LOG(DEBUG, "Transcoding finished. Total served byte count = " << _totalServedByteCount);
 
         return {};
     }
 
     void ResourceHandler::abort()
     {
+        if (_transcoder)
+            LOG(DEBUG, "Aborted, total served bytes = " << _totalServedByteCount);
+
         _transcoder.reset();
     }
 } // namespace lms::transcoding

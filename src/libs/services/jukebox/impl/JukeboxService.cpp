@@ -276,7 +276,7 @@ namespace lms::jukebox
     {
         LMS_LOG(JUKEBOX, INFO, "Audio initialization complete!");
 
-        audio::utils::PcmDecodeStreamerParameters params{
+        audio::utils::AudioDecodeStreamerParameters params{
             .outputStream = *_outputStream,
             .bufferCount = 3,
             .bufferDuration = std::chrono::milliseconds{ 100 },
@@ -284,7 +284,7 @@ namespace lms::jukebox
 
         std::unique_lock lock{ _mutex };
 
-        _decoder = audio::utils::createPcmDecodeStreamer(_ioContext, params);
+        _decoder = audio::utils::createAudioDecodeStreamer(_ioContext, params);
         _state = ServiceState::Ready;
     }
 

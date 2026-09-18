@@ -32,6 +32,7 @@
 #include "Tooltip.hpp"
 #include "common/DoubleValidator.hpp"
 #include "common/MandatoryValidator.hpp"
+#include "common/TranscodingOutputFormatModel.hpp"
 #include "common/ValueStringModel.hpp"
 
 #include "SettingsViewUtils.hpp"
@@ -65,10 +66,7 @@ namespace lms::ui
                     _transcodingOutputBitrateModel->add(Wt::WString::fromUTF8(std::to_string(bitrate / 1000)), bitrate);
                 });
 
-                _transcodingOutputFormatModel = std::make_shared<ValueStringModel<db::TranscodingOutputFormat>>();
-                _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.mp3"), db::TranscodingOutputFormat::MP3);
-                _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.ogg_opus"), db::TranscodingOutputFormat::OGG_OPUS);
-                _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.ogg_vorbis"), db::TranscodingOutputFormat::OGG_VORBIS);
+                _transcodingOutputFormatModel = createTranscodingOutputFormatModel();
 
                 _replayGainModeModel = std::make_shared<ReplayGainModeModel>();
                 _replayGainModeModel->add(Wt::WString::tr("Lms.Settings.replaygain-mode.none"), MediaPlayer::Settings::ReplayGain::Mode::None);
@@ -85,7 +83,7 @@ namespace lms::ui
 
                 setValidator(TranscodingModeField, createMandatoryValidator());
                 setValidator(TranscodeBitrateField, createMandatoryValidator());
-                setValidator(TranscodeFormatField, createMandatoryValidator());
+                setValidator(TranscodeFormatField, createTranscodingOutputFormatValidator(_transcodingOutputFormatModel));
                 setValidator(ReplayGainModeField, createMandatoryValidator());
 
                 auto createPreAmpValidator{ [] {

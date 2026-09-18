@@ -25,14 +25,17 @@
 #include <memory>
 #include <span>
 
+#include "core/media/Codec.hpp"
+#include "core/media/Container.hpp"
+
 #include "audio/PcmTypes.hpp"
 
 namespace lms::audio
 {
-    class IPcmDecoder
+    class IAudioDecoder
     {
     public:
-        virtual ~IPcmDecoder() = default;
+        virtual ~IAudioDecoder() = default;
 
         using WritableBuffer = std::span<std::byte>;
 
@@ -51,5 +54,7 @@ namespace lms::audio
     };
 
     // Throw on error
-    std::unique_ptr<IPcmDecoder> createPcmDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters);
+    std::unique_ptr<IAudioDecoder> createAudioDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters);
+
+    bool isDecodingSupported(core::media::Container container, core::media::Codec codec);
 } // namespace lms::audio

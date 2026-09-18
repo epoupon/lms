@@ -33,6 +33,8 @@
 
 #include "core/EnumSet.hpp"
 
+#include "audio/TranscodeTypes.hpp"
+
 #include "database/Object.hpp"
 #include "database/objects/ClusterId.hpp"
 #include "database/objects/GenreId.hpp"
@@ -111,4 +113,6 @@ namespace lms::ui::utils
         std::optional<std::string> workName; // only set when title comes from a movement
     };
     TrackDisplayInfo computeTrackDisplayInfo(const db::ObjectPtr<db::Track>& track);
+
+    std::optional<audio::TranscodeOutputFormat> toSupportedTranscodeOutputFormat(db::TranscodingOutputFormat format);
 } // namespace lms::ui::utils

@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "PcmDecodingBenchmark.hpp"
+#include "AudioDecodingBenchmark.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -31,7 +31,7 @@
 #include <Wt/WServer.h>
 
 #include "audio/Exception.hpp"
-#include "audio/IPcmDecoder.hpp"
+#include "audio/IAudioDecoder.hpp"
 #include "audio/PcmTypes.hpp"
 #include "core/String.hpp"
 #include "core/media/Codec.hpp"
@@ -101,11 +101,11 @@ namespace lms::ui
             const std::size_t bufferSize{ bufferSamples * params.channelCount * audio::getSampleSize(params.sampleType) };
 
             std::vector<std::byte> buffer(bufferSize);
-            std::array<audio::IPcmDecoder::WritableBuffer, 1> outputBuffers{ audio::IPcmDecoder::WritableBuffer{ buffer } };
+            std::array<audio::IAudioDecoder::WritableBuffer, 1> outputBuffers{ audio::IAudioDecoder::WritableBuffer{ buffer } };
 
             const auto start{ Clock::now() };
 
-            auto decoder{ audio::createPcmDecoder(path, std::chrono::microseconds{ 0 }, params) };
+            auto decoder{ audio::createAudioDecoder(path, std::chrono::microseconds{ 0 }, params) };
 
             std::size_t sampleCount{};
             while (!decoder->finished())
@@ -118,7 +118,7 @@ namespace lms::ui
             };
         }
 
-        std::vector<PcmDecodingBenchmark::CodecResult> runBench(db::IDb& db)
+        std::vector<AudioDecodingBenchmark::CodecResult> runBench(db::IDb& db)
         {
             constexpr audio::PcmParameters params{
                 .channelCount = 2,
@@ -128,14 +128,14 @@ namespace lms::ui
                 .planar = false,
             };
 
-            std::vector<PcmDecodingBenchmark::CodecResult> allResults;
+            std::vector<AudioDecodingBenchmark::CodecResult> allResults;
 
             core::media::visitCodecs([&](const core::media::CodecDesc& codecDesc) {
                 const std::vector<TrackEntry> tracks{ pickTracksForCodec(db.getTLSSession(), codecDesc.type) };
                 if (tracks.empty())
                     return;
 
-                std::vector<PcmDecodingBenchmark::TrackDecodeResult> trackResults;
+                std::vector<AudioDecodingBenchmark::TrackDecodeResult> trackResults;
                 for (const TrackEntry& entry : tracks)
                 {
                     try
@@ -146,7 +146,7 @@ namespace lms::ui
                             continue;
 
                         const float decodedAudioSeconds{ static_cast<float>(res.decodedSampleCount) / params.sampleRate };
-                        trackResults.push_back(PcmDecodingBenchmark::TrackDecodeResult{
+                        trackResults.push_back(AudioDecodingBenchmark::TrackDecodeResult{
                             .path = entry.path,
                             .bitrate = entry.bitrate,
                             .duration = entry.duration,
@@ -163,18 +163,18 @@ namespace lms::ui
                     return;
 
                 const std::size_t n{ trackResults.size() };
-                const float mean{ std::accumulate(trackResults.begin(), trackResults.end(), 0.F, [](float acc, const PcmDecodingBenchmark::TrackDecodeResult& t) {
+                const float mean{ std::accumulate(trackResults.begin(), trackResults.end(), 0.F, [](float acc, const AudioDecodingBenchmark::TrackDecodeResult& t) {
                                       return acc + t.realTimeFactor;
                                   })
                                   / static_cast<float>(n) };
-                const float variance{ std::accumulate(trackResults.begin(), trackResults.end(), 0.F, [mean](float acc, const PcmDecodingBenchmark::TrackDecodeResult& t) {
+                const float variance{ std::accumulate(trackResults.begin(), trackResults.end(), 0.F, [mean](float acc, const AudioDecodingBenchmark::TrackDecodeResult& t) {
                                           return acc + (t.realTimeFactor - mean) * (t.realTimeFactor - mean);
                                       })
                                       / static_cast<float>(n) };
-                const auto [minIt, maxIt]{ std::minmax_element(trackResults.begin(), trackResults.end(), [](const PcmDecodingBenchmark::TrackDecodeResult& a, const PcmDecodingBenchmark::TrackDecodeResult& b) {
+                const auto [minIt, maxIt]{ std::minmax_element(trackResults.begin(), trackResults.end(), [](const AudioDecodingBenchmark::TrackDecodeResult& a, const AudioDecodingBenchmark::TrackDecodeResult& b) {
                     return a.realTimeFactor < b.realTimeFactor;
                 }) };
-                allResults.push_back(PcmDecodingBenchmark::CodecResult{
+                allResults.push_back(AudioDecodingBenchmark::CodecResult{
                     .codecName = std::string{ codecDesc.name.str() },
                     .tracks = std::move(trackResults),
                     .minRealTimeFactor = minIt->realTimeFactor,
@@ -188,37 +188,37 @@ namespace lms::ui
         }
     } // namespace
 
-    PcmDecodingBenchmark& PcmDecodingBenchmark::instance()
+    AudioDecodingBenchmark& AudioDecodingBenchmark::instance()
     {
-        static PcmDecodingBenchmark s_instance;
+        static AudioDecodingBenchmark s_instance;
         return s_instance;
     }
 
-    PcmDecodingBenchmark::State PcmDecodingBenchmark::getState() const
+    AudioDecodingBenchmark::State AudioDecodingBenchmark::getState() const
     {
         std::scoped_lock lock{ _mutex };
         return _state;
     }
 
-    std::vector<PcmDecodingBenchmark::CodecResult> PcmDecodingBenchmark::getResults() const
+    std::vector<AudioDecodingBenchmark::CodecResult> AudioDecodingBenchmark::getResults() const
     {
         std::scoped_lock lock{ _mutex };
         return _results;
     }
 
-    std::chrono::milliseconds PcmDecodingBenchmark::getElapsed() const
+    std::chrono::milliseconds AudioDecodingBenchmark::getElapsed() const
     {
         std::scoped_lock lock{ _mutex };
         return _elapsed;
     }
 
-    std::string PcmDecodingBenchmark::getReportFilename() const
+    std::string AudioDecodingBenchmark::getReportFilename() const
     {
         std::scoped_lock lock{ _mutex };
         return _reportFilename;
     }
 
-    void PcmDecodingBenchmark::start(db::IDb& db)
+    void AudioDecodingBenchmark::start(db::IDb& db)
     {
         {
             State prevState;
@@ -255,19 +255,19 @@ namespace lms::ui
         } }.detach();
     }
 
-    void PcmDecodingBenchmark::registerOnStateChanged(const std::string& sessionId, std::function<void(State, State)> f)
+    void AudioDecodingBenchmark::registerOnStateChanged(const std::string& sessionId, std::function<void(State, State)> f)
     {
         std::scoped_lock lock{ _signalMutex };
         _sessionSignals[sessionId].connect(std::move(f));
     }
 
-    void PcmDecodingBenchmark::unregisterOnStateChanged(const std::string& sessionId)
+    void AudioDecodingBenchmark::unregisterOnStateChanged(const std::string& sessionId)
     {
         std::scoped_lock lock{ _signalMutex };
         _sessionSignals.erase(sessionId);
     }
 
-    void PcmDecodingBenchmark::postStateToAllSessions(State oldState, State newState)
+    void AudioDecodingBenchmark::postStateToAllSessions(State oldState, State newState)
     {
         auto* server{ Wt::WServer::instance() };
         if (!server)

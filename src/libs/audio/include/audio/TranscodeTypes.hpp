@@ -23,8 +23,7 @@
 #include <filesystem>
 #include <optional>
 
-#include "core/media/Codec.hpp"
-#include "core/media/Container.hpp"
+#include "core/media/AudioFormat.hpp"
 
 #include "audio/AudioProperties.hpp"
 
@@ -37,11 +36,7 @@ namespace lms::audio
         std::chrono::milliseconds offset{}; // Offset in the audio file to start transcoding from
     };
 
-    struct TranscodeOutputFormat
-    {
-        core::media::Container container;
-        core::media::Codec codec;
-    };
+    using TranscodeOutputFormat = core::media::AudioFormat;
 
     struct TranscodeOutputParameters
     {

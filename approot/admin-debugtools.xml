@@ -9,13 +9,13 @@
         <legend>${tr:Lms.Admin.DebugTools.Db.db}</legend>
         ${db}
         <hr/>
-        <legend>${tr:Lms.Admin.DebugTools.PcmDecodingStats.pcm-decoding-stats}</legend>
-        ${pcm-decoding-stats}
+        <legend>${tr:Lms.Admin.DebugTools.AudioDecodingStats.audio-decoding-stats}</legend>
+        ${audio-decoding-stats}
 	</form>
 
 </message>
 
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.template">
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.template">
 	<form>
 		<div class="row g-3">
 			<div class="col-12">

@@ -50,6 +50,7 @@
 #include "common/InfiniteScrollingContainer.hpp"
 #include "common/MandatoryValidator.hpp"
 #include "common/ValueStringModel.hpp"
+#include "explore/TrackListHelpers.hpp"
 #include "resource/DownloadResource.hpp"
 
 namespace lms::ui
@@ -112,9 +113,10 @@ namespace lms::ui
         };
     } // namespace
 
-    PlayQueue::PlayQueue()
+    PlayQueue::PlayQueue(Filters& filters)
         : Template{ Wt::WString::tr("Lms.PlayQueue.template") }
         , _capacity{ core::Service<core::IConfig>::get()->getULong("ui-playqueue-max-entry-count", 1000) }
+        , _filters{ filters }
     {
         initTrackLists();
 
@@ -616,6 +618,10 @@ namespace lms::ui
             entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
                 ->setLink(Wt::WLink{ std::make_unique<DownloadTrackResource>(trackId) });
         }
+
+        entry->bindNew<Wt::WPushButton>("track-info", Wt::WString::tr("Lms.Explore.track-info"))
+            ->clicked()
+            .connect([this, trackId] { TrackListHelpers::showTrackInfoModal(trackId, _filters); });
     }
 
     void PlayQueue::enqueueRadioTracksIfNeeded()

@@ -1,5 +1,5 @@
-pkg_check_modules(LIBAV IMPORTED_TARGET libavcodec libavutil libavformat libswresample)
-pkg_check_modules(Taglib REQUIRED IMPORTED_TARGET taglib)
+pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET libavcodec libavutil libavformat libswresample)
+pkg_check_modules(Taglib REQUIRED IMPORTED_TARGET taglib>=2)
 pkg_check_modules(PulseAudio IMPORTED_TARGET libpulse)
 pkg_check_modules(ALSA IMPORTED_TARGET alsa)
 pkg_check_modules(OnnxRuntime IMPORTED_TARGET libonnxruntime)
@@ -12,12 +12,13 @@ endif()
 
 add_library(lmsaudio STATIC
 	impl/features/MelFilterBank.cpp
+	impl/ffmpeg/AudioDecoder.cpp
+	impl/ffmpeg/AudioEncoder.cpp
 	impl/ffmpeg/AudioFile.cpp
 	impl/ffmpeg/AudioFileInfo.cpp
 	impl/ffmpeg/AudioFileInfoParser.cpp
 	impl/ffmpeg/FFmpegTypes.cpp
 	impl/ffmpeg/ImageReader.cpp
-	impl/ffmpeg/PcmDecoder.cpp
 	impl/ffmpeg/TagReader.cpp
 	impl/ffmpeg/Transcoder.cpp
 	impl/ffmpeg/Utils.cpp
@@ -27,9 +28,10 @@ add_library(lmsaudio STATIC
 	impl/taglib/ImageReader.cpp
 	impl/taglib/TagReader.cpp
 	impl/taglib/Utils.cpp
-	impl/utils/PcmDecodeStreamer.cpp
+	impl/utils/AudioDecodeStreamer.cpp
 	impl/AudioFileInfoParser.cpp
 	impl/AudioOutput.cpp
+	impl/Init.cpp
 	impl/MusicNNEmbeddingExtractorCreator.cpp
 	impl/PcmTypes.cpp
 	impl/TagReader.cpp

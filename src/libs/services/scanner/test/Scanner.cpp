@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,26 +17,18 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ChildProcessManager.hpp"
+#include <gtest/gtest.h>
 
+#include "audio/Init.hpp"
 #include "core/ILogger.hpp"
+#include "core/Service.hpp"
 
-#include "ChildProcess.hpp"
-
-namespace lms::core
+int main(int argc, char** argv)
 {
-    std::unique_ptr<IChildProcessManager> createChildProcessManager(boost::asio::io_context& ioContext)
-    {
-        return std::make_unique<ChildProcessManager>(ioContext);
-    }
+    lms::core::Service<lms::core::logging::ILogger> logger{ lms::core::logging::createLogger(lms::core::logging::Severity::ERROR) };
+    lms::audio::init();
 
-    ChildProcessManager::ChildProcessManager(boost::asio::io_context& ioContext)
-        : _ioContext{ ioContext }
-    {
-    }
+    ::testing::InitGoogleTest(&argc, argv);
 
-    std::unique_ptr<IChildProcess> ChildProcessManager::spawnChildProcess(const std::filesystem::path& path, const IChildProcess::Args& args)
-    {
-        return std::make_unique<ChildProcess>(_ioContext, path, args);
-    }
-} // namespace lms::core
+    return RUN_ALL_TESTS();
+}

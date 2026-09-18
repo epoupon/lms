@@ -22,10 +22,13 @@
 #include "core/ILogger.hpp"
 #include "core/Service.hpp"
 
+#include "audio/Init.hpp"
+
 int main(int argc, char** argv)
 {
     using namespace lms;
     core::Service<core::logging::ILogger> logger{ core::logging::createLogger(core::logging::Severity::ERROR) };
+    audio::init();
 
     ::testing::InitGoogleTest(&argc, argv);
 

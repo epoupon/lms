@@ -20,22 +20,32 @@
 #include "Transcoder.hpp"
 
 #include <filesystem>
-#include <iomanip>
+#include <span>
+#include <vector>
 
-#include "core/IChildProcessManager.hpp"
-#include "core/IConfig.hpp"
+#include <boost/asio/post.hpp>
+
 #include "core/ILogger.hpp"
-#include "core/Service.hpp"
 #include "core/media/MimeType.hpp"
 
 #include "audio/Exception.hpp"
+#include "audio/IAudioDecoder.hpp"
 #include "audio/TranscodeTypes.hpp"
+
+#include "AudioEncoder.hpp"
+#include "AudioFile.hpp"
+#include "Utils.hpp"
 
 namespace lms::audio
 {
-    std::unique_ptr<ITranscoder> createTranscoder(const TranscodeParameters& parameters)
+    std::unique_ptr<ITranscoder> createTranscoder(boost::asio::io_context& ioContext, const TranscodeParameters& parameters)
     {
-        return std::make_unique<ffmpeg::Transcoder>(parameters);
+        return std::make_unique<ffmpeg::Transcoder>(ioContext, parameters);
+    }
+
+    bool isEncodingSupported(core::media::Container container, core::media::Codec codec)
+    {
+        return ffmpeg::utils::isCodecMuxingSupported(container, codec);
     }
 } // namespace lms::audio
 
@@ -45,196 +55,187 @@ namespace lms::audio::ffmpeg
 
     namespace
     {
-        class FFmpegPath
-        {
-        public:
-            FFmpegPath()
-            {
-                path = core::Service<core::IConfig>::get()->getPath("ffmpeg-file", "/usr/bin/ffmpeg");
-                if (!std::filesystem::exists(path))
-                    throw Exception{ "File '" + path.string() + "' does not exist!" };
-            }
-
-            const std::filesystem::path& get() const { return path; }
-
-        private:
-            std::filesystem::path path;
-        };
+        // How many samples per channel are pulled out of the decoder at once
+        constexpr std::size_t decodeSampleCount{ 8'192 };
     } // namespace
 
-    std::atomic<std::size_t> Transcoder::_nextDebugId;
-
-    Transcoder::Transcoder(const TranscodeParameters& parameters)
-        : _debugId{ _nextDebugId++ }
-        , _inputParams{ parameters.inputParameters }
-        , _outputParams{ parameters.outputParameters }
+    class Transcoder::Engine
     {
-        start();
-    }
+    public:
+        Engine(std::size_t debugId, const TranscodeParameters& parameters);
 
-    Transcoder::~Transcoder() = default;
+        std::size_t read(std::byte* buffer, std::size_t bufferSize);
+        bool finished() const;
 
-    void Transcoder::start()
+        void abort() { _aborted = true; }
+        bool aborted() const { return _aborted; }
+        void setFailed() { _failed = true; }
+
+    private:
+        void allocatePcmBuffers();
+
+        const std::size_t _debugId;
+        std::atomic<bool> _failed{};
+        std::atomic<bool> _aborted{};
+
+        std::unique_ptr<AudioEncoder> _encoder;
+        std::unique_ptr<IAudioDecoder> _decoder;
+        std::vector<std::byte> _pcmBuffer;
+        std::vector<IAudioDecoder::WritableBuffer> _pcmWritableBuffers;
+        std::vector<AudioEncoder::ReadableBuffer> _pcmReadableBuffers;
+    };
+
+    Transcoder::Engine::Engine(std::size_t debugId, const TranscodeParameters& parameters)
+        : _debugId{ debugId }
     {
-        static FFmpegPath ffmpegPath;
+        const TranscodeInputParameters& inputParams{ parameters.inputParameters };
+        const TranscodeOutputParameters& outputParams{ parameters.outputParameters };
+
+        if (!outputParams.format)
+            throw Exception{ "No output format specified" };
 
         try
         {
-            if (!std::filesystem::exists(_inputParams.filePath))
-                throw Exception{ "File " + _inputParams.filePath.string() + " does not exist!" };
-            if (!std::filesystem::is_regular_file(_inputParams.filePath))
-                throw Exception{ "File " + _inputParams.filePath.string() + " is not regular!" };
+            if (!std::filesystem::exists(inputParams.filePath))
+                throw Exception{ "File " + inputParams.filePath.string() + " does not exist!" };
+            if (!std::filesystem::is_regular_file(inputParams.filePath))
+                throw Exception{ "File " + inputParams.filePath.string() + " is not regular!" };
         }
         catch (const std::filesystem::filesystem_error& e)
         {
-            throw IOFileException{ _inputParams.filePath, "Failed to check if file exists", e.code() };
+            throw IOFileException{ inputParams.filePath, "Failed to check if file exists", e.code() };
         }
 
-        LOG(INFO, "Transcoding file " << _inputParams.filePath);
+        LOG(INFO, "Transcoding file " << inputParams.filePath);
 
-        std::vector<std::string> args;
+        EncodeParameters encodeParameters{
+            .container = outputParams.format->container,
+            .codec = outputParams.format->codec,
+            .bitrate = outputParams.bitrate,
+            .bitsPerSample = outputParams.bitsPerSample ? outputParams.bitsPerSample : inputParams.audioProperties.bitsPerSample,
+            .channelCount = outputParams.channelCount.value_or(inputParams.audioProperties.channelCount),
+            .sampleRate = outputParams.sampleRate.value_or(inputParams.audioProperties.sampleRate),
+            .metadata = {},
+        };
 
-        args.emplace_back(ffmpegPath.get().string());
+        LOG(INFO, "Output: container = " << core::media::containerToString(encodeParameters.container) << ", codec = " << core::media::getCodecDesc(encodeParameters.codec).name
+                                         << ", bitrate = " << (encodeParameters.bitrate ? std::to_string(*encodeParameters.bitrate) + " bps" : "n/a")
+                                         << ", bits per sample = " << (encodeParameters.bitsPerSample ? std::to_string(*encodeParameters.bitsPerSample) : "n/a")
+                                         << ", channel count = " << encodeParameters.channelCount
+                                         << ", sample rate = " << encodeParameters.sampleRate);
 
-        // TODO some codecs have restrictions, take them into account (channel count, sample rate, etc.)
-
-        // Make sure:
-        // - we do not produce anything in the stderr output
-        // - we do not rely on input
-        // in order not to block the whole forked process
-        args.emplace_back("-loglevel");
-        args.emplace_back("quiet");
-        args.emplace_back("-nostdin");
-
-        // input Offset
+        if (!outputParams.stripMetadata)
         {
-            args.emplace_back("-ss");
-
-            std::ostringstream oss;
-            oss << std::fixed << std::showpoint << std::setprecision(3) << (_inputParams.offset.count() / float{ 1'000 });
-            args.emplace_back(oss.str());
-        }
-
-        // Input file
-        args.emplace_back("-i");
-        args.emplace_back(_inputParams.filePath.string());
-
-        if (_outputParams.stripMetadata)
-        {
-            // Strip metadata
-            args.emplace_back("-map_metadata");
-            args.emplace_back("-1");
-        }
-
-        // Skip video flows (including covers!)
-        args.emplace_back("-vn");
-
-        // Output bitrates
-        if (_outputParams.bitrate)
-        {
-            args.emplace_back("-b:a");
-            args.emplace_back(std::to_string(*_outputParams.bitrate));
-        }
-
-        // -ac doc says: "For output streams it is set by default to the number of input audio channels".
-        // But it looks like specifying it is required in case the original layout is not compatible with the output codec selected
-        {
-            args.emplace_back("-ac");
-            args.emplace_back(std::to_string(_outputParams.channelCount ? *_outputParams.channelCount : _inputParams.audioProperties.channelCount));
-        }
-
-        if (_outputParams.sampleRate)
-        {
-            args.emplace_back("-ar");
-            args.emplace_back(std::to_string(*_outputParams.sampleRate));
-        }
-
-        if (_outputParams.bitsPerSample)
-        {
-            args.emplace_back("-sample_fmt");
-            args.emplace_back("s" + std::to_string(*_outputParams.bitsPerSample));
-        }
-
-        // Codecs and formats
-        if (_outputParams.format)
-        {
-            args.emplace_back("-f");
-
-            switch (_outputParams.format->container)
+            // Not being able to read the tags must not prevent the audio from being transcoded
+            try
             {
-            case core::media::Container::FLAC:
-                args.emplace_back("flac");
-                break;
-            case core::media::Container::Ogg:
-                args.emplace_back("ogg");
-                break;
-            case core::media::Container::MPEG:
-                args.emplace_back("mp3");
-                break;
-
-            default:
-                throw Exception{ "Unsupported container type " + std::string{ core::media::containerToString(_outputParams.format->container).str() } };
+                encodeParameters.metadata = AudioFile{ inputParams.filePath }.extractMetaData();
             }
-
-            args.emplace_back("-acodec");
-
-            switch (_outputParams.format->codec)
+            catch (const Exception& e)
             {
-            case core::media::Codec::MP3:
-                args.emplace_back("libmp3lame");
-                break;
-
-            case core::media::Codec::Opus:
-                args.emplace_back("libopus");
-                break;
-
-            case core::media::Codec::Vorbis:
-                args.emplace_back("libvorbis");
-                break;
-
-            case core::media::Codec::FLAC:
-                args.emplace_back("flac");
-                break;
-
-            default:
-                throw Exception{ "Unhandled codec type " + std::string{ core::media::getCodecDesc(_outputParams.format->codec).name.str() } };
+                LOG(WARNING, "Cannot extract metadata from " << inputParams.filePath << ": " << e.what());
             }
         }
 
-        args.emplace_back("pipe:1");
+        _encoder = std::make_unique<AudioEncoder>(encodeParameters);
+        _decoder = createAudioDecoder(inputParams.filePath, inputParams.offset, _encoder->getInputParameters());
 
-        if (core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
+        allocatePcmBuffers();
+    }
+
+    void Transcoder::Engine::allocatePcmBuffers()
+    {
+        const PcmParameters& pcmParameters{ _encoder->getInputParameters() };
+        const std::size_t bufferCount{ pcmParameters.planar ? pcmParameters.channelCount : 1 };
+        const std::size_t sampleSize{ getSampleSize(pcmParameters.sampleType) };
+        const std::size_t bufferSize{ decodeSampleCount * sampleSize * (pcmParameters.planar ? 1 : pcmParameters.channelCount) };
+
+        _pcmBuffer.resize(bufferCount * bufferSize);
+
+        for (std::size_t i{}; i < bufferCount; ++i)
         {
-            LOG(DEBUG, "Dumping args (" << args.size() << ")");
-            for (const std::string& arg : args)
-                LOG(DEBUG, "Arg = '" << arg << "'");
+            const std::span<std::byte> bufferView{ std::span{ _pcmBuffer }.subspan(i * bufferSize, bufferSize) };
+            _pcmWritableBuffers.emplace_back(bufferView);
+            _pcmReadableBuffers.emplace_back(bufferView);
+        }
+    }
+
+    std::size_t Transcoder::Engine::read(std::byte* buffer, std::size_t bufferSize)
+    {
+        std::size_t writtenByteCount{};
+
+        while (writtenByteCount < bufferSize)
+        {
+            const std::size_t byteCount{ _encoder->readBytes(std::span<std::byte>{ buffer, bufferSize }.subspan(writtenByteCount)) };
+            if (byteCount > 0)
+            {
+                writtenByteCount += byteCount;
+                continue;
+            }
+
+            if (_encoder->finished())
+                break;
+
+            const std::size_t sampleCount{ _decoder->readSamples(_pcmWritableBuffers) };
+            if (sampleCount == 0)
+                _encoder->flush();
+            else
+                _encoder->writeSamples(_pcmReadableBuffers, sampleCount);
         }
 
-        // Caution: stdin must have been closed before
-        try
-        {
-            _childProcess = core::Service<core::IChildProcessManager>::get()->spawnChildProcess(ffmpegPath.get(), args);
-        }
-        catch (core::ChildProcessException& exception)
-        {
-            throw Exception{ "Cannot execute '" + ffmpegPath.get().string() + "': " + exception.what() };
-        }
+        return writtenByteCount;
+    }
+
+    bool Transcoder::Engine::finished() const
+    {
+        return _failed || _encoder->finished();
+    }
+
+    std::atomic<std::size_t> Transcoder::_nextDebugId;
+
+    Transcoder::Transcoder(boost::asio::io_context& ioContext, const TranscodeParameters& parameters)
+        : _debugId{ _nextDebugId++ }
+        , _inputParams{ parameters.inputParameters }
+        , _outputParams{ parameters.outputParameters }
+        , _strand{ boost::asio::make_strand(ioContext) }
+        , _engine{ std::make_shared<Engine>(_debugId, parameters) }
+    {
+    }
+
+    Transcoder::~Transcoder()
+    {
+        _engine->abort();
     }
 
     void Transcoder::asyncRead(std::byte* buffer, std::size_t bufferSize, ReadCallback readCallback)
     {
-        assert(_childProcess);
+        boost::asio::post(_strand, [debugId{ _debugId }, engine{ _engine }, buffer, bufferSize, readCallback{ std::move(readCallback) }] {
+            if (engine->aborted())
+                return;
 
-        return _childProcess->asyncRead(buffer, bufferSize, [readCallback{ std::move(readCallback) }](core::IChildProcess::ReadResult /*res*/, std::size_t nbBytesRead) {
-            readCallback(nbBytesRead);
+            std::size_t readByteCount{};
+
+            try
+            {
+                readByteCount = engine->read(buffer, bufferSize);
+            }
+            catch (const Exception& e)
+            {
+                LMS_LOG(TRANSCODING, ERROR, "[" << debugId << "] - Transcoding failed: " << e.what());
+                engine->setFailed();
+            }
+
+            // Forbidden to use the callback if the transcoder has been destroyed in the meantime
+            if (engine->aborted())
+                return;
+
+            readCallback(readByteCount);
         });
     }
 
     std::size_t Transcoder::readSome(std::byte* buffer, std::size_t bufferSize)
     {
-        assert(_childProcess);
-
-        return _childProcess->readSome(buffer, bufferSize);
+        return _engine->read(buffer, bufferSize);
     }
 
     std::string_view Transcoder::getOutputMimeType() const
@@ -247,8 +248,6 @@ namespace lms::audio::ffmpeg
 
     bool Transcoder::finished() const
     {
-        assert(_childProcess);
-
-        return _childProcess->finished();
+        return _engine->finished();
     }
 } // namespace lms::audio::ffmpeg

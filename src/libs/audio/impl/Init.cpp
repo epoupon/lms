@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -16,24 +16,17 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
 
-#include <filesystem>
-#include <memory>
+#include "audio/Init.hpp"
 
-#include <boost/asio/io_context.hpp>
+#include "ffmpeg/Utils.hpp"
+#include "taglib/Utils.hpp"
 
-#include "IChildProcess.hpp"
-
-namespace lms::core
+namespace lms::audio
 {
-    class IChildProcessManager
+    void init()
     {
-    public:
-        virtual ~IChildProcessManager() = default;
-
-        virtual std::unique_ptr<IChildProcess> spawnChildProcess(const std::filesystem::path& path, const IChildProcess::Args& args) = 0;
-    };
-
-    std::unique_ptr<IChildProcessManager> createChildProcessManager(boost::asio::io_context& ioContext);
-} // namespace lms::core
+        taglib::utils::init();
+        ffmpeg::utils::init();
+    }
+} // namespace lms::audio

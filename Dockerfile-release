@@ -40,7 +40,7 @@ ARG	BUILD_PACKAGES=" \
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
 
 # FFmpeg
-ARG	FFMPEG_VERSION=6.1.6
+ARG	FFMPEG_VERSION=7.1.5
 RUN  \
 	DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
@@ -53,8 +53,7 @@ RUN \
 	--disable-autodetect \
 	--disable-debug \
 	--disable-doc \
-	--disable-ffplay \
-	--disable-ffprobe \
+	--disable-programs \
 	--disable-openssl \
 	--disable-postproc \
 	--disable-pixelutils \
@@ -103,7 +102,7 @@ RUN \
 	cp ./*.h ${PREFIX}/include/stb
 
 # TAGLIB
-ARG TAGLIB_VERSION=v2.3.1
+ARG TAGLIB_VERSION=v2.3.2
 RUN \
 	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/taglib/taglib/archive/${TAGLIB_VERSION}.tar.gz && \
@@ -120,14 +119,14 @@ RUN \
 	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR} && \
 	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_UNITY_BUILD=ON -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make -j$(nproc) install && \
-	LD_LIBRARY_PATH=${PREFIX}/lib LMS_MUSICNN_MODEL=/tmp/lms/src/libs/audio/models/MSD_musicnn_embedding.onnx make test && \
+	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
 	mkdir -p ${PREFIX}/etc/ && \
 	cp /tmp/lms/conf/lms.conf ${PREFIX}/etc
 
 # Now copy all the stuff installed in a new folder (/tmp/fakeroot/)
 RUN \
 	mkdir -p /tmp/fakeroot/bin && \
-	for bin in ${PREFIX}/bin/ffmpeg ${PREFIX}/bin/lms*; \
+	for bin in ${PREFIX}/bin/lms*; \
 	do \
 	strip --strip-all $bin && \
 	cp $bin /tmp/fakeroot/bin/; \

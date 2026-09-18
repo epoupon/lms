@@ -69,6 +69,7 @@
 					${<if-has-download>}
 					<li>${download class="dropdown-item"}</li>
 					${</if-has-download>}
+					<li>${track-info class="dropdown-item"}</li>
 				</ul>
 			</div>
 		</div>

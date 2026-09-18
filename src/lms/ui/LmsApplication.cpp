@@ -55,6 +55,7 @@
 #include "ModalManager.hpp"
 #include "NotificationContainer.hpp"
 #include "PlayQueue.hpp"
+#include "WebStorage.hpp"
 #include "admin/About.hpp"
 #include "admin/AdminView.hpp"
 #include "admin/InitWizardView.hpp"
@@ -164,6 +165,7 @@ namespace lms::ui
         , _authBackend{ authBackend }
         , _serverInstanceId{ serverInstanceId }
         , _areDownloadsEnabled(core::Service<core::IConfig>::get()->getBool("ui-allow-downloads", true))
+        , _webStorage{ std::make_unique<WebStorage>(*this) }
     {
         try
         {
@@ -462,7 +464,7 @@ namespace lms::ui
 
         PathRouter* mainRouter{ main->bindNew<PathRouter>("contents") };
 
-        _playQueue = mainRouter->add<PlayQueue>("/playqueue", Wt::WString::tr("Lms.PlayQueue.playqueue"));
+        _playQueue = mainRouter->add<PlayQueue>("/playqueue", Wt::WString::tr("Lms.PlayQueue.playqueue"), *filters);
 
         Explore* explore{ mainRouter->add<Explore>("/artists", Wt::WString::tr("Lms.Explore.artists"), *filters, *_playQueue) };
         mainRouter->addRoute("/artist", std::nullopt, explore);

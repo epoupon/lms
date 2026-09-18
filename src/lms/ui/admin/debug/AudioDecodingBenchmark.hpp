@@ -36,7 +36,7 @@ namespace lms::db
 
 namespace lms::ui
 {
-    class PcmDecodingBenchmark
+    class AudioDecodingBenchmark
     {
     public:
         enum class State
@@ -65,7 +65,7 @@ namespace lms::ui
             float stdDevRealTimeFactor{};
         };
 
-        static PcmDecodingBenchmark& instance();
+        static AudioDecodingBenchmark& instance();
 
         State getState() const;
         std::vector<CodecResult> getResults() const;

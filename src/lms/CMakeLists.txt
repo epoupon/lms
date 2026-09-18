@@ -21,10 +21,11 @@ add_executable(lms
 	ui/State.cpp
 	ui/Tooltip.cpp
 	ui/Utils.cpp
+	ui/WebStorage.cpp
 	ui/admin/AdminView.cpp
 	ui/admin/debug/Database.cpp
-	ui/admin/debug/PcmDecodingBenchmark.cpp
-	ui/admin/debug/PcmDecodingStats.cpp
+	ui/admin/debug/AudioDecodingBenchmark.cpp
+	ui/admin/debug/AudioDecodingStats.cpp
 	ui/admin/debug/Tracing.cpp
 	ui/admin/About.cpp
 	ui/admin/DebugToolsView.cpp
@@ -44,6 +45,7 @@ add_executable(lms
 	ui/common/MandatoryValidator.cpp
 	ui/common/PasswordValidator.cpp
 	ui/common/Template.cpp
+	ui/common/TranscodingOutputFormatModel.cpp
 	ui/common/UppercaseValidator.cpp
 	ui/common/UUIDValidator.cpp
 	ui/explore/ArtistCollector.cpp

@@ -23,7 +23,7 @@
 
 #include "MusicNNModel.hpp"
 #include "features/MelFilterBank.hpp"
-#include "utils/PcmSpectralFrameDecoder.hpp"
+#include "utils/SpectralFrameDecoder.hpp"
 
 namespace lms::audio::musicnn
 {
@@ -51,7 +51,7 @@ namespace lms::audio::musicnn
 
         class PatchAccumulator;
 
-        using FrameDecoder = PcmSpectralFrameDecoder<512, float>;
+        using FrameDecoder = SpectralFrameDecoder<512, float>;
         const features::MelFilterBank _melFilterBank;
         const MusicNNModel _model;
         const std::size_t _maxPatchCount;

@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -51,6 +52,7 @@ namespace lms::ui
     class LmsApplicationManager;
     class NotificationContainer;
     class ModalManager;
+    class WebStorage;
 
     class LmsApplication : public Wt::WApplication
     {
@@ -91,6 +93,7 @@ namespace lms::ui
         MediaPlayer& getMediaPlayer() const { return *_mediaPlayer; }
         PlayQueue& getPlayQueue() const { return *_playQueue; }
         ModalManager& getModalManager() const { return *_modalManager; }
+        WebStorage& getWebStorage() const { return *_webStorage; }
 
         // Signal emitted just before the session ends (user may already be logged out)
         Wt::Signal<>& preQuit() { return _preQuit; }
@@ -131,6 +134,7 @@ namespace lms::ui
         PlayQueue* _playQueue{};
         NotificationContainer* _notificationContainer{};
         ModalManager* _modalManager{};
+        std::unique_ptr<WebStorage> _webStorage;
     };
 
     // Helper to get session instance

@@ -33,7 +33,7 @@
 
 #include "core/AlignedHeapArray.hpp"
 
-#include "audio/IPcmDecoder.hpp"
+#include "audio/IAudioDecoder.hpp"
 #include "audio/PcmTypes.hpp"
 #include "math/FFT.hpp"
 #include "math/Window.hpp"
@@ -42,7 +42,7 @@ namespace lms::audio
 {
     // Stateful PCM frame decoder that applies a Hann window + FFT per frame.
     template<std::size_t WindowSize, typename FloatType = float>
-    class PcmSpectralFrameDecoder
+    class SpectralFrameDecoder
     {
         static_assert(std::has_single_bit(WindowSize), "WindowSize must be a power of two");
 
@@ -50,13 +50,13 @@ namespace lms::audio
         using FFTPlan = math::FixedRealFFTPlan<WindowSize, FloatType>;
         static constexpr std::size_t spectrumSize{ FFTPlan::getOutputSize() };
 
-        PcmSpectralFrameDecoder(const std::filesystem::path& audioFile, const PcmParameters& params, std::size_t hopSize)
-            : PcmSpectralFrameDecoder{ createPcmDecoder(audioFile, {}, params), hopSize }
+        SpectralFrameDecoder(const std::filesystem::path& audioFile, const PcmParameters& params, std::size_t hopSize)
+            : SpectralFrameDecoder{ createAudioDecoder(audioFile, {}, params), hopSize }
         {
         }
-        ~PcmSpectralFrameDecoder() = default;
+        ~SpectralFrameDecoder() = default;
 
-        explicit PcmSpectralFrameDecoder(std::unique_ptr<IPcmDecoder> decoder, std::size_t hopSize)
+        explicit SpectralFrameDecoder(std::unique_ptr<IAudioDecoder> decoder, std::size_t hopSize)
             : _pcmParams{ decoder->getParameters() }
             , _hopSize{ hopSize }
             , _powerScale{ FloatType{ 1 } / (_window.energy() * static_cast<FloatType>(WindowSize)) }
@@ -67,8 +67,8 @@ namespace lms::audio
             assert(_hopSize > 0);
         }
 
-        PcmSpectralFrameDecoder(const PcmSpectralFrameDecoder&) = delete;
-        PcmSpectralFrameDecoder& operator=(const PcmSpectralFrameDecoder&) = delete;
+        SpectralFrameDecoder(const SpectralFrameDecoder&) = delete;
+        SpectralFrameDecoder& operator=(const SpectralFrameDecoder&) = delete;
 
         std::size_t hopSize() const noexcept { return _hopSize; }
         const PcmParameters& pcmParameters() const noexcept { return _pcmParams; }
@@ -176,7 +176,7 @@ namespace lms::audio
                 if (dest.empty())
                     break;
 
-                std::array outputBuffers{ IPcmDecoder::WritableBuffer{ std::as_writable_bytes(dest) } };
+                std::array outputBuffers{ IAudioDecoder::WritableBuffer{ std::as_writable_bytes(dest) } };
                 const std::size_t samplesRead{ _decoder->readSamples(outputBuffers) };
                 if (samplesRead == 0)
                 {
@@ -211,7 +211,7 @@ namespace lms::audio
         const math::HannWindow<WindowSize, FloatType> _window;
         const FloatType _powerScale;
         const FFTPlan _fftPlan{};
-        std::unique_ptr<IPcmDecoder> _decoder;
+        std::unique_ptr<IAudioDecoder> _decoder;
         std::vector<FloatType> _samplesBuffer;
         core::AlignedHeapArray<FloatType, FFTPlan::minBufferAlignment> _windowedFrame{ FFTPlan::getInputSize() };
         core::AlignedHeapArray<std::complex<FloatType>, FFTPlan::minBufferAlignment> _fftOutput{ FFTPlan::getOutputSize() };

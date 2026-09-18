@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,21 +19,8 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-
-#include "audio/IAudioFileInfoParser.hpp"
-
-namespace lms::scanner
+namespace lms::audio
 {
-    struct AudioFileInfoParserSet
-    {
-        std::unique_ptr<audio::IAudioFileInfoParser> taglibParser;
-        std::unique_ptr<audio::IAudioFileInfoParser> ffmpegParser;
-        std::vector<std::filesystem::path> supportedExtensions;
-
-        audio::AudioFileInfoParseOptions::AudioPropertiesReadStyle audioPropertiesReadStyle; // a bit hacky to have this here
-    };
-
-    AudioFileInfoParserSet createAudioFileInfoParserSet();
-} // namespace lms::scanner
+    // Must be called once, early, before any other audio:: API is used
+    void init();
+} // namespace lms::audio

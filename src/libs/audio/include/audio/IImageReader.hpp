@@ -23,6 +23,7 @@
 #include <span>
 #include <string>
 
+#include "core/Utils.hpp"
 #include "core/media/ImageType.hpp"
 
 namespace lms::audio
@@ -40,7 +41,7 @@ namespace lms::audio
     public:
         virtual ~IImageReader() = default;
 
-        using ImageVisitor = std::function<void(const Image& image)>;
+        using ImageVisitor = std::function<core::VisitorResult(const Image& image)>;
         virtual void visitImages(const ImageVisitor& visitor) const = 0;
     };
 } // namespace lms::audio

@@ -9,7 +9,7 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       actions: read
       contents: read
@@ -28,7 +28,7 @@ jobs:
         name: Install dependencies (cpp)
         run: |
           sudo apt-get update
-          sudo apt-get install --yes build-essential cmake libarchive-dev libavcodec-dev libavformat-dev libavutil-dev libboost-all-dev libconfig++-dev libgtest-dev libpam0g-dev libpugixml-dev libstb-dev libtag1-dev libxxhash-dev
+          sudo apt-get install --yes build-essential cmake libarchive-dev libavcodec-dev libavformat-dev libavutil-dev libboost-all-dev libconfig++-dev libgtest-dev libpam0g-dev libpugixml-dev libssl-dev libstb-dev libtag-dev libxxhash-dev
           export WT_VERSION=4.11.3
           export WT_INSTALL_PREFIX=/usr
           git clone https://github.com/emweb/wt.git /tmp/wt
@@ -44,6 +44,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
+          config-file: ./.github/codeql/codeql-config.yml
 
       - if: matrix.language == 'javascript'
         name: Autobuild

@@ -186,12 +186,12 @@
 <message id="Lms.Admin.DebugTools.Db.export-query-profiling">Eksportuj dane profilowania zapytań</message>
 <message id="Lms.Admin.DebugTools.Db.db">Baza danych</message>
 
-<!--PcmDecodingStats-->
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.pcm-decoding-stats">Statystyki dekodowania PCM</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.run">Uruchom benchmark</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.download">Pobierz wyniki</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.running">Trwa…</message>
-<message id="Lms.Admin.DebugTools.PcmDecodingStats.benchmark-completed">Test wydajności dekodowania PCM zakończony w {1}</message>
+<!--AudioDecodingStats-->
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.audio-decoding-stats">Statystyki dekodowania audio</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.run">Uruchom benchmark</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.download">Pobierz wyniki</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.running">Trwa…</message>
+<message id="Lms.Admin.DebugTools.AudioDecodingStats.benchmark-completed">Test wydajności dekodowania audio zakończony w {1}</message>
 
 <!--Tracing-->
 <message id="Lms.Admin.DebugTools.Tracing.export-current-buffer">Eksportuj ślady</message>
@@ -376,7 +376,7 @@
 <message id="Lms.Explore.Search.search-placeholder">Szukaj...</message>
 
 <!--Player-->
-<message id="Lms.Player.transcoding-active">Transkodowanie włączone</message>
+<message id="Lms.Player.transcoding-active">Transkodowanie włączone ({1}, {2} kbps)</message>
 <message id="Lms.Player.now-playing">Teraz odtwarzane</message>
 <message id="Lms.Player.previous">Poprzedni</message>
 <message id="Lms.Player.play-pause">Odtwarzaj / pauza</message>
@@ -477,6 +477,7 @@
 <message id="Lms.Settings.transcoding-output-format.mp3">MP3</message>
 <message id="Lms.Settings.transcoding-output-format.ogg_opus">Ogg/Opus</message>
 <message id="Lms.Settings.transcoding-output-format.ogg_vorbis">Ogg/Vorbis</message>
+<message id="Lms.Settings.transcoding-output-format-not-supported">Ten format nie jest obsługiwany</message>
 <message id="Lms.Settings.user-interface">Interfejs użytkownika</message>
 
 <!--Wt-->

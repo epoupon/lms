@@ -19,19 +19,14 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
-#include <set>
+#include <span>
 
 #include <Wt/WString.h>
 #include <Wt/WWidget.h>
 
-#include "core/EnumSet.hpp"
-
 #include "database/Object.hpp"
-#include "database/objects/ArtistId.hpp"
 #include "database/objects/TrackId.hpp"
-#include "database/objects/Types.hpp"
 
 namespace lms::db
 {
@@ -49,4 +44,5 @@ namespace lms::ui::TrackListHelpers
     void showTrackInfoModal(db::TrackId trackId, Filters& filters);
     void showTrackLyricsModal(db::TrackId trackId);
     std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters);
+    std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters, std::span<const db::TrackId> orderedTrackIds, std::size_t trackIndex);
 } // namespace lms::ui::TrackListHelpers

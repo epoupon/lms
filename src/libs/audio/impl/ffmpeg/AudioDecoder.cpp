@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "PcmDecoder.hpp"
+#include "AudioDecoder.hpp"
 
 #include <algorithm>
 #include <array>
@@ -35,15 +35,21 @@ extern "C"
 #include "core/ILogger.hpp"
 
 #include "audio/Exception.hpp"
-#include "audio/IPcmDecoder.hpp"
+#include "audio/IAudioDecoder.hpp"
 
 #include "Exception.hpp"
+#include "Utils.hpp"
 
 namespace lms::audio
 {
-    std::unique_ptr<IPcmDecoder> createPcmDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
+    std::unique_ptr<IAudioDecoder> createAudioDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
     {
-        return std::make_unique<ffmpeg::PcmDecoder>(filePath, offset, parameters);
+        return std::make_unique<ffmpeg::AudioDecoder>(filePath, offset, parameters);
+    }
+
+    bool isDecodingSupported(core::media::Container container, core::media::Codec codec)
+    {
+        return ffmpeg::utils::isDecodingSupported(container, codec);
     }
 } // namespace lms::audio
 
@@ -51,26 +57,9 @@ namespace lms::audio::ffmpeg
 {
     namespace
     {
-        ::AVSampleFormat toAvSampleFormat(PcmSampleType type, bool planar)
-        {
-            switch (type)
-            {
-            case PcmSampleType::Signed16:
-                return planar ? AV_SAMPLE_FMT_S16P : AV_SAMPLE_FMT_S16;
-            case PcmSampleType::Signed32:
-                return planar ? AV_SAMPLE_FMT_S32P : AV_SAMPLE_FMT_S32;
-            case PcmSampleType::Float32:
-                return planar ? AV_SAMPLE_FMT_FLTP : AV_SAMPLE_FMT_FLT;
-            case PcmSampleType::Float64:
-                return planar ? AV_SAMPLE_FMT_DBLP : AV_SAMPLE_FMT_DBL;
-            }
-
-            throw Exception{ "Unsupported PcmSampleType" };
-        }
-
         SwrContextPtr createResampler(const PcmParameters& params, const AVChannelLayout& inLayout, AVSampleFormat inFmt, int inSampleRate)
         {
-            const ::AVSampleFormat outFmt{ toAvSampleFormat(params.sampleType, params.planar) };
+            const ::AVSampleFormat outFmt{ utils::toAvSampleFormat(params.sampleType, params.planar) };
             AVChannelLayout outLayout;
             ::av_channel_layout_default(&outLayout, static_cast<int>(params.channelCount));
 
@@ -98,17 +87,37 @@ namespace lms::audio::ffmpeg
 
             return resampleContext;
         }
+
+        // Can av_seek_frame be trusted for this container's demuxer?
+        bool isSeekingSupported(core::media::Container container)
+        {
+            return container != core::media::Container::WavPack;
+        }
+
+        void checkDecodedFormatIsSupported(const ::AVFormatContext& formatContext, const ::AVCodec& decoder, const std::filesystem::path& filePath)
+        {
+            const std::optional<core::media::Container> container{ utils::containerFromDemuxerName(formatContext.iformat->name) };
+            const std::optional<core::media::Codec> codec{ utils::codecFromAVCodecId(decoder.id) };
+
+            if (container && codec && utils::isDecodingSupported(*container, *codec))
+                return;
+
+            const std::string containerName{ container ? std::string{ core::media::containerToString(*container).str() } : std::string{ "unknown" } };
+            const std::string codecName{ codec ? std::string{ core::media::getCodecDesc(*codec).name.str() } : std::string{ "unknown" } };
+            LMS_LOG(AUDIO, ERROR, "Unsupported format in " << filePath << ": container = " << containerName << ", codec = " << codecName);
+            throw Exception{ "Format not supported by this build (container = " + containerName + ", codec = " + codecName + ")" };
+        }
     } // namespace
 
-    PcmDecoder::PcmDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
+    AudioDecoder::AudioDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
         : _parameters{ parameters }
     {
         if (_parameters.channelCount > AV_NUM_DATA_POINTERS)
             throw Exception{ "Channel count exceeds maximum supported channels" };
 
-        utils::init();
+        assert(utils::isInit());
 
-        // TODO: use AudioFile wrapper?
+        // TODO: merge all this with AudioFile
         {
             ::AVFormatContext* context{};
             int error{ ::avformat_open_input(&context, filePath.c_str(), nullptr, nullptr) };
@@ -143,6 +152,8 @@ namespace lms::audio::ffmpeg
             throw FFmpegException{ "Cannot find best audio stream in '" + filePath.string() + "'", _inputStreamIndex };
         }
 
+        checkDecodedFormatIsSupported(*_context, *decoder, filePath);
+
         if (offset.count() > 0)
         {
             const AVStream* stream{ _context->streams[_inputStreamIndex] };
@@ -150,16 +161,22 @@ namespace lms::audio::ffmpeg
             using OffsetPeriod = decltype(offset)::period;
             constexpr AVRational offsetTimebase{ static_cast<int>(OffsetPeriod::num), static_cast<int>(OffsetPeriod::den) };
 
-            const int64_t targetTimestamp{ static_cast<int64_t>(av_rescale_q(offset.count(), offsetTimebase, stream->time_base)) };
-            const int seekError{ ::av_seek_frame(_context.get(), _inputStreamIndex, targetTimestamp, AVSEEK_FLAG_BACKWARD) };
-            if (seekError < 0)
+            _seekTargetTimestamp = static_cast<int64_t>(av_rescale_q(offset.count(), offsetTimebase, stream->time_base));
+            if (stream->start_time != AV_NOPTS_VALUE)
+                _seekTargetTimestamp += stream->start_time;
+
+            if (const auto container{ utils::containerFromDemuxerName(_context->iformat->name) }; !container || isSeekingSupported(*container))
             {
-                LMS_LOG(AUDIO, WARNING, "Failed to seek to offset: " << utils::averrorToString(seekError));
+                const int seekError{ ::av_seek_frame(_context.get(), _inputStreamIndex, _seekTargetTimestamp, AVSEEK_FLAG_BACKWARD) };
+                if (seekError < 0)
+                    LMS_LOG(AUDIO, WARNING, "Failed to seek to offset: " << utils::averrorToString(seekError));
             }
+
+            _startTrimPending = true;
         }
 
         {
-            _estimatedDuration = std::chrono::milliseconds{ _context->duration == AV_NOPTS_VALUE ? 0 : _context->duration / AV_TIME_BASE * 1'000 };
+            _estimatedDuration = std::chrono::milliseconds{ _context->duration == AV_NOPTS_VALUE ? 0 : _context->duration * 1'000 / AV_TIME_BASE };
             if (_estimatedDuration > offset)
                 _estimatedDuration = _estimatedDuration - std::chrono::duration_cast<std::chrono::milliseconds>(offset);
             else
@@ -200,14 +217,14 @@ namespace lms::audio::ffmpeg
         };
     }
 
-    PcmDecoder::~PcmDecoder() = default;
+    AudioDecoder::~AudioDecoder() = default;
 
-    const PcmParameters& PcmDecoder::getParameters() const
+    const PcmParameters& AudioDecoder::getParameters() const
     {
         return _parameters;
     }
 
-    std::size_t PcmDecoder::readSamples(std::span<WritableBuffer> outputChannelBuffers)
+    std::size_t AudioDecoder::readSamples(std::span<WritableBuffer> outputChannelBuffers)
     {
         if (_finished)
             return 0;
@@ -272,24 +289,24 @@ namespace lms::audio::ffmpeg
         return 0;
     }
 
-    bool PcmDecoder::finished() const
+    bool AudioDecoder::finished() const
     {
         return _finished;
     }
 
-    std::chrono::milliseconds PcmDecoder::getEstimatedDuration() const
+    std::chrono::milliseconds AudioDecoder::getEstimatedDuration() const
     {
         return _estimatedDuration;
     }
 
-    std::size_t PcmDecoder::computeSampleCountPerChannel(std::span<WritableBuffer> outputChannelBuffers) const
+    std::size_t AudioDecoder::computeSampleCountPerChannel(std::span<WritableBuffer> outputChannelBuffers) const
     {
         if (_parameters.planar)
         {
             if (outputChannelBuffers.size() != _parameters.channelCount)
                 throw Exception{ "Expected " + std::to_string(_parameters.channelCount) + " buffers for planar output" };
 
-            const int bytesPerSample{ av_get_bytes_per_sample(toAvSampleFormat(_parameters.sampleType, true)) };
+            const int bytesPerSample{ av_get_bytes_per_sample(utils::toAvSampleFormat(_parameters.sampleType, true)) };
             if (bytesPerSample <= 0)
                 throw Exception{ "Invalid bytes per sample for output format" };
 
@@ -304,7 +321,7 @@ namespace lms::audio::ffmpeg
         if (outputChannelBuffers.size() != 1)
             throw Exception{ "Expected a single buffer for interleaved output" };
 
-        const int bytesPerSample = av_get_bytes_per_sample(toAvSampleFormat(_parameters.sampleType, false));
+        const int bytesPerSample = av_get_bytes_per_sample(utils::toAvSampleFormat(_parameters.sampleType, false));
         if (bytesPerSample <= 0)
             throw Exception{ "Invalid bytes per sample for output format" };
 
@@ -313,9 +330,39 @@ namespace lms::audio::ffmpeg
         return sampleCount;
     }
 
-    void PcmDecoder::feedDecoder()
+    void AudioDecoder::sendPendingPacket()
+    {
+        int sendError{ ::avcodec_send_packet(_decoderContext.get(), _inputPacket.get()) };
+        if (sendError == AVERROR(EAGAIN))
+            return; // On EAGAIN, leaves _inputPacket referenced: feedDecoder() retries it on the next call
+
+        ::av_packet_unref(_inputPacket.get());
+        if (sendError == AVERROR_INVALIDDATA)
+        {
+            // we may be close to the end of the file, abort gracefully *only* if next packet is EOF
+            const int peekError{ ::av_read_frame(_context.get(), _inputPacket.get()) };
+            ::av_packet_unref(_inputPacket.get());
+            if (peekError == AVERROR_EOF)
+            {
+                LMS_LOG(AUDIO, DEBUG, "Invalid data in packet at end of file");
+                _eof = true;
+                sendError = 0;
+            }
+        }
+        if (sendError < 0)
+            throw FFmpegException{ "avcodec_send_packet failed", sendError };
+    }
+
+    void AudioDecoder::feedDecoder()
     {
         assert(!_eof);
+
+        // A packet left pending from a previous EAGAIN must be retried before reading more input
+        if (_inputPacket->data)
+        {
+            sendPendingPacket();
+            return;
+        }
 
         const int readError{ ::av_read_frame(_context.get(), _inputPacket.get()) };
         if (readError == AVERROR_EOF)
@@ -328,33 +375,45 @@ namespace lms::audio::ffmpeg
         {
             throw FFmpegException{ "av_read_frame failed", readError };
         }
+        else if (_inputPacket->stream_index == _inputStreamIndex)
+        {
+            sendPendingPacket();
+        }
         else
         {
-            if (_inputPacket->stream_index == _inputStreamIndex)
-            {
-                int sendError{ ::avcodec_send_packet(_decoderContext.get(), _inputPacket.get()) };
-                ::av_packet_unref(_inputPacket.get());
-                if (sendError == AVERROR_INVALIDDATA)
-                {
-                    // we may be close to the end of the file, abort gracefully *only* if next packet is EOF
-                    const int peekError{ ::av_read_frame(_context.get(), _inputPacket.get()) };
-                    ::av_packet_unref(_inputPacket.get());
-                    if (peekError == AVERROR_EOF)
-                    {
-                        LMS_LOG(AUDIO, DEBUG, "Invalid data in packet at end of file");
-                        _eof = true;
-                        sendError = 0;
-                    }
-                }
-                if (sendError < 0)
-                    throw FFmpegException{ "avcodec_send_packet failed", sendError };
-            }
-            else
-                ::av_packet_unref(_inputPacket.get());
+            ::av_packet_unref(_inputPacket.get());
         }
     }
 
-    bool PcmDecoder::inputFormatChanged(const AVFrame* frame) const
+    int AudioDecoder::computeStartTrimSampleCount(const AVFrame* frame)
+    {
+        if (!_startTrimPending)
+            return 0;
+
+        std::int64_t framePts{ frame->best_effort_timestamp != AV_NOPTS_VALUE ? frame->best_effort_timestamp : frame->pts };
+        if (framePts == AV_NOPTS_VALUE)
+        {
+            LMS_LOG(AUDIO, DEBUG, "No timestamp available on decoded frame: cannot trim the seek overshoot");
+            _startTrimPending = false;
+            return 0;
+        }
+
+        const AVStream* stream{ _context->streams[_inputStreamIndex] };
+        const std::int64_t skipSampleCount{ ::av_rescale_q(_seekTargetTimestamp - framePts, stream->time_base, AVRational{ 1, frame->sample_rate }) };
+        if (skipSampleCount <= 0)
+        {
+            _startTrimPending = false;
+            return 0;
+        }
+
+        if (skipSampleCount >= frame->nb_samples)
+            return frame->nb_samples;
+
+        _startTrimPending = false;
+        return static_cast<int>(skipSampleCount);
+    }
+
+    bool AudioDecoder::inputFormatChanged(const AVFrame* frame) const
     {
         const auto& c{ _resamplerInputConfig };
         if (frame->sample_rate != c.sampleRate
@@ -367,7 +426,7 @@ namespace lms::audio::ffmpeg
         return false;
     }
 
-    void PcmDecoder::reinitResamplerForFrame(const AVFrame* frame)
+    void AudioDecoder::reinitResamplerForFrame(const AVFrame* frame)
     {
         // The format change is caused by a corrupt/non-standard frame so the lost samples are likely garbled audio anyway.
         _resampleContext = createResampler(_parameters, frame->ch_layout, static_cast<AVSampleFormat>(frame->format), frame->sample_rate);
@@ -380,7 +439,7 @@ namespace lms::audio::ffmpeg
         };
     }
 
-    std::size_t PcmDecoder::resampleFrame(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel, const AVFrame* inputFrame)
+    std::size_t AudioDecoder::resampleFrame(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel, const AVFrame* inputFrame)
     {
         if (inputFrame && inputFormatChanged(inputFrame))
         {
@@ -388,23 +447,34 @@ namespace lms::audio::ffmpeg
             reinitResamplerForFrame(inputFrame);
         }
 
-        std::array<std::uint8_t*, AV_NUM_DATA_POINTERS> outData{};
-        for (std::size_t i{}; i < outputChannelBuffers.size(); ++i)
-            outData[i] = static_cast<std::uint8_t*>(static_cast<void*>(outputChannelBuffers[i].data()));
-
+        int inputSampleCount{};
         std::array<const std::uint8_t*, AV_NUM_DATA_POINTERS> inData{};
         if (inputFrame)
         {
+            const int skipSampleCount{ computeStartTrimSampleCount(inputFrame) };
+            if (skipSampleCount >= inputFrame->nb_samples)
+                return 0;
+
+            inputSampleCount = inputFrame->nb_samples - skipSampleCount;
+
+            const auto sampleFormat{ static_cast<AVSampleFormat>(inputFrame->format) };
+            const int planeSampleSize{ ::av_get_bytes_per_sample(sampleFormat) * (::av_sample_fmt_is_planar(sampleFormat) ? 1 : inputFrame->ch_layout.nb_channels) };
+            const int skipByteCount{ skipSampleCount * planeSampleSize };
+
             for (int i{}; i < AV_NUM_DATA_POINTERS; ++i)
-                inData[i] = inputFrame->data[i];
+                inData[i] = inputFrame->data[i] ? inputFrame->data[i] + skipByteCount : nullptr;
         }
+
+        std::array<std::uint8_t*, AV_NUM_DATA_POINTERS> outData{};
+        for (std::size_t i{}; i < outputChannelBuffers.size(); ++i)
+            outData[i] = static_cast<std::uint8_t*>(static_cast<void*>(outputChannelBuffers[i].data()));
 
         const int outSampleCount{ ::swr_convert(
             _resampleContext.get(),
             outData.data(),
             static_cast<int>(maxSamplesPerChannel),
             inputFrame ? inData.data() : nullptr,
-            inputFrame ? inputFrame->nb_samples : 0) };
+            inputSampleCount) };
 
         if (outSampleCount < 0)
             throw FFmpegException{ inputFrame ? "swr_convert failed" : "swr_convert (drain) failed", outSampleCount };
@@ -412,12 +482,12 @@ namespace lms::audio::ffmpeg
         return static_cast<std::size_t>(outSampleCount);
     }
 
-    std::size_t PcmDecoder::drainResampler(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel)
+    std::size_t AudioDecoder::drainResampler(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel)
     {
         return resampleFrame(outputChannelBuffers, maxSamplesPerChannel, nullptr);
     }
 
-    std::size_t PcmDecoder::getEstimatedResamplerAvailableSamples() const
+    std::size_t AudioDecoder::getEstimatedResamplerAvailableSamples() const
     {
         const int64_t delayedInputSampleCount{ ::swr_get_delay(_resampleContext.get(), _resamplerInputConfig.sampleRate) };
         const int64_t sampleCount{ av_rescale_rnd(delayedInputSampleCount, _parameters.sampleRate, _resamplerInputConfig.sampleRate, AV_ROUND_UP) };

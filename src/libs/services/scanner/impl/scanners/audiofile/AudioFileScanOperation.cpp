@@ -61,7 +61,6 @@
 #include "helpers/ArtistHelpers.hpp"
 #include "scanners/IFileScanOperation.hpp"
 #include "scanners/Utils.hpp"
-#include "scanners/audiofile/AudioFileInfoParserSet.hpp"
 #include "scanners/audiofile/TrackMetadataParser.hpp"
 
 namespace lms::scanner
@@ -571,9 +570,10 @@ namespace lms::scanner
         }
     } // namespace
 
-    AudioFileScanOperation::AudioFileScanOperation(FileToScan&& fileToScan, db::IDb& db, const ScannerSettings& settings, const AudioFileInfoParserSet& audioFileInfoParserSet, const TrackMetadataParser& metadataParser)
+    AudioFileScanOperation::AudioFileScanOperation(FileToScan&& fileToScan, db::IDb& db, const ScannerSettings& settings, const audio::IAudioFileInfoParser& parser, audio::AudioFileInfoParseOptions::AudioPropertiesReadStyle audioPropertiesReadStyle, const TrackMetadataParser& metadataParser)
         : FileScanOperationBase{ std::move(fileToScan), db, settings }
-        , _audioFileInfoParserSet{ audioFileInfoParserSet }
+        , _parser{ parser }
+        , _audioPropertiesReadStyle{ audioPropertiesReadStyle }
         , _metadataParser{ metadataParser }
     {
     }
@@ -585,34 +585,20 @@ namespace lms::scanner
         try
         {
             audio::AudioFileInfoParseOptions options;
-            options.audioPropertiesReadStyle = _audioFileInfoParserSet.audioPropertiesReadStyle;
+            options.audioPropertiesReadStyle = _audioPropertiesReadStyle;
             options.readImages = true;
             options.readTags = true;
 
-            const auto audioFileInfo{ _audioFileInfoParserSet.taglibParser->parse(getFilePath(), options) };
+            const auto audioFileInfo{ _parser.parse(getFilePath(), options) };
 
-            _file.emplace();
-
-            // Fallback on ffmpeg in case no audio properties are found by taglib
             if (!audioFileInfo->getAudioProperties())
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Cannot parse audio properties in " << getFilePath() << " using TagLib, switching to ffmpeg");
-
-                options.readTags = false;
-                options.readImages = false;
-                const auto ffmpegAudioFileInfo{ _audioFileInfoParserSet.ffmpegParser->parse(getFilePath(), options) };
-                if (!ffmpegAudioFileInfo->getAudioProperties())
-                {
-                    addError<NoAudioTrackFoundError>(getFilePath());
-                    return;
-                }
-                _file->audioProperties = *ffmpegAudioFileInfo->getAudioProperties();
-            }
-            else
-            {
-                _file->audioProperties = *audioFileInfo->getAudioProperties();
+                addError<NoAudioTrackFoundError>(getFilePath());
+                return;
             }
 
+            _file.emplace();
+            _file->audioProperties = *audioFileInfo->getAudioProperties();
             _file->track = _metadataParser.parseTrackMetaData(*audioFileInfo->getTagReader());
 
             // We fill missing artist mbids with mbids found on other artist roles
@@ -644,6 +630,8 @@ namespace lms::scanner
                 }
 
                 index++;
+
+                return core::Continue;
             });
         }
         catch (const audio::IOFileException& e)
@@ -689,6 +677,7 @@ namespace lms::scanner
             if (track)
             {
                 track.remove();
+                LMS_LOG(DBUPDATER, DEBUG, "Removed track " << getFilePath());
                 return OperationResult::Removed;
             }
             return OperationResult::Skipped;
@@ -766,6 +755,7 @@ namespace lms::scanner
             if (track)
             {
                 track.remove();
+                LMS_LOG(DBUPDATER, DEBUG, "Removed track " << getFilePath());
                 return OperationResult::Removed;
             }
             return OperationResult::Skipped;

@@ -44,13 +44,13 @@ namespace lms::db
 
 namespace lms::ui
 {
-
+    class Filters;
     class InfiniteScrollingContainer;
 
     class PlayQueue : public Template
     {
     public:
-        PlayQueue();
+        PlayQueue(Filters& filters);
 
         using ResetNextPlayPos = core::TaggedBool<struct ResetNextPlayPosTag>;
 
@@ -112,6 +112,7 @@ namespace lms::ui
         const std::size_t _capacity;
         static inline constexpr std::size_t _batchSize{ 12 };
 
+        Filters& _filters;
         bool _mediaPlayerSettingsLoaded{};
         db::TrackListId _queueId{};
         InfiniteScrollingContainer* _entriesContainer{};

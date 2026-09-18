@@ -26,8 +26,9 @@ class LMSMediaPlayer {
 	#trackId;
 	#duration;
 	#audioNativeSrc;
-	#audioTranscodingSrc;
+	#audioTranscodingResource;
 	#settings;
+	#transcodingActiveLabel;
 	#playedDuration;
 	#lastStartPlaying;
 	#audioIsInit;
@@ -42,6 +43,7 @@ class LMSMediaPlayer {
 		this.#trackId = null;
 		this.#duration = 0;
 		this.#settings = {};
+		this.#transcodingActiveLabel = "";
 		this.#playedDuration = 0;
 		this.#lastStartPlaying = null;
 		this.#audioIsInit = false;
@@ -88,8 +90,7 @@ class LMSMediaPlayer {
 		this.#elems.audio.addEventListener("waiting", this.#pauseTimer.bind(this));
 
 		this.#elems.audio.addEventListener("timeupdate", () => {
-			this.#elems.progress.style.width = "" + ((this.#offset + this.#elems.audio.currentTime) / this.#duration) * 100 + "%";
-			this.#elems.curtime.innerHTML = this.#durationToString(this.#offset + this.#elems.audio.currentTime);
+			this.#updateProgress();
 		});
 
 		this.#elems.audio.addEventListener("ended", () => {
@@ -99,6 +100,7 @@ class LMSMediaPlayer {
 
 		this.#elems.audio.addEventListener("canplay", () => {
 			if (this.#getAudioMode() == LMSMediaPlayer.#Mode.Transcoding) {
+				this.#elems.transcodingActive.title = this.#transcodingActiveLabel;
 				this.#elems.transcodingActive.style.display = "inline";
 			}
 			else {
@@ -107,7 +109,7 @@ class LMSMediaPlayer {
 		});
 
 		this.#initVolume();
-		this.#initDefaultSettings(defaultSettings);
+		this.#settings = defaultSettings;
 
 		this.#elems.volumeslider.addEventListener("input", () => {
 			this.#setVolume(this.#elems.volumeslider.value);
@@ -246,6 +248,17 @@ class LMSMediaPlayer {
 		}
 	}
 
+	// #offset is the start position baked into the transcoding URL, so it only counts while a transcoded source is playing
+	#currentPosition() {
+		return (this.#getAudioMode() == LMSMediaPlayer.#Mode.File ? 0 : this.#offset) + this.#elems.audio.currentTime;
+	}
+
+	#updateProgress() {
+		const position = this.#currentPosition();
+		this.#elems.progress.style.width = "" + (this.#duration ? (position / this.#duration) * 100 : 0) + "%";
+		this.#elems.curtime.innerHTML = this.#durationToString(position);
+	}
+
 	#durationToString(duration) {
 		const seconds = parseInt(duration, 10);
 		const h = Math.floor(seconds / 3600);
@@ -296,17 +309,6 @@ class LMSMediaPlayer {
 		this.#setVolume(this.#elems.volumeslider.value);
 	}
 
-	#initDefaultSettings = function (defaultSettings) {
-		if (typeof (Storage) !== "undefined" && localStorage.settings) {
-			this.#settings = Object.assign(defaultSettings, JSON.parse(localStorage.settings));
-		}
-		else {
-			this.#settings = defaultSettings;
-		}
-
-		Wt.emit(this.#root, "settingsLoaded", JSON.stringify(this.#settings));
-	}
-
 	#setVolume(volume) {
 		this.#elems.lastvolume = this.#elems.audio.volume;
 
@@ -353,42 +355,33 @@ class LMSMediaPlayer {
 	}
 
 	#seekTo(seekTime) {
-		this.#initAudioCtx();
-		let mode = this.#getAudioMode();
-		if (!mode)
+		if (this.#trackId === null)
 			return;
+
+		this.#initAudioCtx();
 
 		let wasPlaying = !this.#elems.audio.paused;
 
-		switch (mode) {
-			case LMSMediaPlayer.#Mode.Transcoding:
-				this.#offset = seekTime;
-				this.#removeAudioSources();
-				this.#addAudioSource(this.#audioTranscodingSrc + "&offset=" + this.#offset);
-				this.#elems.audio.load();
-				this.#elems.audio.currentTime = 0;
-				break;
-
-			case LMSMediaPlayer.#Mode.File:
-				this.#elems.audio.currentTime = seekTime;
-				break;
+		if (this.#getAudioMode() == LMSMediaPlayer.#Mode.File) {
+			this.#elems.audio.currentTime = seekTime;
+			this.#updateProgress();
+			this.#updateMediaSessionState();
+		}
+		else {
+			this.#reloadAudioSources(seekTime);
 		}
 
 		if (wasPlaying)
 			this.#playTrack();
-
-		this.#updateMediaSessionState();
 	}
 
 	#seekBack() {
-		let currentPosition = this.#offset + this.#elems.audio.currentTime;
-		let newPosition = currentPosition - LMSMediaPlayer.#seekAmount;
+		let newPosition = this.#currentPosition() - LMSMediaPlayer.#seekAmount;
 		this.#seekTo(Math.max(newPosition, 0));
 	}
 
 	#seekForward() {
-		let currentPosition = this.#offset + this.#elems.audio.currentTime;
-		let newPosition = currentPosition + LMSMediaPlayer.#seekAmount;
+		let newPosition = this.#currentPosition() + LMSMediaPlayer.#seekAmount;
 		this.#seekTo(Math.min(newPosition, this.#duration));
 	}
 
@@ -397,7 +390,7 @@ class LMSMediaPlayer {
 			navigator.mediaSession.setPositionState({
 				duration: this.#duration,
 				playbackRate: 1,
-				position: Math.min(this.#offset + this.#elems.audio.currentTime, this.#duration),
+				position: Math.min(this.#currentPosition(), this.#duration),
 			});
 
 			if (this.#elems.audio.paused)
@@ -417,6 +410,35 @@ class LMSMediaPlayer {
 		let source = document.createElement('source');
 		source.src = audioSrc;
 		this.#elems.audio.appendChild(source);
+	}
+
+	#buildAudioTranscodingSrc() {
+		return this.#audioTranscodingResource + "&bitrate=" + this.#settings.transcoding.bitrate + "&format=" + this.#settings.transcoding.format;
+	}
+
+	#reloadAudioSources(seekTime) {
+		this.#offset = seekTime;
+
+		this.#removeAudioSources();
+		// ! order is important
+		if (this.#settings.transcoding.mode == LMSTranscodingMode.Never || this.#settings.transcoding.mode == LMSTranscodingMode.IfFormatNotSupported) {
+			this.#addAudioSource(this.#audioNativeSrc);
+		}
+		if (this.#settings.transcoding.mode == LMSTranscodingMode.Always || this.#settings.transcoding.mode == LMSTranscodingMode.IfFormatNotSupported) {
+			this.#addAudioSource(this.#buildAudioTranscodingSrc() + "&offset=" + seekTime);
+		}
+		this.#elems.audio.load();
+
+		// A native source cannot carry a start position in its URL, so seek it once we know it is the one that got picked
+		if (seekTime > 0) {
+			this.#elems.audio.addEventListener("loadedmetadata", () => {
+				if (this.#getAudioMode() == LMSMediaPlayer.#Mode.File)
+					this.#elems.audio.currentTime = seekTime;
+			}, { once: true });
+		}
+
+		this.#updateProgress();
+		this.#updateMediaSessionState();
 	}
 
 	#getAudioMode() {
@@ -446,25 +468,14 @@ class LMSMediaPlayer {
 		this.#resetTimer();
 
 		this.#trackId = params.trackId;
-		this.#offset = 0;
 		this.#duration = params.duration;
 		this.#audioNativeSrc = params.nativeResource;
-		this.#audioTranscodingSrc = params.transcodingResource + "&bitrate=" + this.#settings.transcoding.bitrate + "&format=" + this.#settings.transcoding.format;
+		this.#audioTranscodingResource = params.transcodingResource;
 
 		this.#elems.seek.max = this.#duration;
-
-		this.#removeAudioSources();
-		// ! order is important
-		if (this.#settings.transcoding.mode == LMSTranscodingMode.Never || this.#settings.transcoding.mode == LMSTranscodingMode.IfFormatNotSupported) {
-			this.#addAudioSource(this.#audioNativeSrc);
-		}
-		if (this.#settings.transcoding.mode == LMSTranscodingMode.Always || this.#settings.transcoding.mode == LMSTranscodingMode.IfFormatNotSupported) {
-			this.#addAudioSource(this.#audioTranscodingSrc);
-		}
-		this.#elems.audio.load();
-
-		this.#elems.curtime.innerHTML = this.#durationToString(this.#offset);
 		this.#elems.duration.innerHTML = this.#durationToString(this.#duration);
+
+		this.#reloadAudioSources(0);
 
 		if (!this.#audioIsInit) {
 			this.#pendingTrackParameters = params;
@@ -481,11 +492,18 @@ class LMSMediaPlayer {
 		this.#elems.audio.pause();
 	}
 
-	setSettings(settings) {
+	setSettings(settings, transcodingActiveLabel) {
 		this.#settings = settings;
+		this.#transcodingActiveLabel = transcodingActiveLabel;
 
-		if (typeof (Storage) !== "undefined") {
-			localStorage.settings = JSON.stringify(this.#settings);
+		// Settings only apply to a newly started stream, so restart the current one to make them take effect right away
+		if (this.#trackId !== null) {
+			const wasPlaying = !this.#elems.audio.paused;
+
+			this.#reloadAudioSources(this.#currentPosition());
+
+			if (wasPlaying)
+				this.#playTrack();
 		}
 	}
 }

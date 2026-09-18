@@ -38,4 +38,17 @@ namespace lms::audio
 
         return nullptr;
     }
+
+    core::LiteralString audioFileInfoParserBackendToString(AudioFileInfoParserBackend backend)
+    {
+        switch (backend)
+        {
+        case AudioFileInfoParserBackend::TagLib:
+            return "taglib";
+        case AudioFileInfoParserBackend::FFmpeg:
+            return "ffmpeg";
+        }
+
+        return "Unknown";
+    }
 } // namespace lms::audio

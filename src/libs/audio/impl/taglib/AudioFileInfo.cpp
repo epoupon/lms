@@ -23,19 +23,31 @@
 
 #include "TagLibDefs.hpp"
 
-#include <taglib/aifffile.h>
-#include <taglib/apefile.h>
-#include <taglib/asffile.h>
-#include <taglib/flacfile.h>
-#include <taglib/mp4file.h>
-#include <taglib/mpcfile.h>
 #include <taglib/mpegfile.h>
-#include <taglib/opusfile.h>
-#include <taglib/trueaudiofile.h>
-#include <taglib/vorbisfile.h>
-#include <taglib/wavfile.h>
-#include <taglib/wavpackfile.h>
 
+#if LMS_TAGLIB_HAS_RIFF
+    #include <taglib/aifffile.h>
+    #include <taglib/wavfile.h>
+#endif
+#if LMS_TAGLIB_HAS_APE
+    #include <taglib/apefile.h>
+    #include <taglib/mpcfile.h>
+    #include <taglib/wavpackfile.h>
+#endif
+#if LMS_TAGLIB_HAS_ASF
+    #include <taglib/asffile.h>
+#endif
+#if LMS_TAGLIB_HAS_VORBIS
+    #include <taglib/flacfile.h>
+    #include <taglib/opusfile.h>
+    #include <taglib/vorbisfile.h>
+#endif
+#if LMS_TAGLIB_HAS_MP4
+    #include <taglib/mp4file.h>
+#endif
+#if LMS_TAGLIB_HAS_TRUEAUDIO
+    #include <taglib/trueaudiofile.h>
+#endif
 #if LMS_TAGLIB_HAS_DSF
     #include <taglib/dsffile.h>
 #endif
@@ -87,7 +99,7 @@ namespace lms::audio::taglib
                 }
 
                 audioProperties.duration = std::chrono::milliseconds{ properties->lengthInMilliseconds() };
-                if (audioProperties.duration == decltype(audioProperties.duration)::zero())
+                if (audioProperties.duration <= decltype(audioProperties.duration)::zero())
                 {
                     LMS_LOG(AUDIO, DEBUG, "Cannot determine duration in " << filePath);
                     return std::nullopt;
@@ -102,12 +114,70 @@ namespace lms::audio::taglib
             }
 
             // Guess container from the file type
-            if (const auto* apeFile{ dynamic_cast<const ::TagLib::APE::File*>(&file) })
+            if (const auto* mpegFile{ dynamic_cast<const ::TagLib::MPEG::File*>(&file) })
+            {
+                const auto& properties{ *mpegFile->audioProperties() };
+
+                audioProperties.container = core::media::Container::MPEG;
+                if ((properties.version() == TagLib::MPEG::Header::Version::Version1 || properties.version() == TagLib::MPEG::Header::Version::Version2 || properties.version() == TagLib::MPEG::Header::Version::Version2_5)
+                    && mpegFile->audioProperties()->layer() == 3)
+                    audioProperties.codec = core::media::Codec::MP3; // could be MPEG-1 layer 3 or MPEG-2(.5) layer 3
+                else if (mpegFile->audioProperties()->isADTS())      // likely AAC
+                    audioProperties.codec = core::media::Codec::AAC;
+                else
+                {
+                    LMS_LOG(AUDIO, DEBUG, "Unhandled MPEG codec in " << filePath);
+                    return std::nullopt;
+                }
+            }
+#if LMS_TAGLIB_HAS_RIFF
+            else if (const auto* aiffFile{ dynamic_cast<const ::TagLib::RIFF::AIFF::File*>(&file) })
+            {
+                // We don't check for potential Aiff-C format here, we considerer it PCM for now
+                audioProperties.container = core::media::Container::AIFF;
+                audioProperties.codec = core::media::Codec::PCM;
+                audioProperties.bitsPerSample = aiffFile->audioProperties()->bitsPerSample();
+            }
+            else if (const auto* wavFile{ dynamic_cast<const ::TagLib::RIFF::WAV::File*>(&file) })
+            {
+                // We don't check for format here, we considerer it PCM for now
+                audioProperties.container = core::media::Container::WAV;
+                audioProperties.codec = core::media::Codec::PCM;
+                audioProperties.bitsPerSample = wavFile->audioProperties()->bitsPerSample();
+            }
+#endif // LMS_TAGLIB_HAS_RIFF
+#if LMS_TAGLIB_HAS_APE
+            else if (const auto* apeFile{ dynamic_cast<const ::TagLib::APE::File*>(&file) })
             {
                 audioProperties.container = core::media::Container::APE;
                 audioProperties.codec = core::media::Codec::APE; // TODO version?
                 audioProperties.bitsPerSample = apeFile->audioProperties()->bitsPerSample();
             }
+            else if (const auto* mpcFile{ dynamic_cast<const ::TagLib::MPC::File*>(&file) })
+            {
+                audioProperties.container = core::media::Container::MPC;
+
+                switch (mpcFile->audioProperties()->mpcVersion())
+                {
+                case 7:
+                    audioProperties.codec = core::media::Codec::MPC7;
+                    break;
+                case 8:
+                    audioProperties.codec = core::media::Codec::MPC8;
+                    break;
+                default:
+                    LMS_LOG(AUDIO, DEBUG, "Unhandled MPC codec version " << mpcFile->audioProperties()->mpcVersion() << " in " << filePath);
+                    return std::nullopt;
+                }
+            }
+            else if (const auto* wavPackFile{ dynamic_cast<const ::TagLib::WavPack::File*>(&file) })
+            {
+                audioProperties.container = core::media::Container::WavPack;
+                audioProperties.codec = core::media::Codec::WavPack;
+                audioProperties.bitsPerSample = wavPackFile->audioProperties()->bitsPerSample();
+            }
+#endif // LMS_TAGLIB_HAS_APE
+#if LMS_TAGLIB_HAS_ASF
             else if (const auto* asfFile{ dynamic_cast<const ::TagLib::ASF::File*>(&file) })
             {
                 audioProperties.container = core::media::Container::ASF;
@@ -133,72 +203,13 @@ namespace lms::audio::taglib
 
                 audioProperties.bitsPerSample = asfFile->audioProperties()->bitsPerSample();
             }
-#if LMS_TAGLIB_HAS_DSF
-            else if (const auto* dsfFile{ dynamic_cast<const ::TagLib::DSF::File*>(&file) })
-            {
-                audioProperties.container = core::media::Container::DSF;
-                audioProperties.codec = core::media::Codec::DSD;
-                audioProperties.bitsPerSample = dsfFile->audioProperties()->bitsPerSample();
-            }
-#endif // LMS_TAGLIB_HAS_DSF
+#endif // LMS_TAGLIB_HAS_ASF
+#if LMS_TAGLIB_HAS_VORBIS
             else if (const auto* flacFile{ dynamic_cast<const ::TagLib::FLAC::File*>(&file) })
             {
                 audioProperties.container = core::media::Container::FLAC;
                 audioProperties.codec = core::media::Codec::FLAC;
                 audioProperties.bitsPerSample = flacFile->audioProperties()->bitsPerSample();
-            }
-            else if (const auto* mp4File{ dynamic_cast<const ::TagLib::MP4::File*>(&file) })
-            {
-                audioProperties.container = core::media::Container::MP4;
-                switch (mp4File->audioProperties()->codec())
-                {
-                case ::TagLib::MP4::Properties::Codec::AAC:
-                    audioProperties.codec = core::media::Codec::AAC;
-                    break;
-                case ::TagLib::MP4::Properties::Codec::ALAC:
-                    audioProperties.codec = core::media::Codec::ALAC;
-                    break;
-                case ::TagLib::MP4::Properties::Codec::Unknown:
-                    LMS_LOG(AUDIO, DEBUG, "Unhandled MP4 codec in " << filePath);
-                    return std::nullopt;
-                }
-
-                audioProperties.bitsPerSample = mp4File->audioProperties()->bitsPerSample();
-            }
-            else if (const auto* mpcFile{ dynamic_cast<const ::TagLib::MPC::File*>(&file) })
-            {
-                audioProperties.container = core::media::Container::MPC;
-
-                switch (mpcFile->audioProperties()->mpcVersion())
-                {
-                case 7:
-                    audioProperties.codec = core::media::Codec::MPC7;
-                    break;
-                case 8:
-                    audioProperties.codec = core::media::Codec::MPC8;
-                    break;
-                default:
-                    LMS_LOG(AUDIO, DEBUG, "Unhandled MPC codec version " << mpcFile->audioProperties()->mpcVersion() << " in " << filePath);
-                    return std::nullopt;
-                }
-            }
-            else if (const auto* mpegFile{ dynamic_cast<const ::TagLib::MPEG::File*>(&file) })
-            {
-                const auto& properties{ *mpegFile->audioProperties() };
-
-                audioProperties.container = core::media::Container::MPEG;
-                if ((properties.version() == TagLib::MPEG::Header::Version::Version1 || properties.version() == TagLib::MPEG::Header::Version::Version2 || properties.version() == TagLib::MPEG::Header::Version::Version2_5)
-                    && mpegFile->audioProperties()->layer() == 3)
-                    audioProperties.codec = core::media::Codec::MP3; // could be MPEG-1 layer 3 or MPEG-2(.5) layer 3
-#if LMS_TAGLIB_HAS_ADTS
-                else if (mpegFile->audioProperties()->isADTS()) // likely AAC
-                    audioProperties.codec = core::media::Codec::AAC;
-#endif
-                else
-                {
-                    LMS_LOG(AUDIO, DEBUG, "Unhandled MPEG codec in " << filePath);
-                    return std::nullopt;
-                }
             }
             else if (dynamic_cast<const ::TagLib::Ogg::Opus::File*>(&file))
             {
@@ -210,20 +221,60 @@ namespace lms::audio::taglib
                 audioProperties.container = core::media::Container::Ogg;
                 audioProperties.codec = core::media::Codec::Vorbis;
             }
-            else if (const auto* aiffFile{ dynamic_cast<const ::TagLib::RIFF::AIFF::File*>(&file) })
+#endif // LMS_TAGLIB_HAS_VORBIS
+#if LMS_TAGLIB_HAS_MP4
+            else if (const auto* mp4File{ dynamic_cast<const ::TagLib::MP4::File*>(&file) })
             {
-                // We don't check for potential Aiff-C format here, we considerer it PCM for now
-                audioProperties.container = core::media::Container::AIFF;
-                audioProperties.codec = core::media::Codec::PCM;
-                audioProperties.bitsPerSample = aiffFile->audioProperties()->bitsPerSample();
+                audioProperties.container = core::media::Container::MP4;
+                switch (mp4File->audioProperties()->codec())
+                {
+                case ::TagLib::MP4::Properties::Codec::AAC:
+                    audioProperties.codec = core::media::Codec::AAC;
+                    break;
+                case ::TagLib::MP4::Properties::Codec::ALAC:
+                    audioProperties.codec = core::media::Codec::ALAC;
+                    break;
+    #if LMS_TAGLIB_HAS_MP4_EXTENDED_CODECS
+                case ::TagLib::MP4::Properties::Codec::AC3:
+                    audioProperties.codec = core::media::Codec::AC3;
+                    break;
+                case ::TagLib::MP4::Properties::Codec::EAC3:
+                    audioProperties.codec = core::media::Codec::EAC3;
+                    break;
+                case ::TagLib::MP4::Properties::Codec::FLAC:
+                    audioProperties.codec = core::media::Codec::FLAC;
+                    break;
+                case ::TagLib::MP4::Properties::Codec::Opus:
+                    audioProperties.codec = core::media::Codec::Opus;
+                    break;
+                case ::TagLib::MP4::Properties::Codec::DTS:
+                    LMS_LOG(AUDIO, DEBUG, "Unhandled MP4 codec (DTS) in " << filePath);
+                    return std::nullopt;
+    #endif // LMS_TAGLIB_HAS_MP4_EXTENDED_CODECS
+                case ::TagLib::MP4::Properties::Codec::Unknown:
+                    LMS_LOG(AUDIO, DEBUG, "Unhandled MP4 codec in " << filePath);
+                    return std::nullopt;
+                }
+
+                audioProperties.bitsPerSample = mp4File->audioProperties()->bitsPerSample();
             }
-            else if (const auto* wavFile{ dynamic_cast<const ::TagLib::RIFF::WAV::File*>(&file) })
+#endif // LMS_TAGLIB_HAS_MP4
+#if LMS_TAGLIB_HAS_TRUEAUDIO
+            else if (const auto* trueAudioFile{ dynamic_cast<const ::TagLib::TrueAudio::File*>(&file) })
             {
-                // We don't check for format here, we considerer it PCM for now
-                audioProperties.container = core::media::Container::WAV;
-                audioProperties.codec = core::media::Codec::PCM;
-                audioProperties.bitsPerSample = wavFile->audioProperties()->bitsPerSample();
+                audioProperties.container = core::media::Container::TrueAudio;
+                audioProperties.codec = core::media::Codec::TrueAudio;
+                audioProperties.bitsPerSample = trueAudioFile->audioProperties()->bitsPerSample();
             }
+#endif // LMS_TAGLIB_HAS_TRUEAUDIO
+#if LMS_TAGLIB_HAS_DSF
+            else if (const auto* dsfFile{ dynamic_cast<const ::TagLib::DSF::File*>(&file) })
+            {
+                audioProperties.container = core::media::Container::DSF;
+                audioProperties.codec = core::media::Codec::DSD;
+                audioProperties.bitsPerSample = dsfFile->audioProperties()->bitsPerSample();
+            }
+#endif // LMS_TAGLIB_HAS_DSF
 #if LMS_TAGLIB_HAS_SHORTEN
             else if (const auto* shortenFile{ dynamic_cast<const ::TagLib::Shorten::File*>(&file) })
             {
@@ -232,18 +283,6 @@ namespace lms::audio::taglib
                 audioProperties.bitsPerSample = shortenFile->audioProperties()->bitsPerSample();
             }
 #endif // LMS_TAGLIB_HAS_SHORTEN
-            else if (const auto* trueAudioFile{ dynamic_cast<const ::TagLib::TrueAudio::File*>(&file) })
-            {
-                audioProperties.container = core::media::Container::TrueAudio;
-                audioProperties.codec = core::media::Codec::TrueAudio;
-                audioProperties.bitsPerSample = trueAudioFile->audioProperties()->bitsPerSample();
-            }
-            else if (const auto* wavPackFile{ dynamic_cast<const ::TagLib::WavPack::File*>(&file) })
-            {
-                audioProperties.container = core::media::Container::WavPack;
-                audioProperties.codec = core::media::Codec::WavPack;
-                audioProperties.bitsPerSample = wavPackFile->audioProperties()->bitsPerSample();
-            }
             else
             {
                 LMS_LOG(AUDIO, DEBUG, "Unhandled file type in " << filePath);

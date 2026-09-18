@@ -17,24 +17,24 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "PcmDecodeStreamer.hpp"
+#include "AudioDecodeStreamer.hpp"
 
 #include <boost/asio/post.hpp>
 
 #include "core/ILogger.hpp"
 
 #include "audio/Exception.hpp"
+#include "audio/IAudioDecoder.hpp"
 #include "audio/IAudioOutput.hpp"
-#include "audio/IPcmDecoder.hpp"
 
 namespace lms::audio::utils
 {
-    std::unique_ptr<IPcmDecodeStreamer> createPcmDecodeStreamer(boost::asio::io_context& ioContext, const PcmDecodeStreamerParameters& parameters)
+    std::unique_ptr<IAudioDecodeStreamer> createAudioDecodeStreamer(boost::asio::io_context& ioContext, const AudioDecodeStreamerParameters& parameters)
     {
-        return std::make_unique<PcmDecodeStreamer>(ioContext, parameters);
+        return std::make_unique<AudioDecodeStreamer>(ioContext, parameters);
     }
 
-    PcmDecodeStreamer::PcmDecodeStreamer(boost::asio::io_context& ioContext, const PcmDecodeStreamerParameters& parameters)
+    AudioDecodeStreamer::AudioDecodeStreamer(boost::asio::io_context& ioContext, const AudioDecodeStreamerParameters& parameters)
         : _ioContext{ ioContext }
         , _strand{ _ioContext }
         , _outputStream{ parameters.outputStream }
@@ -42,17 +42,17 @@ namespace lms::audio::utils
         prepareBuffers(parameters.bufferCount, parameters.bufferDuration);
     }
 
-    PcmDecodeStreamer::~PcmDecodeStreamer()
+    AudioDecodeStreamer::~AudioDecodeStreamer()
     {
         assert(!isWritePending());
     }
 
-    void PcmDecodeStreamer::start(const std::filesystem::path& path, std::chrono::microseconds offset, DecodeCompleteCallback cb)
+    void AudioDecodeStreamer::start(const std::filesystem::path& path, std::chrono::microseconds offset, DecodeCompleteCallback cb)
     {
         assert(cb);
         assert(isComplete()); // previous job must be finished or cancelled
 
-        _pcmDecoder = audio::createPcmDecoder(path, offset, getPcmParameters()); // may throw
+        _audioDecoder = audio::createAudioDecoder(path, offset, getPcmParameters()); // may throw
         _aborted = false;
         _eofReached = false;
 
@@ -64,7 +64,7 @@ namespace lms::audio::utils
         });
     }
 
-    void PcmDecodeStreamer::abort()
+    void AudioDecodeStreamer::abort()
     {
         if (isComplete())
             return;
@@ -79,17 +79,17 @@ namespace lms::audio::utils
         });
     }
 
-    bool PcmDecodeStreamer::isComplete() const
+    bool AudioDecodeStreamer::isComplete() const
     {
-        return !_pcmDecoder;
+        return !_audioDecoder;
     }
 
-    const audio::PcmParameters& PcmDecodeStreamer::getPcmParameters() const
+    const audio::PcmParameters& AudioDecodeStreamer::getPcmParameters() const
     {
         return _outputStream.getParameters();
     }
 
-    void PcmDecodeStreamer::prepareBuffers(std::size_t bufferCount, std::chrono::microseconds bufferDuration)
+    void AudioDecodeStreamer::prepareBuffers(std::size_t bufferCount, std::chrono::microseconds bufferDuration)
     {
         const std::size_t sampleCountPerBuffer{ static_cast<std::size_t>(std::chrono::duration_cast<std::chrono::microseconds>(bufferDuration).count() * getPcmParameters().sampleRate / std::chrono::microseconds::period::den) };
         const std::size_t bufferSize{ sampleCountToByteCount(sampleCountPerBuffer) };
@@ -99,14 +99,14 @@ namespace lms::audio::utils
             bufferDesc.buffer.resize(bufferSize);
     }
 
-    bool PcmDecodeStreamer::isWritePending() const
+    bool AudioDecodeStreamer::isWritePending() const
     {
         return std::any_of(std::cbegin(_buffers), std::cend(_buffers), [](const BufferDesc& bufferDesc) {
             return bufferDesc.isWritePending;
         });
     }
 
-    void PcmDecodeStreamer::decodeSome()
+    void AudioDecodeStreamer::decodeSome()
     {
         assert(_strand.running_in_this_thread());
 
@@ -143,7 +143,7 @@ namespace lms::audio::utils
         }
     }
 
-    std::size_t PcmDecodeStreamer::readSamples(std::span<std::byte> buffer)
+    std::size_t AudioDecodeStreamer::readSamples(std::span<std::byte> buffer)
     {
         assert(_strand.running_in_this_thread());
 
@@ -156,8 +156,8 @@ namespace lms::audio::utils
 
             while (!buffer.empty())
             {
-                std::array outputBuffers{ audio::IPcmDecoder::WritableBuffer{ buffer } };
-                const std::size_t sampleCount{ _pcmDecoder->readSamples(outputBuffers) };
+                std::array outputBuffers{ audio::IAudioDecoder::WritableBuffer{ buffer } };
+                const std::size_t sampleCount{ _audioDecoder->readSamples(outputBuffers) };
                 if (sampleCount == 0)
                     break;
 
@@ -176,7 +176,7 @@ namespace lms::audio::utils
         }
     }
 
-    void PcmDecodeStreamer::onBufferWriteComplete(std::size_t bufferIndex)
+    void AudioDecodeStreamer::onBufferWriteComplete(std::size_t bufferIndex)
     {
         assert(_strand.running_in_this_thread());
 
@@ -191,18 +191,18 @@ namespace lms::audio::utils
             notifyDecodeComplete();
     }
 
-    void PcmDecodeStreamer::notifyDecodeComplete()
+    void AudioDecodeStreamer::notifyDecodeComplete()
     {
         LMS_LOG(AUDIO, DEBUG, "Decode complete notification");
 
         boost::asio::post(_ioContext, [this, cb = std::move(_decodeCompleteCallback)] {
-            _pcmDecoder.reset();
+            _audioDecoder.reset();
             cb(_aborted);
             _ioContext.get_executor().on_work_finished();
         });
     }
 
-    std::size_t PcmDecodeStreamer::sampleCountToByteCount(std::size_t sampleCount) const
+    std::size_t AudioDecodeStreamer::sampleCountToByteCount(std::size_t sampleCount) const
     {
         return sampleCount * audio::getSampleSize(getPcmParameters().sampleType) * getPcmParameters().channelCount;
     }

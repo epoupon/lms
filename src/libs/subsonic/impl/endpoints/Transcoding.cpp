@@ -149,7 +149,7 @@ namespace lms::api::subsonic
 
         params.outputParameters.stripMetadata = false;
 
-        const audio::TranscodeOutputFormat* transcodeOutputFormat{ detail::selectTranscodeOutputFormat(entry->targetStreamInfo.container, entry->targetStreamInfo.codec) };
+        const std::optional<audio::TranscodeOutputFormat> transcodeOutputFormat{ detail::findSupportedTranscodeOutputFormat(entry->targetStreamInfo.container, entry->targetStreamInfo.codec) };
         if (!transcodeOutputFormat)
             throw InternalErrorGenericError{ "Unsupported output format" };
 

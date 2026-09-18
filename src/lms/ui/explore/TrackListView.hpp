@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <vector>
+
+#include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
 
 #include "common/Template.hpp"
@@ -40,12 +43,13 @@ namespace lms::ui
         void refreshView();
         void addSome();
 
-        static constexpr std::size_t _batchSize{ 6 };
+        static constexpr std::size_t _batchSize{ 12 };
         static constexpr std::size_t _maxCount{ 8000 };
 
         Filters& _filters;
         PlayQueueController& _playQueueController;
         db::TrackListId _trackListId;
+        std::vector<db::TrackId> _trackIds;
         InfiniteScrollingContainer* _container{};
     };
 } // namespace lms::ui

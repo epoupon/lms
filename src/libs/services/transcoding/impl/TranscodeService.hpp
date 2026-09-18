@@ -19,6 +19,10 @@
 
 #pragma once
 
+#include <boost/asio/io_context.hpp>
+
+#include "core/IOContextRunner.hpp"
+
 #include "services/transcoding/ITranscodeService.hpp"
 
 namespace lms::transcoding
@@ -33,6 +37,9 @@ namespace lms::transcoding
         TranscodeService& operator=(const TranscodeService&) = delete;
 
     private:
-        std::unique_ptr<core::IResourceHandler> createTranscodeResourceHandler(const audio::TranscodeParameters& parameters, bool estimateContentLength) override;
+        std::shared_ptr<core::IResourceHandler> createTranscodeResourceHandler(const audio::TranscodeParameters& parameters, bool estimateContentLength) override;
+
+        boost::asio::io_context _ioContext;
+        core::IOContextRunner _ioContextRunner;
     };
 } // namespace lms::transcoding

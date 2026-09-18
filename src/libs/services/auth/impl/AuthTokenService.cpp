@@ -122,7 +122,7 @@ namespace lms::auth
 
         if (auto maxUseCount{ authToken->getMaxUseCount() })
         {
-            if (*maxUseCount >= tokenUseCount)
+            if (tokenUseCount >= *maxUseCount)
                 authToken.remove();
         }
 

@@ -19,8 +19,35 @@
 
 #include "core/media/Container.hpp"
 
+#include <algorithm>
+#include <array>
+
 namespace lms::core::media
 {
+    namespace
+    {
+        constexpr std::array allContainers{
+            Container::AIFF,
+            Container::APE,
+            Container::ASF,
+            Container::DSF,
+            Container::FLAC,
+            Container::MP4,
+            Container::MPC,
+            Container::MPEG,
+            Container::Ogg,
+            Container::Shorten,
+            Container::TrueAudio,
+            Container::WAV,
+            Container::WavPack,
+        };
+    } // namespace
+
+    void visitContainers(const std::function<void(Container)>& visitor)
+    {
+        std::for_each(std::cbegin(allContainers), std::cend(allContainers), visitor);
+    }
+
     core::LiteralString containerToString(Container type)
     {
         switch (type)

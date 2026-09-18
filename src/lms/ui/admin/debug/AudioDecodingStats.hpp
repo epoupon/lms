@@ -24,7 +24,7 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
-#include "PcmDecodingBenchmark.hpp"
+#include "AudioDecodingBenchmark.hpp"
 
 namespace lms::db
 {
@@ -33,16 +33,16 @@ namespace lms::db
 
 namespace lms::ui
 {
-    class PcmDecodingStats : public Wt::WTemplate
+    class AudioDecodingStats : public Wt::WTemplate
     {
     public:
-        PcmDecodingStats();
-        ~PcmDecodingStats() override;
+        AudioDecodingStats();
+        ~AudioDecodingStats() override;
 
     private:
         void onRunClicked();
-        void onStateChanged(PcmDecodingBenchmark::State oldState, PcmDecodingBenchmark::State newState);
-        void processState(PcmDecodingBenchmark::State state);
+        void onStateChanged(AudioDecodingBenchmark::State oldState, AudioDecodingBenchmark::State newState);
+        void processState(AudioDecodingBenchmark::State state);
         void setupDownloadButton();
 
         db::IDb& _db;

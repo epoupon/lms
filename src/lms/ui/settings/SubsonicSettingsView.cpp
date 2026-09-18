@@ -38,6 +38,7 @@
 #include "ModalManager.hpp"
 #include "Tooltip.hpp"
 #include "common/MandatoryValidator.hpp"
+#include "common/TranscodingOutputFormatModel.hpp"
 #include "common/ValueStringModel.hpp"
 
 #include "SettingsViewUtils.hpp"
@@ -62,10 +63,7 @@ namespace lms::ui
                     _transcodingOutputBitrateModel->add(Wt::WString::fromUTF8(std::to_string(bitrate / 1000)), bitrate);
                 });
 
-                _transcodingOutputFormatModel = std::make_shared<ValueStringModel<db::TranscodingOutputFormat>>();
-                _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.mp3"), db::TranscodingOutputFormat::MP3);
-                _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.ogg_opus"), db::TranscodingOutputFormat::OGG_OPUS);
-                _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.ogg_vorbis"), db::TranscodingOutputFormat::OGG_VORBIS);
+                _transcodingOutputFormatModel = createTranscodingOutputFormatModel();
 
                 _subsonicArtistListModeModel = std::make_shared<ValueStringModel<db::SubsonicArtistListMode>>();
                 _subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.all-artists"), db::SubsonicArtistListMode::AllArtists);
@@ -78,7 +76,7 @@ namespace lms::ui
                 addField(SubsonicArtistListModeField);
 
                 setValidator(SubsonicTranscodingOutputBitrateField, createMandatoryValidator());
-                setValidator(SubsonicTranscodingOutputFormatField, createMandatoryValidator());
+                setValidator(SubsonicTranscodingOutputFormatField, createTranscodingOutputFormatValidator(_transcodingOutputFormatModel));
 
                 loadData();
             }

@@ -19,7 +19,12 @@
 
 #include "TranscodeService.hpp"
 
+#include <algorithm>
+#include <thread>
+
+#include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
+#include "core/Service.hpp"
 
 #include "TranscodeResourceHandler.hpp"
 
@@ -32,6 +37,12 @@ namespace lms::transcoding
             const std::size_t estimatedContentLength{ static_cast<size_t>((bitrate / 8 * duration.count()) / 1000) };
             return estimatedContentLength;
         }
+
+        std::size_t getThreadCount()
+        {
+            const unsigned long configThreadCount{ core::Service<core::IConfig>::get()->getULong("transcode-thread-count", 0) };
+            return configThreadCount ? configThreadCount : std::max<unsigned long>(1, std::thread::hardware_concurrency());
+        }
     } // namespace
 
     std::unique_ptr<ITranscodeService> createTranscodeService()
@@ -40,6 +51,7 @@ namespace lms::transcoding
     }
 
     TranscodeService::TranscodeService()
+        : _ioContextRunner{ _ioContext, getThreadCount(), "Transcoding" }
     {
         LMS_LOG(TRANSCODING, INFO, "Service started!");
     }
@@ -49,18 +61,20 @@ namespace lms::transcoding
         LMS_LOG(TRANSCODING, INFO, "Service stopped!");
     }
 
-    std::unique_ptr<core::IResourceHandler> TranscodeService::createTranscodeResourceHandler(const audio::TranscodeParameters& parameters, bool estimateContentLength)
+    std::shared_ptr<core::IResourceHandler> TranscodeService::createTranscodeResourceHandler(const audio::TranscodeParameters& parameters, bool estimateContentLength)
     {
         std::optional<std::size_t> estimatedContentLength;
 
         if (estimateContentLength)
         {
-            if (parameters.inputParameters.offset < parameters.inputParameters.audioProperties.duration)
-                estimatedContentLength = doEstimateContentLength(*parameters.outputParameters.bitrate, parameters.inputParameters.audioProperties.duration - parameters.inputParameters.offset);
-            else
+            if (!parameters.outputParameters.bitrate)
+                LMS_LOG(TRANSCODING, WARNING, "No output bitrate set: not estimating content length");
+            else if (parameters.inputParameters.offset >= parameters.inputParameters.audioProperties.duration)
                 LMS_LOG(TRANSCODING, WARNING, "Offset " << parameters.inputParameters.offset << " is greater than audio file duration " << parameters.inputParameters.audioProperties.duration << ": not estimating content length");
+            else
+                estimatedContentLength = doEstimateContentLength(*parameters.outputParameters.bitrate, parameters.inputParameters.audioProperties.duration - parameters.inputParameters.offset);
         }
 
-        return std::make_unique<transcoding::ResourceHandler>(parameters, estimatedContentLength);
+        return std::make_shared<transcoding::ResourceHandler>(_ioContext, parameters, estimatedContentLength);
     }
 } // namespace lms::transcoding

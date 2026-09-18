@@ -26,24 +26,24 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/io_context_strand.hpp>
 
-#include "audio/utils/IPcmDecodeStreamer.hpp"
+#include "audio/utils/IAudioDecodeStreamer.hpp"
 
 namespace lms::audio
 {
     class IAudioOutputStream;
-    class IPcmDecoder;
+    class IAudioDecoder;
 } // namespace lms::audio
 
 namespace lms::audio::utils
 {
-    class PcmDecodeStreamer : public IPcmDecodeStreamer
+    class AudioDecodeStreamer : public IAudioDecodeStreamer
     {
     public:
-        PcmDecodeStreamer(boost::asio::io_context& ioContext, const PcmDecodeStreamerParameters& parameters);
-        ~PcmDecodeStreamer() override;
+        AudioDecodeStreamer(boost::asio::io_context& ioContext, const AudioDecodeStreamerParameters& parameters);
+        ~AudioDecodeStreamer() override;
 
-        PcmDecodeStreamer(const PcmDecodeStreamer&) = delete;
-        PcmDecodeStreamer& operator=(const PcmDecodeStreamer&) = delete;
+        AudioDecodeStreamer(const AudioDecodeStreamer&) = delete;
+        AudioDecodeStreamer& operator=(const AudioDecodeStreamer&) = delete;
 
     private:
         void start(const std::filesystem::path& path, std::chrono::microseconds offset, DecodeCompleteCallback cb) override;
@@ -70,7 +70,7 @@ namespace lms::audio::utils
         boost::asio::io_context& _ioContext;
         boost::asio::io_context::strand _strand;
         audio::IAudioOutputStream& _outputStream;
-        std::unique_ptr<audio::IPcmDecoder> _pcmDecoder;
+        std::unique_ptr<audio::IAudioDecoder> _audioDecoder;
 
         std::vector<BufferDesc> _buffers;
         std::size_t _nextBufferIndex{};

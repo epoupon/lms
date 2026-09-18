@@ -33,6 +33,6 @@ namespace lms::audio::ffmpeg
 
     std::span<const std::filesystem::path> AudioFileInfoParser::getSupportedExtensions() const
     {
-        return utils::getSupportedExtensions();
+        return utils::getSupportedDemuxerExtensions();
     }
 } // namespace lms::audio::ffmpeg

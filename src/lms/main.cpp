@@ -26,7 +26,6 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-#include "core/IChildProcessManager.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/IOContextRunner.hpp"
@@ -38,6 +37,7 @@
 
 #include "audio/IAudioOutput.hpp"
 #include "audio/IMusicNNEmbeddingExtractor.hpp"
+#include "audio/Init.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/ServerInfo.hpp"
@@ -68,7 +68,7 @@ namespace lms
         {
             const unsigned long configHttpServerThreadCount{ core::Service<core::IConfig>::get()->getULong("http-server-thread-count", 0) };
 
-            // Reserve at least 2 threads since we still have some blocking IO (for example when reading from ffmpeg)
+            // Reserve at least 2 threads since we still have some blocking IO
             return configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(2, std::thread::hardware_concurrency());
         }
 
@@ -199,7 +199,11 @@ namespace lms
             // Reverse proxy
             if (config.getBool("behind-reverse-proxy", false))
             {
-                pt.put("server.application-settings.trusted-proxy-config.original-ip-header", config.getString("original-ip-header", "X-Forwarded-For"));
+                // https://www.webtoolkit.eu/wt/doc/reference/html/overview.html says original-ip-header is in trusted-proxy-config
+                // but Wt's actual parser (still true as of Wt 4.14.0) reads it as a sibling of <trusted-proxy-config> instead...
+                const std::string originalIpHeader{ config.getString("original-ip-header", "X-Forwarded-For") };
+                pt.put("server.application-settings.original-ip-header", originalIpHeader);
+                pt.put("server.application-settings.trusted-proxy-config.original-ip-header", originalIpHeader);
                 config.visitStrings("trusted-proxies", [&](std::string_view trustedProxy) {
                     pt.add("server.application-settings.trusted-proxy-config.trusted-proxies.proxy", std::string{ trustedProxy });
                 },
@@ -402,6 +406,8 @@ namespace lms
             else
                 LMS_LOG(MAIN, WARNING, "Cannot set locale from system");
 
+            audio::init();
+
             // Make sure the working directory exists
             const std::filesystem::path workingDirectoryPath{ config->getPath("working-dir", "/var/lms") };
             const std::filesystem::path cachePath{ workingDirectoryPath / "cache" };
@@ -463,8 +469,6 @@ namespace lms
 
             const std::size_t loginThrottlerMaxEntries{ config->getULong("login-throttler-max-entries", 10'000) };
             // Service initialization order is important (reverse-order for deinit)
-            core::Service<core::IChildProcessManager> childProcessManagerService{ core::createChildProcessManager(ioContext) };
-
             const ui::AuthenticationBackend uiAuthenticationBackend{ getUIAuthenticationBackend() };
             core::Service<auth::IAuthTokenService> authTokenService{ auth::createAuthTokenService(*database, config->getULong("login-throttler-max-entriees", 10'000)) };
             core::Service<auth::IPasswordService> authPasswordService;
