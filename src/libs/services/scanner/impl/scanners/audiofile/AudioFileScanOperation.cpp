@@ -677,6 +677,7 @@ namespace lms::scanner
             if (track)
             {
                 track.remove();
+                LMS_LOG(DBUPDATER, DEBUG, "Removed track " << getFilePath());
                 return OperationResult::Removed;
             }
             return OperationResult::Skipped;
@@ -754,6 +755,7 @@ namespace lms::scanner
             if (track)
             {
                 track.remove();
+                LMS_LOG(DBUPDATER, DEBUG, "Removed track " << getFilePath());
                 return OperationResult::Removed;
             }
             return OperationResult::Skipped;
