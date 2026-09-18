@@ -181,6 +181,11 @@ namespace lms::audio::taglib::utils
         }
     } // namespace
 
+    void init()
+    {
+        LMS_LOG(AUDIO, INFO, "Using TagLib " << TAGLIB_MAJOR_VERSION << "." << TAGLIB_MINOR_VERSION << "." << TAGLIB_PATCH_VERSION);
+    }
+
     std::span<const std::filesystem::path> getSupportedExtensions()
     {
         static const std::vector<std::filesystem::path> supportedExtensions{ buildSupportedExtensions() };

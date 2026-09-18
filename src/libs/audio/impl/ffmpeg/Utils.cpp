@@ -24,6 +24,7 @@
 #include <array>
 #include <atomic>
 #include <ranges>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -37,6 +38,8 @@ extern "C"
 #include <libavutil/channel_layout.h>
 #include <libavutil/error.h>
 #include <libavutil/log.h>
+#include <libavutil/version.h>
+#include <libswresample/swresample.h>
 }
 
 #include "core/ILogger.hpp"
@@ -636,11 +639,23 @@ namespace lms::audio::ffmpeg::utils
         throw Exception{ "Unsupported PcmSampleType" };
     }
 
+    namespace
+    {
+        std::string avVersionToString(unsigned version)
+        {
+            return std::to_string(AV_VERSION_MAJOR(version)) + "." + std::to_string(AV_VERSION_MINOR(version)) + "." + std::to_string(AV_VERSION_MICRO(version));
+        }
+    } // namespace
+
     void init()
     {
         assert(!isInitialized);
 
         LMS_LOG(AUDIO, INFO, "Initializing ffmpeg backend...");
+        LMS_LOG(AUDIO, INFO, "Using libavutil " << avVersionToString(::avutil_version())
+                                                 << ", libavcodec " << avVersionToString(::avcodec_version())
+                                                 << ", libavformat " << avVersionToString(::avformat_version())
+                                                 << ", libswresample " << avVersionToString(::swresample_version()));
         isInitialized = true;
         getCapabilities(); // init
         LMS_LOG(AUDIO, INFO, "ffmpeg backend init done");

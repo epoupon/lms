@@ -30,6 +30,8 @@
 
 namespace lms::audio::taglib::utils
 {
+    void init();
+
     std::span<const std::filesystem::path> getSupportedExtensions();
 
     struct FileDesc

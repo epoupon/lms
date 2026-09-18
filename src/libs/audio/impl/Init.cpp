@@ -20,11 +20,13 @@
 #include "audio/Init.hpp"
 
 #include "ffmpeg/Utils.hpp"
+#include "taglib/Utils.hpp"
 
 namespace lms::audio
 {
     void init()
     {
+        taglib::utils::init();
         ffmpeg::utils::init();
     }
 } // namespace lms::audio
