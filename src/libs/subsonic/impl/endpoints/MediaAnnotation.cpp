@@ -176,6 +176,7 @@ namespace lms::api::subsonic
 
     Response handleScrobble(RequestContext& context)
     {
+        auto transaction{ context.getDbSession().createReadTransaction() };
         const std::vector<TrackId> ids{ getMandatoryMultiParametersAs<TrackId>(context.getParameters(), "id") };
         const std::vector<unsigned long> times{ getMultiParametersAs<unsigned long>(context.getParameters(), "time") };
         const bool submission{ getParameterAs<bool>(context.getParameters(), "submission").value_or(true) };
@@ -187,6 +188,13 @@ namespace lms::api::subsonic
         // if multiple submissions, must have all times
         if (ids.size() > 1 && ids.size() != times.size())
             throw BadParameterGenericError{ "time" };
+
+        for (std::size_t i{}; i < ids.size(); ++i)
+        {
+            const db::Track::pointer track{ db::Track::find(context.getDbSession(), ids[i]) };
+            if (!track)
+                throw RequestedDataNotFoundError{};
+        }
 
         if (!submission)
         {
