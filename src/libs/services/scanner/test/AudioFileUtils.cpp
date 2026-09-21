@@ -109,6 +109,175 @@ namespace lms::scanner::utils::tests
         }
     }
 
+    TEST(MetaData, fillMissingArtistMetadata_fillsInMbidAndSortNameFromTrackArtist)
+    {
+        const core::UUID mbid{ core::UUID::fromString("b227426f-98b8-4b39-b3a7-ff25e7711e9b").value() };
+
+        Track track;
+        track.artists = { Artist{ mbid, "Tolkien", "Tolkien, J.R.R." } };
+        track.composerArtists = { Artist{ "Tolkien" } };
+
+        fillMissingArtistMetadata(track);
+
+        ASSERT_EQ(track.composerArtists.size(), 1);
+        EXPECT_EQ(track.composerArtists[0].mbid, mbid);
+        ASSERT_TRUE(track.composerArtists[0].sortName.has_value());
+        EXPECT_EQ(*track.composerArtists[0].sortName, "Tolkien, J.R.R.");
+    }
+
+    TEST(MetaData, fillMissingArtistMetadata_fillsInFieldsIndependentlyAcrossSources)
+    {
+        const core::UUID mbid{ core::UUID::fromString("b227426f-98b8-4b39-b3a7-ff25e7711e9b").value() };
+
+        Track track;
+        track.artists = { Artist{ mbid, "Tolkien", std::nullopt } };
+        track.medium.emplace();
+        track.medium->release.emplace();
+        track.medium->release->artists = { Artist{ std::nullopt, "Tolkien", "Tolkien, J.R.R." } };
+        track.composerArtists = { Artist{ "Tolkien" } };
+
+        fillMissingArtistMetadata(track);
+
+        ASSERT_EQ(track.composerArtists.size(), 1);
+        EXPECT_EQ(track.composerArtists[0].mbid, mbid);
+        ASSERT_TRUE(track.composerArtists[0].sortName.has_value());
+        EXPECT_EQ(*track.composerArtists[0].sortName, "Tolkien, J.R.R.");
+    }
+
+    TEST(MetaData, fillMissingArtistMetadata_ignoresMergeSetting)
+    {
+        const core::UUID mbid{ core::UUID::fromString("b227426f-98b8-4b39-b3a7-ff25e7711e9b").value() };
+
+        Track track;
+        track.artists = { Artist{ mbid, "Tolkien", "Tolkien, J.R.R." } };
+        track.lyricistArtists = { Artist{ "Tolkien" } };
+
+        fillMissingArtistMetadata(track);
+
+        ASSERT_EQ(track.lyricistArtists.size(), 1);
+        EXPECT_EQ(track.lyricistArtists[0].mbid, mbid);
+        EXPECT_EQ(track.lyricistArtists[0].sortName, "Tolkien, J.R.R.");
+    }
+
+    TEST(MetaData, fillMissingArtistMetadata_noMatchOnDifferentName)
+    {
+        Track track;
+        track.artists = { Artist{ core::UUID::fromString("b227426f-98b8-4b39-b3a7-ff25e7711e9b").value(), "Tolkien", "Tolkien, J.R.R." } };
+        track.composerArtists = { Artist{ "Someone Else" } };
+
+        fillMissingArtistMetadata(track);
+
+        ASSERT_EQ(track.composerArtists.size(), 1);
+        EXPECT_FALSE(track.composerArtists[0].mbid.has_value());
+        EXPECT_FALSE(track.composerArtists[0].sortName.has_value());
+    }
+
+    TEST(MetaData, fillMissingArtistMetadata_trackArtistTakesPriorityOverAlbumArtist)
+    {
+        const core::UUID trackArtistMbid{ core::UUID::fromString("b227426f-98b8-4b39-b3a7-ff25e7711e9b").value() };
+        const core::UUID albumArtistMbid{ core::UUID::fromString("97d1fb6f-db09-4760-b0b3-816559bcb632").value() };
+
+        Track track;
+        track.artists = { Artist{ trackArtistMbid, "Tolkien", "Track Sort Name" } };
+        track.medium.emplace();
+        track.medium->release.emplace();
+        track.medium->release->artists = { Artist{ albumArtistMbid, "Tolkien", "Album Sort Name" } };
+        track.composerArtists = { Artist{ "Tolkien" } };
+
+        fillMissingArtistMetadata(track);
+
+        ASSERT_EQ(track.composerArtists.size(), 1);
+        EXPECT_EQ(track.composerArtists[0].mbid, trackArtistMbid);
+        EXPECT_EQ(track.composerArtists[0].sortName, "Track Sort Name");
+    }
+
+    TEST(MetaData, fillMissingArtistMetadata_noMediumDoesNotCrash)
+    {
+        Track track;
+        ASSERT_FALSE(track.medium.has_value());
+        track.composerArtists = { Artist{ "Tolkien" } };
+
+        fillMissingArtistMetadata(track);
+
+        ASSERT_EQ(track.composerArtists.size(), 1);
+        EXPECT_FALSE(track.composerArtists[0].mbid.has_value());
+        EXPECT_FALSE(track.composerArtists[0].sortName.has_value());
+    }
+
+    TEST(MetaData, fillMissingArtistMetadata_fillsInMultipleRoles)
+    {
+        const core::UUID mbid{ core::UUID::fromString("b227426f-98b8-4b39-b3a7-ff25e7711e9b").value() };
+
+        Track track;
+        track.artists = { Artist{ mbid, "Tolkien", "Tolkien, J.R.R." } };
+        track.composerArtists = { Artist{ "Tolkien" } };
+        track.lyricistArtists = { Artist{ "Tolkien" } };
+        track.performerArtists["Narrator"] = { Artist{ "Tolkien" } };
+
+        fillMissingArtistMetadata(track);
+
+        ASSERT_EQ(track.composerArtists.size(), 1);
+        EXPECT_EQ(track.composerArtists[0].mbid, mbid);
+        EXPECT_EQ(track.composerArtists[0].sortName, "Tolkien, J.R.R.");
+        ASSERT_EQ(track.lyricistArtists.size(), 1);
+        EXPECT_EQ(track.lyricistArtists[0].mbid, mbid);
+        EXPECT_EQ(track.lyricistArtists[0].sortName, "Tolkien, J.R.R.");
+        ASSERT_EQ(track.performerArtists["Narrator"].size(), 1);
+        EXPECT_EQ(track.performerArtists["Narrator"][0].mbid, mbid);
+        EXPECT_EQ(track.performerArtists["Narrator"][0].sortName, "Tolkien, J.R.R.");
+    }
+
+    TEST(MetaData, fillMissingArtistMetadata_doesNotOverwriteExistingValues)
+    {
+        const core::UUID trackArtistMbid{ core::UUID::fromString("b227426f-98b8-4b39-b3a7-ff25e7711e9b").value() };
+        const core::UUID composerMbid{ core::UUID::fromString("97d1fb6f-db09-4760-b0b3-816559bcb632").value() };
+
+        Track track;
+        track.artists = { Artist{ trackArtistMbid, "Tolkien", "Track Sort Name" } };
+        track.composerArtists = { Artist{ composerMbid, "Tolkien", "Composer Sort Name" } };
+
+        fillMissingArtistMetadata(track);
+
+        ASSERT_EQ(track.composerArtists.size(), 1);
+        EXPECT_EQ(track.composerArtists[0].mbid, composerMbid);
+        EXPECT_EQ(track.composerArtists[0].sortName, "Composer Sort Name");
+    }
+
+    TEST(MetaData, fillMissingArtistMetadata_fillsOnlyMissingMbidWhenSortNameAlreadySet)
+    {
+        // destination side independence: a role that already has its own sort name but no mbid
+        // should get the mbid filled in while keeping its own (different) sort name untouched
+        const core::UUID mbid{ core::UUID::fromString("b227426f-98b8-4b39-b3a7-ff25e7711e9b").value() };
+
+        Track track;
+        track.artists = { Artist{ mbid, "Tolkien", "Track Sort Name" } };
+        track.composerArtists = { Artist{ std::nullopt, "Tolkien", "Composer Sort Name" } };
+
+        fillMissingArtistMetadata(track);
+
+        ASSERT_EQ(track.composerArtists.size(), 1);
+        EXPECT_EQ(track.composerArtists[0].mbid, mbid);
+        EXPECT_EQ(track.composerArtists[0].sortName, "Composer Sort Name");
+    }
+
+    TEST(MetaData, fillMissingArtistMetadata_fillsOnlySortNameWhenMbidAlreadySet)
+    {
+        // destination side independence: a role that already has its own mbid but no sort name
+        // should get the sort name filled in while keeping its own (different) mbid untouched
+        const core::UUID trackArtistMbid{ core::UUID::fromString("b227426f-98b8-4b39-b3a7-ff25e7711e9b").value() };
+        const core::UUID composerMbid{ core::UUID::fromString("97d1fb6f-db09-4760-b0b3-816559bcb632").value() };
+
+        Track track;
+        track.artists = { Artist{ trackArtistMbid, "Tolkien", "Track Sort Name" } };
+        track.composerArtists = { Artist{ composerMbid, "Tolkien", std::nullopt } };
+
+        fillMissingArtistMetadata(track);
+
+        ASSERT_EQ(track.composerArtists.size(), 1);
+        EXPECT_EQ(track.composerArtists[0].mbid, composerMbid);
+        EXPECT_EQ(track.composerArtists[0].sortName, "Track Sort Name");
+    }
+
     TEST(MetaData, extractPerformerAndRole)
     {
         struct TestCase

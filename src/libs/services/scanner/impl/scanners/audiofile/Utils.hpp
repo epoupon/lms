@@ -40,4 +40,8 @@ namespace lms::scanner::utils
 
     // format is "artist name (role)"
     PerformerArtist extractPerformerAndRole(std::string_view entry);
+
+    // Fills in the mbid and/or sort name on artist roles (composer, lyricist, performer, etc.) that
+    // are missing them, using the mbid/sort name of a track or album artist that shares the same name
+    void fillMissingArtistMetadata(Track& track);
 } // namespace lms::scanner::utils

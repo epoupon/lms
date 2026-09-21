@@ -21,8 +21,10 @@
 
 #include <ctime>
 #include <iomanip>
+#include <span>
 #include <sstream>
 #include <string_view>
+#include <unordered_map>
 
 namespace lms::scanner::utils
 {
@@ -137,5 +139,68 @@ namespace lms::scanner::utils
             artistName = core::stringUtils::stringTrim(entry);
 
         return PerformerArtist{ Artist{ artistName }, std::string{ role } };
+    }
+
+    namespace
+    {
+        struct ArtistMetadata
+        {
+            std::optional<core::UUID> mbid;
+            std::optional<std::string> sortName;
+        };
+
+        void collectArtistMetadata(std::span<const Artist> artists, std::unordered_map<std::string_view, ArtistMetadata>& artistsMetadata)
+        {
+            for (const Artist& artist : artists)
+            {
+                if (!artist.mbid && !artist.sortName)
+                    continue;
+
+                // there may be collisions: keep the first value seen for each field (see caller for priority order)
+                ArtistMetadata& metadata{ artistsMetadata[artist.name] };
+                if (!metadata.mbid)
+                    metadata.mbid = artist.mbid;
+                if (!metadata.sortName)
+                    metadata.sortName = artist.sortName;
+            }
+        }
+
+        void fillArtistMetadata(std::span<Artist> artists, const std::unordered_map<std::string_view, ArtistMetadata>& artistsMetadata)
+        {
+            for (Artist& artist : artists)
+            {
+                const auto it{ artistsMetadata.find(artist.name) };
+                if (it == std::cend(artistsMetadata))
+                    continue;
+
+                if (!artist.mbid)
+                    artist.mbid = it->second.mbid;
+                if (!artist.sortName)
+                    artist.sortName = it->second.sortName;
+            }
+        }
+    } // namespace
+
+    void fillMissingArtistMetadata(Track& track)
+    {
+        // first pass: collect the mbid/sort name of all artist and album artist entries
+        std::unordered_map<std::string_view, ArtistMetadata> artistsMetadata;
+
+        // For now, metadata can only be gathered from artist and album artist tags
+        // collection order is important: we estimate track-level artists are more likely
+        // to be set in other fields than album artists
+        collectArtistMetadata(track.artists, artistsMetadata);
+        if (track.medium && track.medium->release)
+            collectArtistMetadata(track.medium->release->artists, artistsMetadata);
+
+        // second pass: fill in the mbid/sort name of all artists that miss them
+        fillArtistMetadata(track.conductorArtists, artistsMetadata);
+        fillArtistMetadata(track.composerArtists, artistsMetadata);
+        fillArtistMetadata(track.lyricistArtists, artistsMetadata);
+        fillArtistMetadata(track.mixerArtists, artistsMetadata);
+        fillArtistMetadata(track.producerArtists, artistsMetadata);
+        fillArtistMetadata(track.remixerArtists, artistsMetadata);
+        for (auto& [role, artists] : track.performerArtists)
+            fillArtistMetadata(artists, artistsMetadata);
     }
 } // namespace lms::scanner::utils
