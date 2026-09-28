@@ -16,6 +16,10 @@
 # Installation
 ## Docker
 _Docker_ images are available, please see detailed instructions on https://hub.docker.com/r/epoupon/lms.
+
+[Easypanel](https://easypanel.io) is a self-hosted Docker deployment platform, and it maintains a one-click deployment template for LMS:
+
+[![Deploy on Easypanel](https://easypanel.io/img/deploy-on-easypanel-40.svg)](https://easypanel.io/templates/lms)
 ## Debian packages
 _Trixie_ packages are provided for _amd64_ architectures.
 As root, trust the following debian package provider and add it in your list of repositories:
