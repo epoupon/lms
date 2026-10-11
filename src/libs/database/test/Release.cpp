@@ -416,6 +416,41 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, MulitpleReleaseSearchByNameWithBackslash)
+    {
+        ScopedRelease release1{ session, R"(AC\DC)" };
+        ScopedRelease release2{ session, "ACDC" };
+        ScopedRelease release3{ session, R"(MyRelease\)" };
+
+        // filters does not work on orphans
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            track1.get().modify()->setRelease(release1.get());
+            track2.get().modify()->setRelease(release2.get());
+            track3.get().modify()->setRelease(release3.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            {
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ R"(AC\DC)" })) };
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases[0], release1.getId());
+            }
+            {
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ R"(MyRelease\)" })) };
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases[0], release3.getId());
+            }
+        }
+    }
+
     TEST_F(DatabaseFixture, ReleaseSearchByMediumName)
     {
         ScopedRelease release{ session, "The Beatles In Mono" };

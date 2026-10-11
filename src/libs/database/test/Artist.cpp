@@ -814,6 +814,28 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Artist_findByNameEscapedBackslash)
+    {
+        ScopedArtist artist1{ session, R"(AC\DC)" };
+        ScopedArtist artist2{ session, "ACDC" };
+        ScopedArtist artist3{ session, R"(MyArtist\)" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            {
+                const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setKeywords({ R"(AC\DC)" })) };
+                ASSERT_EQ(artists.size(), 1);
+                EXPECT_EQ(artists[0], artist1.getId());
+            }
+            {
+                const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setKeywords({ R"(MyArtist\)" })) };
+                ASSERT_EQ(artists.size(), 1);
+                EXPECT_EQ(artists[0], artist3.getId());
+            }
+        }
+    }
+
     TEST_F(DatabaseFixture, Artist_findNextIdRange)
     {
         {

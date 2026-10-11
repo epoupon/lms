@@ -25,7 +25,8 @@ namespace lms::db::utils
 {
     std::string escapeForLikeKeyword(std::string_view keyword)
     {
-        return core::stringUtils::escapeString(keyword, "%_", escapeChar);
+        // The escape char itself must be escaped too, otherwise it would escape the next char
+        return core::stringUtils::escapeString(keyword, "%_" ESCAPE_CHAR_STR, escapeChar);
     }
 
     Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime)

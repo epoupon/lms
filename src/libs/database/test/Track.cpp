@@ -388,6 +388,35 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, MultipleTracksSearchByFilterWithBackslash)
+    {
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track1.get().modify()->setName(R"(AC\DC)");
+            track2.get().modify()->setName("ACDC");
+            track3.get().modify()->setName(R"(MyTrack\)");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            {
+                const auto tracks{ Track::findIds(session, Track::FindParameters{}.setKeywords({ R"(AC\DC)" })) };
+                ASSERT_EQ(tracks.size(), 1);
+                EXPECT_EQ(tracks[0], track1.getId());
+            }
+            {
+                const auto tracks{ Track::findIds(session, Track::FindParameters{}.setKeywords({ R"(MyTrack\)" })) };
+                ASSERT_EQ(tracks.size(), 1);
+                EXPECT_EQ(tracks[0], track3.getId());
+            }
+        }
+    }
+
     TEST_F(DatabaseFixture, Track_date)
     {
         ScopedTrack track{ session };
