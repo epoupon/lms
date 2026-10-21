@@ -65,7 +65,7 @@ namespace lms::api::subsonic
             if (type == "alphabeticalByName")
             {
                 Release::FindParameters params;
-                params.setSortMethod(ReleaseSortMethod::Name);
+                params.setSortMethod(ReleaseSortMethod::SortName);
                 params.setRange(range);
                 params.filters.setMediaLibrary(mediaLibraryId);
 
