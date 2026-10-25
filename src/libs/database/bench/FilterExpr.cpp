@@ -77,7 +77,7 @@ namespace lms::db::benchs
         constexpr std::size_t clusterCountPerTrack{ 2 };
         constexpr std::size_t composerTrackModulo{ 20 }; // a rare link type
         constexpr std::size_t sampleReleaseModulo{ 1'000 };
-        constexpr std::size_t prolificTrackModulo{ 10 }; // one artist credited on a tenth of the tracks
+        constexpr std::size_t prolificTrackModulo{ 10 }; // one artist linked to a tenth of the tracks
         constexpr std::size_t bigTrackListModulo{ 50 };  // one track list with a fiftieth of the tracks
         constexpr double compilationRatio{ 0.1 };
         constexpr double listenedTrackRatio{ 0.2 };
@@ -299,6 +299,10 @@ namespace lms::db::benchs
             ReleaseNameStartsWith,
             ReleaseNameAndGenre,
             ArtistNameStartsWith,
+            ArtistNameContains,
+            ArtistNameAndGenre,
+            NotArtistName,
+            ArtistSortNameStartsWith,
             Rated,
             RatedAndGenre,
             NotRated,
@@ -324,6 +328,10 @@ namespace lms::db::benchs
             std::pair<core::LiteralString, FilterCase>{ "ReleaseNameStartsWith", FilterCase::ReleaseNameStartsWith },
             std::pair<core::LiteralString, FilterCase>{ "ReleaseNameAndGenre", FilterCase::ReleaseNameAndGenre },
             std::pair<core::LiteralString, FilterCase>{ "ArtistNameStartsWith", FilterCase::ArtistNameStartsWith },
+            std::pair<core::LiteralString, FilterCase>{ "ArtistNameContains", FilterCase::ArtistNameContains },
+            std::pair<core::LiteralString, FilterCase>{ "ArtistNameAndGenre", FilterCase::ArtistNameAndGenre },
+            std::pair<core::LiteralString, FilterCase>{ "NotArtistName", FilterCase::NotArtistName },
+            std::pair<core::LiteralString, FilterCase>{ "ArtistSortNameStartsWith", FilterCase::ArtistSortNameStartsWith },
             std::pair<core::LiteralString, FilterCase>{ "Rated", FilterCase::Rated },
             std::pair<core::LiteralString, FilterCase>{ "RatedAndGenre", FilterCase::RatedAndGenre },
             std::pair<core::LiteralString, FilterCase>{ "NotRated", FilterCase::NotRated },
@@ -369,6 +377,14 @@ namespace lms::db::benchs
                 return FilterExpr::And({ FilterExpr::condition(StringCondition{ StringField::ReleaseName, StringOperator::StartsWith, "Release1" }), FilterExpr::equal(library.genres.front()) });
             case FilterCase::ArtistNameStartsWith:
                 return FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::StartsWith, "Artist1" });
+            case FilterCase::ArtistNameContains:
+                return FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::Contains, "rtist1" });
+            case FilterCase::ArtistNameAndGenre:
+                return FilterExpr::And({ FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::StartsWith, "Artist1" }), FilterExpr::equal(library.genres.front()) });
+            case FilterCase::NotArtistName:
+                return FilterExpr::Not(FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::StartsWith, "Artist1" }));
+            case FilterCase::ArtistSortNameStartsWith:
+                return FilterExpr::condition(StringCondition{ StringField::ArtistSortName, StringOperator::StartsWith, "Artist1" });
             case FilterCase::Rated:
                 return FilterExpr::condition(RatingCondition{ FilterOperator::GreaterOrEqual, std::int64_t{ 4 } });
             case FilterCase::RatedAndGenre:

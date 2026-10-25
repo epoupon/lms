@@ -684,39 +684,45 @@ namespace lms::db
                     return;
                 case StringField::ArtistName:
                 case StringField::ArtistSortName:
-                    compileArtistCondition(condition, fragment);
+                    compileArtistCondition(condition, isUnderNot, fragment);
                     return;
                 }
 
                 throw Exception{ "Unhandled string filter field" };
             }
 
-            // An artist linked to the track or to its release, matching by the name of the link or by its own name
-            void compileArtistCondition(const StringCondition& condition, SqlFragment& fragment) const
+            // An artist linked to the track or to its release, matching by the name of the link or by its own name.
+            void compileArtistCondition(const StringCondition& condition, IsUnderNot isUnderNot, SqlFragment& fragment) const
             {
                 const bool sortName{ condition.field == StringField::ArtistSortName };
                 const std::string pattern{ createLikePattern(condition.op, condition.value) };
 
-                std::string sql{ "(" };
+                const std::string linkName{ sortName ? createSortNameExpr("f_l.artist_sort_name", "f_l.artist_name") : "f_l.artist_name" };
+                const std::string ownName{ sortName ? createSortNameExpr("f_a.sort_name", "f_a.name") : "f_a.name" };
+                const bool isArtistQuery{ _queriedEntity == FilterEntity::Artist };
 
-                // when querying artists, only the credits of the queried artist count
-                const auto appendLinkCondition = [&](std::string_view linkTable, std::string_view linkEntityColumn, const std::string& entityId) {
-                    const std::string creditedName{ sortName ? createSortNameExpr("f_c.artist_sort_name", "f_c.artist_name") : "f_c.artist_name" };
-                    const std::string ownName{ sortName ? createSortNameExpr("f_a.sort_name", "f_a.name") : "f_a.name" };
+                // Under NOT, the release of a track may be missing, and NULL IN (...) is unknown (which NOT keeps out) instead of false.
+                // Optim: CASE WHEN rather than COALESCE(..., 0) or a bare NOT
+                const bool needsCase{ isUnderNot.value() };
 
-                    sql.append("EXISTS (SELECT 1 FROM ").append(linkTable).append(" f_c JOIN artist f_a ON f_a.id = f_c.artist_id WHERE f_c.").append(linkEntityColumn).append(" = ").append(entityId);
-                    if (_queriedEntity == FilterEntity::Artist)
-                        sql.append(" AND f_c.artist_id = ").append(createEntityIdExpr(FilterEntity::Artist));
-                    sql.append(" AND (").append(creditedName).append(" ").append(sqlLikeComparison);
-                    sql.append(" OR ").append(ownName).append(" ").append(sqlLikeComparison).append("))");
+                std::string sql{ needsCase ? "CASE WHEN (" : "(" };
+
+                const auto appendMemberships = [&](std::string_view linkTable, std::string_view linkEntityColumn, const std::string& entityId) {
+                    // when querying artists, the pair is tested: only the links of the queried artist count
+                    const std::string key{ isArtistQuery ? "(" + createEntityIdExpr(FilterEntity::Artist) + ", " + entityId + ")" : entityId };
+                    const std::string columns{ isArtistQuery ? "f_l.artist_id, f_l." + std::string{ linkEntityColumn } : "f_l." + std::string{ linkEntityColumn } };
+
+                    sql.append(key).append(" IN (SELECT ").append(columns).append(" FROM ").append(linkTable).append(" f_l WHERE ").append(linkName).append(" ").append(sqlLikeComparison).append(")");
+                    sql.append(" OR ");
+                    sql.append(key).append(" IN (SELECT ").append(columns).append(" FROM artist f_a JOIN ").append(linkTable).append(" f_l ON f_l.artist_id = f_a.id WHERE ").append(ownName).append(" ").append(sqlLikeComparison).append(")");
                 };
 
-                appendLinkCondition("track_artist_link", "track_id", createEntityIdExpr(FilterEntity::Track));
+                appendMemberships("track_artist_link", "track_id", createEntityIdExpr(FilterEntity::Track));
                 sql += " OR ";
-                appendLinkCondition("release_artist_link", "release_id", createEntityIdExpr(FilterEntity::Release));
-                sql += ')';
+                appendMemberships("release_artist_link", "release_id", createEntityIdExpr(FilterEntity::Release));
+                sql += needsCase ? ") THEN 1 ELSE 0 END" : ")";
 
-                // Two placeholders per link condition
+                // One placeholder per membership
                 const BindValue patternValue{ toBindValue(pattern) };
                 fragment.append(sql, { patternValue, patternValue, patternValue, patternValue });
             }

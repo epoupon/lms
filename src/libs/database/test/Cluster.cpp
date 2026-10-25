@@ -861,7 +861,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            // credited three times on the same track: it still is a single track, counted per link it would come first
+            // linked three times to the same track: it still is a single track, counted per link it would come first
             session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Artist);
             session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Composer);
             session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Lyricist);

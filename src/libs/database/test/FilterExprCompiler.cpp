@@ -293,6 +293,66 @@ namespace lms::db::tests
         EXPECT_EQ(compiled.where.getSql(), R"(r.name LIKE ? ESCAPE '\')");
     }
 
+    TEST(FilterExprCompiler, artistNameOnTracks_isAMembershipOfTheLinksOfTheTrackAndOfItsRelease)
+    {
+        const Compiled compiled{ compile(FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::Equal, "Artist" }), FilterEntity::Track) };
+
+        EXPECT_TRUE(compiled.joins.empty());
+        EXPECT_EQ(compiled.where.getSql(),
+                  "(t.id IN (SELECT f_l.track_id FROM track_artist_link f_l WHERE f_l.artist_name LIKE ? ESCAPE '\\')"
+                  " OR t.id IN (SELECT f_l.track_id FROM artist f_a JOIN track_artist_link f_l ON f_l.artist_id = f_a.id WHERE f_a.name LIKE ? ESCAPE '\\')"
+                  " OR t.release_id IN (SELECT f_l.release_id FROM release_artist_link f_l WHERE f_l.artist_name LIKE ? ESCAPE '\\')"
+                  " OR t.release_id IN (SELECT f_l.release_id FROM artist f_a JOIN release_artist_link f_l ON f_l.artist_id = f_a.id WHERE f_a.name LIKE ? ESCAPE '\\'))");
+        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ std::string{ "Artist" }, std::string{ "Artist" }, std::string{ "Artist" }, std::string{ "Artist" } }));
+    }
+
+    TEST(FilterExprCompiler, artistNameOnReleases_usesTheQueriedRelease)
+    {
+        const Compiled compiled{ compile(FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::Equal, "Artist" }), FilterEntity::Release) };
+
+        EXPECT_EQ(compiled.where.getSql(),
+                  "(t.id IN (SELECT f_l.track_id FROM track_artist_link f_l WHERE f_l.artist_name LIKE ? ESCAPE '\\')"
+                  " OR t.id IN (SELECT f_l.track_id FROM artist f_a JOIN track_artist_link f_l ON f_l.artist_id = f_a.id WHERE f_a.name LIKE ? ESCAPE '\\')"
+                  " OR r.id IN (SELECT f_l.release_id FROM release_artist_link f_l WHERE f_l.artist_name LIKE ? ESCAPE '\\')"
+                  " OR r.id IN (SELECT f_l.release_id FROM artist f_a JOIN release_artist_link f_l ON f_l.artist_id = f_a.id WHERE f_a.name LIKE ? ESCAPE '\\'))");
+    }
+
+    TEST(FilterExprCompiler, artistNameOnArtists_isAMembershipOfThePairs)
+    {
+        const Compiled compiled{ compile(FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::Equal, "Artist" }), FilterEntity::Artist) };
+
+        EXPECT_EQ(compiled.where.getSql(),
+                  "((a.id, t.id) IN (SELECT f_l.artist_id, f_l.track_id FROM track_artist_link f_l WHERE f_l.artist_name LIKE ? ESCAPE '\\')"
+                  " OR (a.id, t.id) IN (SELECT f_l.artist_id, f_l.track_id FROM artist f_a JOIN track_artist_link f_l ON f_l.artist_id = f_a.id WHERE f_a.name LIKE ? ESCAPE '\\')"
+                  " OR (a.id, t.release_id) IN (SELECT f_l.artist_id, f_l.release_id FROM release_artist_link f_l WHERE f_l.artist_name LIKE ? ESCAPE '\\')"
+                  " OR (a.id, t.release_id) IN (SELECT f_l.artist_id, f_l.release_id FROM artist f_a JOIN release_artist_link f_l ON f_l.artist_id = f_a.id WHERE f_a.name LIKE ? ESCAPE '\\'))");
+    }
+
+    TEST(FilterExprCompiler, artistNameUnderNot_keepsTracksWithoutReleaseIn)
+    {
+        const FilterExpr notArtistName{ FilterExpr::Not(FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::Equal, "Artist" })) };
+
+        // A track without release has a NULL release id: NULL IN (...) would be unknown, that NOT keeps out
+        const Compiled onTracks{ compile(notArtistName, FilterEntity::Track) };
+        EXPECT_EQ(onTracks.where.getSql().substr(0, 16), "NOT (CASE WHEN (");
+        EXPECT_EQ(onTracks.where.getSql().substr(onTracks.where.getSql().size() - 20), ") THEN 1 ELSE 0 END)");
+
+        const Compiled onArtists{ compile(notArtistName, FilterEntity::Artist) };
+        EXPECT_EQ(onArtists.where.getSql().substr(0, 16), "NOT (CASE WHEN (");
+
+        const Compiled onReleases{ compile(notArtistName, FilterEntity::Release) };
+        EXPECT_EQ(onReleases.where.getSql().substr(0, 16), "NOT (CASE WHEN (");
+    }
+
+    TEST(FilterExprCompiler, artistSortName_fallsBackOnTheNameOfTheLinkAndOfTheArtist)
+    {
+        const Compiled compiled{ compile(FilterExpr::condition(StringCondition{ StringField::ArtistSortName, StringOperator::StartsWith, "bea" }), FilterEntity::Track) };
+
+        EXPECT_NE(compiled.where.getSql().find("COALESCE(NULLIF(f_l.artist_sort_name, ''), f_l.artist_name) LIKE ?"), std::string::npos);
+        EXPECT_NE(compiled.where.getSql().find("COALESCE(NULLIF(f_a.sort_name, ''), f_a.name) LIKE ?"), std::string::npos);
+        EXPECT_EQ(compiled.where.getBinds().front(), BindValue{ std::string{ "bea%" } });
+    }
+
     TEST(FilterExprCompiler, requiresTracks_dependsOnTheQueriedEntity)
     {
         const FilterExpr trackCondition{ FilterExpr::equal(genre5) };

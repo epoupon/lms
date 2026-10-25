@@ -73,11 +73,11 @@ namespace lms::db::tests
             return FilterExpr::condition(StringCondition{ field, op, std::move(value) });
         }
 
-        void createCredit(Session& session, const Track::pointer& track, const Artist::pointer& artist, std::string_view creditedName, TrackArtistLinkType type = TrackArtistLinkType::Artist, std::string_view creditedSortName = {})
+        void createTrackArtistLink(Session& session, const Track::pointer& track, const Artist::pointer& artist, std::string_view linkName, TrackArtistLinkType type = TrackArtistLinkType::Artist, std::string_view linkSortName = {})
         {
             auto link{ session.create<TrackArtistLink>(track, artist, type) };
-            link.modify()->setArtistName(creditedName);
-            link.modify()->setArtistSortName(creditedSortName);
+            link.modify()->setArtistName(linkName);
+            link.modify()->setArtistSortName(linkSortName);
         }
     } // namespace
 
@@ -611,32 +611,32 @@ namespace lms::db::tests
         EXPECT_EQ(findReleaseIds(session, name(StringField::ReleaseSortName, StringOperator::StartsWith, "anim")), (std::vector{ animals.getId() }));
     }
 
-    TEST_F(DatabaseFixture, FilterExpr_artistNameFilterCreditedAndOwnName)
+    TEST_F(DatabaseFixture, FilterExpr_artistNameFilterLinkAndOwnName)
     {
         ScopedArtist rhapsody{ session, "Rhapsody of Fire" };
         ScopedArtist luca{ session, "Luca Turilli" };
         ScopedArtist justice{ session, "Justice" };
-        ScopedArtist withoutCredit{ session, "Rhapsody Without Credit" };
+        ScopedArtist withoutLink{ session, "Rhapsody Without Link" };
         ScopedRelease oldRelease{ session, "Legendary Tales" };
         ScopedRelease newRelease{ session, "Dark Wings" };
         ScopedRelease justiceRelease{ session, "Cross" };
-        ScopedTrack creditedOld{ session };
-        ScopedTrack creditedNew{ session };
+        ScopedTrack linkedOld{ session };
+        ScopedTrack linkedNew{ session };
         ScopedTrack justiceTrack{ session };
         ScopedGenre rock{ session, "Rock" };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            creditedOld.get().modify()->setRelease(oldRelease.get());
-            creditedOld.get().modify()->setGenres(std::array{ rock.get() });
-            creditedNew.get().modify()->setRelease(newRelease.get());
+            linkedOld.get().modify()->setRelease(oldRelease.get());
+            linkedOld.get().modify()->setGenres(std::array{ rock.get() });
+            linkedNew.get().modify()->setRelease(newRelease.get());
             justiceTrack.get().modify()->setRelease(justiceRelease.get());
             justiceTrack.get().modify()->setGenres(std::array{ rock.get() });
-            // same artist, credited under its former name
-            createCredit(session, creditedOld.get(), rhapsody.get(), "Rhapsody");
-            createCredit(session, creditedNew.get(), rhapsody.get(), "Rhapsody of Fire");
-            createCredit(session, creditedNew.get(), luca.get(), "Luca Turilli", TrackArtistLinkType::Composer);
-            createCredit(session, justiceTrack.get(), justice.get(), "Justice");
+            // same artist, linked under its former name
+            createTrackArtistLink(session, linkedOld.get(), rhapsody.get(), "Rhapsody");
+            createTrackArtistLink(session, linkedNew.get(), rhapsody.get(), "Rhapsody of Fire");
+            createTrackArtistLink(session, linkedNew.get(), luca.get(), "Luca Turilli", TrackArtistLinkType::Composer);
+            createTrackArtistLink(session, justiceTrack.get(), justice.get(), "Justice");
         }
 
         const FilterExpr formerName{ name(StringField::ArtistName, StringOperator::Equal, "rhapsody") };
@@ -644,23 +644,23 @@ namespace lms::db::tests
         const FilterExpr currentName{ name(StringField::ArtistName, StringOperator::Equal, "Rhapsody of Fire") };
         const FilterExpr isRock{ FilterExpr::equal(rock.getId()) };
 
-        // tracks: matches the credited name or the name of the artist, whatever the link type
-        EXPECT_EQ(findTrackIds(session, formerName), (std::vector{ creditedOld.getId() }));
-        EXPECT_EQ(findTrackIds(session, currentName), (std::vector{ creditedOld.getId(), creditedNew.getId() }));
-        EXPECT_EQ(findTrackIds(session, startsWithRhapsody), (std::vector{ creditedOld.getId(), creditedNew.getId() }));
-        EXPECT_EQ(findTrackIds(session, name(StringField::ArtistName, StringOperator::StartsWith, "luca")), (std::vector{ creditedNew.getId() }));
-        EXPECT_EQ(findTrackIds(session, FilterExpr::Not(formerName)), (std::vector{ creditedNew.getId(), justiceTrack.getId() }));
+        // tracks: matches the name of the link or the name of the artist, whatever the link type
+        EXPECT_EQ(findTrackIds(session, formerName), (std::vector{ linkedOld.getId() }));
+        EXPECT_EQ(findTrackIds(session, currentName), (std::vector{ linkedOld.getId(), linkedNew.getId() }));
+        EXPECT_EQ(findTrackIds(session, startsWithRhapsody), (std::vector{ linkedOld.getId(), linkedNew.getId() }));
+        EXPECT_EQ(findTrackIds(session, name(StringField::ArtistName, StringOperator::StartsWith, "luca")), (std::vector{ linkedNew.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::Not(formerName)), (std::vector{ linkedNew.getId(), justiceTrack.getId() }));
         // on the same track
-        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ startsWithRhapsody, isRock })), (std::vector{ creditedOld.getId() }));
-        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ startsWithRhapsody, FilterExpr::Not(isRock) })), (std::vector{ creditedNew.getId() }));
-        EXPECT_EQ(findTrackIds(session, FilterExpr::Or({ formerName, name(StringField::ArtistName, StringOperator::Equal, "justice") })), (std::vector{ creditedOld.getId(), justiceTrack.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ startsWithRhapsody, isRock })), (std::vector{ linkedOld.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ startsWithRhapsody, FilterExpr::Not(isRock) })), (std::vector{ linkedNew.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::Or({ formerName, name(StringField::ArtistName, StringOperator::Equal, "justice") })), (std::vector{ linkedOld.getId(), justiceTrack.getId() }));
 
         // releases: one of their tracks matches
         EXPECT_EQ(findReleaseIds(session, formerName), (std::vector{ oldRelease.getId() }));
         EXPECT_EQ(findReleaseIds(session, startsWithRhapsody), (std::vector{ oldRelease.getId(), newRelease.getId() }));
         EXPECT_EQ(findReleaseIds(session, FilterExpr::And({ startsWithRhapsody, isRock })), (std::vector{ oldRelease.getId() }));
 
-        // artists: only their own credits count, and an artist without credit does not match
+        // artists: only their own links count, and an artist without link does not match
         EXPECT_EQ(findArtistIds(session, formerName), (std::vector{ rhapsody.getId() }));
         EXPECT_EQ(findArtistIds(session, startsWithRhapsody), (std::vector{ rhapsody.getId() }));
         EXPECT_EQ(findArtistIds(session, name(StringField::ArtistName, StringOperator::StartsWith, "luca")), (std::vector{ luca.getId() }));
@@ -669,7 +669,7 @@ namespace lms::db::tests
         EXPECT_EQ(findArtistIds(session, FilterExpr::Not(startsWithRhapsody)), (std::vector{ luca.getId(), justice.getId() }));
     }
 
-    TEST_F(DatabaseFixture, FilterExpr_artistNameFilterReleaseCredit)
+    TEST_F(DatabaseFixture, FilterExpr_artistNameFilterReleaseLink)
     {
         ScopedArtist variousArtists{ session, "Various Artists" };
         ScopedArtist daftPunk{ session, "Daft Punk" };
@@ -685,22 +685,85 @@ namespace lms::db::tests
             track1.get().modify()->setRelease(hits.get());
             track2.get().modify()->setRelease(hits.get());
             otherTrack.get().modify()->setRelease(other.get());
-            createCredit(session, track1.get(), daftPunk.get(), "Daft Punk");
-            createCredit(session, track2.get(), justice.get(), "Justice");
-            createCredit(session, otherTrack.get(), justice.get(), "Justice");
-            auto releaseCredit{ session.create<ReleaseArtistLink>(hits.get(), variousArtists.get(), false) };
-            releaseCredit.modify()->setArtistName("Various Artists");
+            createTrackArtistLink(session, track1.get(), daftPunk.get(), "Daft Punk");
+            createTrackArtistLink(session, track2.get(), justice.get(), "Justice");
+            createTrackArtistLink(session, otherTrack.get(), justice.get(), "Justice");
+            auto releaseLink{ session.create<ReleaseArtistLink>(hits.get(), variousArtists.get(), false) };
+            releaseLink.modify()->setArtistName("Various Artists");
         }
 
         const FilterExpr various{ name(StringField::ArtistName, StringOperator::Equal, "various artists") };
 
-        // the release credit applies to all the tracks of the release
+        // the release link applies to all the tracks of the release
         EXPECT_EQ(findTrackIds(session, various), (std::vector{ track1.getId(), track2.getId() }));
         EXPECT_EQ(findTrackIds(session, name(StringField::ArtistName, StringOperator::Equal, "daft punk")), (std::vector{ track1.getId() }));
         EXPECT_EQ(findReleaseIds(session, various), (std::vector{ hits.getId() }));
         EXPECT_EQ(findReleaseIds(session, name(StringField::ArtistName, StringOperator::Equal, "justice")), (std::vector{ hits.getId(), other.getId() }));
         EXPECT_EQ(findArtistIds(session, various), (std::vector{ variousArtists.getId() }));
         EXPECT_EQ(findArtistIds(session, name(StringField::ArtistName, StringOperator::Equal, "daft punk")), (std::vector{ daftPunk.getId() }));
+    }
+
+    TEST_F(DatabaseFixture, FilterExpr_artistNameFilterWithLinkType)
+    {
+        ScopedArtist both{ session, "Both" };
+        ScopedArtist composerOnly{ session, "Composer Only" };
+        ScopedTrack bothTrack{ session };
+        ScopedTrack composerTrack{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            createTrackArtistLink(session, bothTrack.get(), both.get(), "Alpha", TrackArtistLinkType::Artist);
+            createTrackArtistLink(session, bothTrack.get(), both.get(), "Composer Alias", TrackArtistLinkType::Composer);
+            createTrackArtistLink(session, composerTrack.get(), composerOnly.get(), "Composer Alias", TrackArtistLinkType::Composer);
+        }
+
+        const auto findArtistIdsWithLinkType = [&](const FilterExpr& expr, TrackArtistLinkType linkType) {
+            auto transaction{ session.createReadTransaction() };
+            return Artist::findIds(session, Artist::FindParameters{}.setFilter(expr).setTrackArtistLinkType(linkType).setSortMethod(ArtistSortMethod::Id));
+        };
+
+        const FilterExpr alpha{ name(StringField::ArtistName, StringOperator::Equal, "alpha") };
+        const FilterExpr composerAlias{ name(StringField::ArtistName, StringOperator::Equal, "composer alias") };
+
+        // the link type selects the artists of the tracks, but the name is matched on all the links of the artist to the track
+        EXPECT_EQ(findArtistIdsWithLinkType(alpha, TrackArtistLinkType::Artist), (std::vector{ both.getId() }));
+        EXPECT_EQ(findArtistIdsWithLinkType(alpha, TrackArtistLinkType::Composer), (std::vector{ both.getId() }));
+        EXPECT_EQ(findArtistIdsWithLinkType(composerAlias, TrackArtistLinkType::Artist), (std::vector{ both.getId() }));
+        EXPECT_EQ(findArtistIdsWithLinkType(composerAlias, TrackArtistLinkType::Composer), (std::vector{ both.getId(), composerOnly.getId() }));
+        EXPECT_TRUE(findArtistIdsWithLinkType(alpha, TrackArtistLinkType::Lyricist).empty());
+    }
+
+    TEST_F(DatabaseFixture, FilterExpr_artistNameFilterUnderNotKeepsTracksWithoutRelease)
+    {
+        ScopedArtist variousArtists{ session, "Various Artists" };
+        ScopedArtist daftPunk{ session, "Daft Punk" };
+        ScopedArtist justice{ session, "Justice" };
+        ScopedRelease hits{ session, "Hits" };
+        ScopedTrack daftPunkTrack{ session };
+        ScopedTrack justiceTrack{ session };
+        ScopedTrack hitsTrack{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            hitsTrack.get().modify()->setRelease(hits.get());
+            createTrackArtistLink(session, daftPunkTrack.get(), daftPunk.get(), "Daft Punk");
+            createTrackArtistLink(session, justiceTrack.get(), justice.get(), "Justice");
+            createTrackArtistLink(session, hitsTrack.get(), justice.get(), "Justice");
+            auto releaseLink{ session.create<ReleaseArtistLink>(hits.get(), variousArtists.get(), false) };
+            releaseLink.modify()->setArtistName("Various Artists");
+        }
+
+        const FilterExpr notJustice{ FilterExpr::Not(name(StringField::ArtistName, StringOperator::Equal, "justice")) };
+        const FilterExpr notVarious{ FilterExpr::Not(name(StringField::ArtistName, StringOperator::Equal, "various artists")) };
+        const FilterExpr notDaftPunk{ FilterExpr::Not(name(StringField::ArtistName, StringOperator::Equal, "daft punk")) };
+
+        // the tracks without release have no release link to match
+        EXPECT_EQ(findTrackIds(session, notJustice), (std::vector{ daftPunkTrack.getId() }));
+        EXPECT_EQ(findTrackIds(session, notVarious), (std::vector{ daftPunkTrack.getId(), justiceTrack.getId() }));
+        EXPECT_EQ(findReleaseIds(session, notDaftPunk), (std::vector{ hits.getId() }));
+        EXPECT_TRUE(findReleaseIds(session, notVarious).empty());
+        EXPECT_EQ(findArtistIds(session, notJustice), (std::vector{ variousArtists.getId(), daftPunk.getId() }));
+        EXPECT_EQ(findArtistIds(session, notVarious), (std::vector{ daftPunk.getId(), justice.getId() }));
     }
 
     TEST_F(DatabaseFixture, FilterExpr_artistSortNameFilter)
@@ -714,8 +777,8 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
             beatles.get().modify()->setSortName("Beatles, The");
             animals.get().modify()->setSortName("");
-            createCredit(session, beatlesTrack.get(), beatles.get(), "The Beatles", TrackArtistLinkType::Artist, "Beatles, The");
-            createCredit(session, animalsTrack.get(), animals.get(), "Animals");
+            createTrackArtistLink(session, beatlesTrack.get(), beatles.get(), "The Beatles", TrackArtistLinkType::Artist, "Beatles, The");
+            createTrackArtistLink(session, animalsTrack.get(), animals.get(), "Animals");
         }
 
         const FilterExpr startsWithBeatles{ name(StringField::ArtistSortName, StringOperator::StartsWith, "beatles") };
@@ -836,7 +899,7 @@ namespace lms::db::tests
         EXPECT_EQ(findArtistIds(library2.getId(), TrackArtistLinkType::Composer), (std::vector{ artist.getId() }));
         EXPECT_TRUE(findArtistIds(library1.getId(), TrackArtistLinkType::Composer).empty());
         EXPECT_TRUE(findArtistIds(library2.getId(), TrackArtistLinkType::Artist).empty());
-        // releaseArtist is never returned when a link type is set: it has no credited track
+        // releaseArtist is never returned when a link type is set: it has no linked track
     }
 
     TEST_F(DatabaseFixture, FilterExpr_artistTracksSort)
@@ -866,7 +929,7 @@ namespace lms::db::tests
                 track.modify()->setLastWriteTime(dateTime);
             } };
 
-            // artistA: credited on a 2020 track, and release artist of a 2022 release
+            // artistA: linked to a 2020 track, and release artist of a 2022 release
             setUpTrack(trackA.get(), date2020);
             session.create<TrackArtistLink>(trackA.get(), artistA.get(), TrackArtistLinkType::Artist);
 

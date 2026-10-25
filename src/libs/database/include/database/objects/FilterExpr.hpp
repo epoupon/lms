@@ -106,7 +106,7 @@ namespace lms::db
         TrackName,
         ReleaseName,     // release condition
         ReleaseSortName, // release condition, falls back on ReleaseName if not set
-        ArtistName,      // an artist of the track or of its release (any link type), by credited or own name
+        ArtistName,      // an artist of the track or of its release (any link type), by the name of the link or the own name of the artist
         ArtistSortName,  // same, each sort name falls back on the matching name if not set
     };
 
