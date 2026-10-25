@@ -239,7 +239,7 @@ namespace lms::db::tests
         const Compiled compiled{ compile(FilterExpr::Not(FilterExpr::equal(MediaLibraryId{ 4 })), FilterEntity::Track) };
 
         EXPECT_TRUE(compiled.joins.empty());
-        EXPECT_EQ(compiled.where.getSql(), "NOT (COALESCE(t.media_library_id = ?, 0))");
+        EXPECT_EQ(compiled.where.getSql(), "NOT (CASE WHEN t.media_library_id = ? THEN 1 ELSE 0 END)");
         EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 4LL }));
     }
 

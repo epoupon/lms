@@ -301,15 +301,16 @@ namespace lms::db
             throw Exception{ "Unhandled string filter operator" };
         }
 
-        // Unknown (missing value) already rejects the row except under NOT: COALESCE is added only there to keep indexes usable
+        // Unknown (missing value) already rejects the row except under NOT: the wrapper is added only there to keep indexes usable.
+        // Optim: CASE WHEN rather than COALESCE(..., 0) or a bare NOT
         std::string createComparison(std::string_view valueExpr, std::string_view comparison, IsUnderNot isUnderNot)
         {
             std::string res;
             if (isUnderNot.value())
-                res += "COALESCE(";
+                res += "CASE WHEN ";
             res.append(valueExpr).append(" ").append(comparison);
             if (isUnderNot.value())
-                res += ", 0)";
+                res += " THEN 1 ELSE 0 END";
 
             return res;
         }

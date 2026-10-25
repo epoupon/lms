@@ -308,6 +308,11 @@ namespace lms::db::benchs
             NotRated,
             Starred,
             StarredAndGenre,
+            NotMediaLibrary,
+            NotYearRange,
+            NotReleaseName,
+            NotListened,
+            NotStarred,
         };
 
         constexpr std::array filterCases{
@@ -337,6 +342,11 @@ namespace lms::db::benchs
             std::pair<core::LiteralString, FilterCase>{ "NotRated", FilterCase::NotRated },
             std::pair<core::LiteralString, FilterCase>{ "Starred", FilterCase::Starred },
             std::pair<core::LiteralString, FilterCase>{ "StarredAndGenre", FilterCase::StarredAndGenre },
+            std::pair<core::LiteralString, FilterCase>{ "NotMediaLibrary", FilterCase::NotMediaLibrary },
+            std::pair<core::LiteralString, FilterCase>{ "NotYearRange", FilterCase::NotYearRange },
+            std::pair<core::LiteralString, FilterCase>{ "NotReleaseName", FilterCase::NotReleaseName },
+            std::pair<core::LiteralString, FilterCase>{ "NotListened", FilterCase::NotListened },
+            std::pair<core::LiteralString, FilterCase>{ "NotStarred", FilterCase::NotStarred },
         };
 
         Filter createFilter(FilterCase filterCase, const Library& library)
@@ -395,6 +405,16 @@ namespace lms::db::benchs
                 return FilterExpr::condition(FeedbackCondition{ FeedbackValue::Loved });
             case FilterCase::StarredAndGenre:
                 return FilterExpr::And({ FilterExpr::condition(FeedbackCondition{ FeedbackValue::Loved }), FilterExpr::equal(library.genres.front()) });
+            case FilterCase::NotMediaLibrary:
+                return FilterExpr::Not(FilterExpr::equal(library.mediaLibraries.front()));
+            case FilterCase::NotYearRange:
+                return FilterExpr::Not(FilterExpr::condition(IntegerCondition{ IntegerField::Year, FilterOperator::Between, FilterRange<std::int64_t>{ 1990, 1999 } }));
+            case FilterCase::NotReleaseName:
+                return FilterExpr::Not(FilterExpr::condition(StringCondition{ StringField::ReleaseName, StringOperator::StartsWith, "Release1" }));
+            case FilterCase::NotListened:
+                return FilterExpr::Not(FilterExpr::condition(ListenCountCondition{ FilterOperator::Greater, std::int64_t{ 0 } }));
+            case FilterCase::NotStarred:
+                return FilterExpr::Not(FilterExpr::condition(FeedbackCondition{ FeedbackValue::Loved }));
             }
             return std::nullopt;
         }
