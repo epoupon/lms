@@ -23,7 +23,9 @@
 #include <cassert>
 #include <chrono>
 #include <cstdint>
+#include <span>
 #include <type_traits>
+#include <vector>
 
 #include "core/TaggedType.hpp"
 #include "core/Utils.hpp"
@@ -318,7 +320,7 @@ namespace lms::db
         }
 
         // Registers the joins needed by the expression, then compiles it. Only lives during the compilation.
-        // Conditions that are positive conjuncts on multi-valued relations are compiled as inner joins, others as EXISTS
+        // Conditions that are positive conjuncts on multi-valued relations are compiled as inner joins, others as IN (subquery)
         class Compiler
         {
         public:
@@ -378,7 +380,7 @@ namespace lms::db
                 std::visit(core::utils::overloads{
                                [&](const RelationCondition& relationCondition) {
                                    if (!isConjunct.value())
-                                       return; // The condition will compile to EXISTS later
+                                       return; // The condition will compile to a membership test later
 
                                    if (findJoinedCondition(relationCondition))
                                        return; // Equal conjuncts share the same join
@@ -482,17 +484,13 @@ namespace lms::db
                 case FilterExpr::Type::And:
                 case FilterExpr::Type::Or:
                     {
-                        const std::string_view separator{ expr.getType() == FilterExpr::Type::And ? " AND " : " OR " };
+                        const bool isOr{ expr.getType() == FilterExpr::Type::Or };
 
                         fragment.append("(");
-                        bool first{ true };
-                        for (const FilterExpr& child : expr.getChildren())
-                        {
-                            if (!first)
-                                fragment.append(separator);
-                            compileExpr(child, isUnderNot, fragment);
-                            first = false;
-                        }
+                        if (isOr)
+                            compileOrChildren(expr.getChildren(), isUnderNot, fragment);
+                        else
+                            compileChildren(expr.getChildren(), " AND ", isUnderNot, fragment);
                         fragment.append(")");
                         return;
                     }
@@ -501,26 +499,130 @@ namespace lms::db
                 throw Exception{ "Unhandled filter expression type" };
             }
 
+            void compileChildren(std::span<const FilterExpr> children, std::string_view separator, IsUnderNot isUnderNot, SqlFragment& fragment) const
+            {
+                bool first{ true };
+                for (const FilterExpr& child : children)
+                {
+                    if (!first)
+                        fragment.append(separator);
+                    compileExpr(child, isUnderNot, fragment);
+                    first = false;
+                }
+            }
+
+            void compileOrChildren(std::span<const FilterExpr> children, IsUnderNot isUnderNot, SqlFragment& fragment) const
+            {
+                std::vector<bool> merged(children.size(), false);
+
+                bool first{ true };
+                for (std::size_t i{}; i < children.size(); ++i)
+                {
+                    if (merged[i])
+                        continue;
+
+                    if (!first)
+                        fragment.append(" OR ");
+                    first = false;
+
+                    const RelationCondition* relationCondition{ getMergeableRelation(children[i]) };
+                    if (!relationCondition)
+                    {
+                        compileExpr(children[i], isUnderNot, fragment);
+                        continue;
+                    }
+
+                    std::vector<const RelationCondition*> sameRelations{ relationCondition };
+                    for (std::size_t j{ i + 1 }; j < children.size(); ++j)
+                    {
+                        const RelationCondition* sibling{ getMergeableRelation(children[j]) };
+                        if (sibling && sibling->id.index() == relationCondition->id.index())
+                        {
+                            sameRelations.push_back(sibling);
+                            merged[j] = true;
+                        }
+                    }
+
+                    compileRelationMembership(sameRelations, isUnderNot, fragment);
+                }
+            }
+
+            // Relations that reuse a join are left alone: they already are a cheap comparison on the row
+            const RelationCondition* getMergeableRelation(const FilterExpr& expr) const
+            {
+                if (expr.getType() != FilterExpr::Type::Condition)
+                    return nullptr;
+
+                const RelationCondition* relationCondition{ std::get_if<RelationCondition>(&expr.getCondition()) };
+                if (!relationCondition || findJoinedCondition(*relationCondition))
+                    return nullptr;
+
+                return relationCondition;
+            }
+
+            void compileRelationMembership(const RelationCondition& relationCondition, IsUnderNot isUnderNot, SqlFragment& fragment) const
+            {
+                const RelationCondition* const relationConditionPtr{ &relationCondition };
+                compileRelationMembership(std::span{ &relationConditionPtr, 1 }, isUnderNot, fragment);
+            }
+
+            // True if the entity is linked to any of the given items, which must all be of the same type.
+            // Not an EXISTS correlated with the row: SQLite drives from the relation index instead of probing it for every row
+            void compileRelationMembership(std::span<const RelationCondition* const> relationConditions, IsUnderNot isUnderNot, SqlFragment& fragment) const
+            {
+                assert(!relationConditions.empty());
+
+                const Relation relation{ getRelation(*relationConditions.front()) };
+
+                // The release of a track may be missing, and NULL IN (...) is unknown (which NOT keeps out) instead of false
+                const bool mayBeUnknown{ relation.entity == FilterEntity::Release && _queriedEntity != FilterEntity::Release };
+                const bool needsCoalesce{ isUnderNot.value() && mayBeUnknown };
+
+                std::string sql;
+                if (needsCoalesce)
+                    sql += "COALESCE(";
+                sql.append(createEntityIdExpr(relation.entity)).append(" IN (SELECT f_e.").append(relation.foreignKey).append(" FROM ").append(relation.table).append(" f_e WHERE f_e.").append(relation.valueColumn);
+                if (relationConditions.size() == 1)
+                {
+                    sql.append(" = ?");
+                }
+                else
+                {
+                    sql.append(" IN (?");
+                    for (std::size_t i{ 1 }; i < relationConditions.size(); ++i)
+                        sql.append(",?");
+                    sql.append(")");
+                }
+                sql.append(")");
+                if (needsCoalesce)
+                    sql += ", 0)";
+
+                std::vector<BindValue> binds;
+                binds.reserve(relationConditions.size());
+                for (const RelationCondition* relationCondition : relationConditions)
+                {
+                    assert(relationCondition->id.index() == relationConditions.front()->id.index());
+                    binds.push_back(toBindValue(*relationCondition));
+                }
+
+                fragment.append(sql, std::move(binds));
+            }
+
             // One lambda per alternative of FilterExpr::Condition: the compiler rejects a forgotten one
             void compileCondition(const FilterExpr::Condition& condition, IsUnderNot isUnderNot, SqlFragment& fragment) const
             {
                 std::visit(core::utils::overloads{
                                [&](const RelationCondition& relationCondition) {
-                                   const Relation relation{ getRelation(relationCondition) };
-
                                    // A condition equal to a joined conjunct is true on every row that survives the WHERE,
                                    // so it can use the join even when it is not a conjunct itself
                                    if (const JoinedCondition* joinedCondition{ findJoinedCondition(relationCondition) })
                                    {
+                                       const Relation relation{ getRelation(relationCondition) };
                                        fragment.append(joinedCondition->alias + "." + std::string{ relation.valueColumn } + " = ?", { toBindValue(relationCondition) });
                                        return;
                                    }
 
-                                   std::string sql;
-                                   sql.append("EXISTS (SELECT 1 FROM ").append(relation.table).append(" f_e WHERE f_e.").append(relation.foreignKey);
-                                   sql.append(" = ").append(createEntityIdExpr(relation.entity));
-                                   sql.append(" AND f_e.").append(relation.valueColumn).append(" = ?)");
-                                   fragment.append(sql, { toBindValue(relationCondition) });
+                                   compileRelationMembership(relationCondition, isUnderNot, fragment);
                                },
                                [&](const MediaLibraryId& mediaLibrary) {
                                    fragment.append(createComparison(createQualifiedTrackColumn("media_library_id"), FilterOperator::Equal, isUnderNot), { toBindValue(mediaLibrary) });

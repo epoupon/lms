@@ -200,6 +200,100 @@ namespace lms::db::tests
         EXPECT_EQ(findTrackIds(session, FilterExpr::And({ isRock, isHappy, FilterExpr::Or({ isRock, FilterExpr::Not(isHappy) }) })), (std::vector{ trackRockHappy.getId() }));
     }
 
+    TEST_F(DatabaseFixture, FilterExpr_sameRelationsUnderOr)
+    {
+        ScopedRelease releaseRockJazz{ session, "RockJazz" };
+        ScopedRelease releaseJazz{ session, "Jazz" };
+        ScopedRelease releaseMetal{ session, "Metal" };
+        ScopedRelease releaseNone{ session, "None" };
+        ScopedTrack trackRock{ session };
+        ScopedTrack trackRockJazz{ session };
+        ScopedTrack trackJazz{ session };
+        ScopedTrack trackMetal{ session };
+        ScopedTrack trackNone{ session };
+        ScopedArtist artistRock{ session, "ArtistRock" };
+        ScopedArtist artistJazz{ session, "ArtistJazz" };
+        ScopedArtist artistMetal{ session, "ArtistMetal" };
+        ScopedGenre rock{ session, "Rock" };
+        ScopedGenre jazz{ session, "Jazz" };
+        ScopedGenre metal{ session, "Metal" };
+        ScopedMood happy{ session, "Happy" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            trackRock.get().modify()->setGenres(std::array{ rock.get() });
+            trackRock.get().modify()->setRelease(releaseRockJazz.get());
+            trackRockJazz.get().modify()->setGenres(std::array{ rock.get(), jazz.get() });
+            trackRockJazz.get().modify()->setRelease(releaseRockJazz.get());
+            trackJazz.get().modify()->setGenres(std::array{ jazz.get() });
+            trackJazz.get().modify()->setMoods(std::array{ happy.get() });
+            trackJazz.get().modify()->setRelease(releaseJazz.get());
+            trackMetal.get().modify()->setGenres(std::array{ metal.get() });
+            trackMetal.get().modify()->setRelease(releaseMetal.get());
+            trackNone.get().modify()->setRelease(releaseNone.get());
+            session.create<TrackArtistLink>(trackRock.get(), artistRock.get(), TrackArtistLinkType::Artist);
+            session.create<TrackArtistLink>(trackRockJazz.get(), artistRock.get(), TrackArtistLinkType::Artist);
+            session.create<TrackArtistLink>(trackJazz.get(), artistJazz.get(), TrackArtistLinkType::Artist);
+            session.create<TrackArtistLink>(trackMetal.get(), artistMetal.get(), TrackArtistLinkType::Artist);
+        }
+
+        const FilterExpr isRock{ FilterExpr::equal(rock.getId()) };
+        const FilterExpr isJazz{ FilterExpr::equal(jazz.getId()) };
+        const FilterExpr isMetal{ FilterExpr::equal(metal.getId()) };
+        const FilterExpr isHappy{ FilterExpr::equal(happy.getId()) };
+
+        // a track of both genres is returned once
+        EXPECT_EQ(findTrackIds(session, FilterExpr::Or({ isRock, isJazz })), (std::vector{ trackRock.getId(), trackRockJazz.getId(), trackJazz.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::Or({ isRock, isJazz, isMetal })), (std::vector{ trackRock.getId(), trackRockJazz.getId(), trackJazz.getId(), trackMetal.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::Or({ isRock, isRock })), (std::vector{ trackRock.getId(), trackRockJazz.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::Not(FilterExpr::Or({ isRock, isJazz }))), (std::vector{ trackMetal.getId(), trackNone.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::Or({ isRock, isHappy, isMetal })), (std::vector{ trackRock.getId(), trackRockJazz.getId(), trackJazz.getId(), trackMetal.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ isHappy, FilterExpr::Or({ isRock, isJazz, isMetal }) })), (std::vector{ trackJazz.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ isJazz, FilterExpr::Or({ isJazz, isRock, isMetal }) })), (std::vector{ trackRockJazz.getId(), trackJazz.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ isRock, FilterExpr::Not(FilterExpr::Or({ isJazz, isMetal })) })), (std::vector{ trackRock.getId() }));
+        // merged around a joined conjunct
+        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ isRock, FilterExpr::Or({ isJazz, isRock, isMetal, isHappy }) })), (std::vector{ trackRock.getId(), trackRockJazz.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ isJazz, FilterExpr::Or({ isMetal, isRock, isHappy, isJazz }) })), (std::vector{ trackRockJazz.getId(), trackJazz.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ isRock, FilterExpr::Not(FilterExpr::Or({ isJazz, isRock, isMetal })) })), std::vector<TrackId>{});
+        EXPECT_EQ(findTrackIds(session, FilterExpr::Not(FilterExpr::And({ isRock, FilterExpr::Or({ isJazz, isMetal }) }))), (std::vector{ trackRock.getId(), trackJazz.getId(), trackMetal.getId(), trackNone.getId() }));
+        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ FilterExpr::Not(FilterExpr::Or({ isJazz, isMetal })), FilterExpr::Or({ isRock, isHappy }) })), (std::vector{ trackRock.getId() }));
+
+        // a release matches if one of its tracks does
+        EXPECT_EQ(findReleaseIds(session, FilterExpr::Or({ isRock, isJazz })), (std::vector{ releaseRockJazz.getId(), releaseJazz.getId() }));
+        EXPECT_EQ(findReleaseIds(session, FilterExpr::Not(FilterExpr::Or({ isRock, isJazz }))), (std::vector{ releaseMetal.getId(), releaseNone.getId() }));
+
+        EXPECT_EQ(findArtistIds(session, FilterExpr::Or({ isRock, isJazz })), (std::vector{ artistRock.getId(), artistJazz.getId() }));
+        EXPECT_EQ(findArtistIds(session, FilterExpr::Or({ isJazz, isMetal })), (std::vector{ artistRock.getId(), artistJazz.getId(), artistMetal.getId() }));
+        EXPECT_EQ(findArtistIds(session, FilterExpr::Not(FilterExpr::Or({ isRock, isJazz }))), (std::vector{ artistMetal.getId() }));
+    }
+
+    TEST_F(DatabaseFixture, FilterExpr_releaseRelationsOfArtistsWithoutRelease)
+    {
+        ScopedRelease release{ session, "MyRelease" };
+        ScopedTrack trackWithLabel{ session };
+        ScopedTrack trackWithoutRelease{ session };
+        ScopedArtist artistWithLabel{ session, "ArtistWithLabel" };
+        ScopedArtist artistWithoutRelease{ session, "ArtistWithoutRelease" };
+        ScopedLabel label{ session, "MyLabel" };
+        ScopedLabel otherLabel{ session, "OtherLabel" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->addLabel(label.get());
+            trackWithLabel.get().modify()->setRelease(release.get());
+            session.create<TrackArtistLink>(trackWithLabel.get(), artistWithLabel.get(), TrackArtistLinkType::Artist);
+            session.create<TrackArtistLink>(trackWithoutRelease.get(), artistWithoutRelease.get(), TrackArtistLinkType::Artist);
+        }
+
+        const FilterExpr hasLabel{ FilterExpr::equal(label.getId()) };
+        const FilterExpr hasOtherLabel{ FilterExpr::equal(otherLabel.getId()) };
+
+        EXPECT_EQ(findArtistIds(session, FilterExpr::Or({ hasLabel, hasOtherLabel })), (std::vector{ artistWithLabel.getId() }));
+        // the track without release is not linked to any label
+        EXPECT_EQ(findArtistIds(session, FilterExpr::Not(hasLabel)), (std::vector{ artistWithoutRelease.getId() }));
+        EXPECT_EQ(findArtistIds(session, FilterExpr::Not(FilterExpr::Or({ hasLabel, hasOtherLabel }))), (std::vector{ artistWithoutRelease.getId() }));
+    }
+
     TEST_F(DatabaseFixture, FilterExpr_trackAttributesAndUserData)
     {
         ScopedRelease compilation{ session, "MyCompilation" };
@@ -362,6 +456,7 @@ namespace lms::db::tests
         ScopedTrack trackWithoutLabel{ session };
         ScopedTrack trackWithoutRelease{ session };
         ScopedLabel label{ session, "MyLabel" };
+        ScopedLabel otherLabel{ session, "OtherLabel" };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -377,6 +472,9 @@ namespace lms::db::tests
 
         EXPECT_EQ(findTrackIds(session, hasLabel), (std::vector{ trackWithLabel.getId() }));
         EXPECT_EQ(findTrackIds(session, FilterExpr::Not(hasLabel)), others);
+        EXPECT_EQ(findTrackIds(session, FilterExpr::Or({ hasLabel, FilterExpr::equal(otherLabel.getId()) })), (std::vector{ trackWithLabel.getId() }));
+        // tracks without release are not linked to any label
+        EXPECT_EQ(findTrackIds(session, FilterExpr::Not(FilterExpr::Or({ hasLabel, FilterExpr::equal(otherLabel.getId()) }))), others);
         EXPECT_EQ(findTrackIds(session, isCompilation), (std::vector{ trackWithLabel.getId() }));
         EXPECT_EQ(findTrackIds(session, FilterExpr::Not(isCompilation)), others);
     }
