@@ -75,7 +75,7 @@ namespace lms::db
 
             assert(!params.clusterType.isValid() || params.clusterTypeName.empty());
             if (params.clusterType.isValid())
-                query.where("+c.cluster_type_id = ?").bind(params.clusterType); // Exclude this since the query planner does not do a good job when db is not analyzed
+                query.where("c.cluster_type_id = ?").bind(params.clusterType);
             else if (!params.clusterTypeName.empty())
                 query.where("c_t.name = ?").bind(params.clusterTypeName);
 

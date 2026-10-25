@@ -303,8 +303,8 @@ namespace lms::db
                             .join("track t ON t.id = t_a_l.track_id")
                             .where("t.release_id = ?")
                             .bind(releaseId)
-                            .where("+t_a_l.type = ?")
-                            .bind(linkType) // adding + since the query planner does not a good job when analyze is not performed
+                            .where("t_a_l.type = ?")
+                            .bind(linkType)
                             .groupBy("a.id")
                             .orderBy("t_a_l.id") };
 

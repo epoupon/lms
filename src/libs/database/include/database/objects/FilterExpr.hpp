@@ -224,7 +224,7 @@ namespace lms::db
         static FilterExpr Not(const FilterExpr& child);
 
         Type getType() const { return _type; }
-        const Condition& getCondition() const;                                 // Type::Condition only
+        const Condition& getCondition() const;                                // Type::Condition only
         std::span<const FilterExpr> getChildren() const { return _children; } // And, Or: at least one, Not: exactly one
 
         bool hasPerUserCondition() const;

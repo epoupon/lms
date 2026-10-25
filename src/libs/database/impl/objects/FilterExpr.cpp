@@ -90,7 +90,7 @@ namespace lms::db
 #endif // NDEBUG
 
         template<typename T>
-        constexpr bool isPerUserCondition{ requires { T::perUser; } };
+        concept PerUserCondition = requires { T::perUser; };
     } // namespace
 
     FilterExpr::FilterExpr(Type type, std::optional<Condition> condition, std::vector<FilterExpr> children)
@@ -200,7 +200,7 @@ namespace lms::db
     bool FilterExpr::hasPerUserCondition() const
     {
         if (_type == Type::Condition)
-            return std::visit([](const auto& alternative) { return isPerUserCondition<std::decay_t<decltype(alternative)>>; }, *_condition);
+            return std::visit([](const auto& alternative) { return PerUserCondition<std::decay_t<decltype(alternative)>>; }, *_condition);
 
         return std::any_of(std::cbegin(_children), std::cend(_children), [](const FilterExpr& child) { return child.hasPerUserCondition(); });
     }

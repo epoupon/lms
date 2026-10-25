@@ -40,6 +40,7 @@
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistFeedback.hpp"
+#include "database/objects/Cluster.hpp"
 #include "database/objects/FilterExpr.hpp"
 #include "database/objects/Genre.hpp"
 #include "database/objects/Listen.hpp"
@@ -70,6 +71,11 @@ namespace lms::db::benchs
         constexpr std::size_t moodCountPerTrack{ 2 };
         constexpr std::size_t labelCount{ 20 };
         constexpr std::size_t countryCount{ 10 };
+        constexpr std::size_t clusterTypeCount{ 3 };
+        constexpr std::size_t clusterCountPerType{ 20 };
+        constexpr std::size_t clusterCountPerTrack{ 2 };
+        constexpr std::size_t composerTrackModulo{ 20 }; // a rare link type
+        constexpr std::size_t sampleReleaseModulo{ 1'000 };
         constexpr double compilationRatio{ 0.1 };
         constexpr double listenedTrackRatio{ 0.2 };
         constexpr double starredRatio{ 0.05 };
@@ -88,6 +94,8 @@ namespace lms::db::benchs
             std::vector<MoodId> moods;
             std::vector<LabelId> labels;
             std::vector<CountryId> countries;
+            std::vector<ClusterTypeId> clusterTypes;
+            std::vector<ReleaseId> sampleReleases; // for the queries made for a single release
             UserId user;
         };
 
@@ -134,6 +142,7 @@ namespace lms::db::benchs
             std::vector<Mood::pointer> moods;
             std::vector<Label::pointer> labels;
             std::vector<Country::pointer> countries;
+            std::vector<Cluster::pointer> clusters;
             User::pointer user;
             {
                 auto transaction{ session.createWriteTransaction() };
@@ -149,6 +158,13 @@ namespace lms::db::benchs
                 for (std::size_t i{}; i < countryCount; ++i)
                     countries.push_back(session.create<Country>("Country" + std::to_string(i)));
                 user = session.create<User>("MyUser");
+                for (std::size_t typeIndex{}; typeIndex < clusterTypeCount; ++typeIndex)
+                {
+                    const ClusterType::pointer clusterType{ session.create<ClusterType>("ClusterType" + std::to_string(typeIndex)) };
+                    library.clusterTypes.push_back(clusterType->getId());
+                    for (std::size_t i{}; i < clusterCountPerType; ++i)
+                        clusters.push_back(session.create<Cluster>(clusterType, "Cluster" + std::to_string(typeIndex) + "-" + std::to_string(i)));
+                }
 
                 for (const auto& mediaLibrary : mediaLibraries)
                     library.mediaLibraries.push_back(mediaLibrary->getId());
@@ -168,6 +184,8 @@ namespace lms::db::benchs
                 for (std::size_t releaseIndex{}; releaseIndex < releaseCount; ++releaseIndex)
                 {
                     Release::pointer release{ session.create<Release>("Release" + std::to_string(releaseIndex)) };
+                    if (releaseIndex % sampleReleaseModulo == 0)
+                        library.sampleReleases.push_back(release->getId());
                     const Medium::pointer medium{ session.create<Medium>(release) };
                     const MediaLibrary::pointer mediaLibrary{ mediaLibraries[releaseIndex % mediaLibraries.size()] };
                     const bool compilation{ isCompilation(rng) };
@@ -211,6 +229,13 @@ namespace lms::db::benchs
 
                         // Not drawn from rng, to keep the same random data as before
                         const std::size_t trackNumber{ releaseIndex * trackCountPerRelease + trackIndex };
+                        std::vector<Cluster::pointer> trackClusters;
+                        for (std::size_t i{}; i < clusterCountPerTrack; ++i)
+                            trackClusters.push_back(clusters[(trackNumber * 7 + i * 13) % clusters.size()]);
+                        track.modify()->setClusters(trackClusters);
+                        if (trackNumber % composerTrackModulo == 0)
+                            session.create<TrackArtistLink>(track, trackArtist, TrackArtistLinkType::Composer).modify()->setArtistName(trackArtistName);
+
                         if (trackNumber % ratedTrackModulo == 0)
                             session.create<RatedTrack>(track, user).modify()->setRating(static_cast<Rating>(1 + static_cast<int>(trackNumber / ratedTrackModulo) % ratingCount));
 
@@ -535,6 +560,51 @@ namespace lms::db::benchs
             return count;
         }
 
+        // Queries filtered by a link type or a cluster type, which hint the query planner (see the "+" in Artist.cpp, Release.cpp and Cluster.cpp)
+        std::size_t countArtistsByLinkType(Session& session, TrackArtistLinkType linkType)
+        {
+            Artist::FindParameters params;
+            params.setTrackArtistLinkType(linkType);
+            return Artist::getCount(session, params);
+        }
+
+        std::size_t pageArtistsByLinkType(Session& session, TrackArtistLinkType linkType)
+        {
+            Artist::FindParameters params;
+            params.setTrackArtistLinkType(linkType).setSortMethod(ArtistSortMethod::SortName).setRange(firstPage);
+
+            std::size_t count{};
+            Artist::find(session, params, [&](const Artist::pointer&) { ++count; });
+            return count;
+        }
+
+        std::size_t releaseTrackArtists(Session& session, const Library& library, TrackArtistLinkType linkType)
+        {
+            std::size_t count{};
+            for (const ReleaseId releaseId : library.sampleReleases)
+                count += Release::find(session, releaseId)->getTrackArtistIds(linkType).size();
+            return count;
+        }
+
+        std::size_t clustersOfReleases(Session& session, const Library& library)
+        {
+            std::size_t count{};
+            for (const ReleaseId releaseId : library.sampleReleases)
+            {
+                for (const ClusterTypeId clusterTypeId : library.clusterTypes)
+                    count += Cluster::findIds(session, Cluster::FindParameters{}.setRelease(releaseId).setClusterType(clusterTypeId)).size();
+            }
+            return count;
+        }
+
+        std::size_t clustersOfTypes(Session& session, const Library& library)
+        {
+            std::size_t count{};
+            for (const ClusterTypeId clusterTypeId : library.clusterTypes)
+                count += Cluster::findIds(session, Cluster::FindParameters{}.setClusterType(clusterTypeId).setSortMethod(ClusterSortMethod::Name)).size();
+            return count;
+        }
+
         template<typename QueryFunc>
         void runQuery(benchmark::State& state, const Library& library, QueryFunc queryFunc)
         {
@@ -576,6 +646,27 @@ namespace lms::db::benchs
                     })->Unit(benchmark::kMicrosecond);
                 }
             }
+
+            for (const auto linkType : { TrackArtistLinkType::Artist, TrackArtistLinkType::Composer })
+            {
+                const std::string linkTypeName{ linkType == TrackArtistLinkType::Artist ? "Artist" : "Composer" };
+
+                benchmark::RegisterBenchmark("LinkType/Artists/Count/" + linkTypeName, [&library, linkType](benchmark::State& state) {
+                    runQuery(state, library, [&](Session& session) { return countArtistsByLinkType(session, linkType); });
+                })->Unit(benchmark::kMicrosecond);
+                benchmark::RegisterBenchmark("LinkType/Artists/Page/" + linkTypeName, [&library, linkType](benchmark::State& state) {
+                    runQuery(state, library, [&](Session& session) { return pageArtistsByLinkType(session, linkType); });
+                })->Unit(benchmark::kMicrosecond);
+                benchmark::RegisterBenchmark("LinkType/Release/TrackArtists/" + linkTypeName, [&library, linkType](benchmark::State& state) {
+                    runQuery(state, library, [&](Session& session) { return releaseTrackArtists(session, library, linkType); });
+                })->Unit(benchmark::kMicrosecond);
+            }
+            benchmark::RegisterBenchmark("LinkType/Cluster/OfReleases", [&library](benchmark::State& state) {
+                runQuery(state, library, [&](Session& session) { return clustersOfReleases(session, library); });
+            })->Unit(benchmark::kMicrosecond);
+            benchmark::RegisterBenchmark("LinkType/Cluster/OfTypes", [&library](benchmark::State& state) {
+                runQuery(state, library, [&](Session& session) { return clustersOfTypes(session, library); });
+            })->Unit(benchmark::kMicrosecond);
 
             // Sort cost alone, then combined with a media library filter as the UI and Subsonic almost always set one
             for (const auto& [groupName, filterCase] : { std::pair<core::LiteralString, FilterCase>{ "View", FilterCase::None }, std::pair<core::LiteralString, FilterCase>{ "ViewInMediaLibrary", FilterCase::MediaLibrary } })

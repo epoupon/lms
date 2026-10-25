@@ -615,7 +615,7 @@ namespace lms::db
                                [&](const RelationCondition& relationCondition) {
                                    // A condition equal to a joined conjunct is true on every row that survives the WHERE,
                                    // so it can use the join even when it is not a conjunct itself
-                                   if (const JoinedCondition* joinedCondition{ findJoinedCondition(relationCondition) })
+                                   if (const JoinedCondition * joinedCondition{ findJoinedCondition(relationCondition) })
                                    {
                                        const Relation relation{ getRelation(relationCondition) };
                                        fragment.append(joinedCondition->alias + "." + std::string{ relation.valueColumn } + " = ?", { toBindValue(relationCondition) });

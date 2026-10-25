@@ -118,7 +118,7 @@ namespace lms::db
             if (params.trackArtistLinkType.has_value())
             {
                 joins.add(trackArtistLinkJoin);
-                res.combineWithAnd({ "+t_a_l.type = ?", { static_cast<int>(*params.trackArtistLinkType) } }); // Exclude this since the query planner does not do a good job when db is not analyzed
+                res.combineWithAnd({ "t_a_l.type = ?", { static_cast<int>(*params.trackArtistLinkType) } });
             }
 
             if (!params.keywords.empty())
