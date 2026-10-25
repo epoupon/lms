@@ -290,6 +290,8 @@ namespace lms::db::benchs
             GenreOrGenre,
             NotGenre,
             Listened,
+            ListenedAtLeast3,
+            LastListenedRecently,
             YearRange,
             Label,
             LabelAndGenre,
@@ -313,6 +315,8 @@ namespace lms::db::benchs
             std::pair<core::LiteralString, FilterCase>{ "GenreOrGenre", FilterCase::GenreOrGenre },
             std::pair<core::LiteralString, FilterCase>{ "NotGenre", FilterCase::NotGenre },
             std::pair<core::LiteralString, FilterCase>{ "Listened", FilterCase::Listened },
+            std::pair<core::LiteralString, FilterCase>{ "ListenedAtLeast3", FilterCase::ListenedAtLeast3 },
+            std::pair<core::LiteralString, FilterCase>{ "LastListenedRecently", FilterCase::LastListenedRecently },
             std::pair<core::LiteralString, FilterCase>{ "YearRange", FilterCase::YearRange },
             std::pair<core::LiteralString, FilterCase>{ "Label", FilterCase::Label },
             std::pair<core::LiteralString, FilterCase>{ "LabelAndGenre", FilterCase::LabelAndGenre },
@@ -347,6 +351,10 @@ namespace lms::db::benchs
                 return FilterExpr::Not(FilterExpr::equal(library.genres.front()));
             case FilterCase::Listened:
                 return FilterExpr::condition(ListenCountCondition{ FilterOperator::Greater, std::int64_t{ 0 } });
+            case FilterCase::ListenedAtLeast3:
+                return FilterExpr::condition(ListenCountCondition{ FilterOperator::GreaterOrEqual, std::int64_t{ 3 } });
+            case FilterCase::LastListenedRecently:
+                return FilterExpr::condition(LastListenDateTimeCondition{ FilterOperator::Greater, Wt::WDateTime{ Wt::WDate{ 2022, 1, 1 } } });
             case FilterCase::YearRange:
                 return FilterExpr::condition(IntegerCondition{ IntegerField::Year, FilterOperator::Between, FilterRange<std::int64_t>{ 1990, 1999 } });
             case FilterCase::Label:
@@ -744,6 +752,31 @@ namespace lms::db::benchs
                 benchmark::RegisterBenchmark("TagCloud/" + std::string{ name.str() }, [&library, tagCloudFunc](benchmark::State& state) {
                     runQuery(state, library, [&](Session& session) { return tagCloudFunc(session, library); });
                 })->Unit(benchmark::kMicrosecond);
+            }
+
+            // The listen stats queries join the listens themselves: cost of a filter on the listens on top of it
+            constexpr std::array listenViewModes{
+                std::pair<core::LiteralString, ViewMode>{ "RecentlyPlayed", ViewMode::RecentlyPlayed },
+                std::pair<core::LiteralString, ViewMode>{ "MostPlayed", ViewMode::MostPlayed },
+            };
+            constexpr std::array listenFilterCases{
+                std::pair<core::LiteralString, FilterCase>{ "None", FilterCase::None },
+                std::pair<core::LiteralString, FilterCase>{ "Listened", FilterCase::Listened },
+                std::pair<core::LiteralString, FilterCase>{ "ListenedAtLeast3", FilterCase::ListenedAtLeast3 },
+                std::pair<core::LiteralString, FilterCase>{ "LastListenedRecently", FilterCase::LastListenedRecently },
+            };
+            for (const auto& [entityName, viewFunc] : viewFuncs)
+            {
+                for (const auto& [modeName, viewMode] : listenViewModes)
+                {
+                    for (const auto& [filterName, filterCase] : listenFilterCases)
+                    {
+                        benchmark::RegisterBenchmark("ViewListen/" + std::string{ entityName.str() } + "/" + std::string{ modeName.str() } + "/" + std::string{ filterName.str() }, [&library, viewFunc, viewMode, filterCase](benchmark::State& state) {
+                            const Filter filter{ createFilter(filterCase, library) };
+                            runQuery(state, library, [&](Session& session) { return viewFunc(session, viewMode, filter, library.user); });
+                        })->Unit(benchmark::kMicrosecond);
+                    }
+                }
             }
 
             // Sort cost alone, then combined with a media library filter as the UI and Subsonic almost always set one
