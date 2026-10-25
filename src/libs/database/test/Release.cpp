@@ -339,13 +339,13 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId()))) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setFilter(FilterExpr::equal(library->getId()))) };
             ASSERT_EQ(releases.size(), 1);
             EXPECT_EQ(releases.front(), release.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setFilters(Filters{}.setMediaLibrary(otherLibrary->getId()))) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setFilter(FilterExpr::equal(otherLibrary->getId()))) };
             EXPECT_EQ(releases.size(), 0);
         }
     }
@@ -1652,7 +1652,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             Release::FindParameters params;
-            params.setFilters(Filters{}.setCodec(core::media::Codec::MP3));
+            params.setFilter(FilterExpr::equal(core::media::Codec::MP3));
 
             auto releases{ Release::findIds(session, params) };
             ASSERT_EQ(releases.size(), 1);

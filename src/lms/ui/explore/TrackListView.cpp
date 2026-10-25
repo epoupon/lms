@@ -115,14 +115,7 @@ namespace lms::ui
             }
         }
 
-        _trackIds.clear();
-        {
-            db::Track::FindParameters params;
-            params.setTrackList(_trackListId);
-            params.setSortMethod(db::TrackSortMethod::TrackList);
-            params.setRange(db::Range{ 0, _maxCount });
-            _trackIds = db::Track::findIds(LmsApp->getDbSession(), params);
-        }
+        _trackIds = trackList->getTrackIds(db::Range{ 0, _maxCount });
 
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
             ->clicked()

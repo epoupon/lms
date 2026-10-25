@@ -9,9 +9,12 @@ add_executable(test-database
 	Common.cpp
 	DatabaseTest.cpp
 	Directory.cpp
+	FilterExpr.cpp
+	FilterExprCompiler.cpp
 	Genre.cpp
 	Grouping.cpp
 	Image.cpp
+	JoinSet.cpp
 	Language.cpp
 	Listen.cpp
 	ListenBackendSync.cpp
@@ -28,6 +31,7 @@ add_executable(test-database
 	ReleaseArtistLink.cpp
 	ReleaseFeedback.cpp
 	ScanSettings.cpp
+	SqlFragment.cpp
 	Track.cpp
 	TrackArtistLink.cpp
 	TrackBookmark.cpp
@@ -39,8 +43,12 @@ add_executable(test-database
 	Work.cpp
 	)
 
+target_include_directories(test-database PRIVATE
+	../impl
+	)
+
 target_link_libraries(test-database PRIVATE
-	lmsdatabase
+	lmsdatabasetestutils
 	GTest::GTest
 	GTest::gtest_main
 	)

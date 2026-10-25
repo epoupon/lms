@@ -250,9 +250,14 @@ namespace lms::ui
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        db::Track::FindParameters params;
-        params.setTrackList(_trackListId);
-        const auto tracks{ db::Track::find(LmsApp->getDbSession(), params) };
+        std::vector<db::Track::pointer> tracks;
+        if (const db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), _trackListId) })
+        {
+            trackList->visitTracks([&](const db::Track::pointer& track) {
+                tracks.push_back(track);
+            });
+        }
+
         return detail::createZipper(tracks);
     }
 } // namespace lms::ui

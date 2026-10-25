@@ -275,9 +275,39 @@ namespace lms::ui
             set(db::MoodId{ *moodId });
     }
 
+    std::optional<db::FilterExpr> Filters::createDbFilter() const
+    {
+        std::vector<db::FilterExpr> conditions;
+
+        if (_state.mediaLibrary.isValid())
+            conditions.push_back(db::FilterExpr::equal(_state.mediaLibrary));
+        for (const db::ClusterId clusterId : _state.clusters)
+            conditions.push_back(db::FilterExpr::equal(clusterId));
+        if (_state.genre.isValid())
+            conditions.push_back(db::FilterExpr::equal(_state.genre));
+        if (_state.grouping.isValid())
+            conditions.push_back(db::FilterExpr::equal(_state.grouping));
+        if (_state.label.isValid())
+            conditions.push_back(db::FilterExpr::equal(_state.label));
+        if (_state.language.isValid())
+            conditions.push_back(db::FilterExpr::equal(_state.language));
+        if (_state.mood.isValid())
+            conditions.push_back(db::FilterExpr::equal(_state.mood));
+        if (_state.releaseType.isValid())
+            conditions.push_back(db::FilterExpr::equal(_state.releaseType));
+        if (_state.codec)
+            conditions.push_back(db::FilterExpr::equal(*_state.codec));
+
+        if (conditions.empty())
+            return std::nullopt;
+        if (conditions.size() == 1)
+            return std::move(conditions.front());
+        return db::FilterExpr::And(conditions);
+    }
+
     void Filters::add(db::ClusterId clusterId)
     {
-        if (std::find(std::cbegin(_dbFilters.clusters), std::cend(_dbFilters.clusters), clusterId) != std::cend(_dbFilters.clusters))
+        if (std::find(std::cbegin(_state.clusters), std::cend(_state.clusters), clusterId) != std::cend(_state.clusters))
             return;
 
         Wt::WInteractWidget* filter{};
@@ -290,12 +320,12 @@ namespace lms::ui
             filter = _filters->addWidget(std::move(cluster));
         }
 
-        _dbFilters.clusters.push_back(clusterId);
+        _state.clusters.push_back(clusterId);
 
         filter->clicked().connect([this, filter, clusterId] {
             _filters->removeWidget(filter);
-            _dbFilters.clusters.erase(std::remove_if(std::begin(_dbFilters.clusters), std::end(_dbFilters.clusters), [clusterId](db::ClusterId id) { return id == clusterId; }), std::end(_dbFilters.clusters));
-            _sigUpdated.emit();
+            _state.clusters.erase(std::remove_if(std::begin(_state.clusters), std::end(_state.clusters), [clusterId](db::ClusterId id) { return id == clusterId; }), std::end(_state.clusters));
+            notifyUpdated();
         });
 
         emitFilterAddedNotification();
@@ -303,33 +333,33 @@ namespace lms::ui
 
     void Filters::set(db::GenreId genreId)
     {
-        if (_dbFilters.genre == genreId)
+        if (_state.genre == genreId)
             return;
 
         if (_genreFilter)
         {
             _filters->removeWidget(_genreFilter);
             _genreFilter = nullptr;
-            _dbFilters.genre = db::GenreId{};
+            _state.genre = db::GenreId{};
         }
 
         auto genre{ utils::createFilterGenre(genreId, true) };
         if (!genre)
         {
-            _sigUpdated.emit();
+            notifyUpdated();
             return;
         }
 
-        _dbFilters.genre = genreId;
+        _state.genre = genreId;
         state::writeValue<db::GenreId::ValueType>("filters_genre_id", genreId.getValue());
 
         _genreFilter = _filters->addWidget(std::move(genre));
         _genreFilter->clicked().connect([this] {
             _filters->removeWidget(_genreFilter);
             _genreFilter = nullptr;
-            _dbFilters.genre = db::GenreId{};
+            _state.genre = db::GenreId{};
             state::writeValue<db::GenreId::ValueType>("filters_genre_id", std::nullopt);
-            _sigUpdated.emit();
+            notifyUpdated();
         });
 
         emitFilterAddedNotification();
@@ -337,33 +367,33 @@ namespace lms::ui
 
     void Filters::set(db::GroupingId groupingId)
     {
-        if (_dbFilters.grouping == groupingId)
+        if (_state.grouping == groupingId)
             return;
 
         if (_groupingFilter)
         {
             _filters->removeWidget(_groupingFilter);
             _groupingFilter = nullptr;
-            _dbFilters.grouping = db::GroupingId{};
+            _state.grouping = db::GroupingId{};
         }
 
         auto grouping{ utils::createFilterGrouping(groupingId, true) };
         if (!grouping)
         {
-            _sigUpdated.emit();
+            notifyUpdated();
             return;
         }
 
-        _dbFilters.grouping = groupingId;
+        _state.grouping = groupingId;
         state::writeValue<db::GroupingId::ValueType>("filters_grouping_id", groupingId.getValue());
 
         _groupingFilter = _filters->addWidget(std::move(grouping));
         _groupingFilter->clicked().connect([this] {
             _filters->removeWidget(_groupingFilter);
             _groupingFilter = nullptr;
-            _dbFilters.grouping = db::GroupingId{};
+            _state.grouping = db::GroupingId{};
             state::writeValue<db::GroupingId::ValueType>("filters_grouping_id", std::nullopt);
-            _sigUpdated.emit();
+            notifyUpdated();
         });
 
         emitFilterAddedNotification();
@@ -371,33 +401,33 @@ namespace lms::ui
 
     void Filters::set(db::LanguageId languageId)
     {
-        if (_dbFilters.language == languageId)
+        if (_state.language == languageId)
             return;
 
         if (_languageFilter)
         {
             _filters->removeWidget(_languageFilter);
             _languageFilter = nullptr;
-            _dbFilters.language = db::LanguageId{};
+            _state.language = db::LanguageId{};
         }
 
         auto language{ utils::createFilterLanguage(languageId, true) };
         if (!language)
         {
-            _sigUpdated.emit();
+            notifyUpdated();
             return;
         }
 
-        _dbFilters.language = languageId;
+        _state.language = languageId;
         state::writeValue<db::LanguageId::ValueType>("filters_language_id", languageId.getValue());
 
         _languageFilter = _filters->addWidget(std::move(language));
         _languageFilter->clicked().connect([this] {
             _filters->removeWidget(_languageFilter);
             _languageFilter = nullptr;
-            _dbFilters.language = db::LanguageId{};
+            _state.language = db::LanguageId{};
             state::writeValue<db::LanguageId::ValueType>("filters_language_id", std::nullopt);
-            _sigUpdated.emit();
+            notifyUpdated();
         });
 
         emitFilterAddedNotification();
@@ -405,33 +435,33 @@ namespace lms::ui
 
     void Filters::set(db::MoodId moodId)
     {
-        if (_dbFilters.mood == moodId)
+        if (_state.mood == moodId)
             return;
 
         if (_moodFilter)
         {
             _filters->removeWidget(_moodFilter);
             _moodFilter = nullptr;
-            _dbFilters.mood = db::MoodId{};
+            _state.mood = db::MoodId{};
         }
 
         auto mood{ utils::createFilterMood(moodId, true) };
         if (!mood)
         {
-            _sigUpdated.emit();
+            notifyUpdated();
             return;
         }
 
-        _dbFilters.mood = moodId;
+        _state.mood = moodId;
         state::writeValue<db::MoodId::ValueType>("filters_mood_id", moodId.getValue());
 
         _moodFilter = _filters->addWidget(std::move(mood));
         _moodFilter->clicked().connect([this] {
             _filters->removeWidget(_moodFilter);
             _moodFilter = nullptr;
-            _dbFilters.mood = db::MoodId{};
+            _state.mood = db::MoodId{};
             state::writeValue<db::MoodId::ValueType>("filters_mood_id", std::nullopt);
-            _sigUpdated.emit();
+            notifyUpdated();
         });
 
         emitFilterAddedNotification();
@@ -443,7 +473,7 @@ namespace lms::ui
         {
             _filters->removeWidget(_mediaLibraryFilter);
             _mediaLibraryFilter = nullptr;
-            _dbFilters.mediaLibrary = db::MediaLibraryId{};
+            _state.mediaLibrary = db::MediaLibraryId{};
         }
 
         std::string libraryName;
@@ -452,20 +482,23 @@ namespace lms::ui
 
             const auto library{ db::MediaLibrary::find(LmsApp->getDbSession(), mediaLibraryId) };
             if (!library)
+            {
+                notifyUpdated();
                 return;
+            }
 
             libraryName = library->getName();
         }
 
-        _dbFilters.mediaLibrary = mediaLibraryId;
+        _state.mediaLibrary = mediaLibraryId;
         state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", mediaLibraryId.getValue());
 
         _mediaLibraryFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(libraryName), Wt::WString::tr("Lms.Explore.media-library"), "bg-primary", true));
         _mediaLibraryFilter->clicked().connect(_mediaLibraryFilter, [this] {
             _filters->removeWidget(_mediaLibraryFilter);
-            _dbFilters.mediaLibrary = db::MediaLibraryId{};
+            _state.mediaLibrary = db::MediaLibraryId{};
             _mediaLibraryFilter = nullptr;
-            _sigUpdated.emit();
+            notifyUpdated();
             state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", std::nullopt);
         });
 
@@ -478,7 +511,7 @@ namespace lms::ui
         {
             _filters->removeWidget(_labelFilter);
             _labelFilter = nullptr;
-            _dbFilters.label = db::LabelId{};
+            _state.label = db::LabelId{};
         }
 
         std::string name;
@@ -487,20 +520,23 @@ namespace lms::ui
 
             const auto label{ db::Label::find(LmsApp->getDbSession(), labelId) };
             if (!label)
+            {
+                notifyUpdated();
                 return;
+            }
 
             name = label->getName();
         }
 
-        _dbFilters.label = labelId;
+        _state.label = labelId;
         state::writeValue<db::LabelId::ValueType>("filters_label_id", labelId.getValue());
 
         _labelFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(name), Wt::WString::tr("Lms.Explore.label"), "bg-secondary", true));
         _labelFilter->clicked().connect(_labelFilter, [this] {
             _filters->removeWidget(_labelFilter);
-            _dbFilters.label = db::LabelId{};
+            _state.label = db::LabelId{};
             _labelFilter = nullptr;
-            _sigUpdated.emit();
+            notifyUpdated();
             state::writeValue<db::LabelId::ValueType>("filters_label_id", std::nullopt);
         });
 
@@ -513,7 +549,7 @@ namespace lms::ui
         {
             _filters->removeWidget(_releaseTypeFilter);
             _releaseTypeFilter = nullptr;
-            _dbFilters.releaseType = db::ReleaseTypeId{};
+            _state.releaseType = db::ReleaseTypeId{};
         }
 
         std::string name;
@@ -522,20 +558,23 @@ namespace lms::ui
 
             const auto releaseType{ db::ReleaseType::find(LmsApp->getDbSession(), releaseTypeId) };
             if (!releaseType)
+            {
+                notifyUpdated();
                 return;
+            }
 
             name = releaseType->getName();
         }
 
-        _dbFilters.releaseType = releaseTypeId;
+        _state.releaseType = releaseTypeId;
         state::writeValue<db::ReleaseTypeId::ValueType>("filters_release_type_id", releaseTypeId.getValue());
 
         _releaseTypeFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(name), Wt::WString::tr("Lms.Explore.release-type"), "bg-dark", true));
         _releaseTypeFilter->clicked().connect(_releaseTypeFilter, [this] {
             _filters->removeWidget(_releaseTypeFilter);
-            _dbFilters.releaseType = db::ReleaseTypeId{};
+            _state.releaseType = db::ReleaseTypeId{};
             _releaseTypeFilter = nullptr;
-            _sigUpdated.emit();
+            notifyUpdated();
             state::writeValue<db::LabelId::ValueType>("filters_release_type_id", std::nullopt);
         });
 
@@ -548,18 +587,18 @@ namespace lms::ui
         {
             _filters->removeWidget(_codecFilter);
             _codecFilter = nullptr;
-            _dbFilters.codec.reset();
+            _state.codec.reset();
         }
 
-        _dbFilters.codec = codec;
+        _state.codec = codec;
         state::writeValue<core::media::Codec>("filters_codec", codec);
 
         _codecFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(core::media::getCodecDesc(codec).longName.c_str()), Wt::WString::tr("Lms.Explore.codec"), "bg-success", true));
         _codecFilter->clicked().connect(_codecFilter, [this] {
             _filters->removeWidget(_codecFilter);
-            _dbFilters.codec.reset();
+            _state.codec.reset();
             _codecFilter = nullptr;
-            _sigUpdated.emit();
+            notifyUpdated();
             state::writeValue<db::LabelId::ValueType>("filters_codec", std::nullopt);
         });
 
@@ -570,6 +609,12 @@ namespace lms::ui
     {
         LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Explore.filter-added"), std::chrono::seconds{ 2 });
 
+        notifyUpdated();
+    }
+
+    void Filters::notifyUpdated()
+    {
+        _dbFilter = createDbFilter();
         _sigUpdated.emit();
     }
 } // namespace lms::ui

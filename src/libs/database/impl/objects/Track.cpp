@@ -46,8 +46,10 @@
 #include "database/objects/User.hpp"
 #include "database/objects/Work.hpp"
 
+#include "JoinSet.hpp"
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
+#include "objects/FilterExprCompiler.hpp"
 #include "objects/detail/Types.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PartialDateTimeTraits.hpp"
@@ -61,191 +63,139 @@ namespace lms::db
 {
     namespace
     {
-        template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Track::FindParameters& params)
+        // Several conditions can need the same join, which is then added once
+        constexpr std::string_view trackFeedbackJoin{ "track_feedback t_f ON t_f.track_id = t.id" };
+
+        // A track can be linked to the same artist several times (once per link type)
+        bool joinsArtists(const Track::FindParameters& params)
         {
-            session.checkReadTransaction();
+            return params.artist.isValid() || !params.artistName.empty();
+        }
 
-            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM track t") };
-
+        // Returns the condition of the parameters, filter included, and adds to joins the joins it relies on
+        SqlFragment createParamsConditions(const Track::FindParameters& params, JoinSet& joins)
+        {
             assert(params.keywords.empty() || params.name.empty());
-            for (std::string_view keyword : params.keywords)
-                query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
+            assert(!(params.nonRelease && params.release.isValid()));
+
+            SqlFragment res;
+
+            for (const std::string_view keyword : params.keywords)
+                res.combineWithAnd({ "t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" } });
 
             if (!params.name.empty())
-                query.where("t.name = ?").bind(params.name);
+                res.combineWithAnd({ "t.name = ?", { params.name } });
 
             if (params.writtenAfter.isValid())
-                query.where("t.file_last_write > ?").bind(params.writtenAfter);
+                res.combineWithAnd({ "t.file_last_write > ?", { params.writtenAfter } });
 
-            if (params.feedbackUser.isValid() || params.feedbackValue)
+            if (params.feedbackUser.isValid())
             {
-                query.join("track_feedback t_f ON t_f.track_id = t.id");
-                if (params.feedbackUser.isValid())
-                    query.where("t_f.user_id = ?").bind(params.feedbackUser);
-                if (params.feedbackValue)
-                    query.where("t_f.value = ?").bind(static_cast<int>(*params.feedbackValue));
+                joins.add(trackFeedbackJoin);
+                res.combineWithAnd({ "t_f.user_id = ?", { params.feedbackUser.getValue() } });
+            }
+            if (params.feedbackValue)
+            {
+                joins.add(trackFeedbackJoin);
+                res.combineWithAnd({ "t_f.value = ?", { static_cast<int>(*params.feedbackValue) } });
             }
 
-            if (params.filters.clusters.size() == 1)
+            if (joinsArtists(params))
             {
-                // optim
-                query.join("track_cluster t_c ON t_c.track_id = t.id")
-                    .where("t_c.cluster_id = ?")
-                    .bind(params.filters.clusters.front());
-            }
-            else if (params.filters.clusters.size() > 1)
-            {
-                std::ostringstream oss;
-                oss << "t.id IN (SELECT DISTINCT t.id FROM track t"
-                       " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
-
-                WhereClause clusterClause;
-                for (const ClusterId clusterId : params.filters.clusters)
-                {
-                    clusterClause.Or(WhereClause{ "t_c.cluster_id = ?" });
-                    query.bind(clusterId);
-                }
-
-                oss << " " << clusterClause.get();
-                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.filters.clusters.size() << ")";
-
-                query.where(oss.str());
-            }
-
-            if (params.filters.genre.isValid())
-            {
-                query.join("track_genre t_g ON t_g.track_id = t.id")
-                    .where("t_g.genre_id = ?")
-                    .bind(params.filters.genre);
-            }
-
-            if (params.filters.grouping.isValid())
-            {
-                query.join("track_grouping t_gr ON t_gr.track_id = t.id")
-                    .where("t_gr.grouping_id = ?")
-                    .bind(params.filters.grouping);
-            }
-
-            if (params.filters.language.isValid())
-            {
-                query.join("track_language t_l ON t_l.track_id = t.id")
-                    .where("t_l.language_id = ?")
-                    .bind(params.filters.language);
-            }
-
-            if (params.filters.mood.isValid())
-            {
-                query.join("track_mood t_m ON t_m.track_id = t.id")
-                    .where("t_m.mood_id = ?")
-                    .bind(params.filters.mood);
-            }
-
-            if (params.artist.isValid() || !params.artistName.empty())
-            {
-                query.join("artist a ON a.id = t_a_l.artist_id")
-                    .join("track_artist_link t_a_l ON t_a_l.track_id = t.id");
+                joins.add("track_artist_link t_a_l ON t_a_l.track_id = t.id");
+                joins.add("artist a ON a.id = t_a_l.artist_id");
 
                 if (params.artist.isValid())
-                    query.where("a.id = ?").bind(params.artist);
+                    res.combineWithAnd({ "a.id = ?", { params.artist.getValue() } });
                 if (!params.artistName.empty())
-                    query.where("a.name = ?").bind(params.artistName);
+                    res.combineWithAnd({ "a.name = ?", { params.artistName } });
 
-                if (!params.trackArtistLinkTypes.empty())
+                SqlFragment linkTypes;
+                for (const TrackArtistLinkType linkType : params.trackArtistLinkTypes)
                 {
-                    std::ostringstream oss;
-
-                    bool first{ true };
-                    for (TrackArtistLinkType linkType : params.trackArtistLinkTypes)
-                    {
-                        if (!first)
-                            oss << " OR ";
-                        oss << "t_a_l.type = ?";
-                        query.bind(linkType);
-
-                        first = false;
-                    }
-                    query.where(oss.str());
+                    if (!linkTypes.isEmpty())
+                        linkTypes.append(" OR ");
+                    linkTypes.append("t_a_l.type = ?", { static_cast<int>(linkType) });
                 }
-
-                query.groupBy("t.id");
+                res.combineWithAnd(linkTypes);
             }
 
-            assert(!(params.nonRelease && params.release.isValid()));
             if (params.nonRelease)
-                query.where("t.release_id IS NULL");
+            {
+                res.combineWithAnd({ "t.release_id IS NULL" });
+            }
             else if (params.release.isValid())
-                query.where("t.release_id = ?").bind(params.release);
+            {
+                res.combineWithAnd({ "t.release_id = ?", { params.release.getValue() } });
+            }
             else if (!params.releaseName.empty())
             {
-                query.join("release r ON t.release_id = r.id");
-                query.where("r.name = ?").bind(params.releaseName);
+                joins.add("release r ON t.release_id = r.id");
+                res.combineWithAnd({ "r.name = ?", { params.releaseName } });
             }
 
             if (params.medium.isValid())
-                query.where("t.medium_id = ?").bind(params.medium);
-
-            if (params.trackList.isValid() || params.sortMethod == TrackSortMethod::TrackList)
-            {
-                query.join("tracklist t_l ON t_l_e.tracklist_id = t_l.id");
-                query.join("tracklist_entry t_l_e ON t.id = t_l_e.track_id");
-                query.where("t_l.id = ?").bind(params.trackList);
-            }
+                res.combineWithAnd({ "t.medium_id = ?", { params.medium.getValue() } });
 
             if (params.trackNumber)
-                query.where("t.track_number = ?").bind(*params.trackNumber);
-
-            if (params.sortMethod == TrackSortMethod::DateDescAndRelease
-                || params.sortMethod == TrackSortMethod::OriginalDateDescAndRelease
-                || params.sortMethod == TrackSortMethod::Release)
-            {
-                query.join("medium m ON t.medium_id = m.id");
-            }
-
-            if (params.filters.mediaLibrary.isValid())
-                query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
-
-            if (params.filters.label.isValid())
-            {
-                query.join("release_label r_l ON r_l.release_id = t.release_id");
-                query.where("r_l.label_id = ?").bind(params.filters.label);
-            }
-
-            if (params.filters.releaseType.isValid())
-            {
-                query.join("release_release_type r_r_t ON r_r_t.release_id = t.release_id");
-                query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
-            }
+                res.combineWithAnd({ "t.track_number = ?", { *params.trackNumber } });
 
             if (params.directory.isValid())
-                query.where("t.directory_id = ?").bind(params.directory);
+                res.combineWithAnd({ "t.directory_id = ?", { params.directory.getValue() } });
 
             if (params.fileSize.has_value())
-                query.where("t.file_size = ?").bind(static_cast<long long>(params.fileSize.value()));
+                res.combineWithAnd({ "t.file_size = ?", { static_cast<long long>(*params.fileSize) } });
 
             if (params.hasMusicNNEmbeddings.has_value())
             {
                 if (*params.hasMusicNNEmbeddings)
-                    query.where("EXISTS (SELECT t_m_e.track_id FROM track_musicnn_embeddings t_m_e WHERE t_m_e.track_id = t.id)");
+                    res.combineWithAnd({ "EXISTS (SELECT t_m_e.track_id FROM track_musicnn_embeddings t_m_e WHERE t_m_e.track_id = t.id)" });
                 else
-                    query.where("NOT EXISTS (SELECT t_m_e.track_id FROM track_musicnn_embeddings t_m_e WHERE t_m_e.track_id = t.id)");
+                    res.combineWithAnd({ "NOT EXISTS (SELECT t_m_e.track_id FROM track_musicnn_embeddings t_m_e WHERE t_m_e.track_id = t.id)" });
             }
 
             if (params.lastTrackId.isValid())
             {
                 assert(params.sortMethod == TrackSortMethod::Id);
-                query.where("t.id > ?").bind(params.lastTrackId);
+                res.combineWithAnd({ "t.id > ?", { params.lastTrackId.getValue() } });
             }
 
             if (params.embeddedImageId.isValid())
             {
-                query.join("track_embedded_image_link t_e_i_l ON t_e_i_l.track_id = t.id");
-                query.where("t_e_i_l.track_embedded_image_id = ?").bind(params.embeddedImageId);
+                joins.add("track_embedded_image_link t_e_i_l ON t_e_i_l.track_id = t.id");
+                res.combineWithAnd({ "t_e_i_l.track_embedded_image_id = ?", { params.embeddedImageId.getValue() } });
             }
 
-            if (params.filters.codec.has_value())
-                query.where("t.codec = ?").bind(detail::getDbCodec(*params.filters.codec));
+            // The joins of a sort select the tracks too: the ones without any row are excluded
+            switch (params.sortMethod)
+            {
+            case TrackSortMethod::FeedbackDateDesc:
+                joins.add(trackFeedbackJoin);
+                break;
+            case TrackSortMethod::DateDescAndRelease:
+            case TrackSortMethod::OriginalDateDescAndRelease:
+            case TrackSortMethod::Release:
+                joins.add("medium m ON t.medium_id = m.id");
+                break;
+            case TrackSortMethod::None:
+            case TrackSortMethod::Id:
+            case TrackSortMethod::Random:
+            case TrackSortMethod::LastWrittenDesc:
+            case TrackSortMethod::AddedDesc:
+            case TrackSortMethod::AbsoluteFilePath:
+            case TrackSortMethod::Name:
+            case TrackSortMethod::TrackNumber:
+                break;
+            }
 
+            res.combineWithAnd(compileFilterExpr(params.filter, FilterEntity::Track, params.filterUser, joins));
+
+            return res;
+        }
+
+        template<typename ResultType>
+        void applySortMethod(Wt::Dbo::Query<ResultType>& query, const Track::FindParameters& params)
+        {
             switch (params.sortMethod)
             {
             case TrackSortMethod::None:
@@ -281,30 +231,39 @@ namespace lms::db
             case TrackSortMethod::Release:
                 query.orderBy("m.position,t.track_number");
                 break;
-            case TrackSortMethod::TrackList:
-                assert(params.trackList.isValid());
-                query.orderBy("t_l_e.id");
-                break;
             case TrackSortMethod::TrackNumber:
                 query.orderBy("t.track_number");
                 break;
             }
-            return query;
         }
 
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, const Track::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createListQuery(Session& session, std::string_view selectedItem, const Track::FindParameters& params)
         {
-            std::string_view itemToSelect;
+            JoinSet joins;
+            const SqlFragment where{ createParamsConditions(params, joins) };
 
-            if constexpr (std::is_same_v<ResultType, TrackId>)
-                itemToSelect = "t.id";
-            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Track>>)
-                itemToSelect = "t";
-            else
-                static_assert("Unhandled type");
+            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ selectedItem } + " FROM track t") };
+            joins.apply(query);
+            applyWhereFragment(query, where);
+            applySortMethod(query, params);
 
-            return createQuery<ResultType>(session, itemToSelect, params);
+            if (joinsArtists(params))
+                query.groupBy("t.id");
+
+            return query;
+        }
+
+        Wt::Dbo::Query<int> createCountQuery(Session& session, const Track::FindParameters& params)
+        {
+            JoinSet joins;
+            const SqlFragment where{ createParamsConditions(params, joins) };
+
+            auto query{ session.getDboSession()->query<int>(joinsArtists(params) ? "SELECT COUNT(DISTINCT t.id) FROM track t" : "SELECT COUNT(*) FROM track t") };
+            joins.apply(query);
+            applyWhereFragment(query, where);
+
+            return query;
         }
     } // namespace
 
@@ -384,9 +343,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        std::string_view itemToSelect{ "t.id, t.absolute_file_path" };
-
-        auto query{ createQuery<std::tuple<TrackId, std::filesystem::path>>(session, itemToSelect, params) };
+        auto query{ createListQuery<std::tuple<TrackId, std::filesystem::path>>(session, "t.id, t.absolute_file_path", params) };
 
         utils::forEachQueryRangeResult(query, params.range, [&](const auto& res) {
             func(std::get<0>(res), std::get<1>(res));
@@ -568,7 +525,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery<TrackId>(session, parameters) };
+        auto query{ createListQuery<TrackId>(session, "t.id", parameters) };
         return utils::execRangeQuery<TrackId>(query, parameters.range);
     }
 
@@ -576,7 +533,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, parameters) };
+        auto query{ createListQuery<Wt::Dbo::ptr<Track>>(session, "t", parameters) };
         return utils::execRangeQuery<Track::pointer>(query, parameters.range);
     }
 
@@ -584,7 +541,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, params) };
+        auto query{ createListQuery<Wt::Dbo::ptr<Track>>(session, "t", params) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
@@ -592,7 +549,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(*)", params));
+        return utils::fetchQuerySingleResult(createCountQuery(session, params));
     }
 
     void Track::setAbsoluteFilePath(const std::filesystem::path& filePath)

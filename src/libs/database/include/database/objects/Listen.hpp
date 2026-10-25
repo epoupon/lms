@@ -28,7 +28,7 @@
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
-#include "database/objects/Filters.hpp"
+#include "database/objects/FilterExpr.hpp"
 #include "database/objects/ListenId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
@@ -75,7 +75,8 @@ namespace lms::db
         struct StatsFindParameters
         {
             UserId user;
-            db::Filters filters;
+            std::optional<FilterExpr> filter;       // if set, the listened tracks must match this expression
+            UserId filterUser;                      // required if filter has per-user fields
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
             std::optional<Range> range;
             ArtistId artist; // if set, matching this artist
@@ -85,9 +86,10 @@ namespace lms::db
                 user = _user;
                 return *this;
             }
-            StatsFindParameters& setFilters(const db::Filters& _filters)
+            StatsFindParameters& setFilter(std::optional<FilterExpr> _filter, UserId _user = {})
             {
-                filters = _filters;
+                filter = std::move(_filter);
+                filterUser = _user;
                 return *this;
             }
             StatsFindParameters& setKeywords(const std::vector<std::string_view>& _keywords)

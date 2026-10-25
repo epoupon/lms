@@ -51,7 +51,7 @@ namespace lms::ui
                 if (!_randomArtists)
                 {
                     db::Artist::FindParameters params;
-                    params.setFilters(getDbFilters());
+                    params.setFilter(getDbFilter());
                     params.setKeywords(getSearchKeywords());
                     params.setSortMethod(db::ArtistSortMethod::Random);
                     params.setRange(db::Range{ 0, getMaxCount() });
@@ -73,7 +73,7 @@ namespace lms::ui
         case Mode::Feedback:
             {
                 db::Artist::FindParameters params;
-                params.setFilters(getDbFilters());
+                params.setFilter(getDbFilter());
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::ArtistSortMethod::FeedbackDateDesc);
                 params.setRange(range);
@@ -89,7 +89,7 @@ namespace lms::ui
         case Mode::RecentlyPlayed:
             {
                 db::Listen::ArtistStatsFindParameters params;
-                params.setFilters(getDbFilters());
+                params.setFilter(getDbFilter());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
                 params.setUser(LmsApp->getUserId());
@@ -103,7 +103,7 @@ namespace lms::ui
         case Mode::MostPlayed:
             {
                 db::Listen::ArtistStatsFindParameters params;
-                params.setFilters(getDbFilters());
+                params.setFilter(getDbFilter());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
                 params.setUser(LmsApp->getUserId());
@@ -117,7 +117,7 @@ namespace lms::ui
         case Mode::RecentlyAdded:
             {
                 db::Artist::FindParameters params;
-                params.setFilters(getDbFilters());
+                params.setFilter(getDbFilter());
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::ArtistSortMethod::AddedDesc);
                 params.setRange(range);
@@ -131,7 +131,7 @@ namespace lms::ui
         case Mode::RecentlyModified:
             {
                 db::Artist::FindParameters params;
-                params.setFilters(getDbFilters());
+                params.setFilter(getDbFilter());
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::ArtistSortMethod::LastWrittenDesc);
                 params.setRange(range);
@@ -145,7 +145,7 @@ namespace lms::ui
         case Mode::All:
             {
                 db::Artist::FindParameters params;
-                params.setFilters(getDbFilters());
+                params.setFilter(getDbFilter());
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::ArtistSortMethod::SortName);
                 params.setRange(range);

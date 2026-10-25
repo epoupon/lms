@@ -192,7 +192,7 @@ namespace lms::db::tests
 
                 Listen::ArtistStatsFindParameters params;
                 params.setUser(user->getId());
-                params.filters.setClusters(std::initializer_list<ClusterId>{ cluster->getId() });
+                params.setFilter(FilterExpr::equal(cluster->getId()));
 
                 auto artists{ Listen::getTopArtists(session, params) };
                 EXPECT_EQ(artists.size(), 0);
@@ -283,7 +283,7 @@ namespace lms::db::tests
 
             Listen::ArtistStatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto artists{ Listen::getTopArtists(session, params) };
             ASSERT_EQ(artists.size(), 0);
@@ -297,7 +297,7 @@ namespace lms::db::tests
 
             Listen::ArtistStatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto artists{ Listen::getTopArtists(session, params) };
             ASSERT_EQ(artists.size(), 1);
@@ -320,7 +320,7 @@ namespace lms::db::tests
 
             Listen::ArtistStatsFindParameters params;
             params.setUser(user.getId());
-            params.filters.setMediaLibrary(library.getId());
+            params.setFilter(FilterExpr::equal(library.getId()));
 
             const auto artists{ Listen::getTopArtists(session, params) };
             EXPECT_EQ(artists.size(), 0);
@@ -348,7 +348,7 @@ namespace lms::db::tests
 
             Listen::ArtistStatsFindParameters params;
             params.setUser(user.getId());
-            params.filters.setMediaLibrary(library.getId());
+            params.setFilter(FilterExpr::equal(library.getId()));
 
             auto artists{ Listen::getTopArtists(session, params) };
             ASSERT_EQ(artists.size(), 1);
@@ -359,7 +359,7 @@ namespace lms::db::tests
 
             Listen::ArtistStatsFindParameters params;
             params.setUser(user.getId());
-            params.filters.setMediaLibrary(otherLibrary.getId());
+            params.setFilter(FilterExpr::equal(otherLibrary.getId()));
 
             auto artists{ Listen::getTopArtists(session, params) };
             EXPECT_EQ(artists.size(), 0);
@@ -475,7 +475,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto releases{ Listen::getTopReleases(session, params) };
             EXPECT_EQ(releases.size(), 0);
@@ -490,7 +490,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto releases{ Listen::getTopReleases(session, params) };
             EXPECT_EQ(releases.size(), 1);
@@ -518,7 +518,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setMediaLibrary(library.getId());
+            params.setFilter(FilterExpr::equal(library.getId()));
 
             auto releases{ Listen::getTopReleases(session, params) };
             EXPECT_EQ(releases.size(), 0);
@@ -531,7 +531,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setMediaLibrary(library.getId());
+            params.setFilter(FilterExpr::equal(library.getId()));
 
             auto releases{ Listen::getTopReleases(session, params) };
             ASSERT_EQ(releases.size(), 1);
@@ -542,7 +542,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setMediaLibrary(otherLibrary.getId());
+            params.setFilter(FilterExpr::equal(otherLibrary.getId()));
 
             auto releases{ Listen::getTopReleases(session, params) };
             EXPECT_EQ(releases.size(), 0);
@@ -688,7 +688,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto tracks{ Listen::getTopTracks(session, params) };
             EXPECT_EQ(tracks.size(), 0);
@@ -703,7 +703,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto tracks{ Listen::getTopTracks(session, params) };
             EXPECT_EQ(tracks.size(), 1);
@@ -724,7 +724,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user.getId());
-            params.filters.setMediaLibrary(library.getId());
+            params.setFilter(FilterExpr::equal(library.getId()));
 
             auto tracks{ Listen::getTopTracks(session, params) };
             ASSERT_EQ(tracks.size(), 0);
@@ -742,7 +742,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setMediaLibrary(library.getId());
+            params.setFilter(FilterExpr::equal(library.getId()));
 
             auto tracks{ Listen::getTopTracks(session, params) };
             ASSERT_EQ(tracks.size(), 1);
@@ -753,7 +753,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setMediaLibrary(otherLibrary.getId());
+            params.setFilter(FilterExpr::equal(otherLibrary.getId()));
 
             auto tracks{ Listen::getTopTracks(session, params) };
             EXPECT_EQ(tracks.size(), 0);
@@ -865,7 +865,7 @@ namespace lms::db::tests
 
                 Listen::ArtistStatsFindParameters params;
                 params.setUser(user->getId());
-                params.filters.setClusters(std::initializer_list<ClusterId>{ cluster->getId() });
+                params.setFilter(FilterExpr::equal(cluster->getId()));
 
                 auto artists{ Listen::getRecentArtists(session, params) };
                 EXPECT_EQ(artists.size(), 0);
@@ -955,7 +955,7 @@ namespace lms::db::tests
 
             Listen::ArtistStatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto artists{ Listen::getRecentArtists(session, params) };
             ASSERT_EQ(artists.size(), 0);
@@ -969,7 +969,7 @@ namespace lms::db::tests
 
             Listen::ArtistStatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto artists{ Listen::getRecentArtists(session, params) };
             ASSERT_EQ(artists.size(), 1);
@@ -998,7 +998,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             Listen::ArtistStatsFindParameters params;
-            params.filters.setMediaLibrary(library.getId());
+            params.setFilter(FilterExpr::equal(library.getId()));
 
             auto artists{ Listen::getRecentArtists(session, params) };
             ASSERT_EQ(artists.size(), 1);
@@ -1008,7 +1008,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             Listen::ArtistStatsFindParameters params;
-            params.filters.setMediaLibrary(otherLibrary.getId());
+            params.setFilter(FilterExpr::equal(otherLibrary.getId()));
 
             auto artists{ Listen::getRecentArtists(session, params) };
             EXPECT_EQ(artists.size(), 0);
@@ -1188,7 +1188,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto releases{ Listen::getRecentReleases(session, params) };
             EXPECT_EQ(releases.size(), 0);
@@ -1202,7 +1202,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto releases{ Listen::getRecentReleases(session, params) };
             EXPECT_EQ(releases.size(), 0);
@@ -1217,7 +1217,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto releases{ Listen::getRecentReleases(session, params) };
             EXPECT_EQ(releases.size(), 1);
@@ -1246,7 +1246,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             Listen::StatsFindParameters params;
-            params.filters.setMediaLibrary(library.getId());
+            params.setFilter(FilterExpr::equal(library.getId()));
 
             auto releases{ Listen::getRecentReleases(session, params) };
             ASSERT_EQ(releases.size(), 1);
@@ -1256,7 +1256,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             Listen::StatsFindParameters params;
-            params.filters.setMediaLibrary(otherLibrary.getId());
+            params.setFilter(FilterExpr::equal(otherLibrary.getId()));
 
             auto releases{ Listen::getRecentReleases(session, params) };
             EXPECT_EQ(releases.size(), 0);
@@ -1312,7 +1312,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             Listen::StatsFindParameters params;
-            params.filters.setMediaLibrary(library.getId());
+            params.setFilter(FilterExpr::equal(library.getId()));
 
             auto tracks{ Listen::getRecentTracks(session, params) };
             ASSERT_EQ(tracks.size(), 1);
@@ -1323,7 +1323,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             Listen::StatsFindParameters params;
-            params.filters.setMediaLibrary(otherLibrary.getId());
+            params.setFilter(FilterExpr::equal(otherLibrary.getId()));
 
             auto tracks{ Listen::getRecentTracks(session, params) };
             EXPECT_EQ(tracks.size(), 0);
@@ -1514,7 +1514,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto tracks{ Listen::getRecentTracks(session, params) };
             EXPECT_EQ(tracks.size(), 0);
@@ -1529,7 +1529,7 @@ namespace lms::db::tests
 
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            params.filters.setClusters(std::initializer_list<ClusterId>{ cluster.getId() });
+            params.setFilter(FilterExpr::equal(cluster.getId()));
 
             auto tracks{ Listen::getRecentTracks(session, params) };
             EXPECT_EQ(tracks.size(), 1);

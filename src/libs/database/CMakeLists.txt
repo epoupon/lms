@@ -6,6 +6,8 @@ add_library(lmsdatabase STATIC
 	impl/objects/AuthToken.cpp
 	impl/objects/Cluster.cpp
 	impl/objects/Directory.cpp
+	impl/objects/FilterExpr.cpp
+	impl/objects/FilterExprCompiler.cpp
 	impl/objects/Genre.cpp
 	impl/objects/Grouping.cpp
 	impl/objects/Image.cpp
@@ -47,10 +49,12 @@ add_library(lmsdatabase STATIC
 	impl/objects/User.cpp
 	impl/Db.cpp
 	impl/IdType.cpp
+	impl/JoinSet.cpp
 	impl/Migration.cpp
 	impl/Object.cpp
 	impl/profiling/QueryProfiler.cpp
 	impl/Session.cpp
+	impl/SqlFragment.cpp
 	impl/SqlQuery.cpp
 	impl/Transaction.cpp
 	impl/Utils.cpp
@@ -79,6 +83,14 @@ target_link_libraries(lmsdatabase PUBLIC
 	Wt::Dbo
 	)
 
+if(BUILD_TESTING OR BUILD_BENCHMARKS)
+	add_subdirectory(testutils)
+endif()
+
 if(BUILD_TESTING)
 	add_subdirectory(test)
+endif()
+
+if (BUILD_BENCHMARKS)
+	add_subdirectory(bench)
 endif()

@@ -40,7 +40,7 @@
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/CountryId.hpp"
 #include "database/objects/DirectoryId.hpp"
-#include "database/objects/Filters.hpp"
+#include "database/objects/FilterExpr.hpp"
 #include "database/objects/LabelId.hpp"
 #include "database/objects/MediaLibraryId.hpp"
 #include "database/objects/ReleaseId.hpp"
@@ -162,7 +162,8 @@ namespace lms::db
     public:
         struct FindParameters
         {
-            Filters filters;
+            std::optional<FilterExpr> filter;       // if set, releases must match this expression: its track conditions must hold on one of their tracks, on which trackArtist, directory, parentDirectory, date ranges and writtenAfter must also hold
+            UserId filterUser;                      // required if filter has per-user fields
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords (cannot be set with keywords)
             std::string name;                       // must match this name (cannot be set with keywords)
             ReleaseSortMethod sortMethod{ ReleaseSortMethod::None };
@@ -180,9 +181,10 @@ namespace lms::db
             DirectoryId directory;                                   // if set, releases in this directory (cannot be set with parent directory)
             DirectoryId parentDirectory;                             // if set, releases in this parent directory (cannot be set with directory)
 
-            FindParameters& setFilters(const Filters& _filters)
+            FindParameters& setFilter(std::optional<FilterExpr> _filter, UserId _user = {})
             {
-                filters = _filters;
+                filter = std::move(_filter);
+                filterUser = _user;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)

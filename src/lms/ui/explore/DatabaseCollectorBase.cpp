@@ -50,9 +50,9 @@ namespace lms::ui
         return _maxCount;
     }
 
-    const db::Filters& DatabaseCollectorBase::getDbFilters() const
+    const std::optional<db::FilterExpr>& DatabaseCollectorBase::getDbFilter() const
     {
-        return _filters.getDbFilters();
+        return _filters.getDbFilter();
     }
 
     void DatabaseCollectorBase::setSearch(std::string_view searchText)

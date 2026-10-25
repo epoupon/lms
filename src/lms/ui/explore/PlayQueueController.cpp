@@ -43,7 +43,7 @@ namespace lms::ui
                 db::Track::FindParameters params;
                 params.setArtist(artistId);
                 params.setSortMethod(db::TrackSortMethod::DateDescAndRelease);
-                params.setFilters(filters.getDbFilters());
+                params.setFilter(filters.getDbFilter());
                 params.setRange(db::Range{ 0, maxTrackCount - res.size() });
 
                 const auto tracks{ db::Track::findIds(session, params) };
@@ -71,7 +71,7 @@ namespace lms::ui
                 db::Track::FindParameters params;
                 params.setRelease(releaseId);
                 params.setSortMethod(db::TrackSortMethod::Release);
-                params.setFilters(filters.getDbFilters());
+                params.setFilter(filters.getDbFilter());
                 params.setRange(db::Range{ 0, maxTrackCount - res.size() });
 
                 const auto tracks{ db::Track::findIds(session, params) };

@@ -44,7 +44,7 @@
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/ClusterId.hpp"
 #include "database/objects/DirectoryId.hpp"
-#include "database/objects/Filters.hpp"
+#include "database/objects/FilterExpr.hpp"
 #include "database/objects/GenreId.hpp"
 #include "database/objects/GroupingId.hpp"
 #include "database/objects/LanguageId.hpp"
@@ -55,7 +55,6 @@
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackEmbeddedImageId.hpp"
 #include "database/objects/TrackId.hpp"
-#include "database/objects/TrackListId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
 #include "database/objects/WorkId.hpp"
@@ -89,7 +88,8 @@ namespace lms::db
     public:
         struct FindParameters
         {
-            Filters filters;
+            std::optional<FilterExpr> filter;       // if set, tracks must match this expression
+            UserId filterUser;                      // required if filter has per-user fields
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
             std::string name;                       // if non empty, must match this name (title)
             TrackSortMethod sortMethod{ TrackSortMethod::None };
@@ -104,7 +104,6 @@ namespace lms::db
             MediumId medium;                                         // matching this medium
             ReleaseId release;                                       // matching this release
             std::string releaseName;                                 // matching this release name
-            TrackListId trackList;                                   // matching this trackList
             std::optional<int> trackNumber;                          // matching this track number
             DirectoryId directory;                                   // if set, tracks in this directory
             std::optional<std::size_t> fileSize;                     // if set, tracks that match this file size
@@ -112,9 +111,10 @@ namespace lms::db
             std::optional<bool> hasMusicNNEmbeddings;                // If set, tracks that have (or not) MusicNN embeddings
             TrackId lastTrackId;                                     // If set, tracks that are after this one, must be used with sort by id
 
-            FindParameters& setFilters(const Filters& _filters)
+            FindParameters& setFilter(std::optional<FilterExpr> _filter, UserId _user = {})
             {
-                filters = _filters;
+                filter = std::move(_filter);
+                filterUser = _user;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -182,11 +182,6 @@ namespace lms::db
             FindParameters& setReleaseName(std::string_view _releaseName)
             {
                 releaseName = _releaseName;
-                return *this;
-            }
-            FindParameters& setTrackList(TrackListId _trackList)
-            {
-                trackList = _trackList;
                 return *this;
             }
             FindParameters& setTrackNumber(int _trackNumber)

@@ -115,11 +115,11 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setFilters(Filters{}.setGenre(genre1.getId()))) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setFilter(FilterExpr::equal(genre1.getId()))) };
             ASSERT_EQ(tracks.size(), 1);
             EXPECT_EQ(tracks.front(), track.getId());
 
-            const auto tracks2{ Track::findIds(session, Track::FindParameters{}.setFilters(Filters{}.setGenre(genre2.getId()))) };
+            const auto tracks2{ Track::findIds(session, Track::FindParameters{}.setFilter(FilterExpr::equal(genre2.getId()))) };
             EXPECT_EQ(tracks2.size(), 0);
         }
     }
@@ -147,11 +147,11 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setFilters(Filters{}.setGenre(genre1.getId()))) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setFilter(FilterExpr::equal(genre1.getId()))) };
             ASSERT_EQ(tracks.size(), 1);
             EXPECT_EQ(tracks.front(), track.getId());
 
-            const auto tracks2{ Track::findIds(session, Track::FindParameters{}.setFilters(Filters{}.setGenre(genre2.getId()))) };
+            const auto tracks2{ Track::findIds(session, Track::FindParameters{}.setFilter(FilterExpr::equal(genre2.getId()))) };
             ASSERT_EQ(tracks2.size(), 1);
             EXPECT_EQ(tracks2.front(), track.getId());
         }

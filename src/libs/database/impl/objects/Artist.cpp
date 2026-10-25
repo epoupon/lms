@@ -36,8 +36,10 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 
+#include "JoinSet.hpp"
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
+#include "objects/FilterExprCompiler.hpp"
 #include "objects/detail/Types.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
@@ -49,156 +51,217 @@ namespace lms::db
 {
     namespace
     {
-        template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Artist::FindParameters& params)
+        // Several conditions can need the same join, which is then added once
+        constexpr std::string_view trackArtistLinkJoin{ "track_artist_link t_a_l ON t_a_l.artist_id = a.id" };
+        constexpr std::string_view releaseArtistLinkJoin{ "release_artist_link r_a_l ON r_a_l.artist_id = a.id" };
+        constexpr std::string_view artistFeedbackJoin{ "artist_feedback a_f ON a_f.artist_id = a.id" };
+
+        void addTrackArtistJoins(JoinSet& joins)
         {
-            session.checkReadTransaction();
+            joins.add(trackArtistLinkJoin);
+            joins.add("track t ON t.id = t_a_l.track_id");
+        }
 
-            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM artist a") };
-            if (params.sortMethod == ArtistSortMethod::LastWrittenDesc
-                || params.sortMethod == ArtistSortMethod::AddedDesc
-                || params.writtenAfter.isValid()
-                || params.trackArtistLinkType.has_value()
-                || params.track.isValid()
-                || params.filters.clusters.size() == 1
-                || params.filters.genre.isValid()
-                || params.filters.grouping.isValid()
-                || params.filters.language.isValid()
-                || params.filters.mood.isValid()
-                || params.filters.codec.has_value()
-                || params.filters.label.isValid()
-                || params.filters.releaseType.isValid())
-            {
-                query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
-            }
+        void addReleaseArtistJoins(JoinSet& joins)
+        {
+            joins.add(releaseArtistLinkJoin);
+            joins.add("track t ON t.release_id = r_a_l.release_id");
+        }
 
-            if (params.sortMethod == ArtistSortMethod::LastWrittenDesc
-                || params.sortMethod == ArtistSortMethod::AddedDesc
-                || params.writtenAfter.isValid()
-                || params.filters.codec.has_value()
-                || params.filters.label.isValid()
-                || params.filters.releaseType.isValid())
-            {
-                query.join("track t ON t.id = t_a_l.track_id");
+        // The tracks of an artist are the ones it is track artist of, or the ones of its releases if it is release artist
+        void addTracksJoins(JoinSet& joins, const Artist::FindParameters& params)
+        {
+            if (params.releaseArtistsOnly)
+                addReleaseArtistJoins(joins);
+            else
+                addTrackArtistJoins(joins);
+        }
 
-                if (params.writtenAfter.isValid())
-                    query.where("t.file_last_write > ?").bind(params.writtenAfter);
-
-                if (params.filters.codec.has_value())
-                    query.where("t.codec = ?").bind(detail::getDbCodec(*params.filters.codec));
-
-                if (params.filters.label.isValid())
+        SqlFragment createKeywordsCondition(const std::vector<std::string_view>& keywords)
+        {
+            const auto createKeywordClauses{ [&](std::string_view column) {
+                SqlFragment res;
+                for (const std::string_view keyword : keywords)
                 {
-                    query.join("release_label r_l ON r_l.release_id = t.release_id");
-                    query.where("r_l.label_id = ?").bind(params.filters.label);
+                    if (!res.isEmpty())
+                        res.append(" AND ");
+                    res.append(std::string{ column } + " LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" });
                 }
+                return res;
+            } };
 
-                if (params.filters.releaseType.isValid())
-                {
-                    query.join("release_release_type r_r_t ON r_r_t.release_id = t.release_id");
-                    query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
-                }
-            }
+            SqlFragment res{ "(" };
+            res.append(createKeywordClauses("a.name"));
+            res.append(") OR (");
+            res.append(createKeywordClauses("a.sort_name"));
+            res.append(")");
+            return res;
+        }
+
+        // Returns the condition of the parameters, filter included, and adds to joins the joins it relies on
+        SqlFragment createParamsConditions(const Artist::FindParameters& params, JoinSet& joins)
+        {
+            // The joins of the filter use the tracks: they must come first
+            if (params.filter && requiresTracks(*params.filter, FilterEntity::Artist))
+                addTracksJoins(joins, params);
+            SqlFragment res{ compileFilterExpr(params.filter, FilterEntity::Artist, params.filterUser, joins) };
 
             if (params.releaseArtistsOnly)
-                query.join("release_artist_link r_a_l ON r_a_l.artist_id = a.id");
+                joins.add(releaseArtistLinkJoin);
 
-            if (params.filters.mediaLibrary.isValid())
+            if (params.writtenAfter.isValid())
             {
-                query.where(
-                         "EXISTS (SELECT 1 FROM track_artist_link t_a_l JOIN track t ON t.id = t_a_l.track_id WHERE t_a_l.artist_id = a.id AND t.media_library_id = ?)"
-                         " OR EXISTS (SELECT 1 FROM release_artist_link r_a_l JOIN release r ON r.id = r_a_l.release_id JOIN track t ON t.release_id = r.id WHERE r_a_l.artist_id = a.id AND t.media_library_id = ?)")
-                    .bind(params.filters.mediaLibrary)
-                    .bind(params.filters.mediaLibrary);
+                addTracksJoins(joins, params);
+                res.combineWithAnd({ "t.file_last_write > ?", { params.writtenAfter } });
             }
 
             if (params.trackArtistLinkType.has_value())
-                query.where("+t_a_l.type = ?").bind(*params.trackArtistLinkType); // Exclude this since the query planner does not do a good job when db is not analyzed
+            {
+                joins.add(trackArtistLinkJoin);
+                res.combineWithAnd({ "+t_a_l.type = ?", { static_cast<int>(*params.trackArtistLinkType) } }); // Exclude this since the query planner does not do a good job when db is not analyzed
+            }
 
             if (!params.keywords.empty())
+                res.combineWithAnd(createKeywordsCondition(params.keywords));
+
+            if (params.feedbackUser.isValid())
             {
-                std::vector<std::string> clauses;
-                std::vector<std::string> sortClauses;
-
-                for (const std::string_view keyword : params.keywords)
-                {
-                    clauses.push_back("a.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-                    query.bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
-                }
-
-                for (const std::string_view keyword : params.keywords)
-                {
-                    sortClauses.push_back("a.sort_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-                    query.bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
-                }
-
-                query.where("(" + core::stringUtils::joinStrings(clauses, " AND ") + ") OR (" + core::stringUtils::joinStrings(sortClauses, " AND ") + ")");
+                joins.add(artistFeedbackJoin);
+                res.combineWithAnd({ "a_f.user_id = ?", { params.feedbackUser.getValue() } });
             }
-
-            if (params.feedbackUser.isValid() || params.feedbackValue)
+            if (params.feedbackValue)
             {
-                query.join("artist_feedback a_f ON a_f.artist_id = a.id");
-                if (params.feedbackUser.isValid())
-                    query.where("a_f.user_id = ?").bind(params.feedbackUser);
-                if (params.feedbackValue)
-                    query.where("a_f.value = ?").bind(static_cast<int>(*params.feedbackValue));
-            }
-
-            if (params.filters.clusters.size() == 1)
-            {
-                query.join("track_cluster t_c ON t_c.track_id = t_a_l.track_id")
-                    .where("t_c.cluster_id = ?")
-                    .bind(params.filters.clusters.front());
-            }
-            else if (params.filters.clusters.size() > 1)
-            {
-                std::ostringstream oss;
-                oss << "a.id IN (SELECT DISTINCT t_a_l.artist_id FROM track_artist_link t_a_l"
-                       " INNER JOIN track_cluster t_c ON t_c.track_id = t_a_l.track_id";
-
-                WhereClause clusterClause;
-                for (const ClusterId clusterId : params.filters.clusters)
-                {
-                    clusterClause.Or(WhereClause{ "t_c.cluster_id = ?" });
-                    query.bind(clusterId);
-                }
-
-                oss << " " << clusterClause.get();
-                oss << " GROUP BY t_a_l.track_id,t_a_l.artist_id HAVING COUNT(DISTINCT t_c.cluster_id) = " << params.filters.clusters.size() << ")";
-
-                query.where(oss.str());
-            }
-
-            if (params.filters.genre.isValid())
-            {
-                query.join("track_genre t_g ON t_g.track_id = t_a_l.track_id")
-                    .where("t_g.genre_id = ?")
-                    .bind(params.filters.genre);
-            }
-
-            if (params.filters.grouping.isValid())
-            {
-                query.join("track_grouping t_gr ON t_gr.track_id = t_a_l.track_id")
-                    .where("t_gr.grouping_id = ?")
-                    .bind(params.filters.grouping);
-            }
-
-            if (params.filters.language.isValid())
-            {
-                query.join("track_language t_l ON t_l.track_id = t_a_l.track_id")
-                    .where("t_l.language_id = ?")
-                    .bind(params.filters.language);
-            }
-
-            if (params.filters.mood.isValid())
-            {
-                query.join("track_mood t_m ON t_m.track_id = t_a_l.track_id")
-                    .where("t_m.mood_id = ?")
-                    .bind(params.filters.mood);
+                joins.add(artistFeedbackJoin);
+                res.combineWithAnd({ "a_f.value = ?", { static_cast<int>(*params.feedbackValue) } });
             }
 
             if (params.track.isValid())
-                query.where("t_a_l.track_id = ?").bind(params.track);
+            {
+                joins.add(trackArtistLinkJoin);
+                res.combineWithAnd({ "t_a_l.track_id = ?", { params.track.getValue() } });
+            }
+
+            // The joins of a sort select the artists too: the ones without any row are excluded
+            if (params.sortMethod == ArtistSortMethod::LastWrittenDesc || params.sortMethod == ArtistSortMethod::AddedDesc)
+                addTracksJoins(joins, params);
+            if (params.sortMethod == ArtistSortMethod::FeedbackDateDesc)
+                joins.add(artistFeedbackJoin);
+
+            return res;
+        }
+
+        // A sort on a date is the aggregate of a column over all the joined rows of an artist.
+        // With the union, each branch computes it as "sort_key", and it is aggregated again over both branches as an artist can be in both
+        struct SortDate
+        {
+            std::string_view function;
+            std::string_view column;
+        };
+
+        std::optional<SortDate> getSortDate(ArtistSortMethod sortMethod)
+        {
+            switch (sortMethod)
+            {
+            case ArtistSortMethod::LastWrittenDesc:
+                return SortDate{ "MAX", "t.file_last_write" };
+            case ArtistSortMethod::AddedDesc:
+                return SortDate{ "MIN", "t.file_added" };
+            case ArtistSortMethod::FeedbackDateDesc:
+                return SortDate{ "MAX", "a_f.date_time" };
+            case ArtistSortMethod::None:
+            case ArtistSortMethod::Id:
+            case ArtistSortMethod::Name:
+            case ArtistSortMethod::SortName:
+            case ArtistSortMethod::Random:
+                return std::nullopt;
+            }
+
+            throw Exception{ "Unhandled artist sort method" };
+        }
+
+        std::string createSortDateExpr(ArtistSortMethod sortMethod, bool useUnion)
+        {
+            const std::optional<SortDate> sortDate{ getSortDate(sortMethod) };
+            assert(sortDate);
+
+            return std::string{ sortDate->function } + "(" + (useUnion ? "f_u.sort_key" : std::string{ sortDate->column }) + ")";
+        }
+
+        bool needsTracks(const Artist::FindParameters& params)
+        {
+            return params.sortMethod == ArtistSortMethod::LastWrittenDesc
+                || params.sortMethod == ArtistSortMethod::AddedDesc
+                || params.writtenAfter.isValid()
+                || (params.filter && requiresTracks(*params.filter, FilterEntity::Artist));
+        }
+
+        // The tracks of an artist are the ones it is track artist of and the ones of the releases it is release artist of,
+        // unless the parameters already restrict the artists to one of them
+        bool usesUnion(const Artist::FindParameters& params)
+        {
+            return needsTracks(params) && !params.releaseArtistsOnly && !params.trackArtistLinkType && !params.track.isValid();
+        }
+
+        // A complete artist query, so that each branch keeps its own join order
+        SqlFragment createUnionBranch(const Artist::FindParameters& params)
+        {
+            JoinSet joins;
+            const SqlFragment where{ createParamsConditions(params, joins) };
+
+            SqlFragment res{ "SELECT a.id AS artist_id, " };
+            if (const std::optional<SortDate> sortDate{ getSortDate(params.sortMethod) })
+                res.append(std::string{ sortDate->function } + "(" + std::string{ sortDate->column } + ")");
+            else
+                res.append("NULL");
+            res.append(" AS sort_key FROM artist a");
+            res.append(joins.toSql());
+            if (!where.isEmpty())
+            {
+                res.append(" WHERE ");
+                res.append(where);
+            }
+            res.append(" GROUP BY a.id");
+
+            return res;
+        }
+
+        // The artists that are track artists, and the ones that are release artists
+        SqlFragment createUnionJoin(const Artist::FindParameters& params)
+        {
+            assert(!params.releaseArtistsOnly);
+
+            Artist::FindParameters releaseArtistParams{ params };
+            releaseArtistParams.releaseArtistsOnly = true;
+
+            SqlFragment res{ "(" };
+            res.append(createUnionBranch(params));
+            res.append(" UNION ALL ");
+            res.append(createUnionBranch(releaseArtistParams));
+            res.append(") f_u ON f_u.artist_id = a.id");
+
+            return res;
+        }
+
+        // Returns the condition selecting the artists matching the parameters, and adds to joins the joins it relies on
+        SqlFragment createArtistSelection(const Artist::FindParameters& params, JoinSet& joins)
+        {
+            // A link type needs the track artist links, and releaseArtistsOnly the release artist ones: they would not describe the same tracks
+            assert(!params.releaseArtistsOnly || !params.trackArtistLinkType.has_value());
+
+            // The conditions are inside each branch of the union
+            if (usesUnion(params))
+            {
+                joins.add(createUnionJoin(params));
+                return {};
+            }
+
+            return createParamsConditions(params, joins);
+        }
+
+        template<typename ResultType>
+        void applySortMethod(Wt::Dbo::Query<ResultType>& query, const Artist::FindParameters& params)
+        {
+            const bool useUnion{ usesUnion(params) };
 
             switch (params.sortMethod)
             {
@@ -217,35 +280,45 @@ namespace lms::db
                 query.orderBy("RANDOM()");
                 break;
             case ArtistSortMethod::LastWrittenDesc:
-                query.orderBy("MAX(t.file_last_write) DESC, COALESCE(NULLIF(a.sort_name, ''), a.name) COLLATE NOCASE");
-                break;
             case ArtistSortMethod::AddedDesc:
-                query.orderBy("MIN(t.file_added) DESC, COALESCE(NULLIF(a.sort_name, ''), a.name) COLLATE NOCASE");
+                query.orderBy(createSortDateExpr(params.sortMethod, useUnion) + " DESC, COALESCE(NULLIF(a.sort_name, ''), a.name) COLLATE NOCASE");
                 break;
             case ArtistSortMethod::FeedbackDateDesc:
                 assert(params.feedbackUser.isValid());
-                query.orderBy("a_f.date_time DESC");
+                query.orderBy(createSortDateExpr(params.sortMethod, useUnion) + " DESC");
                 break;
             }
+        }
 
-            query.groupBy("a.id");
+        template<typename ResultType>
+        Wt::Dbo::Query<ResultType> createListQuery(Session& session, std::string_view selectedItem, const Artist::FindParameters& params)
+        {
+            JoinSet joins;
+            const SqlFragment where{ createArtistSelection(params, joins) };
+
+            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ selectedItem } + " FROM artist a") };
+            joins.apply(query);
+            applyWhereFragment(query, where);
+            applySortMethod(query, params);
+
+            // Joins can duplicate artists
+            if (!joins.empty())
+                query.groupBy("a.id");
 
             return query;
         }
 
-        template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, const Artist::FindParameters& params)
+        Wt::Dbo::Query<int> createCountQuery(Session& session, const Artist::FindParameters& params)
         {
-            std::string_view itemToSelect;
+            JoinSet joins;
+            const SqlFragment where{ createArtistSelection(params, joins) };
 
-            if constexpr (std::is_same_v<ResultType, ArtistId>)
-                itemToSelect = "a.id";
-            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Artist>>)
-                itemToSelect = "a";
-            else
-                static_assert("Unhandled type");
+            // Joins can duplicate artists
+            auto query{ session.getDboSession()->query<int>(joins.empty() ? "SELECT COUNT(*) FROM artist a" : "SELECT COUNT(DISTINCT a.id) FROM artist a") };
+            joins.apply(query);
+            applyWhereFragment(query, where);
 
-            return createQuery<ResultType>(session, itemToSelect, params);
+            return query;
         }
     } // namespace
 
@@ -265,6 +338,13 @@ namespace lms::db
         session.checkReadTransaction();
 
         return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM artist"));
+    }
+
+    std::size_t Artist::getCount(Session& session, const FindParameters& params)
+    {
+        session.checkReadTransaction();
+
+        return utils::fetchQuerySingleResult(createCountQuery(session, params));
     }
 
     void Artist::find(Session& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist::pointer&)>& func, MediaLibraryId library)
@@ -325,7 +405,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery<ArtistId>(session, params) };
+        auto query{ createListQuery<ArtistId>(session, "a.id", params) };
         return utils::execRangeQuery<ArtistId>(query, params.range);
     }
 
@@ -333,7 +413,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery<Wt::Dbo::ptr<Artist>>(session, params) };
+        auto query{ createListQuery<Wt::Dbo::ptr<Artist>>(session, "a", params) };
         return utils::execRangeQuery<Artist::pointer>(query, params.range);
     }
 
@@ -341,7 +421,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery<Wt::Dbo::ptr<Artist>>(session, params) };
+        auto query{ createListQuery<Wt::Dbo::ptr<Artist>>(session, "a", params) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 

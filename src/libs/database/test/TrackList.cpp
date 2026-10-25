@@ -52,10 +52,10 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto tracks{ Track::findIds(session, Track::FindParameters{}.setTrackList(trackList1.getId())) };
+            auto tracks{ trackList1->getTrackIds() };
             EXPECT_EQ(tracks.size(), 0);
 
-            tracks = Track::findIds(session, Track::FindParameters{}.setTrackList(trackList2.getId()));
+            tracks = trackList2->getTrackIds();
             EXPECT_EQ(tracks.size(), 0);
         }
 
@@ -68,12 +68,80 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto tracks{ Track::findIds(session, Track::FindParameters{}.setTrackList(trackList1.getId())) };
+            auto tracks{ trackList1->getTrackIds() };
             ASSERT_EQ(tracks.size(), 1);
             EXPECT_EQ(tracks.front(), track.getId());
 
-            tracks = Track::findIds(session, Track::FindParameters{}.setTrackList(trackList2.getId()));
+            tracks = trackList2->getTrackIds();
             EXPECT_EQ(tracks.size(), 0);
+        }
+    }
+
+    TEST_F(DatabaseFixture, TrackList_getTrackIds_orderedByPosition)
+    {
+        ScopedTrackList trackList{ session, "MyTrackList", TrackListType::PlayList };
+        ScopedTrackList otherTrackList{ session, "MyOtherTrackList", TrackListType::PlayList };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            session.create<TrackListEntry>(track3.get(), trackList.get());
+            session.create<TrackListEntry>(track1.get(), trackList.get());
+            session.create<TrackListEntry>(track3.get(), trackList.get());
+            session.create<TrackListEntry>(track2.get(), otherTrackList.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto tracks{ trackList->getTrackIds() };
+            ASSERT_EQ(tracks.size(), 3);
+            EXPECT_EQ(tracks[0], track3.getId());
+            EXPECT_EQ(tracks[1], track1.getId());
+            EXPECT_EQ(tracks[2], track3.getId());
+
+            const auto page{ trackList->getTrackIds(Range{ 1, 1 }) };
+            ASSERT_EQ(page.size(), 1);
+            EXPECT_EQ(page[0], track1.getId());
+
+            EXPECT_EQ(otherTrackList->getTrackIds().size(), 1);
+        }
+    }
+
+    TEST_F(DatabaseFixture, TrackList_visitTracks_orderedByPosition)
+    {
+        ScopedTrackList trackList{ session, "MyTrackList", TrackListType::PlayList };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::size_t count{};
+            trackList->visitTracks([&](const Track::pointer&) { ++count; });
+            EXPECT_EQ(count, 0);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            session.create<TrackListEntry>(track2.get(), trackList.get());
+            session.create<TrackListEntry>(track1.get(), trackList.get());
+            session.create<TrackListEntry>(track2.get(), trackList.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<TrackId> visited;
+            trackList->visitTracks([&](const Track::pointer& track) { visited.push_back(track->getId()); });
+            ASSERT_EQ(visited.size(), 3);
+            EXPECT_EQ(visited[0], track2.getId());
+            EXPECT_EQ(visited[1], track1.getId());
+            EXPECT_EQ(visited[2], track2.getId());
         }
     }
 
@@ -181,7 +249,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             std::vector<TrackListId> visitedTrackLists;
-            TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId())), [&](const TrackList::pointer& trackList) {
+            TrackList::find(session, TrackList::FindParameters{}.setFilter(FilterExpr::equal(library->getId())), [&](const TrackList::pointer& trackList) {
                 visitedTrackLists.push_back(trackList->getId());
             });
             ASSERT_EQ(visitedTrackLists.size(), 1);
@@ -215,7 +283,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             std::vector<TrackListId> visitedTrackLists;
-            TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setReleaseType(releaseType1->getId())), [&](const TrackList::pointer& trackList) {
+            TrackList::find(session, TrackList::FindParameters{}.setFilter(FilterExpr::equal(releaseType1->getId())), [&](const TrackList::pointer& trackList) {
                 visitedTrackLists.push_back(trackList->getId());
             });
             ASSERT_EQ(visitedTrackLists.size(), 1);
@@ -225,7 +293,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             std::vector<TrackListId> visitedTrackLists;
-            TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setReleaseType(releaseType2->getId())), [&](const TrackList::pointer& trackList) {
+            TrackList::find(session, TrackList::FindParameters{}.setFilter(FilterExpr::equal(releaseType2->getId())), [&](const TrackList::pointer& trackList) {
                 visitedTrackLists.push_back(trackList->getId());
             });
             ASSERT_EQ(visitedTrackLists.size(), 1);
@@ -244,7 +312,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setClusters(std::initializer_list<ClusterId>{ cluster.getId() }))) };
+            auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setFilter(FilterExpr::equal(cluster.getId()))) };
             EXPECT_EQ(trackLists.size(), 0);
         }
 
@@ -258,7 +326,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setClusters(std::initializer_list<ClusterId>{ cluster.getId() }))) };
+            auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setFilter(FilterExpr::equal(cluster.getId()))) };
             ASSERT_EQ(trackLists.size(), 1);
             EXPECT_EQ(trackLists.front(), trackList1.getId());
         }

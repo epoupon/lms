@@ -36,7 +36,7 @@
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ArtworkId.hpp"
-#include "database/objects/Filters.hpp"
+#include "database/objects/FilterExpr.hpp"
 #include "database/objects/MediaLibraryId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
@@ -59,20 +59,22 @@ namespace lms::db
 
         struct FindParameters
         {
-            Filters filters;
+            std::optional<FilterExpr> filter;                       // if set, artists must match this expression: its track and release conditions must hold on one of their tracks, on which trackArtistLinkType and writtenAfter must also hold: a track they are track artist of, or a track of a release they are release artist of (only the latter if releaseArtistsOnly)
+            UserId filterUser;                                      // required if filter has per-user fields
             std::vector<std::string_view> keywords;                 // if non empty, name must match all of these keywords (on either name field OR sort name field)
             bool releaseArtistsOnly{};                              // if set, only release artists
             std::optional<TrackArtistLinkType> trackArtistLinkType; // if set, only artists that have produced at least one track with this link type
-            ArtistSortMethod sortMethod{ ArtistSortMethod::None };
+            ArtistSortMethod sortMethod{ ArtistSortMethod::None };  // the date sorts consider the tracks the artist is track artist of, and the ones of the releases it is release artist of (only the latter if releaseArtistsOnly)
             std::optional<Range> range;
-            Wt::WDateTime writtenAfter;
+            Wt::WDateTime writtenAfter;                 // if valid, only artists that have a track written after this date (same tracks as the sorts)
             UserId feedbackUser;                        // if valid, only artists that have feedback from this user
             std::optional<FeedbackValue> feedbackValue; // if set, only artists with feedback matching this value (any user, unless feedbackUser is also set)
             TrackId track;                              // artists involved in this track
 
-            FindParameters& setFilters(const Filters& _filters)
+            FindParameters& setFilter(std::optional<FilterExpr> _filter, UserId _user = {})
             {
-                filters = _filters;
+                filter = std::move(_filter);
+                filterUser = _user;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -126,6 +128,7 @@ namespace lms::db
 
         // Accessors
         static std::size_t getCount(Session& session);
+        static std::size_t getCount(Session& session, const FindParameters& params);
         static pointer find(Session& session, const core::UUID& MBID);
         static pointer find(Session& session, ArtistId id);
         static std::vector<pointer> find(Session& session, std::string_view name); // exact match on name field

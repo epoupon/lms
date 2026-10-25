@@ -190,8 +190,7 @@ namespace lms::db
         Name,
         DateDescAndRelease,
         OriginalDateDescAndRelease,
-        Release,   // order by disc/track number
-        TrackList, // order by asc order in tracklist
+        Release, // order by disc/track number
         TrackNumber,
     };
 

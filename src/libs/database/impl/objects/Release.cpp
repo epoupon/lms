@@ -24,7 +24,6 @@
 
 #include "core/PartialDateTime.hpp"
 #include "core/String.hpp"
-#include "core/TaggedType.hpp"
 
 #include "database/Session.hpp"
 #include "database/Types.hpp"
@@ -48,9 +47,11 @@
 #include "database/objects/User.hpp"
 #include "database/objects/Work.hpp"
 
+#include "JoinSet.hpp"
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
 #include "detail/Types.hpp"
+#include "objects/FilterExprCompiler.hpp"
 #include "traits/EnumSetTraits.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PartialDateTimeTraits.hpp"
@@ -66,215 +67,159 @@ namespace lms::db
 {
     namespace
     {
-        using GroupByRelease = core::TaggedBool<struct GroupByReleaseTag>;
+        // Several conditions can need the same join, which is then added once
+        constexpr std::string_view tracksJoin{ "track t ON t.release_id = r.id" };
+        constexpr std::string_view releaseFeedbackJoin{ "release_feedback r_f ON r_f.release_id = r.id" };
 
-        template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Release::FindParameters& params, GroupByRelease groupByRelease)
+        SqlFragment createKeywordsCondition(const std::vector<std::string_view>& keywords)
+        {
+            const auto createKeywordClauses{ [&](std::string_view column) {
+                SqlFragment res;
+                for (const std::string_view keyword : keywords)
+                {
+                    if (!res.isEmpty())
+                        res.append(" AND ");
+                    res.append(std::string{ column } + " LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" });
+                }
+                return res;
+            } };
+
+            SqlFragment res{ "(" };
+            res.append(createKeywordClauses("r.name"));
+            res.append(") OR (");
+            res.append(createKeywordClauses("m.name"));
+            res.append(")");
+            return res;
+        }
+
+        // Returns the condition of the parameters, filter included, and adds to joins the joins it relies on
+        SqlFragment createParamsConditions(const Release::FindParameters& params, JoinSet& joins)
         {
             assert(params.keywords.empty() || params.name.empty());
             assert(!params.directory.isValid() || !params.parentDirectory.isValid());
+            assert(!params.artist.isValid() || !params.trackArtist.isValid());
 
-            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " from release r") };
+            SqlFragment res;
 
-            if (params.sortMethod == ReleaseSortMethod::LastWrittenDesc
-                || params.sortMethod == ReleaseSortMethod::AddedDesc
-                || params.sortMethod == ReleaseSortMethod::DateAsc
-                || params.sortMethod == ReleaseSortMethod::DateDesc
-                || params.sortMethod == ReleaseSortMethod::OriginalDate
-                || params.sortMethod == ReleaseSortMethod::OriginalDateDesc
-                || params.writtenAfter.isValid()
-                || params.dateRange
-                || params.originalDateRange
-                || params.trackArtist.isValid()
-                || params.filters.clusters.size() == 1
-                || params.filters.genre.isValid()
-                || params.filters.grouping.isValid()
-                || params.filters.language.isValid()
-                || params.filters.mediaLibrary.isValid()
-                || params.filters.mood.isValid()
-                || params.filters.codec.has_value()
-                || params.directory.isValid()
-                || params.parentDirectory.isValid())
+            if (params.directory.isValid())
             {
-                query.join("track t ON t.release_id = r.id");
+                joins.add(tracksJoin);
+                res.combineWithAnd({ "t.directory_id = ?", { params.directory.getValue() } });
             }
-
-            if (!params.keywords.empty())
-                query.leftJoin("medium m ON m.release_id = r.id");
 
             if (params.parentDirectory.isValid())
             {
-                query.join("directory d ON t.directory_id = d.id");
-                query.where("d.parent_directory_id = ?").bind(params.parentDirectory);
-            }
-
-            if (params.filters.mediaLibrary.isValid())
-                query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
-
-            if (params.filters.label.isValid())
-            {
-                query.join("release_label r_l ON r_l.release_id = r.id");
-                query.where("r_l.label_id = ?").bind(params.filters.label);
-            }
-
-            if (params.filters.releaseType.isValid())
-            {
-                query.join("release_release_type r_r_t ON r_r_t.release_id = r.id");
-                query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
-            }
-
-            if (params.directory.isValid())
-                query.where("t.directory_id = ?").bind(params.directory);
-
-            if (!params.releaseType.empty())
-            {
-                query.join("release_release_type r_r_t ON r_r_t.release_id = r.id");
-                query.join("release_type r_t ON r_t.id = r_r_t.release_type_id")
-                    .where("r_t.name = ?")
-                    .bind(params.releaseType);
+                joins.add(tracksJoin);
+                joins.add("directory d ON t.directory_id = d.id");
+                res.combineWithAnd({ "d.parent_directory_id = ?", { params.parentDirectory.getValue() } });
             }
 
             if (params.writtenAfter.isValid())
-                query.where("t.file_last_write > ?").bind(params.writtenAfter);
+            {
+                joins.add(tracksJoin);
+                res.combineWithAnd({ "t.file_last_write > ?", { params.writtenAfter } });
+            }
 
             if (params.dateRange)
             {
                 assert(!params.originalDateRange);
-                query.where("CAST(SUBSTR(t.date, 1, 4) AS INTEGER) >= ?").bind(params.dateRange->begin);
-                query.where("CAST(SUBSTR(t.date, 1, 4) AS INTEGER) <= ?").bind(params.dateRange->end);
+                joins.add(tracksJoin);
+                res.combineWithAnd({ "CAST(SUBSTR(t.date, 1, 4) AS INTEGER) BETWEEN ? AND ?", { params.dateRange->begin, params.dateRange->end } });
             }
 
             if (params.originalDateRange)
             {
                 assert(!params.dateRange);
-                query.where("CAST(SUBSTR(COALESCE(t.original_date, t.date), 1, 4) AS INTEGER) >= ?").bind(params.originalDateRange->begin);
-                query.where("CAST(SUBSTR(COALESCE(t.original_date, t.date), 1, 4) AS INTEGER) <= ?").bind(params.originalDateRange->end);
-            }
-
-            if (!params.name.empty())
-                query.where("r.name = ?").bind(params.name);
-
-            if (!params.keywords.empty())
-            {
-                std::vector<std::string> nameClauses;
-                std::vector<std::string> mediumNameClauses;
-
-                for (const std::string_view keyword : params.keywords)
-                {
-                    nameClauses.push_back("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-                    query.bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
-                }
-
-                for (const std::string_view keyword : params.keywords)
-                {
-                    mediumNameClauses.push_back("m.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-                    query.bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
-                }
-
-                query.where("(" + core::stringUtils::joinStrings(nameClauses, " AND ") + ") OR (" + core::stringUtils::joinStrings(mediumNameClauses, " AND ") + ")");
-            }
-
-            if (params.feedbackUser.isValid() || params.feedbackValue)
-            {
-                query.join("release_feedback r_f ON r_f.release_id = r.id");
-                if (params.feedbackUser.isValid())
-                    query.where("r_f.user_id = ?").bind(params.feedbackUser);
-                if (params.feedbackValue)
-                    query.where("r_f.value = ?").bind(static_cast<int>(*params.feedbackValue));
-            }
-
-            if (params.artist.isValid())
-            {
-                assert(!params.trackArtist.isValid());
-                query.join("release_artist_link r_a_l ON r_a_l.release_id = r.id");
-                query.where("r_a_l.artist_id = ?").bind(params.artist);
+                joins.add(tracksJoin);
+                res.combineWithAnd({ "CAST(SUBSTR(COALESCE(t.original_date, t.date), 1, 4) AS INTEGER) BETWEEN ? AND ?", { params.originalDateRange->begin, params.originalDateRange->end } });
             }
 
             if (params.trackArtist.isValid())
             {
-                assert(!params.artist.isValid());
+                joins.add(tracksJoin);
+                joins.add("track_artist_link t_a_l ON t_a_l.track_id = t.id");
+                res.combineWithAnd({ "t_a_l.artist_id = ?", { params.trackArtist.getValue() } });
 
-                query.join("track_artist_link t_a_l ON t_a_l.track_id = t.id");
-
-                query.where("t_a_l.artist_id = ?").bind(params.trackArtist);
-
-                if (!params.trackArtistLinkTypes.empty())
+                SqlFragment linkTypes;
+                for (const TrackArtistLinkType linkType : params.trackArtistLinkTypes)
                 {
-                    std::ostringstream oss;
-
-                    bool first{ true };
-                    for (TrackArtistLinkType linkType : params.trackArtistLinkTypes)
-                    {
-                        if (!first)
-                            oss << " OR ";
-                        oss << "t_a_l.type = ?";
-                        query.bind(linkType);
-
-                        first = false;
-                    }
-                    query.where(oss.str());
+                    if (!linkTypes.isEmpty())
+                        linkTypes.append(" OR ");
+                    linkTypes.append("t_a_l.type = ?", { static_cast<int>(linkType) });
                 }
+                res.combineWithAnd(linkTypes);
             }
 
-            if (params.filters.clusters.size() == 1)
+            if (!params.releaseType.empty())
             {
-                query.join("track_cluster t_c ON t_c.track_id = t.id")
-                    .where("t_c.cluster_id = ?")
-                    .bind(params.filters.clusters.front());
+                joins.add("release_release_type r_r_t ON r_r_t.release_id = r.id");
+                joins.add("release_type r_t ON r_t.id = r_r_t.release_type_id");
+                res.combineWithAnd({ "r_t.name = ?", { params.releaseType } });
             }
-            else if (params.filters.clusters.size() > 1)
+
+            if (!params.name.empty())
+                res.combineWithAnd({ "r.name = ?", { params.name } });
+
+            if (!params.keywords.empty())
             {
-                std::ostringstream oss;
-                oss << "r.id IN (SELECT DISTINCT t.release_id FROM track t"
-                       " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
-
-                WhereClause clusterClause;
-                for (const ClusterId clusterId : params.filters.clusters)
-                {
-                    clusterClause.Or(WhereClause{ "t_c.cluster_id = ?" });
-                    query.bind(clusterId);
-                }
-
-                oss << " " << clusterClause.get();
-                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.filters.clusters.size() << ")";
-
-                query.where(oss.str());
+                joins.add("medium m ON m.release_id = r.id", JoinSet::Type::Left);
+                res.combineWithAnd(createKeywordsCondition(params.keywords));
             }
 
-            if (params.filters.genre.isValid())
+            if (params.feedbackUser.isValid())
             {
-                query.join("track_genre t_g ON t_g.track_id = t.id")
-                    .where("t_g.genre_id = ?")
-                    .bind(params.filters.genre);
+                joins.add(releaseFeedbackJoin);
+                res.combineWithAnd({ "r_f.user_id = ?", { params.feedbackUser.getValue() } });
             }
-
-            if (params.filters.grouping.isValid())
+            if (params.feedbackValue)
             {
-                query.join("track_grouping t_gr ON t_gr.track_id = t.id")
-                    .where("t_gr.grouping_id = ?")
-                    .bind(params.filters.grouping);
+                joins.add(releaseFeedbackJoin);
+                res.combineWithAnd({ "r_f.value = ?", { static_cast<int>(*params.feedbackValue) } });
             }
 
-            if (params.filters.language.isValid())
+            if (params.artist.isValid())
             {
-                query.join("track_language t_l ON t_l.track_id = t.id")
-                    .where("t_l.language_id = ?")
-                    .bind(params.filters.language);
+                joins.add("release_artist_link r_a_l ON r_a_l.release_id = r.id");
+                res.combineWithAnd({ "r_a_l.artist_id = ?", { params.artist.getValue() } });
             }
-
-            if (params.filters.mood.isValid())
-            {
-                query.join("track_mood t_m ON t_m.track_id = t.id")
-                    .where("t_m.mood_id = ?")
-                    .bind(params.filters.mood);
-            }
-
-            if (params.filters.codec.has_value())
-                query.where("t.codec = ?").bind(detail::getDbCodec(params.filters.codec.value()));
 
             if (params.releaseGroupMBID)
-                query.where("group_mbid = ?").bind(*params.releaseGroupMBID);
+                res.combineWithAnd({ "r.group_mbid = ?", { *params.releaseGroupMBID } });
 
+            // The joins of a sort select the releases too: the ones without any row are excluded
+            switch (params.sortMethod)
+            {
+            case ReleaseSortMethod::LastWrittenDesc:
+            case ReleaseSortMethod::AddedDesc:
+            case ReleaseSortMethod::DateAsc:
+            case ReleaseSortMethod::DateDesc:
+            case ReleaseSortMethod::OriginalDate:
+            case ReleaseSortMethod::OriginalDateDesc:
+                joins.add(tracksJoin);
+                break;
+            case ReleaseSortMethod::FeedbackDateDesc:
+                joins.add(releaseFeedbackJoin);
+                break;
+            case ReleaseSortMethod::None:
+            case ReleaseSortMethod::Id:
+            case ReleaseSortMethod::Name:
+            case ReleaseSortMethod::SortName:
+            case ReleaseSortMethod::ArtistNameThenName:
+            case ReleaseSortMethod::Random:
+                break;
+            }
+
+            // The joins of the filter use the tracks: they must come first
+            if (params.filter && requiresTracks(*params.filter, FilterEntity::Release))
+                joins.add(tracksJoin);
+            res.combineWithAnd(compileFilterExpr(params.filter, FilterEntity::Release, params.filterUser, joins));
+
+            return res;
+        }
+
+        template<typename ResultType>
+        void applySortMethod(Wt::Dbo::Query<ResultType>& query, const Release::FindParameters& params)
+        {
             switch (params.sortMethod)
             {
             case ReleaseSortMethod::None:
@@ -317,9 +262,35 @@ namespace lms::db
                 query.orderBy("r_f.date_time DESC");
                 break;
             }
+        }
 
-            if (groupByRelease.value())
+        template<typename ResultType>
+        Wt::Dbo::Query<ResultType> createListQuery(Session& session, std::string_view selectedItem, const Release::FindParameters& params)
+        {
+            JoinSet joins;
+            const SqlFragment where{ createParamsConditions(params, joins) };
+
+            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ selectedItem } + " from release r") };
+            joins.apply(query);
+            applyWhereFragment(query, where);
+            applySortMethod(query, params);
+
+            // Joins can duplicate releases
+            if (!joins.empty())
                 query.groupBy("r.id");
+
+            return query;
+        }
+
+        Wt::Dbo::Query<int> createCountQuery(Session& session, const Release::FindParameters& params)
+        {
+            JoinSet joins;
+            const SqlFragment where{ createParamsConditions(params, joins) };
+
+            // Joins can duplicate releases
+            auto query{ session.getDboSession()->query<int>(joins.empty() ? "SELECT COUNT(*) from release r" : "SELECT COUNT(DISTINCT r.id) from release r") };
+            joins.apply(query);
+            applyWhereFragment(query, where);
 
             return query;
         }
@@ -599,7 +570,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "r", params, GroupByRelease{ true }) };
+        auto query{ createListQuery<Wt::Dbo::ptr<Release>>(session, "r", params) };
         return utils::execRangeQuery<pointer>(query, params.range);
     }
 
@@ -607,7 +578,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "r", params, GroupByRelease{ true }) };
+        auto query{ createListQuery<Wt::Dbo::ptr<Release>>(session, "r", params) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
@@ -615,7 +586,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery<ReleaseId>(session, "r.id", params, GroupByRelease{ true }) };
+        auto query{ createListQuery<ReleaseId>(session, "r.id", params) };
         return utils::execRangeQuery<ReleaseId>(query, params.range);
     }
 
@@ -633,7 +604,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(DISTINCT r.id)", params, GroupByRelease{ false }));
+        return utils::fetchQuerySingleResult(createCountQuery(session, params));
     }
 
     core::PartialDateTime Release::getDate() const

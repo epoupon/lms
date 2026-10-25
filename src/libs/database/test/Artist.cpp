@@ -364,13 +364,13 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId()))) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilter(FilterExpr::equal(library->getId()))) };
             ASSERT_EQ(artists.size(), 1);
             EXPECT_EQ(artists.front(), artist.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilters(Filters{}.setMediaLibrary(otherLibrary->getId()))) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilter(FilterExpr::equal(otherLibrary->getId()))) };
             EXPECT_EQ(artists.size(), 0);
         }
     }
@@ -407,19 +407,19 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library1->getId()))) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilter(FilterExpr::equal(library1->getId()))) };
             ASSERT_EQ(artists.size(), 1);
             EXPECT_EQ(artists.front(), artist.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library2->getId()))) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilter(FilterExpr::equal(library2->getId()))) };
             ASSERT_EQ(artists.size(), 1);
             EXPECT_EQ(artists.front(), artist.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilters(Filters{}.setMediaLibrary(otherLibrary->getId()))) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilter(FilterExpr::equal(otherLibrary->getId()))) };
             EXPECT_EQ(artists.size(), 0);
         }
     }
@@ -451,7 +451,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId()))) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilter(FilterExpr::equal(library->getId()))) };
             ASSERT_EQ(artists.size(), 1);
             EXPECT_EQ(artists.front(), artist.getId());
         }
@@ -461,7 +461,7 @@ namespace lms::db::tests
 
             Artist::FindParameters params;
             params.setTrackArtistLinkType(TrackArtistLinkType::Artist);
-            params.setFilters(Filters{}.setMediaLibrary(library.getId()));
+            params.setFilter(FilterExpr::equal(library.getId()));
 
             auto artists{ Artist::findIds(session, params) };
             ASSERT_EQ(artists.size(), 1);
@@ -473,7 +473,7 @@ namespace lms::db::tests
 
             Artist::FindParameters params;
             params.setTrackArtistLinkType(TrackArtistLinkType::Performer);
-            params.setFilters(Filters{}.setMediaLibrary(library.getId()));
+            params.setFilter(FilterExpr::equal(library.getId()));
 
             auto artists{ Artist::findIds(session, params) };
             EXPECT_EQ(artists.size(), 0);
@@ -484,7 +484,7 @@ namespace lms::db::tests
 
             Artist::FindParameters params;
             params.setReleaseArtistsOnly(true);
-            params.setFilters(Filters{}.setMediaLibrary(library.getId()));
+            params.setFilter(FilterExpr::equal(library.getId()));
 
             auto artists{ Artist::findIds(session, params) };
             EXPECT_EQ(artists.size(), 1);
@@ -716,7 +716,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             Artist::FindParameters params;
-            params.setFilters(Filters{}.setCodec(core::media::Codec::FLAC));
+            params.setFilter(FilterExpr::equal(core::media::Codec::FLAC));
 
             const auto artists{ Artist::find(session, params) };
             ASSERT_EQ(artists.size(), 1);
@@ -1171,6 +1171,168 @@ namespace lms::db::tests
             ASSERT_EQ(artists.size(), 2);
             EXPECT_EQ(artists[0], artistAlpha.getId());
             EXPECT_EQ(artists[1], artistZulu.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_sortLastWritten_releaseArtist)
+    {
+        ScopedArtist trackArtist{ session, "trackArtist" };
+        ScopedArtist releaseArtist{ session, "releaseArtist" };
+        ScopedArtist trackAndReleaseArtist{ session, "trackAndReleaseArtist" };
+        ScopedArtist artistWithoutTrack{ session, "artistWithoutTrack" };
+
+        ScopedRelease release1{ session, "release1" };
+        ScopedRelease release2{ session, "release2" };
+
+        ScopedTrack trackOfTrackArtist{ session };
+        ScopedTrack trackOfRelease1{ session };
+        ScopedTrack oldTrackOfBothArtist{ session };
+        ScopedTrack trackOfRelease2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            trackOfTrackArtist.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            trackOfRelease1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 5 } });
+            oldTrackOfBothArtist.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
+            trackOfRelease2.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 6 } });
+
+            trackOfRelease1.get().modify()->setRelease(release1.get());
+            trackOfRelease2.get().modify()->setRelease(release2.get());
+
+            session.create<TrackArtistLink>(trackOfTrackArtist.get(), trackArtist.get(), TrackArtistLinkType::Artist);
+            session.create<ReleaseArtistLink>(release1.get(), releaseArtist.get(), false);
+            session.create<TrackArtistLink>(oldTrackOfBothArtist.get(), trackAndReleaseArtist.get(), TrackArtistLinkType::Artist);
+            session.create<ReleaseArtistLink>(release2.get(), trackAndReleaseArtist.get(), false);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::LastWrittenDesc)) };
+            ASSERT_EQ(artists.size(), 3);
+            EXPECT_EQ(artists[0], trackAndReleaseArtist.getId());
+            EXPECT_EQ(artists[1], releaseArtist.getId());
+            EXPECT_EQ(artists[2], trackArtist.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_sortDateAdded_releaseArtist)
+    {
+        ScopedArtist trackArtist{ session, "trackArtist" };
+        ScopedArtist releaseArtist{ session, "releaseArtist" };
+        ScopedArtist trackAndReleaseArtist{ session, "trackAndReleaseArtist" };
+        ScopedArtist artistWithoutTrack{ session, "artistWithoutTrack" };
+
+        ScopedRelease release1{ session, "release1" };
+        ScopedRelease release2{ session, "release2" };
+
+        ScopedTrack trackOfTrackArtist{ session };
+        ScopedTrack trackOfRelease1{ session };
+        ScopedTrack oldTrackOfBothArtist{ session };
+        ScopedTrack trackOfRelease2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            trackOfTrackArtist.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            trackOfRelease1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 5 } });
+            oldTrackOfBothArtist.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
+            trackOfRelease2.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 6 } });
+
+            trackOfRelease1.get().modify()->setRelease(release1.get());
+            trackOfRelease2.get().modify()->setRelease(release2.get());
+
+            session.create<TrackArtistLink>(trackOfTrackArtist.get(), trackArtist.get(), TrackArtistLinkType::Artist);
+            session.create<ReleaseArtistLink>(release1.get(), releaseArtist.get(), false);
+            session.create<TrackArtistLink>(oldTrackOfBothArtist.get(), trackAndReleaseArtist.get(), TrackArtistLinkType::Artist);
+            session.create<ReleaseArtistLink>(release2.get(), trackAndReleaseArtist.get(), false);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            // sorted on the oldest track added, whatever the way the artist is linked to it
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::AddedDesc)) };
+            ASSERT_EQ(artists.size(), 3);
+            EXPECT_EQ(artists[0], releaseArtist.getId());
+            EXPECT_EQ(artists[1], trackArtist.getId());
+            EXPECT_EQ(artists[2], trackAndReleaseArtist.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_writtenAfter_releaseArtist)
+    {
+        ScopedArtist trackArtist{ session, "trackArtist" };
+        ScopedArtist releaseArtist{ session, "releaseArtist" };
+        ScopedRelease release{ session, "release" };
+
+        ScopedTrack trackOfTrackArtist{ session };
+        ScopedTrack trackOfRelease{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            trackOfTrackArtist.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            trackOfRelease.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 5 } });
+            trackOfRelease.get().modify()->setRelease(release.get());
+
+            session.create<TrackArtistLink>(trackOfTrackArtist.get(), trackArtist.get(), TrackArtistLinkType::Artist);
+            session.create<ReleaseArtistLink>(release.get(), releaseArtist.get(), false);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setWrittenAfter(Wt::WDateTime{ Wt::WDate{ 2021, 1, 3 } })) };
+            ASSERT_EQ(artists.size(), 1);
+            EXPECT_EQ(artists[0], releaseArtist.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setWrittenAfter(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } }).setSortMethod(ArtistSortMethod::Id)) };
+            EXPECT_EQ(artists.size(), 2);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_sortByTrackDate_sameArtistsWithAndWithoutFilter)
+    {
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedArtist trackArtist{ session, "trackArtist" };
+        ScopedArtist releaseArtist{ session, "releaseArtist" };
+        ScopedRelease release{ session, "release" };
+
+        ScopedTrack trackOfTrackArtist{ session };
+        ScopedTrack trackOfRelease{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            trackOfTrackArtist.get().modify()->setMediaLibrary(library.get());
+            trackOfTrackArtist.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            trackOfTrackArtist.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            trackOfRelease.get().modify()->setMediaLibrary(library.get());
+            trackOfRelease.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 5 } });
+            trackOfRelease.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 5 } });
+            trackOfRelease.get().modify()->setRelease(release.get());
+
+            session.create<TrackArtistLink>(trackOfTrackArtist.get(), trackArtist.get(), TrackArtistLinkType::Artist);
+            session.create<ReleaseArtistLink>(release.get(), releaseArtist.get(), false);
+        }
+
+        for (const ArtistSortMethod sortMethod : { ArtistSortMethod::AddedDesc, ArtistSortMethod::LastWrittenDesc })
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto unfiltered{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(sortMethod)) };
+            const auto filtered{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(sortMethod).setFilter(FilterExpr::equal(library.getId()))) };
+
+            ASSERT_EQ(unfiltered.size(), 2);
+            EXPECT_EQ(unfiltered[0], releaseArtist.getId());
+            EXPECT_EQ(unfiltered[1], trackArtist.getId());
+            EXPECT_EQ(unfiltered, filtered);
         }
     }
 
