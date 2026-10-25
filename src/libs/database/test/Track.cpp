@@ -449,36 +449,6 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Track_writtenAfter)
-    {
-        ScopedTrack track{ session };
-
-        const Wt::WDateTime dateTime{ Wt::WDate{ 1950, 1, 1 }, Wt::WTime{ 12, 30, 20 } };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setLastWriteTime(dateTime);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}) };
-            EXPECT_EQ(tracks.size(), 1);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setWrittenAfter(dateTime.addSecs(-1))) };
-            EXPECT_EQ(tracks.size(), 1);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setWrittenAfter(dateTime.addSecs(+1))) };
-            EXPECT_EQ(tracks.size(), 0);
-        }
-    }
-
     TEST_F(DatabaseFixture, Track_path)
     {
         ScopedTrack track{ session };

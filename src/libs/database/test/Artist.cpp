@@ -1261,42 +1261,6 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Artist_writtenAfter_releaseArtist)
-    {
-        ScopedArtist trackArtist{ session, "trackArtist" };
-        ScopedArtist releaseArtist{ session, "releaseArtist" };
-        ScopedRelease release{ session, "release" };
-
-        ScopedTrack trackOfTrackArtist{ session };
-        ScopedTrack trackOfRelease{ session };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-
-            trackOfTrackArtist.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
-            trackOfRelease.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 5 } });
-            trackOfRelease.get().modify()->setRelease(release.get());
-
-            session.create<TrackArtistLink>(trackOfTrackArtist.get(), trackArtist.get(), TrackArtistLinkType::Artist);
-            session.create<ReleaseArtistLink>(release.get(), releaseArtist.get(), false);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setWrittenAfter(Wt::WDateTime{ Wt::WDate{ 2021, 1, 3 } })) };
-            ASSERT_EQ(artists.size(), 1);
-            EXPECT_EQ(artists[0], releaseArtist.getId());
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setWrittenAfter(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } }).setSortMethod(ArtistSortMethod::Id)) };
-            EXPECT_EQ(artists.size(), 2);
-        }
-    }
-
     TEST_F(DatabaseFixture, Artist_sortByTrackDate_sameArtistsWithAndWithoutFilter)
     {
         ScopedMediaLibrary library{ session, "MyLibrary", "/root" };

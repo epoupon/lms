@@ -814,38 +814,6 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Release_writtenAfter)
-    {
-        ScopedRelease release{ session, "MyRelease" };
-        ScopedTrack track{ session };
-
-        const Wt::WDateTime dateTime{ Wt::WDate{ 1950, 1, 1 }, Wt::WTime{ 12, 30, 20 } };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setLastWriteTime(dateTime);
-            track.get().modify()->setRelease(release.get());
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            const auto releases{ Release::findIds(session, Release::FindParameters{}) };
-            EXPECT_EQ(releases.size(), 1);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            const auto releases{ Release::findIds(session, Release::FindParameters{}.setWrittenAfter(dateTime.addSecs(-1))) };
-            EXPECT_EQ(releases.size(), 1);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            const auto releases{ Release::findIds(session, Release::FindParameters{}.setWrittenAfter(dateTime.addSecs(+1))) };
-            EXPECT_EQ(releases.size(), 0);
-        }
-    }
-
     TEST_F(DatabaseFixture, Release_trackArtist)
     {
         ScopedRelease release{ session, "MyRelease" };

@@ -87,9 +87,6 @@ namespace lms::db
             if (!params.name.empty())
                 res.combineWithAnd({ "t.name = ?", { params.name } });
 
-            if (params.writtenAfter.isValid())
-                res.combineWithAnd({ "t.file_last_write > ?", { params.writtenAfter } });
-
             if (params.feedbackUser.isValid())
             {
                 joins.add(trackFeedbackJoin);
@@ -159,12 +156,6 @@ namespace lms::db
             {
                 assert(params.sortMethod == TrackSortMethod::Id);
                 res.combineWithAnd({ "t.id > ?", { params.lastTrackId.getValue() } });
-            }
-
-            if (params.embeddedImageId.isValid())
-            {
-                joins.add("track_embedded_image_link t_e_i_l ON t_e_i_l.track_id = t.id");
-                res.combineWithAnd({ "t_e_i_l.track_embedded_image_id = ?", { params.embeddedImageId.getValue() } });
             }
 
             // The joins of a sort select the tracks too: the ones without any row are excluded

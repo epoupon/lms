@@ -53,7 +53,6 @@
 #include "database/objects/MoodId.hpp"
 #include "database/objects/MovementId.hpp"
 #include "database/objects/ReleaseId.hpp"
-#include "database/objects/TrackEmbeddedImageId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
@@ -94,7 +93,6 @@ namespace lms::db
             std::string name;                       // if non empty, must match this name (title)
             TrackSortMethod sortMethod{ TrackSortMethod::None };
             std::optional<Range> range;
-            Wt::WDateTime writtenAfter;
             UserId feedbackUser;                                     // if valid, only tracks that have feedback from this user
             std::optional<FeedbackValue> feedbackValue;              // if set, only tracks with feedback matching this value (any user, unless feedbackUser is also set)
             ArtistId artist;                                         // only tracks that involve this artist
@@ -107,7 +105,6 @@ namespace lms::db
             std::optional<int> trackNumber;                          // matching this track number
             DirectoryId directory;                                   // if set, tracks in this directory
             std::optional<std::size_t> fileSize;                     // if set, tracks that match this file size
-            TrackEmbeddedImageId embeddedImageId;                    // if set, tracks that have this embedded image
             std::optional<bool> hasMusicNNEmbeddings;                // If set, tracks that have (or not) MusicNN embeddings
             TrackId lastTrackId;                                     // If set, tracks that are after this one, must be used with sort by id
 
@@ -135,11 +132,6 @@ namespace lms::db
             FindParameters& setRange(std::optional<Range> _range)
             {
                 range = _range;
-                return *this;
-            }
-            FindParameters& setWrittenAfter(const Wt::WDateTime& _after)
-            {
-                writtenAfter = _after;
                 return *this;
             }
             FindParameters& setFeedbackUser(UserId _user)
@@ -197,11 +189,6 @@ namespace lms::db
             FindParameters& setFileSize(std::optional<std::size_t> _fileSize)
             {
                 fileSize = _fileSize;
-                return *this;
-            }
-            FindParameters& setEmbeddedImage(TrackEmbeddedImageId _embeddedImageId)
-            {
-                embeddedImageId = _embeddedImageId;
                 return *this;
             }
             FindParameters& setHasMusicNNEmbeddings(std::optional<bool> _hasMusicNNEmbeddings)

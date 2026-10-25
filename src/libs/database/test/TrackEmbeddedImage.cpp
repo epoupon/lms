@@ -338,24 +338,6 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Track_findByEmbeddedImage)
-    {
-        ScopedTrackEmbeddedImage image{ session };
-        ScopedTrack track{ session };
-        ScopedTrackEmbeddedImageLink link{ session, track.lockAndGet(), image.lockAndGet() };
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            Track::FindParameters params;
-            params.setEmbeddedImage(image->getId());
-
-            bool visited{};
-            Track::find(session, params, [&](const auto&) { visited = true; });
-            EXPECT_TRUE(visited);
-        }
-    }
-
     TEST_F(DatabaseFixture, TrackEmbeddedImage_findOrphans)
     {
         ScopedTrackEmbeddedImage image{ session };

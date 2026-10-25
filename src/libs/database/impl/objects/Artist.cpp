@@ -108,12 +108,6 @@ namespace lms::db
             if (params.releaseArtistsOnly)
                 joins.add(releaseArtistLinkJoin);
 
-            if (params.writtenAfter.isValid())
-            {
-                addTracksJoins(joins, params);
-                res.combineWithAnd({ "t.file_last_write > ?", { params.writtenAfter } });
-            }
-
             if (params.trackArtistLinkType.has_value())
             {
                 joins.add(trackArtistLinkJoin);
@@ -190,7 +184,6 @@ namespace lms::db
         {
             return params.sortMethod == ArtistSortMethod::LastWrittenDesc
                 || params.sortMethod == ArtistSortMethod::AddedDesc
-                || params.writtenAfter.isValid()
                 || (params.filter && requiresTracks(*params.filter, FilterEntity::Artist));
         }
 

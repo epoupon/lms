@@ -113,12 +113,6 @@ namespace lms::db
                 res.combineWithAnd({ "d.parent_directory_id = ?", { params.parentDirectory.getValue() } });
             }
 
-            if (params.writtenAfter.isValid())
-            {
-                joins.add(tracksJoin);
-                res.combineWithAnd({ "t.file_last_write > ?", { params.writtenAfter } });
-            }
-
             if (params.dateRange)
             {
                 assert(!params.originalDateRange);
