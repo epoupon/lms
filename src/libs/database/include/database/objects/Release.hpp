@@ -284,10 +284,6 @@ namespace lms::db
         // Updates
         static void updatePreferredArtwork(Session& session, ReleaseId id, ArtworkId artworkId);
 
-        // Get the cluster of the tracks that belong to this release
-        // Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)
-        // size is the max number of cluster per cluster type
-        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const;
         std::vector<ObjectPtr<Cluster>> getClusters(ClusterTypeId clusterTypeId, std::size_t maxCount) const;
 
         // Utility functions (if all tracks have the same values, which is legit to not be the case)

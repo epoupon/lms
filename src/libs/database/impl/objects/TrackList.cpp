@@ -210,54 +210,6 @@ namespace lms::db
         return utils::fetchQueryResults<Cluster::pointer>(query);
     }
 
-    std::vector<std::vector<Cluster::pointer>> TrackList::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const
-    {
-        assert(session());
-        std::vector<std::vector<Cluster::pointer>> res;
-
-        if (clusterTypeIds.empty())
-            return res;
-
-        auto query{ session()->query<Wt::Dbo::ptr<Cluster>>("SELECT c from cluster c") };
-
-        query.join("track t ON c.id = t_c.cluster_id")
-            .join("track_cluster t_c ON t_c.track_id = t.id")
-            .join("cluster_type c_type ON c.cluster_type_id = c_type.id")
-            .join("tracklist_entry t_l_e ON t_l_e.track_id = t.id")
-            .join("tracklist t_l ON t_l.id = t_l_e.tracklist_id")
-            .where("t_l.id = ?")
-            .bind(getId());
-
-        {
-            std::ostringstream oss;
-            oss << "c_type.id IN (";
-            bool first{ true };
-            for (ClusterTypeId clusterTypeId : clusterTypeIds)
-            {
-                if (!first)
-                    oss << ", ";
-                oss << "?";
-                query.bind(clusterTypeId);
-                first = false;
-            }
-            oss << ")";
-            query.where(oss.str());
-        }
-        query.groupBy("c.id");
-        query.orderBy("COUNT(c.id) DESC");
-
-        std::map<ClusterTypeId, std::vector<Cluster::pointer>> clustersByType;
-        utils::forEachQueryResult(query, [&](const Cluster::pointer& cluster) {
-            if (clustersByType[cluster->getType()->getId()].size() < size)
-                clustersByType[cluster->getType()->getId()].push_back(cluster);
-        });
-
-        for (const auto& [clusterTypeId, clusters] : clustersByType)
-            res.push_back(clusters);
-
-        return res;
-    }
-
     std::vector<Track::pointer> TrackList::getSimilarTracks(std::optional<std::size_t> offset, std::optional<std::size_t> size) const
     {
         assert(session());

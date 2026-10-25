@@ -152,7 +152,6 @@ namespace lms::db
 
         // Get clusters, order by occurence
         std::vector<ObjectPtr<Cluster>> getClusters() const;
-        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const;
 
         // Ordered from most clusters in common
         std::vector<ObjectPtr<Track>> getSimilarTracks(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;

@@ -365,8 +365,6 @@ namespace lms::db
         ObjectPtr<Artwork> getPreferredMediaArtwork() const;
         ArtworkId getPreferredMediaArtworkId() const;
 
-        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const;
-
         template<class Action>
         void persist(Action& a)
         {

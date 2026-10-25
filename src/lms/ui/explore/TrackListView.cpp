@@ -99,19 +99,15 @@ namespace lms::ui
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
         {
-            const auto clusterTypeIds{ db::ClusterType::findIds(LmsApp->getDbSession()) };
-            const auto clusterGroups{ trackList->getClusterGroups(clusterTypeIds, 3) };
-
-            for (const auto& clusters : clusterGroups)
+            for (const db::ClusterTypeId clusterTypeId : db::ClusterType::findIds(LmsApp->getDbSession()))
             {
-                for (const db::Cluster::pointer& cluster : clusters)
-                {
+                db::Cluster::find(LmsApp->getDbSession(), db::Cluster::FindParameters{}.setTrackList(trackList->getId()).setClusterType(clusterTypeId).setSortMethod(db::ClusterSortMethod::TrackCountDesc).setRange(db::Range{ 0, 3 }), [&](const db::Cluster::pointer& cluster) {
                     const db::ClusterId clusterId{ cluster->getId() };
                     Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterCluster(clusterId)) };
                     entry->clicked().connect([this, clusterId] {
                         _filters.add(clusterId);
                     });
-                }
+                });
             }
         }
 

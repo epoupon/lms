@@ -48,7 +48,6 @@
 #include "database/objects/Work.hpp"
 
 #include "JoinSet.hpp"
-#include "SqlQuery.hpp"
 #include "Utils.hpp"
 #include "detail/Types.hpp"
 #include "objects/FilterExprCompiler.hpp"
@@ -960,43 +959,6 @@ namespace lms::db
         assert(session());
 
         return utils::fetchQuerySingleResult(session()->query<Wt::WDateTime>("SELECT MAX(file_added) FROM track t").where("t.release_id = ?").bind(getId()));
-    }
-
-    std::vector<std::vector<Cluster::pointer>> Release::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const
-    {
-        assert(session());
-
-        WhereClause where;
-
-        std::ostringstream oss;
-
-        oss << "SELECT c from cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN track t ON t.id = t_c.track_id ";
-
-        where.And(WhereClause{ "t.release_id = ?" }).bind(getId().toString());
-        {
-            WhereClause clusterClause;
-            for (const ClusterTypeId clusterTypeId : clusterTypeIds)
-                clusterClause.Or(WhereClause{ "c.cluster_type_id = ?" }).bind(clusterTypeId.toString());
-            where.And(clusterClause);
-        }
-        oss << " " << where.get();
-        oss << " GROUP BY c.id ORDER BY COUNT(c.id) DESC";
-
-        auto query{ session()->query<Wt::Dbo::ptr<Cluster>>(oss.str()) };
-        for (const std::string& bindArg : where.getBindArgs())
-            query.bind(bindArg);
-
-        std::map<ClusterTypeId, std::vector<Cluster::pointer>> clustersByType;
-        utils::forEachQueryResult(query, [&](const Wt::Dbo::ptr<Cluster>& cluster) {
-            if (clustersByType[cluster->getType()->getId()].size() < size)
-                clustersByType[cluster->getType()->getId()].push_back(cluster);
-        });
-
-        std::vector<std::vector<Cluster::pointer>> res;
-        for (const auto& [clusterTypeId, clusters] : clustersByType)
-            res.push_back(clusters);
-
-        return res;
     }
 
     std::vector<ObjectPtr<Cluster>> Release::getClusters(ClusterTypeId clusterTypeId, std::size_t maxCount) const

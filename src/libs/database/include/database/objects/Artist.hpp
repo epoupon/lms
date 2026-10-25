@@ -20,7 +20,6 @@
 #pragma once
 
 #include <optional>
-#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -45,8 +44,6 @@
 namespace lms::db
 {
     class Artwork;
-    class Cluster;
-    class ClusterType;
     class Release;
     class Session;
     class Track;
@@ -153,11 +150,6 @@ namespace lms::db
         bool hasMBID() const { return _mbid.has_value(); }
         ObjectPtr<Artwork> getPreferredArtwork() const;
         ArtworkId getPreferredArtworkId() const;
-
-        // Get the cluster of the tracks made by this artist
-        // Each clusters are grouped by cluster type, sorted by the number of occurence
-        // size is the max number of cluster per cluster type
-        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(std::span<const ClusterTypeId> clusterTypeIds, std::size_t size) const;
 
         void setName(std::string_view name);
         void setMBID(const std::optional<core::UUID>& mbid) { _mbid = mbid; }

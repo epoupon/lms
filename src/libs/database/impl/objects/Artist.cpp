@@ -37,7 +37,6 @@
 #include "database/objects/User.hpp"
 
 #include "JoinSet.hpp"
-#include "SqlQuery.hpp"
 #include "Utils.hpp"
 #include "objects/FilterExprCompiler.hpp"
 #include "objects/detail/Types.hpp"
@@ -539,45 +538,6 @@ AND NOT EXISTS (
     ArtworkId Artist::getPreferredArtworkId() const
     {
         return _preferredArtwork.id();
-    }
-
-    std::vector<std::vector<Cluster::pointer>> Artist::getClusterGroups(std::span<const ClusterTypeId> clusterTypeIds, std::size_t size) const
-    {
-        assert(session());
-
-        WhereClause where;
-
-        std::ostringstream oss;
-        oss << "SELECT c FROM cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id INNER JOIN artist a ON t_a_l.artist_id = a.id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id";
-
-        where.And(WhereClause{ "a.id = ?" }).bind(getId().toString());
-        {
-            WhereClause clusterClause;
-            for (const ClusterTypeId clusterTypeId : clusterTypeIds)
-                clusterClause.Or(WhereClause{ "c_type.id = ?" }).bind(clusterTypeId.toString());
-
-            where.And(clusterClause);
-        }
-        oss << " " << where.get();
-        oss << "GROUP BY c.id ORDER BY COUNT(DISTINCT c.id) DESC";
-
-        Wt::Dbo::Query<Wt::Dbo::ptr<Cluster>> query{ session()->query<Wt::Dbo::ptr<Cluster>>(oss.str()) };
-
-        for (const std::string& bindArg : where.getBindArgs())
-            query.bind(bindArg);
-
-        std::map<ClusterTypeId, std::vector<Cluster::pointer>> clustersByType;
-        utils::forEachQueryResult(query, [&](const Cluster::pointer& cluster) {
-            if (clustersByType[cluster->getType()->getId()].size() < size)
-                clustersByType[cluster->getType()->getId()].push_back(cluster);
-        });
-
-        std::vector<std::vector<Cluster::pointer>> res;
-        res.reserve(clustersByType.size());
-        for (const auto& [clusterTypeId, clusters] : clustersByType)
-            res.push_back(clusters);
-
-        return res;
     }
 
     void Artist::setName(std::string_view name)

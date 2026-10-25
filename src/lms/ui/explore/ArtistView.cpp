@@ -175,19 +175,15 @@ namespace lms::ui
                 });
             });
 
-            auto clusterTypes{ db::ClusterType::findIds(LmsApp->getDbSession()) };
-            auto clusterGroups{ artist->getClusterGroups(clusterTypes, 3) };
-
-            for (const auto& clusters : clusterGroups)
+            for (const db::ClusterTypeId clusterTypeId : db::ClusterType::findIds(LmsApp->getDbSession()))
             {
-                for (const db::Cluster::pointer& cluster : clusters)
-                {
-                    const db::ClusterId clusterId = cluster->getId();
+                db::Cluster::find(LmsApp->getDbSession(), db::Cluster::FindParameters{}.setArtist(_artistId).setClusterType(clusterTypeId).setSortMethod(db::ClusterSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Cluster::pointer& cluster) {
+                    const db::ClusterId clusterId{ cluster->getId() };
                     Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterCluster(clusterId)) };
                     entry->clicked().connect([this, clusterId] {
                         _filters.add(clusterId);
                     });
-                }
+                });
             }
         }
 

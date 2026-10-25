@@ -54,6 +54,7 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackFeedback.hpp"
+#include "database/objects/TrackList.hpp"
 #include "database/objects/User.hpp"
 
 #include "TmpDatabase.hpp"
@@ -76,6 +77,8 @@ namespace lms::db::benchs
         constexpr std::size_t clusterCountPerTrack{ 2 };
         constexpr std::size_t composerTrackModulo{ 20 }; // a rare link type
         constexpr std::size_t sampleReleaseModulo{ 1'000 };
+        constexpr std::size_t prolificTrackModulo{ 10 }; // one artist credited on a tenth of the tracks
+        constexpr std::size_t bigTrackListModulo{ 50 };  // one track list with a fiftieth of the tracks
         constexpr double compilationRatio{ 0.1 };
         constexpr double listenedTrackRatio{ 0.2 };
         constexpr double starredRatio{ 0.05 };
@@ -95,7 +98,12 @@ namespace lms::db::benchs
             std::vector<LabelId> labels;
             std::vector<CountryId> countries;
             std::vector<ClusterTypeId> clusterTypes;
-            std::vector<ReleaseId> sampleReleases; // for the queries made for a single release
+            // for the queries made for a single entity
+            std::vector<ReleaseId> sampleReleases;
+            std::vector<TrackId> sampleTracks;
+            std::vector<ArtistId> sampleArtists;
+            ArtistId prolificArtist;
+            TrackListId bigTrackList;
             UserId user;
         };
 
@@ -181,6 +189,12 @@ namespace lms::db::benchs
 
             {
                 auto transaction{ session.createWriteTransaction() };
+
+                const Artist::pointer prolificArtist{ session.create<Artist>("Prolific") };
+                library.prolificArtist = prolificArtist->getId();
+                const TrackList::pointer bigTrackList{ session.create<TrackList>("BigTrackList", TrackListType::PlayList) };
+                library.bigTrackList = bigTrackList->getId();
+
                 for (std::size_t releaseIndex{}; releaseIndex < releaseCount; ++releaseIndex)
                 {
                     Release::pointer release{ session.create<Release>("Release" + std::to_string(releaseIndex)) };
@@ -235,6 +249,15 @@ namespace lms::db::benchs
                         track.modify()->setClusters(trackClusters);
                         if (trackNumber % composerTrackModulo == 0)
                             session.create<TrackArtistLink>(track, trackArtist, TrackArtistLinkType::Composer).modify()->setArtistName(trackArtistName);
+                        if (trackNumber % prolificTrackModulo == 0)
+                            session.create<TrackArtistLink>(track, prolificArtist, TrackArtistLinkType::Artist).modify()->setArtistName("Prolific");
+                        if (trackNumber % bigTrackListModulo == 0)
+                            session.create<TrackListEntry>(track, bigTrackList);
+                        if (trackIndex == 0 && releaseIndex % sampleReleaseModulo == 0)
+                        {
+                            library.sampleTracks.push_back(track->getId());
+                            library.sampleArtists.push_back(releaseArtist->getId());
+                        }
 
                         if (trackNumber % ratedTrackModulo == 0)
                             session.create<RatedTrack>(track, user).modify()->setRating(static_cast<Rating>(1 + static_cast<int>(trackNumber / ratedTrackModulo) % ratingCount));
@@ -605,6 +628,49 @@ namespace lms::db::benchs
             return count;
         }
 
+        // The tag clouds of the pages of a track, a release, an artist and a track list: the most frequent clusters of each type
+        std::size_t countTagCloud(Session& session, const Library& library, const Cluster::FindParameters& scope, ClusterSortMethod sortMethod)
+        {
+            std::size_t count{};
+            for (const ClusterTypeId clusterTypeId : library.clusterTypes)
+                count += Cluster::find(session, Cluster::FindParameters{ scope }.setClusterType(clusterTypeId).setSortMethod(sortMethod).setRange(Range{ 0, 3 })).size();
+            return count;
+        }
+
+        std::size_t tagCloudOfTracks(Session& session, const Library& library)
+        {
+            std::size_t count{};
+            for (const TrackId trackId : library.sampleTracks)
+                count += countTagCloud(session, library, Cluster::FindParameters{}.setTrack(trackId), ClusterSortMethod::Name);
+            return count;
+        }
+
+        std::size_t tagCloudOfReleases(Session& session, const Library& library)
+        {
+            std::size_t count{};
+            for (const ReleaseId releaseId : library.sampleReleases)
+                count += countTagCloud(session, library, Cluster::FindParameters{}.setRelease(releaseId), ClusterSortMethod::TrackCountDesc);
+            return count;
+        }
+
+        std::size_t tagCloudOfArtists(Session& session, const Library& library)
+        {
+            std::size_t count{};
+            for (const ArtistId artistId : library.sampleArtists)
+                count += countTagCloud(session, library, Cluster::FindParameters{}.setArtist(artistId), ClusterSortMethod::TrackCountDesc);
+            return count;
+        }
+
+        std::size_t tagCloudOfProlificArtist(Session& session, const Library& library)
+        {
+            return countTagCloud(session, library, Cluster::FindParameters{}.setArtist(library.prolificArtist), ClusterSortMethod::TrackCountDesc);
+        }
+
+        std::size_t tagCloudOfBigTrackList(Session& session, const Library& library)
+        {
+            return countTagCloud(session, library, Cluster::FindParameters{}.setTrackList(library.bigTrackList), ClusterSortMethod::TrackCountDesc);
+        }
+
         template<typename QueryFunc>
         void runQuery(benchmark::State& state, const Library& library, QueryFunc queryFunc)
         {
@@ -667,6 +733,18 @@ namespace lms::db::benchs
             benchmark::RegisterBenchmark("LinkType/Cluster/OfTypes", [&library](benchmark::State& state) {
                 runQuery(state, library, [&](Session& session) { return clustersOfTypes(session, library); });
             })->Unit(benchmark::kMicrosecond);
+
+            using TagCloudFunc = std::size_t (*)(Session&, const Library&);
+            for (const auto& [name, tagCloudFunc] : { std::pair<core::LiteralString, TagCloudFunc>{ "Track", tagCloudOfTracks },
+                                                      std::pair<core::LiteralString, TagCloudFunc>{ "Release", tagCloudOfReleases },
+                                                      std::pair<core::LiteralString, TagCloudFunc>{ "Artist", tagCloudOfArtists },
+                                                      std::pair<core::LiteralString, TagCloudFunc>{ "ProlificArtist", tagCloudOfProlificArtist },
+                                                      std::pair<core::LiteralString, TagCloudFunc>{ "TrackList", tagCloudOfBigTrackList } })
+            {
+                benchmark::RegisterBenchmark("TagCloud/" + std::string{ name.str() }, [&library, tagCloudFunc](benchmark::State& state) {
+                    runQuery(state, library, [&](Session& session) { return tagCloudFunc(session, library); });
+                })->Unit(benchmark::kMicrosecond);
+            }
 
             // Sort cost alone, then combined with a media library filter as the UI and Subsonic almost always set one
             for (const auto& [groupName, filterCase] : { std::pair<core::LiteralString, FilterCase>{ "View", FilterCase::None }, std::pair<core::LiteralString, FilterCase>{ "ViewInMediaLibrary", FilterCase::MediaLibrary } })

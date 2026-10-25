@@ -57,6 +57,7 @@ namespace lms::db
     {
         None,
         Name,
+        TrackCountDesc,
     };
 
     enum class DirectorySortMethod

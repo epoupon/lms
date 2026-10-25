@@ -19,6 +19,8 @@
 
 #include "database/objects/Track.hpp"
 
+#include <sstream>
+
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
@@ -47,7 +49,6 @@
 #include "database/objects/Work.hpp"
 
 #include "JoinSet.hpp"
-#include "SqlQuery.hpp"
 #include "Utils.hpp"
 #include "objects/FilterExprCompiler.hpp"
 #include "objects/detail/Types.hpp"
@@ -840,44 +841,6 @@ namespace lms::db
         query.orderBy("t_a_l.id");
 
         return utils::forEachQueryResult(query, visitor);
-    }
-
-    std::vector<std::vector<Cluster::pointer>> Track::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const
-    {
-        assert(self());
-        assert(session());
-
-        WhereClause where;
-
-        std::ostringstream oss;
-
-        oss << "SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id";
-
-        where.And(WhereClause{ "t.id = ?" }).bind(getId().toString());
-        {
-            WhereClause clusterClause;
-            for (ClusterTypeId clusterTypeId : clusterTypeIds)
-                clusterClause.Or(WhereClause{ "c_type.id = ?" }).bind(clusterTypeId.toString());
-            where.And(clusterClause);
-        }
-        oss << " " << where.get();
-        oss << " GROUP BY c.id ORDER BY COUNT(c.id) DESC";
-
-        auto query{ session()->query<Wt::Dbo::ptr<Cluster>>(oss.str()) };
-        for (const std::string& bindArg : where.getBindArgs())
-            query.bind(bindArg);
-
-        std::map<ClusterTypeId, std::vector<Cluster::pointer>> clusters;
-        utils::forEachQueryResult(query, [&](const Cluster::pointer& cluster) {
-            if (clusters[cluster->getType()->getId()].size() < size)
-                clusters[cluster->getType()->getId()].push_back(cluster);
-        });
-
-        std::vector<std::vector<Cluster::pointer>> res;
-        for (const auto& [type, clusters] : clusters)
-            res.push_back(clusters);
-
-        return res;
     }
 
     namespace Debug

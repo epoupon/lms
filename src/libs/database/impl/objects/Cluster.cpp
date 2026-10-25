@@ -58,7 +58,8 @@ namespace lms::db
 
             auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM cluster c") };
 
-            if (params.track.isValid() || params.release.isValid())
+            if (params.track.isValid() || params.release.isValid() || params.artist.isValid() || params.trackList.isValid()
+                || params.sortMethod == ClusterSortMethod::TrackCountDesc)
                 query.join("track_cluster t_c ON t_c.cluster_id = c.id");
 
             if (!params.clusterTypeName.empty())
@@ -73,6 +74,14 @@ namespace lms::db
                 query.where("t.release_id = ?").bind(params.release);
             }
 
+            // An artist can be linked several times to a track (once per link type), and a track can be several times in a track list:
+            // membership tests do not duplicate the tracks
+            if (params.artist.isValid())
+                query.where("t_c.track_id IN (SELECT t_a_l.track_id FROM track_artist_link t_a_l WHERE t_a_l.artist_id = ?)").bind(params.artist);
+
+            if (params.trackList.isValid())
+                query.where("t_c.track_id IN (SELECT t_l_e.track_id FROM tracklist_entry t_l_e WHERE t_l_e.tracklist_id = ?)").bind(params.trackList);
+
             assert(!params.clusterType.isValid() || params.clusterTypeName.empty());
             if (params.clusterType.isValid())
                 query.where("c.cluster_type_id = ?").bind(params.clusterType);
@@ -86,9 +95,13 @@ namespace lms::db
             case ClusterSortMethod::Name:
                 query.orderBy("c.name COLLATE NOCASE");
                 break;
+            case ClusterSortMethod::TrackCountDesc:
+                query.orderBy("COUNT(*) DESC");
+                break;
             }
 
             // track_cluster has a UNIQUE constraint on (track_id, cluster_id), so no duplicates can occur when filtering by track
+            assert(!params.track.isValid() || params.sortMethod != ClusterSortMethod::TrackCountDesc);
             if (!params.track.isValid())
                 query.groupBy("c.id");
 
