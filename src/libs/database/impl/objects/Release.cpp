@@ -113,20 +113,6 @@ namespace lms::db
                 res.combineWithAnd({ "d.parent_directory_id = ?", { params.parentDirectory.getValue() } });
             }
 
-            if (params.dateRange)
-            {
-                assert(!params.originalDateRange);
-                joins.add(tracksJoin);
-                res.combineWithAnd({ "CAST(SUBSTR(t.date, 1, 4) AS INTEGER) BETWEEN ? AND ?", { params.dateRange->begin, params.dateRange->end } });
-            }
-
-            if (params.originalDateRange)
-            {
-                assert(!params.dateRange);
-                joins.add(tracksJoin);
-                res.combineWithAnd({ "CAST(SUBSTR(COALESCE(t.original_date, t.date), 1, 4) AS INTEGER) BETWEEN ? AND ?", { params.originalDateRange->begin, params.originalDateRange->end } });
-            }
-
             if (params.trackArtist.isValid())
             {
                 joins.add(tracksJoin);

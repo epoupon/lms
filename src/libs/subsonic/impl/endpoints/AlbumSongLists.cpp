@@ -109,9 +109,11 @@ namespace lms::api::subsonic
                 Release::FindParameters params;
                 params.setSortMethod(fromYear > toYear ? ReleaseSortMethod::OriginalDateDesc : ReleaseSortMethod::OriginalDate);
                 params.setRange(range);
-                params.setOriginalDateRange(YearRange{ std::min(fromYear, toYear), std::max(fromYear, toYear) });
+
+                FilterExpr filter{ FilterExpr::condition(IntegerCondition{ IntegerField::OriginalYear, FilterOperator::Between, FilterRange<std::int64_t>{ std::min(fromYear, toYear), std::max(fromYear, toYear) } }) };
                 if (mediaLibraryId.isValid())
-                    params.setFilter(FilterExpr::equal(mediaLibraryId));
+                    filter = FilterExpr::And({ filter, FilterExpr::equal(mediaLibraryId) });
+                params.setFilter(std::move(filter));
 
                 releases = Release::findIds(context.getDbSession(), params);
             }

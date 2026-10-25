@@ -29,12 +29,6 @@ namespace lms::db
     // For enums that have explicit values, never change enum values as they are stored in database.
     // => only add new values or remove unused values, do not recycle values.
 
-    struct YearRange
-    {
-        int begin{};
-        int end{};
-    };
-
     struct FileInfo
     {
         Wt::WDateTime lastWrittenTime;

@@ -162,14 +162,12 @@ namespace lms::db
     public:
         struct FindParameters
         {
-            std::optional<FilterExpr> filter;       // if set, releases must match this expression: its track conditions must hold on one of their tracks, on which trackArtist, directory, parentDirectory and date ranges must also hold
+            std::optional<FilterExpr> filter;       // if set, releases must match this expression: its track conditions must hold on one of their tracks, on which trackArtist, directory and parentDirectory must also hold
             UserId filterUser;                      // required if filter has per-user fields
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords (cannot be set with keywords)
             std::string name;                       // must match this name (cannot be set with keywords)
             ReleaseSortMethod sortMethod{ ReleaseSortMethod::None };
             std::optional<Range> range;
-            std::optional<YearRange> dateRange;
-            std::optional<YearRange> originalDateRange;
             UserId feedbackUser;                                     // if valid, only releases that have feedback from this user
             std::optional<FeedbackValue> feedbackValue;              // if set, only releases with feedback matching this value (any user, unless feedbackUser is also set)
             ArtistId artist;                                         // only releases by this release artist
@@ -204,16 +202,6 @@ namespace lms::db
             FindParameters& setRange(std::optional<Range> _range)
             {
                 range = _range;
-                return *this;
-            }
-            FindParameters& setDateRange(const std::optional<YearRange>& _dateRange)
-            {
-                dateRange = _dateRange;
-                return *this;
-            }
-            FindParameters& setOriginalDateRange(const std::optional<YearRange>& _originalDateRange)
-            {
-                originalDateRange = _originalDateRange;
                 return *this;
             }
             FindParameters& setFeedbackUser(UserId _user)
