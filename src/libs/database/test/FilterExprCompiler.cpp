@@ -58,6 +58,7 @@ namespace lms::db::tests
 
         constexpr std::string_view genreMember{ "t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id = ?)" };
         constexpr std::string_view moodMember{ "t.id IN (SELECT f_e.track_id FROM track_mood f_e WHERE f_e.mood_id = ?)" };
+        constexpr std::string_view genreMemberUnderNot{ "CASE WHEN t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id = ?) THEN 1 ELSE 0 END" };
     } // namespace
 
     TEST(FilterExprCompiler, noExpression_isEmpty)
@@ -135,7 +136,7 @@ namespace lms::db::tests
         const Compiled compiled{ compile(FilterExpr::Not(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(genre7) })), FilterEntity::Track) };
 
         EXPECT_TRUE(compiled.joins.empty());
-        EXPECT_EQ(compiled.where.getSql(), "NOT ((t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?))))");
+        EXPECT_EQ(compiled.where.getSql(), "NOT ((CASE WHEN t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?)) THEN 1 ELSE 0 END))");
         EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 7LL }));
     }
 
@@ -143,7 +144,7 @@ namespace lms::db::tests
     {
         const Compiled compiled{ compile(FilterExpr::Not(FilterExpr::And({ FilterExpr::equal(genre5), FilterExpr::equal(genre7) })), FilterEntity::Track) };
 
-        EXPECT_EQ(compiled.where.getSql(), "NOT ((" + std::string{ genreMember } + " AND " + std::string{ genreMember } + "))");
+        EXPECT_EQ(compiled.where.getSql(), "NOT ((" + std::string{ genreMemberUnderNot } + " AND " + std::string{ genreMemberUnderNot } + "))");
         EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 7LL }));
     }
 
@@ -178,23 +179,23 @@ namespace lms::db::tests
         const Compiled compiled{ compile(FilterExpr::Not(FilterExpr::equal(genre5)), FilterEntity::Track) };
 
         EXPECT_TRUE(compiled.joins.empty());
-        EXPECT_EQ(compiled.where.getSql(), "NOT (" + std::string{ genreMember } + ")");
+        EXPECT_EQ(compiled.where.getSql(), "NOT (" + std::string{ genreMemberUnderNot } + ")");
     }
 
     TEST(FilterExprCompiler, releaseRelationOfTracksUnderNot_keepsTracksWithoutReleaseIn)
     {
         // A track without release has a NULL release id: NULL IN (...) would be unknown, that NOT keeps out
         const Compiled onTracks{ compile(FilterExpr::Not(FilterExpr::equal(label2)), FilterEntity::Track) };
-        EXPECT_EQ(onTracks.where.getSql(), "NOT (COALESCE(t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id = ?), 0))");
+        EXPECT_EQ(onTracks.where.getSql(), "NOT (CASE WHEN t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id = ?) THEN 1 ELSE 0 END)");
 
         const Compiled onTracksMerged{ compile(FilterExpr::Not(FilterExpr::Or({ FilterExpr::equal(label2), FilterExpr::equal(LabelId{ 4 }) })), FilterEntity::Track) };
-        EXPECT_EQ(onTracksMerged.where.getSql(), "NOT ((COALESCE(t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id IN (?,?)), 0)))");
+        EXPECT_EQ(onTracksMerged.where.getSql(), "NOT ((CASE WHEN t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id IN (?,?)) THEN 1 ELSE 0 END))");
 
         const Compiled onArtists{ compile(FilterExpr::Not(FilterExpr::Or({ FilterExpr::equal(label2), FilterExpr::equal(LabelId{ 4 }) })), FilterEntity::Artist) };
-        EXPECT_EQ(onArtists.where.getSql(), "NOT ((COALESCE(t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id IN (?,?)), 0)))");
+        EXPECT_EQ(onArtists.where.getSql(), "NOT ((CASE WHEN t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id IN (?,?)) THEN 1 ELSE 0 END))");
 
         const Compiled onReleases{ compile(FilterExpr::Not(FilterExpr::equal(label2)), FilterEntity::Release) };
-        EXPECT_EQ(onReleases.where.getSql(), "NOT (r.id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id = ?))");
+        EXPECT_EQ(onReleases.where.getSql(), "NOT (CASE WHEN r.id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id = ?) THEN 1 ELSE 0 END)");
     }
 
     TEST(FilterExprCompiler, mergedRelations_keepTheBindsInTheOrderOfTheSql)

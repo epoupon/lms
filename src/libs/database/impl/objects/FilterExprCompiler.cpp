@@ -574,13 +574,13 @@ namespace lms::db
 
                 const Relation relation{ getRelation(*relationConditions.front()) };
 
-                // The release of a track may be missing, and NULL IN (...) is unknown (which NOT keeps out) instead of false
-                const bool mayBeUnknown{ relation.entity == FilterEntity::Release && _queriedEntity != FilterEntity::Release };
-                const bool needsCoalesce{ isUnderNot.value() && mayBeUnknown };
+                // Under NOT, the release of a track may be missing, and NULL IN (...) is unknown (which NOT keeps out) instead of false.
+                // Optim: CASE WHEN rather than COALESCE(..., 0) or a bare NOT, even where the id cannot be NULL
+                const bool needsCase{ isUnderNot.value() };
 
                 std::string sql;
-                if (needsCoalesce)
-                    sql += "COALESCE(";
+                if (needsCase)
+                    sql += "CASE WHEN ";
                 sql.append(createEntityIdExpr(relation.entity)).append(" IN (SELECT f_e.").append(relation.foreignKey).append(" FROM ").append(relation.table).append(" f_e WHERE f_e.").append(relation.valueColumn);
                 if (relationConditions.size() == 1)
                 {
@@ -594,8 +594,8 @@ namespace lms::db
                     sql.append(")");
                 }
                 sql.append(")");
-                if (needsCoalesce)
-                    sql += ", 0)";
+                if (needsCase)
+                    sql += " THEN 1 ELSE 0 END";
 
                 std::vector<BindValue> binds;
                 binds.reserve(relationConditions.size());
