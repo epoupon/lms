@@ -29,7 +29,7 @@
 
 namespace lms::db
 {
-    // Joins needed by the different parts of a query (filters, sort, parameters), each emitted once.
+    // Joins needed by the different parts of a query (sort, parameters), each emitted once.
     // Must be applied before any WHERE bind, since joins may carry placeholders
     class JoinSet
     {
@@ -46,7 +46,6 @@ namespace lms::db
         void add(const SqlFragment& join, Type type = Type::Inner);
 
         bool empty() const { return _joins.empty(); }
-        bool hasAlias(std::string_view alias) const;
 
         // Renders the joins as SQL, for a query that cannot take them through apply (such as a subquery)
         SqlFragment toSql() const;

@@ -19,7 +19,6 @@
 
 #include "FilterExprCompiler.hpp"
 
-#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <cstdint>
@@ -29,33 +28,24 @@
 
 #include "core/TaggedType.hpp"
 #include "core/Utils.hpp"
+#include "database/Types.hpp"
 
-#include "Utils.hpp"
 #include "objects/detail/Types.hpp"
 
 namespace lms::db
 {
     namespace
     {
-        using IsConjunct = core::TaggedBool<struct IsConjunctTag>;
         using IsUnderNot = core::TaggedBool<struct IsUnderNotTag>;
 
-        // Aliases of the queried entity (and of its tracks) given by the queries
         constexpr std::string_view trackAlias{ "t" };
-        constexpr std::string_view releaseAlias{ "r" };
-        constexpr std::string_view artistAlias{ "a" };
 
-        // Fixed aliases of the joins registered for some conditions
-        constexpr std::string_view releaseJoinAlias{ "f_rel" };
-        constexpr std::string_view ratedTrackJoinAlias{ "f_rt" };
-        constexpr std::string_view trackFeedbackJoinAlias{ "f_tf" };
-
-        // A many-to-many relation of an entity
+        // A many-to-many relation of a track, or of its release
         struct Relation
         {
-            FilterEntity entity;
+            std::string_view trackColumn; // "id", or "release_id" for a relation of the release
             std::string_view table;
-            std::string_view foreignKey; // refers to the id of the entity
+            std::string_view foreignKey; // refers to trackColumn
             std::string_view valueColumn;
         };
 
@@ -67,49 +57,49 @@ namespace lms::db
         template<>
         struct RelationTraits<ClusterId>
         {
-            static constexpr Relation relation{ FilterEntity::Track, "track_cluster", "track_id", "cluster_id" };
+            static constexpr Relation relation{ "id", "track_cluster", "track_id", "cluster_id" };
         };
 
         template<>
         struct RelationTraits<CountryId>
         {
-            static constexpr Relation relation{ FilterEntity::Release, "release_country", "release_id", "country_id" };
+            static constexpr Relation relation{ "release_id", "release_country", "release_id", "country_id" };
         };
 
         template<>
         struct RelationTraits<GenreId>
         {
-            static constexpr Relation relation{ FilterEntity::Track, "track_genre", "track_id", "genre_id" };
+            static constexpr Relation relation{ "id", "track_genre", "track_id", "genre_id" };
         };
 
         template<>
         struct RelationTraits<GroupingId>
         {
-            static constexpr Relation relation{ FilterEntity::Track, "track_grouping", "track_id", "grouping_id" };
+            static constexpr Relation relation{ "id", "track_grouping", "track_id", "grouping_id" };
         };
 
         template<>
         struct RelationTraits<LanguageId>
         {
-            static constexpr Relation relation{ FilterEntity::Track, "track_language", "track_id", "language_id" };
+            static constexpr Relation relation{ "id", "track_language", "track_id", "language_id" };
         };
 
         template<>
         struct RelationTraits<MoodId>
         {
-            static constexpr Relation relation{ FilterEntity::Track, "track_mood", "track_id", "mood_id" };
+            static constexpr Relation relation{ "id", "track_mood", "track_id", "mood_id" };
         };
 
         template<>
         struct RelationTraits<LabelId>
         {
-            static constexpr Relation relation{ FilterEntity::Release, "release_label", "release_id", "label_id" };
+            static constexpr Relation relation{ "release_id", "release_label", "release_id", "label_id" };
         };
 
         template<>
         struct RelationTraits<ReleaseTypeId>
         {
-            static constexpr Relation relation{ FilterEntity::Release, "release_release_type", "release_id", "release_type_id" };
+            static constexpr Relation relation{ "release_id", "release_release_type", "release_id", "release_type_id" };
         };
 
         constexpr Relation getRelation(const RelationCondition& condition)
@@ -117,29 +107,18 @@ namespace lms::db
             return std::visit([](const auto& id) { return RelationTraits<std::decay_t<decltype(id)>>::relation; }, condition.id);
         }
 
-        // "alias.column"
-        std::string createQualifiedColumn(std::string_view alias, std::string_view column)
-        {
-            std::string res;
-            res.append(alias).append(".").append(column);
-            return res;
-        }
-
+        // "t.column"
         std::string createQualifiedTrackColumn(std::string_view column)
         {
-            return createQualifiedColumn(trackAlias, column);
+            std::string res;
+            res.append(trackAlias).append(".").append(column);
+            return res;
         }
 
         // Unknown values are stored as 0 in some columns
         std::string createNullIfZeroTrackColumn(std::string_view column)
         {
             return "NULLIF(" + createQualifiedTrackColumn(column) + ", 0)";
-        }
-
-        // Same sort name fallback as the artist sort orders
-        std::string createSortNameExpr(std::string_view sortName, std::string_view name)
-        {
-            return "COALESCE(NULLIF(" + std::string{ sortName } + ", ''), " + std::string{ name } + ")";
         }
 
         std::string createIntegerExpr(IntegerField field)
@@ -191,8 +170,6 @@ namespace lms::db
                 return BindValue{ std::in_place_type<long long>, value.getValue() };
             else if constexpr (std::is_same_v<T, bool>)
                 return BindValue{ std::in_place_type<bool>, value };
-            else if constexpr (std::is_same_v<T, std::string>)
-                return BindValue{ std::in_place_type<std::string>, value };
             else if constexpr (std::is_same_v<T, Wt::WDateTime>)
                 return BindValue{ std::in_place_type<Wt::WDateTime>, value };
             else
@@ -221,42 +198,6 @@ namespace lms::db
             return binds;
         }
 
-        FilterEntity getStringFieldEntity(StringField field)
-        {
-            switch (field)
-            {
-            case StringField::TrackName:
-            case StringField::ArtistName:
-            case StringField::ArtistSortName:
-                return FilterEntity::Track;
-            case StringField::ReleaseName:
-            case StringField::ReleaseSortName:
-                return FilterEntity::Release;
-            }
-
-            throw Exception{ "Unhandled string filter field" };
-        }
-
-        // The entity the condition is about
-        FilterEntity getConditionEntity(const FilterCondition& condition)
-        {
-            return std::visit(core::utils::overloads{
-                                  [](const RelationCondition& relationCondition) { return getRelation(relationCondition).entity; },
-                                  [](const IsCompilationCondition&) { return FilterEntity::Release; },
-                                  [](const StringCondition& stringCondition) { return getStringFieldEntity(stringCondition.field); },
-                                  [](const MediaLibraryId&) { return FilterEntity::Track; },
-                                  [](const core::media::Codec&) { return FilterEntity::Track; },
-                                  [](const Advisory&) { return FilterEntity::Track; },
-                                  [](const IntegerCondition&) { return FilterEntity::Track; },
-                                  [](const DurationCondition&) { return FilterEntity::Track; },
-                                  [](const AddedDateTimeCondition&) { return FilterEntity::Track; },
-                                  [](const ListenCountCondition&) { return FilterEntity::Track; },
-                                  [](const LastListenDateTimeCondition&) { return FilterEntity::Track; },
-                                  [](const RatingCondition&) { return FilterEntity::Track; },
-                                  [](const FeedbackCondition&) { return FilterEntity::Track; } },
-                              condition);
-        }
-
         // "= ?", "< ?", ..., "BETWEEN ? AND ?"
         std::string_view getSqlComparison(FilterOperator op)
         {
@@ -279,28 +220,6 @@ namespace lms::db
             throw Exception{ "Unhandled filter operator" };
         }
 
-        // To be bound with createLikePattern()
-        constexpr std::string_view sqlLikeComparison{ "LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'" };
-
-        std::string createLikePattern(StringOperator op, std::string_view value)
-        {
-            std::string escapedValue{ utils::escapeForLikeKeyword(value) };
-
-            switch (op)
-            {
-            case StringOperator::Equal:
-                return escapedValue;
-            case StringOperator::Contains:
-                return "%" + escapedValue + "%";
-            case StringOperator::StartsWith:
-                return escapedValue + "%";
-            case StringOperator::EndsWith:
-                return "%" + escapedValue;
-            }
-
-            throw Exception{ "Unhandled string filter operator" };
-        }
-
         // Unknown (missing value) already rejects the row except under NOT: the wrapper is added only there to keep indexes usable.
         // Optim: CASE WHEN rather than COALESCE(..., 0) or a bare NOT
         std::string createComparison(std::string_view valueExpr, std::string_view comparison, IsUnderNot isUnderNot)
@@ -320,27 +239,18 @@ namespace lms::db
             return createComparison(valueExpr, getSqlComparison(op), isUnderNot);
         }
 
-        // Registers the joins needed by the expression, then compiles it. Only lives during the compilation.
-        // Conditions that are positive conjuncts on multi-valued relations are compiled as inner joins, others as IN (subquery)
+        // Each condition is a comparison on the track row or a membership test, so that the expression needs no join
         class Compiler
         {
         public:
-            Compiler(FilterEntity queriedEntity, UserId user, JoinSet& joins)
-                : _queriedEntity{ queriedEntity }
-                , _user{ user }
-                , _joins{ joins }
+            Compiler(UserId user)
+                : _user{ user }
             {
             }
-            ~Compiler() = default;
 
-            Compiler(const Compiler&) = delete;
-            Compiler& operator=(const Compiler&) = delete;
-
-            SqlFragment compile(const FilterExpr& expr)
+            SqlFragment compile(const FilterExpr& expr) const
             {
                 assert(_user.isValid() || !expr.hasPerUserCondition());
-
-                registerJoins(expr, IsConjunct{ true });
 
                 SqlFragment where;
                 compileExpr(expr, IsUnderNot{ false }, where);
@@ -348,126 +258,6 @@ namespace lms::db
             }
 
         private:
-            struct JoinedCondition
-            {
-                RelationCondition condition;
-                std::string alias;
-            };
-
-            void registerJoins(const FilterExpr& expr, IsConjunct isConjunct)
-            {
-                switch (expr.getType())
-                {
-                case FilterExpr::Type::Condition:
-                    registerConditionJoins(expr.getCondition(), isConjunct);
-                    break;
-
-                case FilterExpr::Type::And:
-                    for (const FilterExpr& child : expr.getChildren())
-                        registerJoins(child, isConjunct);
-                    break;
-
-                case FilterExpr::Type::Or:
-                case FilterExpr::Type::Not:
-                    // an inner join would drop the rows without any related item, or match any other related item
-                    for (const FilterExpr& child : expr.getChildren())
-                        registerJoins(child, IsConjunct{ false });
-                    break;
-                }
-            }
-
-            void registerConditionJoins(const FilterExpr::Condition& condition, IsConjunct isConjunct)
-            {
-                std::visit(core::utils::overloads{
-                               [&](const RelationCondition& relationCondition) {
-                                   if (!isConjunct.value())
-                                       return; // The condition will compile to a membership test later
-
-                                   if (findJoinedCondition(relationCondition))
-                                       return; // Equal conjuncts share the same join
-
-                                   const Relation relation{ getRelation(relationCondition) };
-                                   std::string alias{ "f_j" + std::to_string(++_relationJoinCount) };
-
-                                   std::string clause;
-                                   clause.append(relation.table).append(" ").append(alias).append(" ON ").append(alias).append(".").append(relation.foreignKey);
-                                   clause.append(" = ").append(createEntityIdExpr(relation.entity));
-                                   _joins.add(clause);
-
-                                   _joinedConditions.push_back(JoinedCondition{ relationCondition, std::move(alias) });
-                               },
-                               [&](const IsCompilationCondition&) {
-                                   registerReleaseJoin();
-                               },
-                               [&](const StringCondition& stringCondition) {
-                                   if (getStringFieldEntity(stringCondition.field) == FilterEntity::Release)
-                                       registerReleaseJoin();
-                               },
-                               [&](const RatingCondition&) {
-                                   registerPerUserTrackJoin("rated_track", ratedTrackJoinAlias);
-                               },
-                               [&](const FeedbackCondition&) {
-                                   registerPerUserTrackJoin("track_feedback", trackFeedbackJoinAlias);
-                               },
-                               [](const MediaLibraryId&) {},
-                               [](const core::media::Codec&) {},
-                               [](const Advisory&) {},
-                               [](const IntegerCondition&) {},
-                               [](const DurationCondition&) {},
-                               [](const AddedDateTimeCondition&) {},
-                               [](const ListenCountCondition&) {},
-                               [](const LastListenDateTimeCondition&) {} },
-                           condition);
-            }
-
-            const JoinedCondition* findJoinedCondition(const RelationCondition& condition) const
-            {
-                const auto it{ std::find_if(std::cbegin(_joinedConditions), std::cend(_joinedConditions), [&](const JoinedCondition& joinedCondition) { return joinedCondition.condition == condition; }) };
-                return it != std::cend(_joinedConditions) ? &*it : nullptr;
-            }
-
-            void registerPerUserTrackJoin(std::string_view table, std::string_view alias)
-            {
-                std::string clause;
-                clause.append(table).append(" ").append(alias).append(" ON ").append(alias).append(".track_id = ").append(createQualifiedTrackColumn("id")).append(" AND ").append(alias).append(".user_id = ?");
-                _joins.add(clause, JoinSet::Type::Left, { toBindValue(_user) });
-            }
-
-            void registerReleaseJoin()
-            {
-                if (_queriedEntity == FilterEntity::Release)
-                    return;
-
-                std::string clause;
-                clause.append("release ").append(releaseJoinAlias).append(" ON ").append(releaseJoinAlias).append(".id = ").append(createQualifiedTrackColumn("release_id"));
-                _joins.add(clause, JoinSet::Type::Left);
-            }
-
-            // Expression of the id of the entity, as seen from the rows of the queried entity
-            std::string createEntityIdExpr(FilterEntity entity) const
-            {
-                switch (entity)
-                {
-                case FilterEntity::Track:
-                    return createQualifiedTrackColumn("id");
-                case FilterEntity::Release:
-                    // no need to join the release table just for its id
-                    return _queriedEntity == FilterEntity::Release ? createQualifiedColumn(releaseAlias, "id") : createQualifiedTrackColumn("release_id");
-                case FilterEntity::Artist:
-                    return createQualifiedColumn(artistAlias, "id");
-                }
-
-                throw Exception{ "Unhandled filter entity" };
-            }
-
-            std::string createQualifiedReleaseColumn(std::string_view column) const
-            {
-                if (_queriedEntity == FilterEntity::Release)
-                    return createQualifiedColumn(releaseAlias, column);
-
-                return createQualifiedColumn(releaseJoinAlias, column);
-            }
-
             void compileExpr(const FilterExpr& expr, IsUnderNot isUnderNot, SqlFragment& fragment) const
             {
                 switch (expr.getType())
@@ -548,17 +338,12 @@ namespace lms::db
                 }
             }
 
-            // Relations that reuse a join are left alone: they already are a cheap comparison on the row
-            const RelationCondition* getMergeableRelation(const FilterExpr& expr) const
+            static const RelationCondition* getMergeableRelation(const FilterExpr& expr)
             {
                 if (expr.getType() != FilterExpr::Type::Condition)
                     return nullptr;
 
-                const RelationCondition* relationCondition{ std::get_if<RelationCondition>(&expr.getCondition()) };
-                if (!relationCondition || findJoinedCondition(*relationCondition))
-                    return nullptr;
-
-                return relationCondition;
+                return std::get_if<RelationCondition>(&expr.getCondition());
             }
 
             void compileRelationMembership(const RelationCondition& relationCondition, IsUnderNot isUnderNot, SqlFragment& fragment) const
@@ -582,7 +367,7 @@ namespace lms::db
                 std::string sql;
                 if (needsCase)
                     sql += "CASE WHEN ";
-                sql.append(createEntityIdExpr(relation.entity)).append(" IN (SELECT f_e.").append(relation.foreignKey).append(" FROM ").append(relation.table).append(" f_e WHERE f_e.").append(relation.valueColumn);
+                sql.append(createQualifiedTrackColumn(relation.trackColumn)).append(" IN (SELECT f_e.").append(relation.foreignKey).append(" FROM ").append(relation.table).append(" f_e WHERE f_e.").append(relation.valueColumn);
                 if (relationConditions.size() == 1)
                 {
                     sql.append(" = ?");
@@ -614,15 +399,6 @@ namespace lms::db
             {
                 std::visit(core::utils::overloads{
                                [&](const RelationCondition& relationCondition) {
-                                   // A condition equal to a joined conjunct is true on every row that survives the WHERE,
-                                   // so it can use the join even when it is not a conjunct itself
-                                   if (const JoinedCondition * joinedCondition{ findJoinedCondition(relationCondition) })
-                                   {
-                                       const Relation relation{ getRelation(relationCondition) };
-                                       fragment.append(joinedCondition->alias + "." + std::string{ relation.valueColumn } + " = ?", { toBindValue(relationCondition) });
-                                       return;
-                                   }
-
                                    compileRelationMembership(relationCondition, isUnderNot, fragment);
                                },
                                [&](const MediaLibraryId& mediaLibrary) {
@@ -644,10 +420,8 @@ namespace lms::db
                                    fragment.append(createComparison(createQualifiedTrackColumn("file_added"), addedDateTimeCondition.op, isUnderNot), createOperandBinds(addedDateTimeCondition.value));
                                },
                                [&](const IsCompilationCondition& isCompilationCondition) {
-                                   fragment.append(createComparison(createQualifiedReleaseColumn("is_compilation"), FilterOperator::Equal, isUnderNot), { toBindValue(isCompilationCondition.value) });
-                               },
-                               [&](const StringCondition& stringCondition) {
-                                   compileStringCondition(stringCondition, isUnderNot, fragment);
+                                   // a membership like the other release conditions, under NOT the release of a track may be missing as well
+                                   fragment.append(createComparison(createQualifiedTrackColumn("release_id"), "IN (SELECT f_r.id FROM release f_r WHERE f_r.is_compilation = ?)", isUnderNot), { toBindValue(isCompilationCondition.value) });
                                },
                                [&](const ListenCountCondition& listenCountCondition) {
                                    fragment.append(createComparison(createListenCountExpr(), listenCountCondition.op, isUnderNot), createOperandBinds(listenCountCondition.value, { toBindValue(_user) }));
@@ -656,104 +430,30 @@ namespace lms::db
                                    fragment.append(createComparison(createLastListenDateTimeExpr(), lastListenDateTimeCondition.op, isUnderNot), createOperandBinds(lastListenDateTimeCondition.value, { toBindValue(_user) }));
                                },
                                [&](const RatingCondition& ratingCondition) {
-                                   fragment.append(createComparison(createQualifiedColumn(ratedTrackJoinAlias, "rating"), ratingCondition.op, isUnderNot), createOperandBinds(ratingCondition.value));
+                                   const std::string membership{ "IN (SELECT f_rt.track_id FROM rated_track f_rt WHERE f_rt.user_id = ? AND f_rt.rating " + std::string{ getSqlComparison(ratingCondition.op) } + ")" };
+                                   fragment.append(createComparison(createQualifiedTrackColumn("id"), membership, isUnderNot), createOperandBinds(ratingCondition.value, { toBindValue(_user) }));
                                },
                                [&](const FeedbackCondition& feedbackCondition) {
-                                   fragment.append(createComparison(createQualifiedColumn(trackFeedbackJoinAlias, "value"), FilterOperator::Equal, isUnderNot), { toBindValue(feedbackCondition.value) });
+                                   fragment.append(createComparison(createQualifiedTrackColumn("id"), "IN (SELECT f_tf.track_id FROM track_feedback f_tf WHERE f_tf.user_id = ? AND f_tf.value = ?)", isUnderNot), { toBindValue(_user), toBindValue(feedbackCondition.value) });
                                } },
                            condition);
             }
 
-            void compileStringCondition(const StringCondition& condition, IsUnderNot isUnderNot, SqlFragment& fragment) const
-            {
-                const std::string pattern{ createLikePattern(condition.op, condition.value) };
-
-                const auto compileColumn = [&](const std::string& column) {
-                    fragment.append(createComparison(column, sqlLikeComparison, isUnderNot), { toBindValue(pattern) });
-                };
-
-                switch (condition.field)
-                {
-                case StringField::TrackName:
-                    compileColumn(createQualifiedTrackColumn("name"));
-                    return;
-                case StringField::ReleaseName:
-                    compileColumn(createQualifiedReleaseColumn("name"));
-                    return;
-                case StringField::ReleaseSortName:
-                    compileColumn(createSortNameExpr(createQualifiedReleaseColumn("sort_name"), createQualifiedReleaseColumn("name")));
-                    return;
-                case StringField::ArtistName:
-                case StringField::ArtistSortName:
-                    compileArtistCondition(condition, isUnderNot, fragment);
-                    return;
-                }
-
-                throw Exception{ "Unhandled string filter field" };
-            }
-
-            // An artist linked to the track or to its release, matching by the name of the link or by its own name.
-            void compileArtistCondition(const StringCondition& condition, IsUnderNot isUnderNot, SqlFragment& fragment) const
-            {
-                const bool sortName{ condition.field == StringField::ArtistSortName };
-                const std::string pattern{ createLikePattern(condition.op, condition.value) };
-
-                const std::string linkName{ sortName ? createSortNameExpr("f_l.artist_sort_name", "f_l.artist_name") : "f_l.artist_name" };
-                const std::string ownName{ sortName ? createSortNameExpr("f_a.sort_name", "f_a.name") : "f_a.name" };
-                const bool isArtistQuery{ _queriedEntity == FilterEntity::Artist };
-
-                // Under NOT, the release of a track may be missing, and NULL IN (...) is unknown (which NOT keeps out) instead of false.
-                // Optim: CASE WHEN rather than COALESCE(..., 0) or a bare NOT
-                const bool needsCase{ isUnderNot.value() };
-
-                std::string sql{ needsCase ? "CASE WHEN (" : "(" };
-
-                const auto appendMemberships = [&](std::string_view linkTable, std::string_view linkEntityColumn, const std::string& entityId) {
-                    // when querying artists, the pair is tested: only the links of the queried artist count
-                    const std::string key{ isArtistQuery ? "(" + createEntityIdExpr(FilterEntity::Artist) + ", " + entityId + ")" : entityId };
-                    const std::string columns{ isArtistQuery ? "f_l.artist_id, f_l." + std::string{ linkEntityColumn } : "f_l." + std::string{ linkEntityColumn } };
-
-                    sql.append(key).append(" IN (SELECT ").append(columns).append(" FROM ").append(linkTable).append(" f_l WHERE ").append(linkName).append(" ").append(sqlLikeComparison).append(")");
-                    sql.append(" OR ");
-                    sql.append(key).append(" IN (SELECT ").append(columns).append(" FROM artist f_a JOIN ").append(linkTable).append(" f_l ON f_l.artist_id = f_a.id WHERE ").append(ownName).append(" ").append(sqlLikeComparison).append(")");
-                };
-
-                appendMemberships("track_artist_link", "track_id", createEntityIdExpr(FilterEntity::Track));
-                sql += " OR ";
-                appendMemberships("release_artist_link", "release_id", createEntityIdExpr(FilterEntity::Release));
-                sql += needsCase ? ") THEN 1 ELSE 0 END" : ")";
-
-                // One placeholder per membership
-                const BindValue patternValue{ toBindValue(pattern) };
-                fragment.append(sql, { patternValue, patternValue, patternValue, patternValue });
-            }
-
-            FilterEntity _queriedEntity;
             UserId _user;
-            JoinSet& _joins; // several conditions can need the same join
-            std::size_t _relationJoinCount{};
-            std::vector<JoinedCondition> _joinedConditions; // TODO flat_set
         };
     } // namespace
 
-    bool requiresTracks(const FilterExpr& expr, FilterEntity queriedEntity)
+    SqlFragment compileFilterExpr(const FilterExpr& expr, UserId user)
     {
-        if (queriedEntity == FilterEntity::Track)
-            return true;
-
-        if (expr.getType() == FilterExpr::Type::Condition)
-            return getConditionEntity(expr.getCondition()) != queriedEntity;
-
-        return std::any_of(std::cbegin(expr.getChildren()), std::cend(expr.getChildren()), [&](const FilterExpr& child) { return requiresTracks(child, queriedEntity); });
+        return Compiler{ user }.compile(expr);
     }
 
-    SqlFragment compileFilterExpr(const std::optional<FilterExpr>& expr, FilterEntity queriedEntity, UserId user, JoinSet& joins)
+    SqlFragment createMatchingTracksCondition(std::string_view column, const FilterExpr& expr, UserId user, std::string_view trackColumn)
     {
-        if (!expr)
-            return {};
+        SqlFragment res{ std::string{ column } + " IN (SELECT " + std::string{ trackColumn } + " FROM track t WHERE " };
+        res.append(compileFilterExpr(expr, user));
+        res.append(")");
 
-        SqlFragment where{ Compiler{ queriedEntity, user, joins }.compile(*expr) };
-        assert(queriedEntity == FilterEntity::Track || !requiresTracks(*expr, queriedEntity) || joins.hasAlias(trackAlias));
-        return where;
+        return res;
     }
 } // namespace lms::db

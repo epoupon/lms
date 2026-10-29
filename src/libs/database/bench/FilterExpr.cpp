@@ -296,13 +296,6 @@ namespace lms::db::benchs
             Label,
             LabelAndGenre,
             NotLabel,
-            ReleaseNameStartsWith,
-            ReleaseNameAndGenre,
-            ArtistNameStartsWith,
-            ArtistNameContains,
-            ArtistNameAndGenre,
-            NotArtistName,
-            ArtistSortNameStartsWith,
             Rated,
             RatedAndGenre,
             NotRated,
@@ -310,7 +303,6 @@ namespace lms::db::benchs
             StarredAndGenre,
             NotMediaLibrary,
             NotYearRange,
-            NotReleaseName,
             NotListened,
             NotStarred,
         };
@@ -330,13 +322,6 @@ namespace lms::db::benchs
             std::pair<core::LiteralString, FilterCase>{ "Label", FilterCase::Label },
             std::pair<core::LiteralString, FilterCase>{ "LabelAndGenre", FilterCase::LabelAndGenre },
             std::pair<core::LiteralString, FilterCase>{ "NotLabel", FilterCase::NotLabel },
-            std::pair<core::LiteralString, FilterCase>{ "ReleaseNameStartsWith", FilterCase::ReleaseNameStartsWith },
-            std::pair<core::LiteralString, FilterCase>{ "ReleaseNameAndGenre", FilterCase::ReleaseNameAndGenre },
-            std::pair<core::LiteralString, FilterCase>{ "ArtistNameStartsWith", FilterCase::ArtistNameStartsWith },
-            std::pair<core::LiteralString, FilterCase>{ "ArtistNameContains", FilterCase::ArtistNameContains },
-            std::pair<core::LiteralString, FilterCase>{ "ArtistNameAndGenre", FilterCase::ArtistNameAndGenre },
-            std::pair<core::LiteralString, FilterCase>{ "NotArtistName", FilterCase::NotArtistName },
-            std::pair<core::LiteralString, FilterCase>{ "ArtistSortNameStartsWith", FilterCase::ArtistSortNameStartsWith },
             std::pair<core::LiteralString, FilterCase>{ "Rated", FilterCase::Rated },
             std::pair<core::LiteralString, FilterCase>{ "RatedAndGenre", FilterCase::RatedAndGenre },
             std::pair<core::LiteralString, FilterCase>{ "NotRated", FilterCase::NotRated },
@@ -344,7 +329,6 @@ namespace lms::db::benchs
             std::pair<core::LiteralString, FilterCase>{ "StarredAndGenre", FilterCase::StarredAndGenre },
             std::pair<core::LiteralString, FilterCase>{ "NotMediaLibrary", FilterCase::NotMediaLibrary },
             std::pair<core::LiteralString, FilterCase>{ "NotYearRange", FilterCase::NotYearRange },
-            std::pair<core::LiteralString, FilterCase>{ "NotReleaseName", FilterCase::NotReleaseName },
             std::pair<core::LiteralString, FilterCase>{ "NotListened", FilterCase::NotListened },
             std::pair<core::LiteralString, FilterCase>{ "NotStarred", FilterCase::NotStarred },
         };
@@ -381,20 +365,6 @@ namespace lms::db::benchs
                 return FilterExpr::And({ FilterExpr::equal(library.labels.front()), FilterExpr::equal(library.genres.front()) });
             case FilterCase::NotLabel:
                 return FilterExpr::Not(FilterExpr::equal(library.labels.front()));
-            case FilterCase::ReleaseNameStartsWith:
-                return FilterExpr::condition(StringCondition{ StringField::ReleaseName, StringOperator::StartsWith, "Release1" });
-            case FilterCase::ReleaseNameAndGenre:
-                return FilterExpr::And({ FilterExpr::condition(StringCondition{ StringField::ReleaseName, StringOperator::StartsWith, "Release1" }), FilterExpr::equal(library.genres.front()) });
-            case FilterCase::ArtistNameStartsWith:
-                return FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::StartsWith, "Artist1" });
-            case FilterCase::ArtistNameContains:
-                return FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::Contains, "rtist1" });
-            case FilterCase::ArtistNameAndGenre:
-                return FilterExpr::And({ FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::StartsWith, "Artist1" }), FilterExpr::equal(library.genres.front()) });
-            case FilterCase::NotArtistName:
-                return FilterExpr::Not(FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::StartsWith, "Artist1" }));
-            case FilterCase::ArtistSortNameStartsWith:
-                return FilterExpr::condition(StringCondition{ StringField::ArtistSortName, StringOperator::StartsWith, "Artist1" });
             case FilterCase::Rated:
                 return FilterExpr::condition(RatingCondition{ FilterOperator::GreaterOrEqual, std::int64_t{ 4 } });
             case FilterCase::RatedAndGenre:
@@ -409,8 +379,6 @@ namespace lms::db::benchs
                 return FilterExpr::Not(FilterExpr::equal(library.mediaLibraries.front()));
             case FilterCase::NotYearRange:
                 return FilterExpr::Not(FilterExpr::condition(IntegerCondition{ IntegerField::Year, FilterOperator::Between, FilterRange<std::int64_t>{ 1990, 1999 } }));
-            case FilterCase::NotReleaseName:
-                return FilterExpr::Not(FilterExpr::condition(StringCondition{ StringField::ReleaseName, StringOperator::StartsWith, "Release1" }));
             case FilterCase::NotListened:
                 return FilterExpr::Not(FilterExpr::condition(ListenCountCondition{ FilterOperator::Greater, std::int64_t{ 0 } }));
             case FilterCase::NotStarred:

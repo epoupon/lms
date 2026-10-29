@@ -50,17 +50,12 @@ namespace lms::db
         const auto it{ std::find_if(std::cbegin(_joins), std::cend(_joins), [&](const Join& existing) { return getAlias(existing.on.getSql()) == alias; }) };
         if (it != std::cend(_joins))
         {
-            // An alias must always designate the same join: a different one means a clash, such as several filters or users in the same set
+            // An alias must always designate the same join, binds included
             assert(it->type == type && it->on.getSql() == join.getSql() && it->on.getBinds() == join.getBinds());
             return;
         }
 
         _joins.push_back(Join{ type, join });
-    }
-
-    bool JoinSet::hasAlias(std::string_view alias) const
-    {
-        return std::any_of(std::cbegin(_joins), std::cend(_joins), [&](const Join& join) { return getAlias(join.on.getSql()) == alias; });
     }
 
     SqlFragment JoinSet::toSql() const

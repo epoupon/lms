@@ -67,18 +67,6 @@ namespace lms::db::tests
         {
             return FilterExpr::condition(ListenCountCondition{ op, value });
         }
-
-        FilterExpr name(StringField field, StringOperator op, std::string value)
-        {
-            return FilterExpr::condition(StringCondition{ field, op, std::move(value) });
-        }
-
-        void createTrackArtistLink(Session& session, const Track::pointer& track, const Artist::pointer& artist, std::string_view linkName, TrackArtistLinkType type = TrackArtistLinkType::Artist, std::string_view linkSortName = {})
-        {
-            auto link{ session.create<TrackArtistLink>(track, artist, type) };
-            link.modify()->setArtistName(linkName);
-            link.modify()->setArtistSortName(linkSortName);
-        }
     } // namespace
 
     TEST(FilterExpr, structure)
@@ -383,7 +371,7 @@ namespace lms::db::tests
         EXPECT_TRUE(findReleaseIds(session, listenCount(FilterOperator::Equal, 0), user.getId()).empty());
 
         {
-            // the track join is shared between the filter and the sort
+            // the filter combines with a sort joining the tracks
             auto transaction{ session.createReadTransaction() };
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setFilter(year(FilterOperator::Greater, 1990)).setSortMethod(ReleaseSortMethod::DateAsc)) };
             EXPECT_EQ(releases, expected);
@@ -437,13 +425,11 @@ namespace lms::db::tests
 
         const FilterExpr hasLabel{ FilterExpr::equal(label.getId()) };
 
-        // release conditions alone apply to the release itself, its tracks are not needed
-        EXPECT_EQ(findReleaseIds(session, hasLabel), (std::vector{ releaseWithoutTracks.getId() }));
-        EXPECT_EQ(findReleaseIds(session, FilterExpr::equal(country.getId())), (std::vector{ releaseWithoutTracks.getId() }));
-        EXPECT_EQ(findReleaseIds(session, FilterExpr::condition(IsCompilationCondition{ true })), (std::vector{ releaseWithoutTracks.getId() }));
+        // a filter selects tracks: a release without tracks never matches, even on its own conditions
+        EXPECT_TRUE(findReleaseIds(session, hasLabel).empty());
+        EXPECT_TRUE(findReleaseIds(session, FilterExpr::equal(country.getId())).empty());
+        EXPECT_TRUE(findReleaseIds(session, FilterExpr::condition(IsCompilationCondition{ true })).empty());
         EXPECT_EQ(findReleaseIds(session, FilterExpr::Not(hasLabel)), (std::vector{ releaseWithTrack.getId() }));
-
-        // track conditions need a track
         EXPECT_TRUE(findReleaseIds(session, FilterExpr::And({ hasLabel, FilterExpr::equal(rock.getId()) })).empty());
         EXPECT_EQ(findReleaseIds(session, FilterExpr::Or({ hasLabel, FilterExpr::equal(rock.getId()) })), (std::vector{ releaseWithTrack.getId() }));
     }
@@ -531,284 +517,6 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Listen::getTopReleases(session, Listen::StatsFindParameters{}.setUser(user.getId()).setFilter(hasLabel)), (std::vector{ release.getId() }));
         }
-    }
-
-    TEST_F(DatabaseFixture, FilterExpr_trackNameFilter)
-    {
-        ScopedTrack helloWorld{ session };
-        ScopedTrack helloThere{ session };
-        ScopedTrack goodbye{ session };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            helloWorld.get().modify()->setName("Hello World");
-            helloThere.get().modify()->setName("hello there");
-            goodbye.get().modify()->setName("Goodbye");
-        }
-
-        EXPECT_EQ(findTrackIds(session, name(StringField::TrackName, StringOperator::Equal, "hello world")), (std::vector{ helloWorld.getId() }));
-        EXPECT_TRUE(findTrackIds(session, name(StringField::TrackName, StringOperator::Equal, "hello")).empty());
-        EXPECT_EQ(findTrackIds(session, name(StringField::TrackName, StringOperator::StartsWith, "HELLO")), (std::vector{ helloWorld.getId(), helloThere.getId() }));
-        EXPECT_EQ(findTrackIds(session, name(StringField::TrackName, StringOperator::Contains, "o w")), (std::vector{ helloWorld.getId() }));
-        EXPECT_EQ(findTrackIds(session, name(StringField::TrackName, StringOperator::EndsWith, "bye")), (std::vector{ goodbye.getId() }));
-        EXPECT_EQ(findTrackIds(session, FilterExpr::Not(name(StringField::TrackName, StringOperator::StartsWith, "hello"))), (std::vector{ goodbye.getId() }));
-    }
-
-    TEST_F(DatabaseFixture, FilterExpr_releaseNameFilter)
-    {
-        ScopedRelease abbeyRoad{ session, "Abbey Road" };
-        ScopedRelease roadTrip{ session, "Road Trip" };
-        ScopedRelease abbeyEmpty{ session, "Abbey Empty" };
-        ScopedTrack abbeyRoadTrack1{ session };
-        ScopedTrack abbeyRoadTrack2{ session };
-        ScopedTrack roadTripTrack{ session };
-        ScopedArtist abbeyRoadArtist{ session, "AbbeyRoadArtist" };
-        ScopedArtist roadTripArtist{ session, "RoadTripArtist" };
-        ScopedGenre rock{ session, "Rock" };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            abbeyRoadTrack1.get().modify()->setRelease(abbeyRoad.get());
-            abbeyRoadTrack2.get().modify()->setRelease(abbeyRoad.get());
-            abbeyRoadTrack2.get().modify()->setGenres(std::array{ rock.get() });
-            roadTripTrack.get().modify()->setRelease(roadTrip.get());
-            roadTripTrack.get().modify()->setGenres(std::array{ rock.get() });
-            session.create<TrackArtistLink>(abbeyRoadTrack1.get(), abbeyRoadArtist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(roadTripTrack.get(), roadTripArtist.get(), TrackArtistLinkType::Artist);
-        }
-
-        const FilterExpr startsWithAbbey{ name(StringField::ReleaseName, StringOperator::StartsWith, "abbey") };
-
-        // the release without tracks matches: no track join
-        EXPECT_EQ(findReleaseIds(session, startsWithAbbey), (std::vector{ abbeyRoad.getId(), abbeyEmpty.getId() }));
-        EXPECT_EQ(findReleaseIds(session, name(StringField::ReleaseName, StringOperator::EndsWith, "ROAD")), (std::vector{ abbeyRoad.getId() }));
-        EXPECT_EQ(findReleaseIds(session, name(StringField::ReleaseName, StringOperator::Contains, "road")), (std::vector{ abbeyRoad.getId(), roadTrip.getId() }));
-        EXPECT_EQ(findReleaseIds(session, name(StringField::ReleaseName, StringOperator::Equal, "road trip")), (std::vector{ roadTrip.getId() }));
-        EXPECT_EQ(findReleaseIds(session, FilterExpr::Not(startsWithAbbey)), (std::vector{ roadTrip.getId() }));
-        EXPECT_EQ(findReleaseIds(session, FilterExpr::And({ startsWithAbbey, FilterExpr::equal(rock.getId()) })), (std::vector{ abbeyRoad.getId() }));
-
-        // tracks and artists match through the release of their tracks
-        EXPECT_EQ(findTrackIds(session, startsWithAbbey), (std::vector{ abbeyRoadTrack1.getId(), abbeyRoadTrack2.getId() }));
-        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ startsWithAbbey, FilterExpr::equal(rock.getId()) })), (std::vector{ abbeyRoadTrack2.getId() }));
-        EXPECT_EQ(findArtistIds(session, startsWithAbbey), (std::vector{ abbeyRoadArtist.getId() }));
-        EXPECT_EQ(findArtistIds(session, FilterExpr::Not(startsWithAbbey)), (std::vector{ roadTripArtist.getId() }));
-    }
-
-    TEST_F(DatabaseFixture, FilterExpr_releaseSortNameFilter)
-    {
-        ScopedRelease theWall{ session, "The Wall" };
-        ScopedRelease animals{ session, "Animals" };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            theWall.get().modify()->setSortName("Wall, The");
-            animals.get().modify()->setSortName("");
-        }
-
-        EXPECT_EQ(findReleaseIds(session, name(StringField::ReleaseSortName, StringOperator::StartsWith, "wall")), (std::vector{ theWall.getId() }));
-        EXPECT_TRUE(findReleaseIds(session, name(StringField::ReleaseSortName, StringOperator::StartsWith, "the")).empty());
-        // falls back on the name
-        EXPECT_EQ(findReleaseIds(session, name(StringField::ReleaseSortName, StringOperator::StartsWith, "anim")), (std::vector{ animals.getId() }));
-    }
-
-    TEST_F(DatabaseFixture, FilterExpr_artistNameFilterLinkAndOwnName)
-    {
-        ScopedArtist rhapsody{ session, "Rhapsody of Fire" };
-        ScopedArtist luca{ session, "Luca Turilli" };
-        ScopedArtist justice{ session, "Justice" };
-        ScopedArtist withoutLink{ session, "Rhapsody Without Link" };
-        ScopedRelease oldRelease{ session, "Legendary Tales" };
-        ScopedRelease newRelease{ session, "Dark Wings" };
-        ScopedRelease justiceRelease{ session, "Cross" };
-        ScopedTrack linkedOld{ session };
-        ScopedTrack linkedNew{ session };
-        ScopedTrack justiceTrack{ session };
-        ScopedGenre rock{ session, "Rock" };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            linkedOld.get().modify()->setRelease(oldRelease.get());
-            linkedOld.get().modify()->setGenres(std::array{ rock.get() });
-            linkedNew.get().modify()->setRelease(newRelease.get());
-            justiceTrack.get().modify()->setRelease(justiceRelease.get());
-            justiceTrack.get().modify()->setGenres(std::array{ rock.get() });
-            // same artist, linked under its former name
-            createTrackArtistLink(session, linkedOld.get(), rhapsody.get(), "Rhapsody");
-            createTrackArtistLink(session, linkedNew.get(), rhapsody.get(), "Rhapsody of Fire");
-            createTrackArtistLink(session, linkedNew.get(), luca.get(), "Luca Turilli", TrackArtistLinkType::Composer);
-            createTrackArtistLink(session, justiceTrack.get(), justice.get(), "Justice");
-        }
-
-        const FilterExpr formerName{ name(StringField::ArtistName, StringOperator::Equal, "rhapsody") };
-        const FilterExpr startsWithRhapsody{ name(StringField::ArtistName, StringOperator::StartsWith, "RHAPSODY") };
-        const FilterExpr currentName{ name(StringField::ArtistName, StringOperator::Equal, "Rhapsody of Fire") };
-        const FilterExpr isRock{ FilterExpr::equal(rock.getId()) };
-
-        // tracks: matches the name of the link or the name of the artist, whatever the link type
-        EXPECT_EQ(findTrackIds(session, formerName), (std::vector{ linkedOld.getId() }));
-        EXPECT_EQ(findTrackIds(session, currentName), (std::vector{ linkedOld.getId(), linkedNew.getId() }));
-        EXPECT_EQ(findTrackIds(session, startsWithRhapsody), (std::vector{ linkedOld.getId(), linkedNew.getId() }));
-        EXPECT_EQ(findTrackIds(session, name(StringField::ArtistName, StringOperator::StartsWith, "luca")), (std::vector{ linkedNew.getId() }));
-        EXPECT_EQ(findTrackIds(session, FilterExpr::Not(formerName)), (std::vector{ linkedNew.getId(), justiceTrack.getId() }));
-        // on the same track
-        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ startsWithRhapsody, isRock })), (std::vector{ linkedOld.getId() }));
-        EXPECT_EQ(findTrackIds(session, FilterExpr::And({ startsWithRhapsody, FilterExpr::Not(isRock) })), (std::vector{ linkedNew.getId() }));
-        EXPECT_EQ(findTrackIds(session, FilterExpr::Or({ formerName, name(StringField::ArtistName, StringOperator::Equal, "justice") })), (std::vector{ linkedOld.getId(), justiceTrack.getId() }));
-
-        // releases: one of their tracks matches
-        EXPECT_EQ(findReleaseIds(session, formerName), (std::vector{ oldRelease.getId() }));
-        EXPECT_EQ(findReleaseIds(session, startsWithRhapsody), (std::vector{ oldRelease.getId(), newRelease.getId() }));
-        EXPECT_EQ(findReleaseIds(session, FilterExpr::And({ startsWithRhapsody, isRock })), (std::vector{ oldRelease.getId() }));
-
-        // artists: only their own links count, and an artist without link does not match
-        EXPECT_EQ(findArtistIds(session, formerName), (std::vector{ rhapsody.getId() }));
-        EXPECT_EQ(findArtistIds(session, startsWithRhapsody), (std::vector{ rhapsody.getId() }));
-        EXPECT_EQ(findArtistIds(session, name(StringField::ArtistName, StringOperator::StartsWith, "luca")), (std::vector{ luca.getId() }));
-        EXPECT_EQ(findArtistIds(session, name(StringField::ArtistName, StringOperator::Equal, "justice")), (std::vector{ justice.getId() }));
-        EXPECT_EQ(findArtistIds(session, FilterExpr::And({ startsWithRhapsody, isRock })), (std::vector{ rhapsody.getId() }));
-        EXPECT_EQ(findArtistIds(session, FilterExpr::Not(startsWithRhapsody)), (std::vector{ luca.getId(), justice.getId() }));
-    }
-
-    TEST_F(DatabaseFixture, FilterExpr_artistNameFilterReleaseLink)
-    {
-        ScopedArtist variousArtists{ session, "Various Artists" };
-        ScopedArtist daftPunk{ session, "Daft Punk" };
-        ScopedArtist justice{ session, "Justice" };
-        ScopedRelease hits{ session, "Hits" };
-        ScopedRelease other{ session, "Other" };
-        ScopedTrack track1{ session };
-        ScopedTrack track2{ session };
-        ScopedTrack otherTrack{ session };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setRelease(hits.get());
-            track2.get().modify()->setRelease(hits.get());
-            otherTrack.get().modify()->setRelease(other.get());
-            createTrackArtistLink(session, track1.get(), daftPunk.get(), "Daft Punk");
-            createTrackArtistLink(session, track2.get(), justice.get(), "Justice");
-            createTrackArtistLink(session, otherTrack.get(), justice.get(), "Justice");
-            auto releaseLink{ session.create<ReleaseArtistLink>(hits.get(), variousArtists.get(), false) };
-            releaseLink.modify()->setArtistName("Various Artists");
-        }
-
-        const FilterExpr various{ name(StringField::ArtistName, StringOperator::Equal, "various artists") };
-
-        // the release link applies to all the tracks of the release
-        EXPECT_EQ(findTrackIds(session, various), (std::vector{ track1.getId(), track2.getId() }));
-        EXPECT_EQ(findTrackIds(session, name(StringField::ArtistName, StringOperator::Equal, "daft punk")), (std::vector{ track1.getId() }));
-        EXPECT_EQ(findReleaseIds(session, various), (std::vector{ hits.getId() }));
-        EXPECT_EQ(findReleaseIds(session, name(StringField::ArtistName, StringOperator::Equal, "justice")), (std::vector{ hits.getId(), other.getId() }));
-        EXPECT_EQ(findArtistIds(session, various), (std::vector{ variousArtists.getId() }));
-        EXPECT_EQ(findArtistIds(session, name(StringField::ArtistName, StringOperator::Equal, "daft punk")), (std::vector{ daftPunk.getId() }));
-    }
-
-    TEST_F(DatabaseFixture, FilterExpr_artistNameFilterWithLinkType)
-    {
-        ScopedArtist both{ session, "Both" };
-        ScopedArtist composerOnly{ session, "Composer Only" };
-        ScopedTrack bothTrack{ session };
-        ScopedTrack composerTrack{ session };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            createTrackArtistLink(session, bothTrack.get(), both.get(), "Alpha", TrackArtistLinkType::Artist);
-            createTrackArtistLink(session, bothTrack.get(), both.get(), "Composer Alias", TrackArtistLinkType::Composer);
-            createTrackArtistLink(session, composerTrack.get(), composerOnly.get(), "Composer Alias", TrackArtistLinkType::Composer);
-        }
-
-        const auto findArtistIdsWithLinkType = [&](const FilterExpr& expr, TrackArtistLinkType linkType) {
-            auto transaction{ session.createReadTransaction() };
-            return Artist::findIds(session, Artist::FindParameters{}.setFilter(expr).setTrackArtistLinkType(linkType).setSortMethod(ArtistSortMethod::Id));
-        };
-
-        const FilterExpr alpha{ name(StringField::ArtistName, StringOperator::Equal, "alpha") };
-        const FilterExpr composerAlias{ name(StringField::ArtistName, StringOperator::Equal, "composer alias") };
-
-        // the link type selects the artists of the tracks, but the name is matched on all the links of the artist to the track
-        EXPECT_EQ(findArtistIdsWithLinkType(alpha, TrackArtistLinkType::Artist), (std::vector{ both.getId() }));
-        EXPECT_EQ(findArtistIdsWithLinkType(alpha, TrackArtistLinkType::Composer), (std::vector{ both.getId() }));
-        EXPECT_EQ(findArtistIdsWithLinkType(composerAlias, TrackArtistLinkType::Artist), (std::vector{ both.getId() }));
-        EXPECT_EQ(findArtistIdsWithLinkType(composerAlias, TrackArtistLinkType::Composer), (std::vector{ both.getId(), composerOnly.getId() }));
-        EXPECT_TRUE(findArtistIdsWithLinkType(alpha, TrackArtistLinkType::Lyricist).empty());
-    }
-
-    TEST_F(DatabaseFixture, FilterExpr_artistNameFilterUnderNotKeepsTracksWithoutRelease)
-    {
-        ScopedArtist variousArtists{ session, "Various Artists" };
-        ScopedArtist daftPunk{ session, "Daft Punk" };
-        ScopedArtist justice{ session, "Justice" };
-        ScopedRelease hits{ session, "Hits" };
-        ScopedTrack daftPunkTrack{ session };
-        ScopedTrack justiceTrack{ session };
-        ScopedTrack hitsTrack{ session };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            hitsTrack.get().modify()->setRelease(hits.get());
-            createTrackArtistLink(session, daftPunkTrack.get(), daftPunk.get(), "Daft Punk");
-            createTrackArtistLink(session, justiceTrack.get(), justice.get(), "Justice");
-            createTrackArtistLink(session, hitsTrack.get(), justice.get(), "Justice");
-            auto releaseLink{ session.create<ReleaseArtistLink>(hits.get(), variousArtists.get(), false) };
-            releaseLink.modify()->setArtistName("Various Artists");
-        }
-
-        const FilterExpr notJustice{ FilterExpr::Not(name(StringField::ArtistName, StringOperator::Equal, "justice")) };
-        const FilterExpr notVarious{ FilterExpr::Not(name(StringField::ArtistName, StringOperator::Equal, "various artists")) };
-        const FilterExpr notDaftPunk{ FilterExpr::Not(name(StringField::ArtistName, StringOperator::Equal, "daft punk")) };
-
-        // the tracks without release have no release link to match
-        EXPECT_EQ(findTrackIds(session, notJustice), (std::vector{ daftPunkTrack.getId() }));
-        EXPECT_EQ(findTrackIds(session, notVarious), (std::vector{ daftPunkTrack.getId(), justiceTrack.getId() }));
-        EXPECT_EQ(findReleaseIds(session, notDaftPunk), (std::vector{ hits.getId() }));
-        EXPECT_TRUE(findReleaseIds(session, notVarious).empty());
-        EXPECT_EQ(findArtistIds(session, notJustice), (std::vector{ variousArtists.getId(), daftPunk.getId() }));
-        EXPECT_EQ(findArtistIds(session, notVarious), (std::vector{ daftPunk.getId(), justice.getId() }));
-    }
-
-    TEST_F(DatabaseFixture, FilterExpr_artistSortNameFilter)
-    {
-        ScopedArtist beatles{ session, "The Beatles" };
-        ScopedArtist animals{ session, "Animals" };
-        ScopedTrack beatlesTrack{ session };
-        ScopedTrack animalsTrack{ session };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            beatles.get().modify()->setSortName("Beatles, The");
-            animals.get().modify()->setSortName("");
-            createTrackArtistLink(session, beatlesTrack.get(), beatles.get(), "The Beatles", TrackArtistLinkType::Artist, "Beatles, The");
-            createTrackArtistLink(session, animalsTrack.get(), animals.get(), "Animals");
-        }
-
-        const FilterExpr startsWithBeatles{ name(StringField::ArtistSortName, StringOperator::StartsWith, "beatles") };
-        const FilterExpr startsWithThe{ name(StringField::ArtistSortName, StringOperator::StartsWith, "the") };
-        const FilterExpr startsWithAnim{ name(StringField::ArtistSortName, StringOperator::StartsWith, "anim") };
-
-        EXPECT_EQ(findTrackIds(session, startsWithBeatles), (std::vector{ beatlesTrack.getId() }));
-        EXPECT_TRUE(findTrackIds(session, startsWithThe).empty());
-        // falls back on the names
-        EXPECT_EQ(findTrackIds(session, startsWithAnim), (std::vector{ animalsTrack.getId() }));
-
-        EXPECT_EQ(findArtistIds(session, startsWithBeatles), (std::vector{ beatles.getId() }));
-        EXPECT_TRUE(findArtistIds(session, startsWithThe).empty());
-        EXPECT_EQ(findArtistIds(session, startsWithAnim), (std::vector{ animals.getId() }));
-    }
-
-    TEST_F(DatabaseFixture, FilterExpr_nameFilterLiteralCharacters)
-    {
-        ScopedRelease percent{ session, "100% Hits" };
-        ScopedRelease noPercent{ session, "100 Hits" };
-        ScopedRelease underscore{ session, "a_b" };
-        ScopedRelease noUnderscore{ session, "axb" };
-        ScopedRelease backslash{ session, R"(C:\Music)" };
-        ScopedRelease noBackslash{ session, "C:Music" };
-
-        EXPECT_EQ(findReleaseIds(session, name(StringField::ReleaseName, StringOperator::Equal, "100% Hits")), (std::vector{ percent.getId() }));
-        EXPECT_EQ(findReleaseIds(session, name(StringField::ReleaseName, StringOperator::StartsWith, "100%")), (std::vector{ percent.getId() }));
-        EXPECT_EQ(findReleaseIds(session, name(StringField::ReleaseName, StringOperator::Contains, "a_b")), (std::vector{ underscore.getId() }));
-        EXPECT_EQ(findReleaseIds(session, name(StringField::ReleaseName, StringOperator::Equal, R"(C:\Music)")), (std::vector{ backslash.getId() }));
-        EXPECT_EQ(findReleaseIds(session, name(StringField::ReleaseName, StringOperator::EndsWith, R"(:\Music)")), (std::vector{ backslash.getId() }));
     }
 
     TEST_F(DatabaseFixture, FilterExpr_advisory)
@@ -964,6 +672,44 @@ namespace lms::db::tests
         // most recent track across both kinds of artist tracks
         EXPECT_EQ(findArtistIds(Artist::FindParameters{}.setSortMethod(ArtistSortMethod::LastWrittenDesc)), (std::vector{ artistA.getId(), artistC.getId(), artistD.getId(), artistV.getId() }));
         EXPECT_EQ(findArtistIds(Artist::FindParameters{}.setSortMethod(ArtistSortMethod::FeedbackDateDesc).setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved)), (std::vector{ artistV.getId(), artistA.getId(), artistC.getId() }));
+    }
+
+    TEST_F(DatabaseFixture, FilterExpr_artistTracksSortOnlyConsidersTheMatchingTracks)
+    {
+        ScopedArtist artistX{ session, "ArtistX" };
+        ScopedArtist artistY{ session, "ArtistY" };
+        ScopedTrack trackX1{ session };
+        ScopedTrack trackX2{ session };
+        ScopedTrack trackY{ session };
+        ScopedMediaLibrary library1{ session, "Library1", "/root1" };
+        ScopedMediaLibrary library2{ session, "Library2", "/root2" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            auto setUpTrack{ [&](Track::pointer track, const MediaLibrary::pointer& library, const Artist::pointer& artist, int addedYear, int writtenYear) {
+                track.modify()->setMediaLibrary(library);
+                track.modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ addedYear, 1, 1 } });
+                track.modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ writtenYear, 1, 1 } });
+                session.create<TrackArtistLink>(track, artist, TrackArtistLinkType::Artist);
+            } };
+
+            // artistX was added to library1 after artistY, but long before to library2, where it was also modified later
+            setUpTrack(trackX1.get(), library1.get(), artistX.get(), 2022, 2020);
+            setUpTrack(trackX2.get(), library2.get(), artistX.get(), 2020, 2022);
+            setUpTrack(trackY.get(), library1.get(), artistY.get(), 2021, 2021);
+        }
+
+        auto findArtistIds{ [&](Artist::FindParameters params) {
+            auto transaction{ session.createReadTransaction() };
+            return Artist::findIds(session, params.setFilter(FilterExpr::equal(library1.getId())));
+        } };
+
+        // the tracks of library2 do not count, with both kinds of artist tracks or with a link type
+        EXPECT_EQ(findArtistIds(Artist::FindParameters{}.setSortMethod(ArtistSortMethod::AddedDesc)), (std::vector{ artistX.getId(), artistY.getId() }));
+        EXPECT_EQ(findArtistIds(Artist::FindParameters{}.setSortMethod(ArtistSortMethod::LastWrittenDesc)), (std::vector{ artistY.getId(), artistX.getId() }));
+        EXPECT_EQ(findArtistIds(Artist::FindParameters{}.setSortMethod(ArtistSortMethod::AddedDesc).setTrackArtistLinkType(TrackArtistLinkType::Artist)), (std::vector{ artistX.getId(), artistY.getId() }));
+        EXPECT_EQ(findArtistIds(Artist::FindParameters{}.setSortMethod(ArtistSortMethod::LastWrittenDesc).setTrackArtistLinkType(TrackArtistLinkType::Artist)), (std::vector{ artistY.getId(), artistX.getId() }));
     }
 
     TEST_F(DatabaseFixture, FilterExpr_artistWithKeywords)

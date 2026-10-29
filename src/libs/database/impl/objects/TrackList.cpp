@@ -35,7 +35,6 @@
 #include "database/objects/User.hpp"
 #include "database/objects/Work.hpp"
 
-#include "JoinSet.hpp"
 #include "Utils.hpp"
 #include "objects/FilterExprCompiler.hpp"
 #include "traits/IdTypeTraits.hpp"
@@ -48,8 +47,7 @@ namespace lms::db
 {
     namespace
     {
-        // Returns the condition of the parameters, filter included, and adds to joins the joins it relies on
-        SqlFragment createParamsConditions(const TrackList::FindParameters& params, JoinSet& joins)
+        SqlFragment createParamsConditions(const TrackList::FindParameters& params)
         {
             assert(!params.user.isValid() || !params.excludedUser.isValid());
 
@@ -69,12 +67,12 @@ namespace lms::db
             if (params.visibility)
                 res.combineWithAnd({ "t_l.visibility = ?", { static_cast<int>(*params.visibility) } });
 
-            // Tracklists have no conditions of their own: they match if one of their tracks does
             if (params.filter)
             {
-                joins.add("tracklist_entry t_l_e ON t_l_e.tracklist_id = t_l.id");
-                joins.add("track t ON t.id = t_l_e.track_id");
-                res.combineWithAnd(compileFilterExpr(params.filter, FilterEntity::Track, params.filterUser, joins));
+                SqlFragment filter{ "t_l.id IN (SELECT t_l_e.tracklist_id FROM tracklist_entry t_l_e WHERE " };
+                filter.append(createMatchingTracksCondition("t_l_e.track_id", *params.filter, params.filterUser));
+                filter.append(")");
+                res.combineWithAnd(filter);
             }
 
             return res;
@@ -99,17 +97,9 @@ namespace lms::db
         template<typename ResultType>
         Wt::Dbo::Query<ResultType> createListQuery(Session& session, std::string_view selectedItem, const TrackList::FindParameters& params)
         {
-            JoinSet joins;
-            const SqlFragment where{ createParamsConditions(params, joins) };
-
             auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ selectedItem } + " FROM tracklist t_l") };
-            joins.apply(query);
-            applyWhereFragment(query, where);
+            applyWhereFragment(query, createParamsConditions(params));
             applySortMethod(query, params);
-
-            // Joins can duplicate tracklists
-            if (!joins.empty())
-                query.groupBy("t_l.id");
 
             return query;
         }

@@ -24,7 +24,6 @@
 #include <initializer_list>
 #include <optional>
 #include <span>
-#include <string>
 #include <variant>
 #include <vector>
 
@@ -101,31 +100,6 @@ namespace lms::db
         bool value;
     };
 
-    enum class StringField
-    {
-        TrackName,
-        ReleaseName,     // release condition
-        ReleaseSortName, // release condition, falls back on ReleaseName if not set
-        ArtistName,      // an artist of the track or of its release (any link type), by the name of the link or the own name of the artist
-        ArtistSortName,  // same, each sort name falls back on the matching name if not set
-    };
-
-    enum class StringOperator
-    {
-        Equal,
-        Contains,
-        StartsWith,
-        EndsWith,
-    };
-
-    // Case insensitive (ASCII only)
-    struct StringCondition
-    {
-        StringField field;
-        StringOperator op;
-        std::string value;
-    };
-
     // Per-user conditions: evaluated against the user given alongside the expression
     struct ListenCountCondition // 0 if never listened
     {
@@ -162,8 +136,6 @@ namespace lms::db
     struct RelationCondition
     {
         std::variant<ClusterId, CountryId, GenreId, GroupingId, LabelId, LanguageId, MoodId, ReleaseTypeId> id;
-
-        bool operator==(const RelationCondition&) const = default;
     };
 
     // A condition on a track. Equal-only conditions have no operator.
@@ -177,15 +149,13 @@ namespace lms::db
         DurationCondition,
         AddedDateTimeCondition,
         IsCompilationCondition,
-        StringCondition,
         ListenCountCondition,
         LastListenDateTimeCondition,
         RatingCondition,
         FeedbackCondition>;
 
-    // Track conditions apply to a single track: releases, artists and tracklists match if one of their tracks satisfies the expression.
-    // Release conditions apply to the queried release itself, or to the release of the track otherwise.
-    // When querying artists, artist conditions only consider the queried artist.
+    // An expression applies to a single track: releases, artists and tracklists match if one of their tracks satisfies it.
+    // Release conditions apply to the release of the track. Names are not conditions: see the keywords of the find parameters.
     // Conditions never evaluate to "unknown": a missing value does not satisfy any comparison, so Not(c) matches it.
     // A 0 Duration, Bitrate, SampleRate or ChannelCount is a missing value
     class FilterExpr

@@ -73,11 +73,6 @@ namespace lms::db
             return true;
         }
 
-        bool isValid(const StringCondition&)
-        {
-            return true;
-        }
-
         bool isValid(const FeedbackCondition&)
         {
             return true;

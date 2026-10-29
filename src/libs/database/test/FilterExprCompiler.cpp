@@ -24,7 +24,6 @@
 
 #include "database/objects/FilterExpr.hpp"
 
-#include "JoinSet.hpp"
 #include "SqlFragment.hpp"
 #include "objects/FilterExprCompiler.hpp"
 
@@ -32,353 +31,179 @@ namespace lms::db::tests
 {
     namespace
     {
-        struct Compiled
-        {
-            JoinSet joins;
-            SqlFragment where;
-        };
-
-        // Gives the tracks to the queries that need them, as the callers must do
-        Compiled compile(const FilterExpr& expr, FilterEntity queriedEntity, UserId user = {})
-        {
-            Compiled res;
-            if (queriedEntity == FilterEntity::Release && requiresTracks(expr, queriedEntity))
-                res.joins.add("track t ON t.release_id = r.id");
-            else if (queriedEntity == FilterEntity::Artist && requiresTracks(expr, queriedEntity))
-                res.joins.add("track t ON t.id = a.id"); // only the alias matters, the SQL is not executed
-
-            res.where = compileFilterExpr(expr, queriedEntity, user, res.joins);
-            return res;
-        }
-
         const GenreId genre5{ 5 };
         const GenreId genre7{ 7 };
         const MoodId mood3{ 3 };
         const LabelId label2{ 2 };
 
-        constexpr std::string_view genreMember{ "t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id = ?)" };
-        constexpr std::string_view moodMember{ "t.id IN (SELECT f_e.track_id FROM track_mood f_e WHERE f_e.mood_id = ?)" };
-        constexpr std::string_view genreMemberUnderNot{ "CASE WHEN t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id = ?) THEN 1 ELSE 0 END" };
+        const std::string genreMember{ "t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id = ?)" };
+        const std::string moodMember{ "t.id IN (SELECT f_e.track_id FROM track_mood f_e WHERE f_e.mood_id = ?)" };
+        const std::string genreMemberUnderNot{ "CASE WHEN " + genreMember + " THEN 1 ELSE 0 END" };
     } // namespace
 
-    TEST(FilterExprCompiler, noExpression_isEmpty)
+    TEST(FilterExprCompiler, matchingTracks_selectTheGivenColumnOfTheTracks)
     {
-        JoinSet joins;
-        const SqlFragment where{ compileFilterExpr(std::nullopt, FilterEntity::Track, UserId{}, joins) };
+        const SqlFragment compiled{ createMatchingTracksCondition("r.id", FilterExpr::equal(genre5), UserId{}, "t.release_id") };
 
-        EXPECT_TRUE(where.isEmpty());
-        EXPECT_TRUE(joins.empty());
+        EXPECT_EQ(compiled.getSql(), "r.id IN (SELECT t.release_id FROM track t WHERE " + genreMember + ")");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 5LL }));
     }
 
-    TEST(FilterExprCompiler, relation_isAnInnerJoin)
+    TEST(FilterExprCompiler, relation_isAMembershipTest)
     {
-        const Compiled compiled{ compile(FilterExpr::equal(genre5), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::equal(genre5), UserId{}) };
 
-        EXPECT_EQ(compiled.joins.toSql().getSql(), " JOIN track_genre f_j1 ON f_j1.track_id = t.id");
-        EXPECT_EQ(compiled.where.getSql(), "f_j1.genre_id = ?");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL }));
+        EXPECT_EQ(compiled.getSql(), genreMember);
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 5LL }));
     }
 
-    TEST(FilterExprCompiler, equalRelations_shareTheSameJoin)
+    TEST(FilterExprCompiler, relationsUnderAnd_areMembershipTestsOfTheirOwn)
     {
-        const Compiled compiled{ compile(FilterExpr::And({ FilterExpr::equal(genre5), FilterExpr::equal(genre5) }), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::And({ FilterExpr::equal(genre5), FilterExpr::equal(genre7), FilterExpr::equal(mood3) }), UserId{}) };
 
-        EXPECT_EQ(compiled.joins.toSql().getSql(), " JOIN track_genre f_j1 ON f_j1.track_id = t.id");
-        EXPECT_EQ(compiled.where.getSql(), "(f_j1.genre_id = ? AND f_j1.genre_id = ?)");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 5LL }));
+        EXPECT_EQ(compiled.getSql(), "(" + genreMember + " AND " + genreMember + " AND " + moodMember + ")");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 5LL, 7LL, 3LL }));
     }
 
-    TEST(FilterExprCompiler, differentRelations_getTheirOwnJoin)
+    TEST(FilterExprCompiler, relationsUnderOr_areMembershipTests)
     {
-        const Compiled compiled{ compile(FilterExpr::And({ FilterExpr::equal(genre5), FilterExpr::equal(mood3) }), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(mood3) }), UserId{}) };
 
-        EXPECT_EQ(compiled.joins.toSql().getSql(), " JOIN track_genre f_j1 ON f_j1.track_id = t.id JOIN track_mood f_j2 ON f_j2.track_id = t.id");
-        EXPECT_EQ(compiled.where.getSql(), "(f_j1.genre_id = ? AND f_j2.mood_id = ?)");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 3LL }));
-    }
-
-    TEST(FilterExprCompiler, relationUnderOr_isAMembershipTest)
-    {
-        const Compiled compiled{ compile(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(mood3) }), FilterEntity::Track) };
-
-        EXPECT_TRUE(compiled.joins.empty());
-        EXPECT_EQ(compiled.where.getSql(), "(" + std::string{ genreMember } + " OR " + std::string{ moodMember } + ")");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 3LL }));
+        EXPECT_EQ(compiled.getSql(), "(" + genreMember + " OR " + moodMember + ")");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 5LL, 3LL }));
     }
 
     TEST(FilterExprCompiler, sameRelationsUnderOr_areMergedIntoOneMembershipTest)
     {
-        const Compiled compiled{ compile(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(genre7), FilterExpr::equal(GenreId{ 9 }) }), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(genre7), FilterExpr::equal(GenreId{ 9 }) }), UserId{}) };
 
-        EXPECT_TRUE(compiled.joins.empty());
-        EXPECT_EQ(compiled.where.getSql(), "(t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?,?)))");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 7LL, 9LL }));
+        EXPECT_EQ(compiled.getSql(), "(t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?,?)))");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 5LL, 7LL, 9LL }));
     }
 
     TEST(FilterExprCompiler, mergedRelations_takeThePlaceOfTheFirstOne)
     {
-        const Compiled compiled{ compile(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(mood3), FilterExpr::equal(genre7) }), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(mood3), FilterExpr::equal(genre7) }), UserId{}) };
 
-        EXPECT_EQ(compiled.where.getSql(), "(t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?)) OR " + std::string{ moodMember } + ")");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 7LL, 3LL }));
+        EXPECT_EQ(compiled.getSql(), "(t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?)) OR " + moodMember + ")");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 5LL, 7LL, 3LL }));
     }
 
     TEST(FilterExprCompiler, relationsOfDifferentTypesUnderOr_areMergedPerType)
     {
-        const Compiled compiled{ compile(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(mood3), FilterExpr::equal(GenreId{ 9 }), FilterExpr::equal(MoodId{ 4 }) }), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(mood3), FilterExpr::equal(GenreId{ 9 }), FilterExpr::equal(MoodId{ 4 }) }), UserId{}) };
 
-        EXPECT_EQ(compiled.where.getSql(), "(t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?)) OR t.id IN (SELECT f_e.track_id FROM track_mood f_e WHERE f_e.mood_id IN (?,?)))");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 9LL, 3LL, 4LL }));
+        EXPECT_EQ(compiled.getSql(), "(t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?)) OR t.id IN (SELECT f_e.track_id FROM track_mood f_e WHERE f_e.mood_id IN (?,?)))");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 5LL, 9LL, 3LL, 4LL }));
     }
 
     TEST(FilterExprCompiler, mergedRelationsUnderNot_stayEquivalent)
     {
-        const Compiled compiled{ compile(FilterExpr::Not(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(genre7) })), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::Not(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(genre7) })), UserId{}) };
 
-        EXPECT_TRUE(compiled.joins.empty());
-        EXPECT_EQ(compiled.where.getSql(), "NOT ((CASE WHEN t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?)) THEN 1 ELSE 0 END))");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 7LL }));
+        EXPECT_EQ(compiled.getSql(), "NOT ((CASE WHEN t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?)) THEN 1 ELSE 0 END))");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 5LL, 7LL }));
     }
 
     TEST(FilterExprCompiler, relationsUnderAnd_areNotMerged)
     {
-        const Compiled compiled{ compile(FilterExpr::Not(FilterExpr::And({ FilterExpr::equal(genre5), FilterExpr::equal(genre7) })), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::Not(FilterExpr::And({ FilterExpr::equal(genre5), FilterExpr::equal(genre7) })), UserId{}) };
 
-        EXPECT_EQ(compiled.where.getSql(), "NOT ((" + std::string{ genreMemberUnderNot } + " AND " + std::string{ genreMemberUnderNot } + "))");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 7LL }));
+        EXPECT_EQ(compiled.getSql(), "NOT ((" + genreMemberUnderNot + " AND " + genreMemberUnderNot + "))");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 5LL, 7LL }));
     }
 
     TEST(FilterExprCompiler, relationsInsideAnAndUnderOr_areNotMerged)
     {
-        const Compiled compiled{ compile(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::And({ FilterExpr::equal(genre7), FilterExpr::equal(mood3) }) }), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::And({ FilterExpr::equal(genre7), FilterExpr::equal(mood3) }) }), UserId{}) };
 
-        EXPECT_EQ(compiled.where.getSql(), "(" + std::string{ genreMember } + " OR (" + std::string{ genreMember } + " AND " + std::string{ moodMember } + "))");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 7LL, 3LL }));
-    }
-
-    TEST(FilterExprCompiler, relationEqualToAConjunctUnderOr_isNotMerged)
-    {
-        const Compiled compiled{ compile(FilterExpr::And({ FilterExpr::equal(genre5), FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(genre7), FilterExpr::equal(GenreId{ 9 }) }) }), FilterEntity::Track) };
-
-        EXPECT_EQ(compiled.joins.toSql().getSql(), " JOIN track_genre f_j1 ON f_j1.track_id = t.id");
-        EXPECT_EQ(compiled.where.getSql(), "(f_j1.genre_id = ? AND (f_j1.genre_id = ? OR t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?))))");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 5LL, 7LL, 9LL }));
-    }
-
-    TEST(FilterExprCompiler, mergedReleaseRelations_followTheQueriedEntity)
-    {
-        const Compiled onReleases{ compile(FilterExpr::Or({ FilterExpr::equal(label2), FilterExpr::equal(LabelId{ 4 }) }), FilterEntity::Release) };
-        EXPECT_EQ(onReleases.where.getSql(), "(r.id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id IN (?,?)))");
-
-        const Compiled onTracks{ compile(FilterExpr::Or({ FilterExpr::equal(label2), FilterExpr::equal(LabelId{ 4 }) }), FilterEntity::Track) };
-        EXPECT_EQ(onTracks.where.getSql(), "(t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id IN (?,?)))");
-    }
-
-    TEST(FilterExprCompiler, relationUnderNot_isAMembershipTest)
-    {
-        const Compiled compiled{ compile(FilterExpr::Not(FilterExpr::equal(genre5)), FilterEntity::Track) };
-
-        EXPECT_TRUE(compiled.joins.empty());
-        EXPECT_EQ(compiled.where.getSql(), "NOT (" + std::string{ genreMemberUnderNot } + ")");
-    }
-
-    TEST(FilterExprCompiler, releaseRelationOfTracksUnderNot_keepsTracksWithoutReleaseIn)
-    {
-        // A track without release has a NULL release id: NULL IN (...) would be unknown, that NOT keeps out
-        const Compiled onTracks{ compile(FilterExpr::Not(FilterExpr::equal(label2)), FilterEntity::Track) };
-        EXPECT_EQ(onTracks.where.getSql(), "NOT (CASE WHEN t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id = ?) THEN 1 ELSE 0 END)");
-
-        const Compiled onTracksMerged{ compile(FilterExpr::Not(FilterExpr::Or({ FilterExpr::equal(label2), FilterExpr::equal(LabelId{ 4 }) })), FilterEntity::Track) };
-        EXPECT_EQ(onTracksMerged.where.getSql(), "NOT ((CASE WHEN t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id IN (?,?)) THEN 1 ELSE 0 END))");
-
-        const Compiled onArtists{ compile(FilterExpr::Not(FilterExpr::Or({ FilterExpr::equal(label2), FilterExpr::equal(LabelId{ 4 }) })), FilterEntity::Artist) };
-        EXPECT_EQ(onArtists.where.getSql(), "NOT ((CASE WHEN t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id IN (?,?)) THEN 1 ELSE 0 END))");
-
-        const Compiled onReleases{ compile(FilterExpr::Not(FilterExpr::equal(label2)), FilterEntity::Release) };
-        EXPECT_EQ(onReleases.where.getSql(), "NOT (CASE WHEN r.id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id = ?) THEN 1 ELSE 0 END)");
+        EXPECT_EQ(compiled.getSql(), "(" + genreMember + " OR (" + genreMember + " AND " + moodMember + "))");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 5LL, 7LL, 3LL }));
     }
 
     TEST(FilterExprCompiler, mergedRelations_keepTheBindsInTheOrderOfTheSql)
     {
-        // The rock conjunct is a join: its siblings are merged around it
-        const Compiled compiled{ compile(FilterExpr::And({ FilterExpr::equal(genre5), FilterExpr::Or({ FilterExpr::equal(genre7), FilterExpr::equal(mood3), FilterExpr::equal(genre5), FilterExpr::equal(GenreId{ 9 }), FilterExpr::equal(MoodId{ 4 }) }) }), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::And({ FilterExpr::equal(genre5), FilterExpr::Or({ FilterExpr::equal(genre7), FilterExpr::equal(mood3), FilterExpr::equal(genre5), FilterExpr::equal(GenreId{ 9 }), FilterExpr::equal(MoodId{ 4 }) }) }), UserId{}) };
 
-        EXPECT_EQ(compiled.joins.toSql().getSql(), " JOIN track_genre f_j1 ON f_j1.track_id = t.id");
-        EXPECT_EQ(compiled.where.getSql(), "(f_j1.genre_id = ? AND (t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?)) OR t.id IN (SELECT f_e.track_id FROM track_mood f_e WHERE f_e.mood_id IN (?,?)) OR f_j1.genre_id = ?))");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 5LL, 7LL, 9LL, 3LL, 4LL, 5LL }));
+        EXPECT_EQ(compiled.getSql(), "(" + genreMember + " AND (t.id IN (SELECT f_e.track_id FROM track_genre f_e WHERE f_e.genre_id IN (?,?,?)) OR t.id IN (SELECT f_e.track_id FROM track_mood f_e WHERE f_e.mood_id IN (?,?))))");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 5LL, 7LL, 5LL, 9LL, 3LL, 4LL }));
     }
 
-    TEST(FilterExprCompiler, relationEqualToAConjunct_reusesItsJoinEvenUnderOr)
+    TEST(FilterExprCompiler, releaseRelation_isAMembershipOfTheReleaseOfTheTrack)
     {
-        const Compiled compiled{ compile(FilterExpr::And({ FilterExpr::equal(genre5), FilterExpr::Or({ FilterExpr::equal(genre5), FilterExpr::equal(mood3) }) }), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::equal(label2), UserId{}) };
+        EXPECT_EQ(compiled.getSql(), "t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id = ?)");
 
-        EXPECT_EQ(compiled.joins.toSql().getSql(), " JOIN track_genre f_j1 ON f_j1.track_id = t.id");
-        EXPECT_EQ(compiled.where.getSql(), "(f_j1.genre_id = ? AND (f_j1.genre_id = ? OR " + std::string{ moodMember } + "))");
+        const SqlFragment merged{ compileFilterExpr(FilterExpr::Or({ FilterExpr::equal(label2), FilterExpr::equal(LabelId{ 4 }) }), UserId{}) };
+        EXPECT_EQ(merged.getSql(), "(t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id IN (?,?)))");
     }
 
-    TEST(FilterExprCompiler, releaseRelation_followsTheQueriedEntity)
+    TEST(FilterExprCompiler, relationUnderNot_isAMembershipTest)
     {
-        const Compiled onReleases{ compile(FilterExpr::equal(label2), FilterEntity::Release) };
-        EXPECT_EQ(onReleases.joins.toSql().getSql(), " JOIN release_label f_j1 ON f_j1.release_id = r.id");
-        EXPECT_EQ(onReleases.where.getSql(), "f_j1.label_id = ?");
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::Not(FilterExpr::equal(genre5)), UserId{}) };
 
-        const Compiled onTracks{ compile(FilterExpr::equal(label2), FilterEntity::Track) };
-        EXPECT_EQ(onTracks.joins.toSql().getSql(), " JOIN release_label f_j1 ON f_j1.release_id = t.release_id");
-        EXPECT_EQ(onTracks.where.getSql(), "f_j1.label_id = ?");
+        EXPECT_EQ(compiled.getSql(), "NOT (" + genreMemberUnderNot + ")");
     }
 
-    TEST(FilterExprCompiler, trackConditionOnReleases_usesTheTracksJoinedByTheCaller)
+    TEST(FilterExprCompiler, releaseRelationUnderNot_keepsTracksWithoutReleaseIn)
     {
-        const Compiled compiled{ compile(FilterExpr::equal(genre5), FilterEntity::Release) };
+        // A track without release has a NULL release id: NULL IN (...) would be unknown, that NOT keeps out
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::Not(FilterExpr::equal(label2)), UserId{}) };
+        EXPECT_EQ(compiled.getSql(), "NOT (CASE WHEN t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id = ?) THEN 1 ELSE 0 END)");
 
-        EXPECT_EQ(compiled.joins.toSql().getSql(), " JOIN track t ON t.release_id = r.id JOIN track_genre f_j1 ON f_j1.track_id = t.id");
+        const SqlFragment merged{ compileFilterExpr(FilterExpr::Not(FilterExpr::Or({ FilterExpr::equal(label2), FilterExpr::equal(LabelId{ 4 }) })), UserId{}) };
+        EXPECT_EQ(merged.getSql(), "NOT ((CASE WHEN t.release_id IN (SELECT f_e.release_id FROM release_label f_e WHERE f_e.label_id IN (?,?)) THEN 1 ELSE 0 END))");
+    }
+
+    TEST(FilterExprCompiler, compilation_isAMembershipOfTheReleaseOfTheTrack)
+    {
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::condition(IsCompilationCondition{ true }), UserId{}) };
+        EXPECT_EQ(compiled.getSql(), "t.release_id IN (SELECT f_r.id FROM release f_r WHERE f_r.is_compilation = ?)");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ true }));
+
+        // A track without release has a NULL release id: NULL IN (...) would be unknown, that NOT keeps out
+        const SqlFragment underNot{ compileFilterExpr(FilterExpr::Not(FilterExpr::condition(IsCompilationCondition{ true })), UserId{}) };
+        EXPECT_EQ(underNot.getSql(), "NOT (CASE WHEN t.release_id IN (SELECT f_r.id FROM release f_r WHERE f_r.is_compilation = ?) THEN 1 ELSE 0 END)");
     }
 
     TEST(FilterExprCompiler, mediaLibraryUnderNot_keepsMissingValuesOut)
     {
-        const Compiled compiled{ compile(FilterExpr::Not(FilterExpr::equal(MediaLibraryId{ 4 })), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::Not(FilterExpr::equal(MediaLibraryId{ 4 })), UserId{}) };
 
-        EXPECT_TRUE(compiled.joins.empty());
-        EXPECT_EQ(compiled.where.getSql(), "NOT (CASE WHEN t.media_library_id = ? THEN 1 ELSE 0 END)");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 4LL }));
+        EXPECT_EQ(compiled.getSql(), "NOT (CASE WHEN t.media_library_id = ? THEN 1 ELSE 0 END)");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 4LL }));
     }
 
     TEST(FilterExprCompiler, integerBetween_bindsBothBounds)
     {
-        const Compiled compiled{ compile(FilterExpr::condition(IntegerCondition{ IntegerField::Year, FilterOperator::Between, FilterRange<std::int64_t>{ 1990, 1999 } }), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::condition(IntegerCondition{ IntegerField::Year, FilterOperator::Between, FilterRange<std::int64_t>{ 1990, 1999 } }), UserId{}) };
 
-        EXPECT_EQ(compiled.where.getSql(), "CAST(SUBSTR(t.date, 1, 4) AS INTEGER) BETWEEN ? AND ?");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 1990LL, 1999LL }));
+        EXPECT_EQ(compiled.getSql(), "CAST(SUBSTR(t.date, 1, 4) AS INTEGER) BETWEEN ? AND ?");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 1990LL, 1999LL }));
     }
 
-    TEST(FilterExprCompiler, stringCondition_bindsAnEscapedPattern)
+    TEST(FilterExprCompiler, rating_isAMembershipBindingTheUserFirst)
     {
-        const Compiled compiled{ compile(FilterExpr::condition(StringCondition{ StringField::TrackName, StringOperator::StartsWith, "100%" }), FilterEntity::Track) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::condition(RatingCondition{ FilterOperator::GreaterOrEqual, std::int64_t{ 4 } }), UserId{ 9 }) };
 
-        EXPECT_EQ(compiled.where.getSql(), R"(t.name LIKE ? ESCAPE '\')");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ std::string{ R"(100\%%)" } }));
+        EXPECT_EQ(compiled.getSql(), "t.id IN (SELECT f_rt.track_id FROM rated_track f_rt WHERE f_rt.user_id = ? AND f_rt.rating >= ?)");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 9LL, 4LL }));
     }
 
-    TEST(FilterExprCompiler, perUserCondition_joinsTheUserRowsAndBindsTheUserFirst)
+    TEST(FilterExprCompiler, feedback_isAMembershipBindingTheUserFirst)
     {
-        const Compiled compiled{ compile(FilterExpr::condition(RatingCondition{ FilterOperator::GreaterOrEqual, std::int64_t{ 4 } }), FilterEntity::Track, UserId{ 9 }) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::condition(FeedbackCondition{ FeedbackValue::Loved }), UserId{ 9 }) };
 
-        EXPECT_EQ(compiled.joins.toSql().getSql(), " LEFT JOIN rated_track f_rt ON f_rt.track_id = t.id AND f_rt.user_id = ?");
-        EXPECT_EQ(compiled.joins.toSql().getBinds(), (std::vector<BindValue>{ 9LL }));
-        EXPECT_EQ(compiled.where.getSql(), "f_rt.rating >= ?");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 4LL }));
+        EXPECT_EQ(compiled.getSql(), "t.id IN (SELECT f_tf.track_id FROM track_feedback f_tf WHERE f_tf.user_id = ? AND f_tf.value = ?)");
+        ASSERT_EQ(compiled.getBinds().size(), 2);
+        EXPECT_EQ(compiled.getBinds().front(), BindValue{ 9LL });
     }
 
     TEST(FilterExprCompiler, listenCount_isAnIndexedSubqueryBindingTheUserBeforeTheOperand)
     {
-        const Compiled compiled{ compile(FilterExpr::condition(ListenCountCondition{ FilterOperator::Greater, std::int64_t{ 0 } }), FilterEntity::Track, UserId{ 9 }) };
+        const SqlFragment compiled{ compileFilterExpr(FilterExpr::condition(ListenCountCondition{ FilterOperator::Greater, std::int64_t{ 0 } }), UserId{ 9 }) };
 
-        EXPECT_TRUE(compiled.joins.empty());
-        EXPECT_EQ(compiled.where.getSql(), "(SELECT COUNT(*) FROM listen f_l WHERE f_l.user_id = ? AND f_l.track_id = t.id) > ?");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ 9LL, 0LL }));
-    }
-
-    TEST(FilterExprCompiler, releaseNameOnTracks_joinsTheRelease)
-    {
-        const Compiled compiled{ compile(FilterExpr::condition(StringCondition{ StringField::ReleaseName, StringOperator::Equal, "Album" }), FilterEntity::Track) };
-
-        EXPECT_EQ(compiled.joins.toSql().getSql(), " LEFT JOIN release f_rel ON f_rel.id = t.release_id");
-        EXPECT_EQ(compiled.where.getSql(), R"(f_rel.name LIKE ? ESCAPE '\')");
-    }
-
-    TEST(FilterExprCompiler, releaseNameOnReleases_usesTheQueriedRelease)
-    {
-        const Compiled compiled{ compile(FilterExpr::condition(StringCondition{ StringField::ReleaseName, StringOperator::Equal, "Album" }), FilterEntity::Release) };
-
-        EXPECT_TRUE(compiled.joins.empty());
-        EXPECT_EQ(compiled.where.getSql(), R"(r.name LIKE ? ESCAPE '\')");
-    }
-
-    TEST(FilterExprCompiler, artistNameOnTracks_isAMembershipOfTheLinksOfTheTrackAndOfItsRelease)
-    {
-        const Compiled compiled{ compile(FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::Equal, "Artist" }), FilterEntity::Track) };
-
-        EXPECT_TRUE(compiled.joins.empty());
-        EXPECT_EQ(compiled.where.getSql(),
-                  "(t.id IN (SELECT f_l.track_id FROM track_artist_link f_l WHERE f_l.artist_name LIKE ? ESCAPE '\\')"
-                  " OR t.id IN (SELECT f_l.track_id FROM artist f_a JOIN track_artist_link f_l ON f_l.artist_id = f_a.id WHERE f_a.name LIKE ? ESCAPE '\\')"
-                  " OR t.release_id IN (SELECT f_l.release_id FROM release_artist_link f_l WHERE f_l.artist_name LIKE ? ESCAPE '\\')"
-                  " OR t.release_id IN (SELECT f_l.release_id FROM artist f_a JOIN release_artist_link f_l ON f_l.artist_id = f_a.id WHERE f_a.name LIKE ? ESCAPE '\\'))");
-        EXPECT_EQ(compiled.where.getBinds(), (std::vector<BindValue>{ std::string{ "Artist" }, std::string{ "Artist" }, std::string{ "Artist" }, std::string{ "Artist" } }));
-    }
-
-    TEST(FilterExprCompiler, artistNameOnReleases_usesTheQueriedRelease)
-    {
-        const Compiled compiled{ compile(FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::Equal, "Artist" }), FilterEntity::Release) };
-
-        EXPECT_EQ(compiled.where.getSql(),
-                  "(t.id IN (SELECT f_l.track_id FROM track_artist_link f_l WHERE f_l.artist_name LIKE ? ESCAPE '\\')"
-                  " OR t.id IN (SELECT f_l.track_id FROM artist f_a JOIN track_artist_link f_l ON f_l.artist_id = f_a.id WHERE f_a.name LIKE ? ESCAPE '\\')"
-                  " OR r.id IN (SELECT f_l.release_id FROM release_artist_link f_l WHERE f_l.artist_name LIKE ? ESCAPE '\\')"
-                  " OR r.id IN (SELECT f_l.release_id FROM artist f_a JOIN release_artist_link f_l ON f_l.artist_id = f_a.id WHERE f_a.name LIKE ? ESCAPE '\\'))");
-    }
-
-    TEST(FilterExprCompiler, artistNameOnArtists_isAMembershipOfThePairs)
-    {
-        const Compiled compiled{ compile(FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::Equal, "Artist" }), FilterEntity::Artist) };
-
-        EXPECT_EQ(compiled.where.getSql(),
-                  "((a.id, t.id) IN (SELECT f_l.artist_id, f_l.track_id FROM track_artist_link f_l WHERE f_l.artist_name LIKE ? ESCAPE '\\')"
-                  " OR (a.id, t.id) IN (SELECT f_l.artist_id, f_l.track_id FROM artist f_a JOIN track_artist_link f_l ON f_l.artist_id = f_a.id WHERE f_a.name LIKE ? ESCAPE '\\')"
-                  " OR (a.id, t.release_id) IN (SELECT f_l.artist_id, f_l.release_id FROM release_artist_link f_l WHERE f_l.artist_name LIKE ? ESCAPE '\\')"
-                  " OR (a.id, t.release_id) IN (SELECT f_l.artist_id, f_l.release_id FROM artist f_a JOIN release_artist_link f_l ON f_l.artist_id = f_a.id WHERE f_a.name LIKE ? ESCAPE '\\'))");
-    }
-
-    TEST(FilterExprCompiler, artistNameUnderNot_keepsTracksWithoutReleaseIn)
-    {
-        const FilterExpr notArtistName{ FilterExpr::Not(FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::Equal, "Artist" })) };
-
-        // A track without release has a NULL release id: NULL IN (...) would be unknown, that NOT keeps out
-        const Compiled onTracks{ compile(notArtistName, FilterEntity::Track) };
-        EXPECT_EQ(onTracks.where.getSql().substr(0, 16), "NOT (CASE WHEN (");
-        EXPECT_EQ(onTracks.where.getSql().substr(onTracks.where.getSql().size() - 20), ") THEN 1 ELSE 0 END)");
-
-        const Compiled onArtists{ compile(notArtistName, FilterEntity::Artist) };
-        EXPECT_EQ(onArtists.where.getSql().substr(0, 16), "NOT (CASE WHEN (");
-
-        const Compiled onReleases{ compile(notArtistName, FilterEntity::Release) };
-        EXPECT_EQ(onReleases.where.getSql().substr(0, 16), "NOT (CASE WHEN (");
-    }
-
-    TEST(FilterExprCompiler, artistSortName_fallsBackOnTheNameOfTheLinkAndOfTheArtist)
-    {
-        const Compiled compiled{ compile(FilterExpr::condition(StringCondition{ StringField::ArtistSortName, StringOperator::StartsWith, "bea" }), FilterEntity::Track) };
-
-        EXPECT_NE(compiled.where.getSql().find("COALESCE(NULLIF(f_l.artist_sort_name, ''), f_l.artist_name) LIKE ?"), std::string::npos);
-        EXPECT_NE(compiled.where.getSql().find("COALESCE(NULLIF(f_a.sort_name, ''), f_a.name) LIKE ?"), std::string::npos);
-        EXPECT_EQ(compiled.where.getBinds().front(), BindValue{ std::string{ "bea%" } });
-    }
-
-    TEST(FilterExprCompiler, requiresTracks_dependsOnTheQueriedEntity)
-    {
-        const FilterExpr trackCondition{ FilterExpr::equal(genre5) };
-        const FilterExpr releaseCondition{ FilterExpr::equal(label2) };
-        const FilterExpr releaseNameCondition{ FilterExpr::condition(StringCondition{ StringField::ReleaseName, StringOperator::Equal, "Album" }) };
-        const FilterExpr artistNameCondition{ FilterExpr::condition(StringCondition{ StringField::ArtistName, StringOperator::Equal, "Artist" }) };
-
-        EXPECT_TRUE(requiresTracks(releaseCondition, FilterEntity::Track));
-        EXPECT_TRUE(requiresTracks(trackCondition, FilterEntity::Track));
-
-        EXPECT_FALSE(requiresTracks(releaseCondition, FilterEntity::Release));
-        EXPECT_FALSE(requiresTracks(releaseNameCondition, FilterEntity::Release));
-        EXPECT_TRUE(requiresTracks(trackCondition, FilterEntity::Release));
-        EXPECT_TRUE(requiresTracks(artistNameCondition, FilterEntity::Release));
-
-        EXPECT_TRUE(requiresTracks(releaseCondition, FilterEntity::Artist));
-        EXPECT_TRUE(requiresTracks(trackCondition, FilterEntity::Artist));
-    }
-
-    TEST(FilterExprCompiler, requiresTracks_lookupsInsideOperators)
-    {
-        const FilterExpr onlyReleaseConditions{ FilterExpr::Not(FilterExpr::And({ FilterExpr::equal(label2), FilterExpr::condition(IsCompilationCondition{ true }) })) };
-        EXPECT_FALSE(requiresTracks(onlyReleaseConditions, FilterEntity::Release));
-
-        const FilterExpr withTrackCondition{ FilterExpr::Or({ FilterExpr::equal(label2), FilterExpr::equal(genre5) }) };
-        EXPECT_TRUE(requiresTracks(withTrackCondition, FilterEntity::Release));
+        EXPECT_EQ(compiled.getSql(), "(SELECT COUNT(*) FROM listen f_l WHERE f_l.user_id = ? AND f_l.track_id = t.id) > ?");
+        EXPECT_EQ(compiled.getBinds(), (std::vector<BindValue>{ 9LL, 0LL }));
     }
 } // namespace lms::db::tests

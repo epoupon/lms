@@ -56,12 +56,12 @@ namespace lms::db
 
         struct FindParameters
         {
-            std::optional<FilterExpr> filter;                       // if set, artists must match this expression: its track and release conditions must hold on one of their tracks, on which trackArtistLinkType must also hold: a track they are track artist of, or a track of a release they are release artist of (only the latter if releaseArtistsOnly)
+            std::optional<FilterExpr> filter;                       // if set, artists must have a track matching this expression: a track they are track artist of, or a track of a release they are release artist of (only the former, with this link type, if trackArtistLinkType is set; only the latter if releaseArtistsOnly)
             UserId filterUser;                                      // required if filter has per-user fields
             std::vector<std::string_view> keywords;                 // if non empty, name must match all of these keywords (on either name field OR sort name field)
             bool releaseArtistsOnly{};                              // if set, only release artists
             std::optional<TrackArtistLinkType> trackArtistLinkType; // if set, only artists that have produced at least one track with this link type
-            ArtistSortMethod sortMethod{ ArtistSortMethod::None };  // the date sorts consider the tracks the artist is track artist of, and the ones of the releases it is release artist of (only the latter if releaseArtistsOnly)
+            ArtistSortMethod sortMethod{ ArtistSortMethod::None };  // the date sorts consider the tracks the artist is track artist of, and the ones of the releases it is release artist of (only the former, with this link type, if trackArtistLinkType is set; only the latter if releaseArtistsOnly), and among them only the ones matching the filter
             std::optional<Range> range;
             UserId feedbackUser;                        // if valid, only artists that have feedback from this user
             std::optional<FeedbackValue> feedbackValue; // if set, only artists with feedback matching this value (any user, unless feedbackUser is also set)

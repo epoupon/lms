@@ -19,32 +19,19 @@
 
 #pragma once
 
-#include <optional>
+#include <string_view>
 
 #include "database/objects/FilterExpr.hpp"
 #include "database/objects/UserId.hpp"
 
-#include "JoinSet.hpp"
 #include "SqlFragment.hpp"
 
 namespace lms::db
 {
-    // Both the entity a filter is evaluated for, and the entity a condition is about
-    enum class FilterEntity
-    {
-        Track,
-        Release,
-        Artist,
-    };
+    // Returns the WHERE condition the tracks, named "t", must satisfy. Needs no join
+    SqlFragment compileFilterExpr(const FilterExpr& expr, UserId user);
 
-    // Whether the expression needs the rows of the tracks of the queried entity
-    bool requiresTracks(const FilterExpr& expr, FilterEntity queriedEntity);
-
-    // Returns the WHERE condition of the expression, empty if there is none, and adds to joins the joins this condition relies on:
-    // the JoinSet must then be applied to the query before any WHERE bind.
-    // The queries must name the queried entity "t", "r" or "a" (track, release, artist), and its tracks "t" if requiresTracks(),
-    // joined before the call. Conditions on the queried entity apply to its own row. Track conditions apply to the track rows, all to a single track.
-    // The aliases of the joins are numbered per call, and the ones of per-user conditions are fixed:
-    // a JoinSet can only receive one compiled expression, or several of them if they use the same user
-    SqlFragment compileFilterExpr(const std::optional<FilterExpr>& expr, FilterEntity queriedEntity, UserId user, JoinSet& joins);
+    // Returns "<column> IN (SELECT <trackColumn> FROM track t WHERE ...)": column is in the trackColumn ("t.id", "t.release_id"...) of a track matching the expression.
+    // For the queries whose rows are not tracks. Uncorrelated: SQLite builds the set once instead of evaluating the expression for each row of the query
+    SqlFragment createMatchingTracksCondition(std::string_view column, const FilterExpr& expr, UserId user, std::string_view trackColumn = "t.id");
 } // namespace lms::db

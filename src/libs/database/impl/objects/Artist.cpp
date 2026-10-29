@@ -76,6 +76,35 @@ namespace lms::db
                 addTrackArtistJoins(joins);
         }
 
+        bool needsTracks(const Artist::FindParameters& params)
+        {
+            return params.sortMethod == ArtistSortMethod::LastWrittenDesc || params.sortMethod == ArtistSortMethod::AddedDesc;
+        }
+
+        // The artists having a matching track, through the links that put them in the list
+        SqlFragment createFilterCondition(const Artist::FindParameters& params)
+        {
+            SqlFragment res{ "a.id IN (" };
+            if (!params.releaseArtistsOnly)
+            {
+                res.append("SELECT t_a_l.artist_id FROM track_artist_link t_a_l WHERE ");
+                res.append(createMatchingTracksCondition("t_a_l.track_id", *params.filter, params.filterUser));
+                if (params.trackArtistLinkType)
+                    res.append(" AND t_a_l.type = ?", { static_cast<int>(*params.trackArtistLinkType) });
+            }
+            if (!params.trackArtistLinkType)
+            {
+                // a membership test needs no deduplication
+                if (!params.releaseArtistsOnly)
+                    res.append(" UNION ALL ");
+                res.append("SELECT r_a_l.artist_id FROM release_artist_link r_a_l WHERE ");
+                res.append(createMatchingTracksCondition("r_a_l.release_id", *params.filter, params.filterUser, "t.release_id"));
+            }
+            res.append(")");
+
+            return res;
+        }
+
         SqlFragment createKeywordsCondition(const std::vector<std::string_view>& keywords)
         {
             const auto createKeywordClauses{ [&](std::string_view column) {
@@ -97,13 +126,10 @@ namespace lms::db
             return res;
         }
 
-        // Returns the condition of the parameters, filter included, and adds to joins the joins it relies on
+        // Returns the condition of the parameters, and adds to joins the joins it relies on. The filter is included only if the tracks are joined
         SqlFragment createParamsConditions(const Artist::FindParameters& params, JoinSet& joins)
         {
-            // The joins of the filter use the tracks: they must come first
-            if (params.filter && requiresTracks(*params.filter, FilterEntity::Artist))
-                addTracksJoins(joins, params);
-            SqlFragment res{ compileFilterExpr(params.filter, FilterEntity::Artist, params.filterUser, joins) };
+            SqlFragment res;
 
             if (params.releaseArtistsOnly)
                 joins.add(releaseArtistLinkJoin);
@@ -135,8 +161,13 @@ namespace lms::db
             }
 
             // The joins of a sort select the artists too: the ones without any row are excluded
-            if (params.sortMethod == ArtistSortMethod::LastWrittenDesc || params.sortMethod == ArtistSortMethod::AddedDesc)
+            if (needsTracks(params))
+            {
                 addTracksJoins(joins, params);
+                // the date only considers the matching tracks
+                if (params.filter)
+                    res.combineWithAnd(compileFilterExpr(*params.filter, params.filterUser));
+            }
             if (params.sortMethod == ArtistSortMethod::FeedbackDateDesc)
                 joins.add(artistFeedbackJoin);
 
@@ -180,13 +211,6 @@ namespace lms::db
             return std::string{ sortDate->function } + "(" + (useUnion ? "f_u.sort_key" : std::string{ sortDate->column }) + ")";
         }
 
-        bool needsTracks(const Artist::FindParameters& params)
-        {
-            return params.sortMethod == ArtistSortMethod::LastWrittenDesc
-                || params.sortMethod == ArtistSortMethod::AddedDesc
-                || (params.filter && requiresTracks(*params.filter, FilterEntity::Artist));
-        }
-
         // The tracks of an artist are the ones it is track artist of and the ones of the releases it is release artist of,
         // unless the parameters already restrict the artists to one of them
         bool usesUnion(const Artist::FindParameters& params)
@@ -200,12 +224,10 @@ namespace lms::db
             JoinSet joins;
             const SqlFragment where{ createParamsConditions(params, joins) };
 
-            SqlFragment res{ "SELECT a.id AS artist_id, " };
-            if (const std::optional<SortDate> sortDate{ getSortDate(params.sortMethod) })
-                res.append(std::string{ sortDate->function } + "(" + std::string{ sortDate->column } + ")");
-            else
-                res.append("NULL");
-            res.append(" AS sort_key FROM artist a");
+            const std::optional<SortDate> sortDate{ getSortDate(params.sortMethod) };
+            assert(sortDate);
+
+            SqlFragment res{ "SELECT a.id AS artist_id, " + std::string{ sortDate->function } + "(" + std::string{ sortDate->column } + ") AS sort_key FROM artist a" };
             res.append(joins.toSql());
             if (!where.isEmpty())
             {
@@ -241,13 +263,16 @@ namespace lms::db
             assert(!params.releaseArtistsOnly || !params.trackArtistLinkType.has_value());
 
             // The conditions are inside each branch of the union
+            SqlFragment res;
             if (usesUnion(params))
-            {
                 joins.add(createUnionJoin(params));
-                return {};
-            }
+            else
+                res = createParamsConditions(params, joins);
 
-            return createParamsConditions(params, joins);
+            if (params.filter && !needsTracks(params))
+                res.combineWithAnd(createFilterCondition(params));
+
+            return res;
         }
 
         template<typename ResultType>

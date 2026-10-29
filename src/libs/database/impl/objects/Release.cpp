@@ -188,10 +188,8 @@ namespace lms::db
                 break;
             }
 
-            // The joins of the filter use the tracks: they must come first
-            if (params.filter && requiresTracks(*params.filter, FilterEntity::Release))
-                joins.add(tracksJoin);
-            res.combineWithAnd(compileFilterExpr(params.filter, FilterEntity::Release, params.filterUser, joins));
+            if (params.filter)
+                res.combineWithAnd(createMatchingTracksCondition("r.id", *params.filter, params.filterUser, "t.release_id"));
 
             return res;
         }

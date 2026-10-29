@@ -30,7 +30,6 @@ namespace lms::db::tests
         const JoinSet joins;
         EXPECT_TRUE(joins.empty());
         EXPECT_TRUE(joins.toSql().isEmpty());
-        EXPECT_FALSE(joins.hasAlias("t"));
     }
 
     TEST(JoinSet, toSql_insertionOrderAndJoinTypes)
@@ -73,25 +72,13 @@ namespace lms::db::tests
         EXPECT_EQ(joins.toSql().getBinds().size(), 1);
     }
 
-    TEST(JoinSet, hasAlias)
-    {
-        JoinSet joins;
-        joins.add("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
-        joins.add("track t ON t.id = t_a_l.track_id");
-
-        EXPECT_TRUE(joins.hasAlias("t_a_l"));
-        EXPECT_TRUE(joins.hasAlias("t"));
-        EXPECT_FALSE(joins.hasAlias("a"));
-        EXPECT_FALSE(joins.hasAlias("track"));
-    }
-
-    TEST(JoinSet, subqueryJoin)
+    TEST(JoinSet, subqueryJoin_aliasIsTheOneOfTheSubquery)
     {
         JoinSet joins;
         joins.add("(SELECT a.id AS artist_id FROM artist a JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id WHERE t_a_l.type = ?) f_u ON f_u.artist_id = a.id", JoinSet::Type::Inner, { 1 });
+        joins.add("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
 
-        EXPECT_TRUE(joins.hasAlias("f_u"));
-        EXPECT_FALSE(joins.hasAlias("t_a_l"));
+        EXPECT_EQ(joins.toSql().getSql(), " JOIN (SELECT a.id AS artist_id FROM artist a JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id WHERE t_a_l.type = ?) f_u ON f_u.artist_id = a.id JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id");
         EXPECT_EQ(joins.toSql().getBinds(), (std::vector<BindValue>{ 1 }));
     }
 

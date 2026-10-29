@@ -180,7 +180,8 @@ namespace lms::db
                 break;
             }
 
-            res.combineWithAnd(compileFilterExpr(params.filter, FilterEntity::Track, params.filterUser, joins));
+            if (params.filter)
+                res.combineWithAnd(compileFilterExpr(*params.filter, params.filterUser));
 
             return res;
         }

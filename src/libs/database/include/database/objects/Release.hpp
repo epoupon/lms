@@ -162,11 +162,11 @@ namespace lms::db
     public:
         struct FindParameters
         {
-            std::optional<FilterExpr> filter;       // if set, releases must match this expression: its track conditions must hold on one of their tracks, on which trackArtist, directory and parentDirectory must also hold
-            UserId filterUser;                      // required if filter has per-user fields
-            std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords (cannot be set with keywords)
-            std::string name;                       // must match this name (cannot be set with keywords)
-            ReleaseSortMethod sortMethod{ ReleaseSortMethod::None };
+            std::optional<FilterExpr> filter;                        // if set, releases must have a track matching this expression
+            UserId filterUser;                                       // required if filter has per-user fields
+            std::vector<std::string_view> keywords;                  // if non empty, name must match all of these keywords (cannot be set with keywords)
+            std::string name;                                        // must match this name (cannot be set with keywords)
+            ReleaseSortMethod sortMethod{ ReleaseSortMethod::None }; // the date sorts consider all the tracks of the release, not only the ones matching the filter
             std::optional<Range> range;
             UserId feedbackUser;                                     // if valid, only releases that have feedback from this user
             std::optional<FeedbackValue> feedbackValue;              // if set, only releases with feedback matching this value (any user, unless feedbackUser is also set)

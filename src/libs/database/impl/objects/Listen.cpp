@@ -83,10 +83,11 @@ namespace lms::db
                 res.combineWithAnd(keywords);
             }
 
-            // The joins of the filter use the tracks: they must come first
-            if (params.filter && requiresTracks(*params.filter, FilterEntity::Artist))
+            if (params.filter)
+            {
                 joins.add("track t ON t.id = t_a_l.track_id");
-            res.combineWithAnd(compileFilterExpr(params.filter, FilterEntity::Artist, params.filterUser, joins));
+                res.combineWithAnd(compileFilterExpr(*params.filter, params.filterUser));
+            }
 
             return res;
         }
@@ -122,7 +123,8 @@ namespace lms::db
             for (const std::string_view keyword : params.keywords)
                 res.combineWithAnd({ "r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" } });
 
-            res.combineWithAnd(compileFilterExpr(params.filter, FilterEntity::Release, params.filterUser, joins));
+            if (params.filter)
+                res.combineWithAnd(compileFilterExpr(*params.filter, params.filterUser));
 
             return res;
         }
@@ -157,7 +159,8 @@ namespace lms::db
             for (const std::string_view keyword : params.keywords)
                 res.combineWithAnd({ "t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" } });
 
-            res.combineWithAnd(compileFilterExpr(params.filter, FilterEntity::Track, params.filterUser, joins));
+            if (params.filter)
+                res.combineWithAnd(compileFilterExpr(*params.filter, params.filterUser));
 
             return res;
         }
