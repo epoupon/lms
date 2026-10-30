@@ -28,6 +28,7 @@
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/ReleaseId.hpp"
+#include "database/objects/TrackId.hpp"
 
 #include "ReleaseHelpers.hpp"
 #include "ReleaseTypes.hpp"
@@ -63,10 +64,12 @@ namespace lms::ui
 
         struct ReleaseContainer;
         void addSomeReleases(ReleaseContainer& releaseContainer, core::EnumSet<releaseListHelpers::DisplayOptions> displayOptions);
-        bool addSomeNonReleaseTracks();
+        void addSomeNonReleaseTracks();
+
+        std::vector<db::TrackId> getTracksToPlay() const;
+
         static constexpr std::size_t _releasesBatchSize{ 6 };
         static constexpr std::size_t _tracksBatchSize{ 6 };
-        static constexpr std::size_t _tracksMaxCount{ 160 };
 
         Filters& _filters;
         PlayQueueController& _playQueueController;
@@ -80,6 +83,7 @@ namespace lms::ui
         std::map<ReleaseType, ReleaseContainer> _releaseContainers;
         std::map<std::optional<db::TrackArtistLinkType>, std::vector<db::ReleaseId>> _appearsOnReleases;
         ReleaseContainer _appearsOnReleaseContainer;
+        std::vector<db::TrackId> _nonReleaseTracks;
         InfiniteScrollingContainer* _trackContainer{};
         db::ArtistId _artistId{};
         std::string _artistName;

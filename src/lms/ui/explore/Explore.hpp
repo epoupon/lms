@@ -34,8 +34,6 @@ namespace lms::ui
     public:
         Explore(Filters& filters, PlayQueue& playQueue);
 
-        PlayQueueController& getPlayQueueController() { return _playQueueController; }
-
     private:
         PlayQueueController _playQueueController;
     };

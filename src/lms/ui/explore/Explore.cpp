@@ -72,7 +72,7 @@ namespace lms::ui
 
     Explore::Explore(Filters& filters, PlayQueue& playQueue)
         : Wt::WTemplate{ Wt::WString::tr("Lms.Explore.template") }
-        , _playQueueController{ filters, playQueue }
+        , _playQueueController{ playQueue }
     {
         addFunction("tr", &Functions::tr);
 

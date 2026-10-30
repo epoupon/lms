@@ -479,8 +479,6 @@ namespace lms::ui
         if (getUserType() == db::UserType::ADMIN)
             mainRouter->add<AdminView>("/admin", std::nullopt);
 
-        explore->getPlayQueueController().setMaxTrackCountToEnqueue(_playQueue->getCapacity());
-
         // Events from MediaPlayer
         _mediaPlayer->playNext.connect([this] {
             LMS_LOG(UI, DEBUG, "Received playNext from player");
