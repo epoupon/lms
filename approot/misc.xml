@@ -15,6 +15,13 @@
 	${loading-indicator}
 </message>
 
+<message id="Lms.check-list.template">
+	${search class="form-control mb-2"}
+	${rows class="list-group"}
+</message>
+
+<message id="Lms.check-list.template.row"><label class="d-block px-3 py-2">${checkbox class="form-check-input me-2"}${text}</label></message>
+
 <message id="Lms.template.trash-btn"><i class="fa fa-fw fa-trash"></i></message>
 <message id="Lms.template.delete-btn"><i class="fa fa-fw fa-times"></i></message>
 <message id="Lms.template.edit-btn"><i class="fa fa-fw fa-edit"></i></message>

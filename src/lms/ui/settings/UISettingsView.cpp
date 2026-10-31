@@ -19,21 +19,19 @@
 
 #include "UISettingsView.hpp"
 
-#include <set>
-
 #include <Wt/WCheckBox.h>
 #include <Wt/WComboBox.h>
 #include <Wt/WFormModel.h>
-#include <Wt/WSelectionBox.h>
 #include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
 
-#include "core/String.hpp"
+#include "core/EnumSet.hpp"
 
 #include "database/Session.hpp"
 #include "database/objects/User.hpp"
 
 #include "LmsApplication.hpp"
+#include "common/CheckList.hpp"
 #include "common/MandatoryValidator.hpp"
 #include "common/ValueStringModel.hpp"
 
@@ -43,41 +41,6 @@ namespace lms::ui
 {
     namespace
     {
-        // highly unefficient hack to make WSelectionBox work with Wt::WFormModel
-        class SelectionBox : public Wt::WSelectionBox
-        {
-        public:
-            static inline constexpr std::string_view valueSeparator{ ", " };
-
-        private:
-            void setValueText(const Wt::WString& values) override
-            {
-                std::set<int> selectedIndexes;
-                const std::string strValues{ values.toUTF8() };
-                for (std::string_view value : core::stringUtils::splitString(strValues, valueSeparator))
-                {
-                    const int index{ findText(std::string{ value }) };
-                    if (index >= 0)
-                        selectedIndexes.insert(index);
-                }
-
-                setSelectedIndexes(selectedIndexes);
-            }
-
-            Wt::WString valueText() const override
-            {
-                Wt::WString res;
-                for (int index : selectedIndexes())
-                {
-                    if (!res.empty())
-                        res += std::string{ valueSeparator };
-                    res += itemText(index);
-                }
-
-                return res;
-            }
-        };
-
         class UISettingsModel : public Wt::WFormModel
         {
         public:
@@ -87,6 +50,7 @@ namespace lms::ui
 
             using ArtistReleaseSortMethodModel = ValueStringModel<db::ReleaseSortMethod>;
             using ArtistRelationshipsModel = ValueStringModel<db::TrackArtistLinkType>;
+            using ArtistRelationships = core::EnumSet<db::TrackArtistLinkType>;
 
             UISettingsModel()
             {
@@ -130,15 +94,7 @@ namespace lms::ui
                 const bool enableInlineArtistRelationships{ Wt::asNumber(value(EnableInlineArtistRelationships)) != 0 };
                 user.modify()->setUIEnableInlineArtistRelationships(enableInlineArtistRelationships);
 
-                core::EnumSet<db::TrackArtistLinkType> artistLinkTypes;
-                const std::string relationships{ valueText(InlineArtistRelationships).toUTF8() };
-                for (std::string_view relationship : core::stringUtils::splitString(relationships, SelectionBox::valueSeparator))
-                {
-                    auto artistRelationshipRow{ _artistRelationshipsModel->getRowFromString(Wt::WString{ std::string{ relationship } }) };
-                    if (artistRelationshipRow)
-                        artistLinkTypes.insert(_artistRelationshipsModel->getValue(*artistRelationshipRow));
-                }
-                user.modify()->setUIInlineArtistRelationships(artistLinkTypes);
+                user.modify()->setUIInlineArtistRelationships(Wt::cpp17::any_cast<ArtistRelationships>(value(InlineArtistRelationships)));
             }
 
             void loadData()
@@ -152,18 +108,7 @@ namespace lms::ui
 
                 setValue(EnableInlineArtistRelationships, user->getUIEnableInlineArtistRelationships());
                 setReadOnly(InlineArtistRelationships, !user->getUIEnableInlineArtistRelationships());
-
-                Wt::WString inlineArtistRelationships;
-                for (db::TrackArtistLinkType artistLinkType : user->getUIInlineArtistRelationships())
-                {
-                    if (auto artistRelationshipsRow{ _artistRelationshipsModel->getRowFromValue(artistLinkType) })
-                    {
-                        if (!inlineArtistRelationships.empty())
-                            inlineArtistRelationships += std::string{ SelectionBox::valueSeparator };
-                        inlineArtistRelationships += _artistRelationshipsModel->getString(*artistRelationshipsRow);
-                    }
-                }
-                setValue(InlineArtistRelationships, inlineArtistRelationships);
+                setValue(InlineArtistRelationships, user->getUIInlineArtistRelationships());
             }
 
         private:
@@ -192,10 +137,10 @@ namespace lms::ui
         auto model{ std::make_shared<UISettingsModel>() };
 
         auto enableInlineArtistRelationships{ std::make_unique<Wt::WCheckBox>() };
-        auto inlineArtistRelationships{ std::make_unique<SelectionBox>() };
-        inlineArtistRelationships->setSelectionMode(Wt::SelectionMode::Extended);
-        inlineArtistRelationships->setVerticalSize(3);
-        inlineArtistRelationships->setModel(model->getArtistRelationshipsModel());
+        auto inlineArtistRelationships{ std::make_unique<CheckList>() };
+        const auto artistRelationshipsModel{ model->getArtistRelationshipsModel() };
+        inlineArtistRelationships->setModel(artistRelationshipsModel);
+        CheckList* inlineArtistRelationshipsList{ inlineArtistRelationships.get() };
 
         auto updateInlineArtistRelationships{ [=](bool readOnly) {
             model->setReadOnly(UISettingsModel::InlineArtistRelationships, readOnly);
@@ -209,7 +154,19 @@ namespace lms::ui
         artistReleaseSortMethod->setModel(model->getArtistReleaseSortMethodModel());
         t->setFormWidget(UISettingsModel::ArtistReleaseSortMethodField, std::move(artistReleaseSortMethod));
         t->setFormWidget(UISettingsModel::EnableInlineArtistRelationships, std::move(enableInlineArtistRelationships));
-        t->setFormWidget(UISettingsModel::InlineArtistRelationships, std::move(inlineArtistRelationships));
+        t->setFormWidget(
+            UISettingsModel::InlineArtistRelationships, std::move(inlineArtistRelationships),
+            [=] {
+                const auto artistRelationships{ Wt::cpp17::any_cast<UISettingsModel::ArtistRelationships>(model->value(UISettingsModel::InlineArtistRelationships)) };
+                for (std::size_t row{}; row < static_cast<std::size_t>(artistRelationshipsModel->rowCount()); ++row)
+                    inlineArtistRelationshipsList->setChecked(row, artistRelationships.contains(artistRelationshipsModel->getValue(row)));
+            },
+            [=] {
+                UISettingsModel::ArtistRelationships artistRelationships;
+                for (const std::size_t row : inlineArtistRelationshipsList->getCheckedRows())
+                    artistRelationships.insert(artistRelationshipsModel->getValue(row));
+                model->setValue(UISettingsModel::InlineArtistRelationships, artistRelationships);
+            });
 
         utils::bindSaveDiscardButtons(t, model.get(), [model] { model->saveData(); }, [model] { model->loadData(); });
         t->updateView(model.get());
