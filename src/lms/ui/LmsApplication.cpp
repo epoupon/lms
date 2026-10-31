@@ -19,6 +19,8 @@
 
 #include "LmsApplication.hpp"
 
+#include <cassert>
+
 #include <Wt/WConfig.h>
 
 #include <Wt/WAnchor.h>
@@ -165,7 +167,6 @@ namespace lms::ui
         , _authBackend{ authBackend }
         , _serverInstanceId{ serverInstanceId }
         , _areDownloadsEnabled(core::Service<core::IConfig>::get()->getBool("ui-allow-downloads", true))
-        , _webStorage{ std::make_unique<WebStorage>(*this) }
     {
         try
         {
@@ -225,6 +226,12 @@ namespace lms::ui
     {
         assert(_user);
         return _user->userLoginName;
+    }
+
+    WebStorage& LmsApplication::getWebStorage() const
+    {
+        assert(_webStorage);
+        return *_webStorage;
     }
 
     bool LmsApplication::areDownloadsEnabled() const
@@ -343,6 +350,7 @@ namespace lms::ui
         root()->clear();
 
         setUserInfo(userId, strongAuth);
+        _webStorage = std::make_unique<WebStorage>(*this, _serverInstanceId, userId);
 
         LMS_LOG(UI, INFO, "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent() << ", locale = '" << locale().name() << "', timezone = '" << environment().timeZoneName() << "'");
 
