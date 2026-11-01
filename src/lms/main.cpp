@@ -210,6 +210,9 @@ namespace lms
                                     { "127.0.0.1", "::1" });
             }
 
+            // Default since Wt 4.13.4 (WT-14630)
+            pt.put("server.application-settings.cache-form-data", false);
+
             {
                 boost::property_tree::ptree viewport;
                 viewport.put("<xmlattr>.name", "viewport");
