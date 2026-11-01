@@ -48,6 +48,19 @@ body {
 	cursor: pointer;
 }
 
+.Lms-badge-none-of {
+	outline: 2px solid var(--bs-danger);
+	outline-offset: 1px;
+}
+
+/* The full text is in the tooltip */
+.Lms-filters .badge {
+	max-width: 30em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	vertical-align: middle;
+}
+
 .Lms-entry-playing {
 	background-color: #0d4655!important;
 }
