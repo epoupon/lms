@@ -1,6 +1,7 @@
 include(GoogleTest)
 
 add_executable(test-core
+	Codec.cpp
 	EnumSet.cpp
 	Hash.cpp
 	HttpUrlValidation.cpp

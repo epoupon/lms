@@ -17,7 +17,12 @@
 
 <message id="Lms.check-list.template">
 	${search class="form-control mb-2"}
-	${rows class="list-group"}
+	${rows}
+</message>
+
+<message id="Lms.check-list.template.rows">
+	${elements class="list-group"}
+	${loading-indicator}
 </message>
 
 <message id="Lms.check-list.template.row"><label class="d-block px-3 py-2">${checkbox class="form-check-input me-2"}${text}</label></message>

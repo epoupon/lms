@@ -19,37 +19,47 @@
 
 #include "Filters.hpp"
 
+#include <algorithm>
+#include <cassert>
+#include <span>
 #include <variant>
 
+#include <Wt/Json/Array.h>
+#include <Wt/Json/Object.h>
+#include <Wt/Json/Parser.h>
+#include <Wt/Json/Serializer.h>
+#include <Wt/Json/Value.h>
 #include <Wt/WComboBox.h>
-#include <Wt/WDialog.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
+#include "core/ILogger.hpp"
 #include "core/Utils.hpp"
 
 #include "core/media/Codec.hpp"
 #include "database/Session.hpp"
+#include "database/Types.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
-#include "database/objects/LabelId.hpp"
 #include "database/objects/Language.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Mood.hpp"
 #include "database/objects/Release.hpp"
-#include "database/objects/ReleaseTypeId.hpp"
 
 #include "LmsApplication.hpp"
 #include "ModalManager.hpp"
-#include "State.hpp"
 #include "Utils.hpp"
+#include "WebStorage.hpp"
+#include "common/CheckList.hpp"
 #include "common/ValueStringModel.hpp"
 
 namespace lms::ui
 {
     namespace
     {
+        constexpr std::string_view storageKey{ "filters" };
+
         struct MediaLibraryTag
         {
         };
@@ -109,8 +119,7 @@ namespace lms::ui
             return typeModel;
         }
 
-        using ValueVariant = std::variant<db::ClusterId, db::MediaLibraryId, db::LabelId, db::ReleaseTypeId, core::media::Codec, db::GenreId, db::GroupingId, db::LanguageId, db::MoodId>;
-        using ValueModel = ValueStringModel<ValueVariant>;
+        using ValueModel = ValueStringModel<Filters::Value>;
 
         std::unique_ptr<ValueModel> createValueModel(TypeVariant type)
         {
@@ -173,6 +182,149 @@ namespace lms::ui
                        type);
             return valueModel;
         }
+
+        using MatchModel = ValueStringModel<Filters::Match>;
+
+        std::unique_ptr<MatchModel> createMatchModel()
+        {
+            auto matchModel{ std::make_unique<MatchModel>() };
+
+            matchModel->add(Wt::WString::tr("Lms.Explore.filter-one-of"), Filters::Match::OneOf);
+            matchModel->add(Wt::WString::tr("Lms.Explore.filter-none-of"), Filters::Match::NoneOf);
+
+            return matchModel;
+        }
+
+        // Values are stored by name: ids change when a tag disappears from the library and comes back
+        struct StoredValue
+        {
+            std::string type;
+            std::string clusterType; // cluster values only
+            std::string name;
+        };
+
+        template<typename Object, typename Id>
+        std::optional<StoredValue> findStoredValue(db::Session& session, std::string_view type, Id id)
+        {
+            const typename Object::pointer object{ Object::find(session, id) };
+            if (!object)
+                return std::nullopt;
+
+            return StoredValue{ std::string{ type }, {}, std::string{ object->getName() } };
+        }
+
+        // nullopt if the value no longer exists
+        std::optional<StoredValue> toStoredValue(db::Session& session, const Filters::Value& value)
+        {
+            return std::visit(core::utils::overloads{
+                                  [&](db::ClusterId id) -> std::optional<StoredValue> {
+                                      const db::Cluster::pointer cluster{ db::Cluster::find(session, id) };
+                                      if (!cluster)
+                                          return std::nullopt;
+
+                                      return StoredValue{ "cluster", std::string{ cluster->getType()->getName() }, std::string{ cluster->getName() } };
+                                  },
+                                  [&](db::MediaLibraryId id) { return findStoredValue<db::MediaLibrary>(session, "mediaLibrary", id); },
+                                  [&](db::LabelId id) { return findStoredValue<db::Label>(session, "label", id); },
+                                  [&](db::ReleaseTypeId id) { return findStoredValue<db::ReleaseType>(session, "releaseType", id); },
+                                  [](core::media::Codec codec) -> std::optional<StoredValue> {
+                                      return StoredValue{ "codec", {}, std::string{ core::media::getCodecDesc(codec).name.str() } };
+                                  },
+                                  [&](db::GenreId id) { return findStoredValue<db::Genre>(session, "genre", id); },
+                                  [&](db::GroupingId id) { return findStoredValue<db::Grouping>(session, "grouping", id); },
+                                  [&](db::LanguageId id) { return findStoredValue<db::Language>(session, "language", id); },
+                                  [&](db::MoodId id) { return findStoredValue<db::Mood>(session, "mood", id); },
+                              },
+                              value);
+        }
+
+        // A filter is stored as a whole: nullopt if one of its values no longer exists
+        std::optional<Wt::Json::Object> toStoredFilter(db::Session& session, std::span<const Filters::Value> values, Filters::Match match)
+        {
+            Wt::Json::Object storedFilter;
+            Wt::Json::Array names;
+            for (const Filters::Value& value : values)
+            {
+                const std::optional<StoredValue> storedValue{ toStoredValue(session, value) };
+                if (!storedValue)
+                    return std::nullopt;
+
+                // All the values of a filter have the same type
+                storedFilter["type"] = Wt::Json::Value{ storedValue->type };
+                if (!storedValue->clusterType.empty())
+                    storedFilter["clusterType"] = Wt::Json::Value{ storedValue->clusterType };
+                names.push_back(Wt::Json::Value{ storedValue->name });
+            }
+
+            storedFilter["noneOf"] = Wt::Json::Value{ match == Filters::Match::NoneOf };
+            storedFilter["values"] = std::move(names);
+            return storedFilter;
+        }
+
+        template<typename Object>
+        std::optional<Filters::Value> findValue(db::Session& session, std::string_view name)
+        {
+            const typename Object::pointer object{ Object::find(session, name) };
+            if (!object)
+                return std::nullopt;
+
+            return object->getId();
+        }
+
+        // nullopt if the value no longer exists
+        std::optional<Filters::Value> fromStoredValue(db::Session& session, const StoredValue& storedValue)
+        {
+            if (storedValue.type == "cluster")
+            {
+                const db::ClusterType::pointer clusterType{ db::ClusterType::find(session, storedValue.clusterType) };
+                if (!clusterType)
+                    return std::nullopt;
+
+                const db::Cluster::pointer cluster{ clusterType->getCluster(storedValue.name) };
+                if (!cluster)
+                    return std::nullopt;
+
+                return cluster->getId();
+            }
+            if (storedValue.type == "mediaLibrary")
+                return findValue<db::MediaLibrary>(session, storedValue.name);
+            if (storedValue.type == "label")
+                return findValue<db::Label>(session, storedValue.name);
+            if (storedValue.type == "releaseType")
+                return findValue<db::ReleaseType>(session, storedValue.name);
+            if (storedValue.type == "codec")
+                return core::media::findCodec(storedValue.name);
+            if (storedValue.type == "genre")
+                return findValue<db::Genre>(session, storedValue.name);
+            if (storedValue.type == "grouping")
+                return findValue<db::Grouping>(session, storedValue.name);
+            if (storedValue.type == "language")
+                return findValue<db::Language>(session, storedValue.name);
+            if (storedValue.type == "mood")
+                return findValue<db::Mood>(session, storedValue.name);
+
+            return std::nullopt;
+        }
+
+        // A filter is restored as a whole: nullopt if one of its values cannot be
+        std::optional<std::vector<Filters::Value>> fromStoredFilter(db::Session& session, const Wt::Json::Object& filter)
+        {
+            StoredValue storedValue{ .type = filter.get("type").toString().orIfNull(""), .clusterType = filter.get("clusterType").toString().orIfNull(""), .name = {} };
+
+            std::vector<Filters::Value> values;
+            const Wt::Json::Array& names = filter.get("values");
+            for (const Wt::Json::Value& name : names)
+            {
+                storedValue.name = name.toString().orIfNull("");
+                const std::optional<Filters::Value> value{ fromStoredValue(session, storedValue) };
+                if (!value)
+                    return std::nullopt;
+
+                values.push_back(*value);
+            }
+
+            return values;
+        }
     } // namespace
 
     void Filters::showDialog()
@@ -186,43 +338,22 @@ namespace lms::ui
         const std::shared_ptr<TypeModel> typeModel{ createTypeModel() };
         typeCombo->setModel(typeModel);
 
-        Wt::WComboBox* valueCombo{ dialog->bindNew<Wt::WComboBox>("value") };
+        Wt::WComboBox* matchCombo{ dialog->bindNew<Wt::WComboBox>("match") };
+        const std::shared_ptr<MatchModel> matchModel{ createMatchModel() };
+        matchCombo->setModel(matchModel);
+
+        CheckList* valueList{ dialog->bindNew<CheckList>("value") };
 
         Wt::WPushButton* addBtn{ dialog->bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.Explore.add-filter")) };
-        addBtn->clicked().connect([this, valueCombo, dialogPtr] {
-            const auto valueModel{ std::static_pointer_cast<ValueModel>(valueCombo->model()) };
-            const ValueVariant value{ valueModel->getValue(valueCombo->currentIndex()) };
+        addBtn->clicked().connect([this, matchCombo, matchModel, valueList, dialogPtr] {
+            const auto valueModel{ std::static_pointer_cast<ValueModel>(valueList->getModel()) };
 
-            std::visit(core::utils::overloads{
-                           [&](db::MediaLibraryId mediaLibraryId) {
-                               set(mediaLibraryId);
-                           },
-                           [&](db::LabelId labelId) {
-                               set(labelId);
-                           },
-                           [&](db::ReleaseTypeId releaseTypeId) {
-                               set(releaseTypeId);
-                           },
-                           [&](db::ClusterId clusterId) {
-                               add(clusterId);
-                           },
-                           [&](core::media::Codec codec) {
-                               set(codec);
-                           },
-                           [&](db::GenreId genreId) {
-                               set(genreId);
-                           },
-                           [&](db::GroupingId groupingId) {
-                               set(groupingId);
-                           },
-                           [&](db::LanguageId languageId) {
-                               set(languageId);
-                           },
-                           [&](db::MoodId moodId) {
-                               set(moodId);
-                           },
-                       },
-                       value);
+            std::vector<Value> values;
+            for (const std::size_t row : valueList->getCheckedRows())
+                values.push_back(valueModel->getValue(row));
+
+            if (addFilter(matchModel->getValue(matchCombo->currentIndex()), std::move(values)))
+                emitFilterAddedNotification();
 
             // TODO
             LmsApp->getModalManager().dispose(dialogPtr);
@@ -233,12 +364,15 @@ namespace lms::ui
             LmsApp->getModalManager().dispose(dialogPtr);
         });
 
-        typeCombo->activated().connect([valueCombo, typeModel](int row) {
+        valueList->checkedChanged().connect([valueList, addBtn] {
+            addBtn->setDisabled(valueList->getCheckedRows().empty());
+        });
+
+        typeCombo->activated().connect([valueList, addBtn, typeModel](int row) {
             const TypeVariant type{ typeModel->getValue(row) };
 
-            const std::shared_ptr<ValueModel> valueModel{ createValueModel(type) };
-            valueCombo->clear();
-            valueCombo->setModel(valueModel);
+            valueList->setModel(createValueModel(type));
+            addBtn->setDisabled(true);
         });
 
         typeCombo->activated().emit(0); // force emit to refresh the type combo model
@@ -255,48 +389,95 @@ namespace lms::ui
         Wt::WPushButton* addFilterBtn = bindNew<Wt::WPushButton>("add-filter", Wt::WText::tr("Lms.Explore.add-filter"));
         addFilterBtn->clicked().connect(this, &Filters::showDialog);
 
-        _filters = bindNew<Wt::WContainerWidget>("clusters");
+        _filtersContainer = bindNew<Wt::WContainerWidget>("filters");
 
-        if (const std::optional<db::MediaLibraryId::ValueType> mediaLibraryId{ state::readValue<db::MediaLibraryId::ValueType>("filters_media_library_id") })
-            set(db::MediaLibraryId{ *mediaLibraryId });
-        if (const std::optional<db::LabelId::ValueType> labelId{ state::readValue<db::LabelId::ValueType>("filters_label_id") })
-            set(db::LabelId{ *labelId });
-        if (const std::optional<db::ReleaseTypeId::ValueType> releaseTypeId{ state::readValue<db::ReleaseTypeId::ValueType>("filters_release_type_id") })
-            set(db::ReleaseTypeId{ *releaseTypeId });
-        if (const std::optional<core::media::Codec> codec{ state::readValue<core::media::Codec>("filters_codec") })
-            set(*codec);
-        if (const std::optional<db::GenreId::ValueType> genreId{ state::readValue<db::GenreId::ValueType>("filters_genre_id") })
-            set(db::GenreId{ *genreId });
-        if (const std::optional<db::GroupingId::ValueType> groupingId{ state::readValue<db::GroupingId::ValueType>("filters_grouping_id") })
-            set(db::GroupingId{ *groupingId });
-        if (const std::optional<db::LanguageId::ValueType> languageId{ state::readValue<db::LanguageId::ValueType>("filters_language_id") })
-            set(db::LanguageId{ *languageId });
-        if (const std::optional<db::MoodId::ValueType> moodId{ state::readValue<db::MoodId::ValueType>("filters_mood_id") })
-            set(db::MoodId{ *moodId });
+        LmsApp->getWebStorage().getItem(*this, storageKey, [this](std::optional<std::string> storedFilters) {
+            if (storedFilters)
+                restore(*storedFilters);
+        });
+    }
+
+    void Filters::restore(const std::string& storedFilters)
+    {
+        Wt::Json::Array filters;
+        Wt::Json::ParseError error;
+        if (!Wt::Json::parse(storedFilters, filters, error))
+        {
+            LMS_LOG(UI, WARNING, "Cannot parse stored filters: " << error.what());
+            return;
+        }
+
+        bool added{};
+        {
+            db::Session& session{ LmsApp->getDbSession() };
+            auto transaction{ session.createReadTransaction() };
+
+            for (const Wt::Json::Value& filterValue : filters)
+            {
+                if (filterValue.type() != Wt::Json::Type::Object)
+                    continue;
+
+                const Wt::Json::Object& filter = filterValue;
+                if (filter.type("values") != Wt::Json::Type::Array)
+                    continue;
+
+                std::optional<std::vector<Value>> values;
+                try
+                {
+                    values = fromStoredFilter(session, filter);
+                }
+                catch (const db::Exception& e)
+                {
+                    // The stored filters come from the browser: an edited name may be too long to be looked up
+                    LMS_LOG(UI, WARNING, "Cannot restore stored filter: " << e.what());
+                }
+
+                const Match match{ filter.get("noneOf").toBool().orIfNull(false) ? Match::NoneOf : Match::OneOf };
+                if (values && !values->empty() && addFilter(match, std::move(*values)))
+                    added = true;
+            }
+        }
+
+        if (added)
+            notifyUpdated();
+    }
+
+    void Filters::store() const
+    {
+        if (_filters.empty())
+        {
+            LmsApp->getWebStorage().removeItem(storageKey);
+            return;
+        }
+
+        Wt::Json::Array storedFilters;
+        {
+            db::Session& session{ LmsApp->getDbSession() };
+            auto transaction{ session.createReadTransaction() };
+
+            for (const Filter& filter : _filters)
+            {
+                if (std::optional<Wt::Json::Object> storedFilter{ toStoredFilter(session, filter.values, filter.match) })
+                    storedFilters.push_back(std::move(*storedFilter));
+            }
+        }
+
+        LmsApp->getWebStorage().setItem(storageKey, Wt::Json::serialize(storedFilters));
     }
 
     std::optional<db::FilterExpr> Filters::createDbFilter() const
     {
         std::vector<db::FilterExpr> conditions;
 
-        if (_state.mediaLibrary.isValid())
-            conditions.push_back(db::FilterExpr::equal(_state.mediaLibrary));
-        for (const db::ClusterId clusterId : _state.clusters)
-            conditions.push_back(db::FilterExpr::equal(clusterId));
-        if (_state.genre.isValid())
-            conditions.push_back(db::FilterExpr::equal(_state.genre));
-        if (_state.grouping.isValid())
-            conditions.push_back(db::FilterExpr::equal(_state.grouping));
-        if (_state.label.isValid())
-            conditions.push_back(db::FilterExpr::equal(_state.label));
-        if (_state.language.isValid())
-            conditions.push_back(db::FilterExpr::equal(_state.language));
-        if (_state.mood.isValid())
-            conditions.push_back(db::FilterExpr::equal(_state.mood));
-        if (_state.releaseType.isValid())
-            conditions.push_back(db::FilterExpr::equal(_state.releaseType));
-        if (_state.codec)
-            conditions.push_back(db::FilterExpr::equal(*_state.codec));
+        for (const Filter& filter : _filters)
+        {
+            std::vector<db::FilterExpr> anyOf;
+            for (const Value& value : filter.values)
+                anyOf.push_back(std::visit([](auto id) { return db::FilterExpr::equal(id); }, value));
+
+            db::FilterExpr condition{ anyOf.size() == 1 ? std::move(anyOf.front()) : db::FilterExpr::Or(anyOf) };
+            conditions.push_back(filter.match == Match::NoneOf ? db::FilterExpr::Not(condition) : std::move(condition));
+        }
 
         if (conditions.empty())
             return std::nullopt;
@@ -307,302 +488,69 @@ namespace lms::ui
 
     void Filters::add(db::ClusterId clusterId)
     {
-        if (std::find(std::cbegin(_state.clusters), std::cend(_state.clusters), clusterId) != std::cend(_state.clusters))
-            return;
-
-        Wt::WInteractWidget* filter{};
-
-        {
-            auto cluster{ utils::createFilterCluster(clusterId, true) };
-            if (!cluster)
-                return;
-
-            filter = _filters->addWidget(std::move(cluster));
-        }
-
-        _state.clusters.push_back(clusterId);
-
-        filter->clicked().connect([this, filter, clusterId] {
-            _filters->removeWidget(filter);
-            _state.clusters.erase(std::remove_if(std::begin(_state.clusters), std::end(_state.clusters), [clusterId](db::ClusterId id) { return id == clusterId; }), std::end(_state.clusters));
-            notifyUpdated();
-        });
-
-        emitFilterAddedNotification();
+        if (addFilter(Match::OneOf, { clusterId }))
+            emitFilterAddedNotification();
     }
 
     void Filters::set(db::GenreId genreId)
     {
-        if (_state.genre == genreId)
-            return;
-
-        if (_genreFilter)
-        {
-            _filters->removeWidget(_genreFilter);
-            _genreFilter = nullptr;
-            _state.genre = db::GenreId{};
-        }
-
-        auto genre{ utils::createFilterGenre(genreId, true) };
-        if (!genre)
-        {
-            notifyUpdated();
-            return;
-        }
-
-        _state.genre = genreId;
-        state::writeValue<db::GenreId::ValueType>("filters_genre_id", genreId.getValue());
-
-        _genreFilter = _filters->addWidget(std::move(genre));
-        _genreFilter->clicked().connect([this] {
-            _filters->removeWidget(_genreFilter);
-            _genreFilter = nullptr;
-            _state.genre = db::GenreId{};
-            state::writeValue<db::GenreId::ValueType>("filters_genre_id", std::nullopt);
-            notifyUpdated();
-        });
-
-        emitFilterAddedNotification();
+        replaceOneOfFilter(genreId);
     }
 
     void Filters::set(db::GroupingId groupingId)
     {
-        if (_state.grouping == groupingId)
-            return;
-
-        if (_groupingFilter)
-        {
-            _filters->removeWidget(_groupingFilter);
-            _groupingFilter = nullptr;
-            _state.grouping = db::GroupingId{};
-        }
-
-        auto grouping{ utils::createFilterGrouping(groupingId, true) };
-        if (!grouping)
-        {
-            notifyUpdated();
-            return;
-        }
-
-        _state.grouping = groupingId;
-        state::writeValue<db::GroupingId::ValueType>("filters_grouping_id", groupingId.getValue());
-
-        _groupingFilter = _filters->addWidget(std::move(grouping));
-        _groupingFilter->clicked().connect([this] {
-            _filters->removeWidget(_groupingFilter);
-            _groupingFilter = nullptr;
-            _state.grouping = db::GroupingId{};
-            state::writeValue<db::GroupingId::ValueType>("filters_grouping_id", std::nullopt);
-            notifyUpdated();
-        });
-
-        emitFilterAddedNotification();
+        replaceOneOfFilter(groupingId);
     }
 
     void Filters::set(db::LanguageId languageId)
     {
-        if (_state.language == languageId)
-            return;
-
-        if (_languageFilter)
-        {
-            _filters->removeWidget(_languageFilter);
-            _languageFilter = nullptr;
-            _state.language = db::LanguageId{};
-        }
-
-        auto language{ utils::createFilterLanguage(languageId, true) };
-        if (!language)
-        {
-            notifyUpdated();
-            return;
-        }
-
-        _state.language = languageId;
-        state::writeValue<db::LanguageId::ValueType>("filters_language_id", languageId.getValue());
-
-        _languageFilter = _filters->addWidget(std::move(language));
-        _languageFilter->clicked().connect([this] {
-            _filters->removeWidget(_languageFilter);
-            _languageFilter = nullptr;
-            _state.language = db::LanguageId{};
-            state::writeValue<db::LanguageId::ValueType>("filters_language_id", std::nullopt);
-            notifyUpdated();
-        });
-
-        emitFilterAddedNotification();
+        replaceOneOfFilter(languageId);
     }
 
     void Filters::set(db::MoodId moodId)
     {
-        if (_state.mood == moodId)
-            return;
-
-        if (_moodFilter)
-        {
-            _filters->removeWidget(_moodFilter);
-            _moodFilter = nullptr;
-            _state.mood = db::MoodId{};
-        }
-
-        auto mood{ utils::createFilterMood(moodId, true) };
-        if (!mood)
-        {
-            notifyUpdated();
-            return;
-        }
-
-        _state.mood = moodId;
-        state::writeValue<db::MoodId::ValueType>("filters_mood_id", moodId.getValue());
-
-        _moodFilter = _filters->addWidget(std::move(mood));
-        _moodFilter->clicked().connect([this] {
-            _filters->removeWidget(_moodFilter);
-            _moodFilter = nullptr;
-            _state.mood = db::MoodId{};
-            state::writeValue<db::MoodId::ValueType>("filters_mood_id", std::nullopt);
-            notifyUpdated();
-        });
-
-        emitFilterAddedNotification();
+        replaceOneOfFilter(moodId);
     }
 
-    void Filters::set(db::MediaLibraryId mediaLibraryId)
+    bool Filters::addFilter(Match match, std::vector<Value> values)
     {
-        if (_mediaLibraryFilter)
-        {
-            _filters->removeWidget(_mediaLibraryFilter);
-            _mediaLibraryFilter = nullptr;
-            _state.mediaLibrary = db::MediaLibraryId{};
-        }
+        if (std::any_of(std::cbegin(_filters), std::cend(_filters), [&](const Filter& filter) { return filter.match == match && filter.values == values; }))
+            return false;
 
-        std::string libraryName;
-        {
-            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+        auto filterWidget{ utils::createFilter(values, match) };
+        if (!filterWidget)
+            return false;
 
-            const auto library{ db::MediaLibrary::find(LmsApp->getDbSession(), mediaLibraryId) };
-            if (!library)
-            {
-                notifyUpdated();
-                return;
-            }
-
-            libraryName = library->getName();
-        }
-
-        _state.mediaLibrary = mediaLibraryId;
-        state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", mediaLibraryId.getValue());
-
-        _mediaLibraryFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(libraryName), Wt::WString::tr("Lms.Explore.media-library"), "bg-primary", true));
-        _mediaLibraryFilter->clicked().connect(_mediaLibraryFilter, [this] {
-            _filters->removeWidget(_mediaLibraryFilter);
-            _state.mediaLibrary = db::MediaLibraryId{};
-            _mediaLibraryFilter = nullptr;
+        Wt::WInteractWidget* widget{ _filtersContainer->addWidget(std::move(filterWidget)) };
+        widget->clicked().connect([this, widget] {
+            _filtersContainer->removeWidget(widget);
+            std::erase_if(_filters, [widget](const Filter& filter) { return filter.widget == widget; });
             notifyUpdated();
-            state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", std::nullopt);
         });
 
-        emitFilterAddedNotification();
+        _filters.push_back(Filter{ match, std::move(values), widget });
+        return true;
     }
 
-    void Filters::set(db::LabelId labelId)
+    void Filters::replaceOneOfFilter(Value value)
     {
-        if (_labelFilter)
+        // The type of a cluster also depends on its cluster type
+        assert(!std::holds_alternative<db::ClusterId>(value));
+
+        const std::vector<Value> values{ value };
+        const auto isReplaced{ [&](const Filter& filter) { return filter.match == Match::OneOf && filter.values.front().index() == value.index() && filter.values != values; } };
+
+        for (const Filter& filter : _filters)
         {
-            _filters->removeWidget(_labelFilter);
-            _labelFilter = nullptr;
-            _state.label = db::LabelId{};
+            if (isReplaced(filter))
+                _filtersContainer->removeWidget(filter.widget);
         }
+        const bool removed{ std::erase_if(_filters, isReplaced) > 0 };
 
-        std::string name;
-        {
-            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-            const auto label{ db::Label::find(LmsApp->getDbSession(), labelId) };
-            if (!label)
-            {
-                notifyUpdated();
-                return;
-            }
-
-            name = label->getName();
-        }
-
-        _state.label = labelId;
-        state::writeValue<db::LabelId::ValueType>("filters_label_id", labelId.getValue());
-
-        _labelFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(name), Wt::WString::tr("Lms.Explore.label"), "bg-secondary", true));
-        _labelFilter->clicked().connect(_labelFilter, [this] {
-            _filters->removeWidget(_labelFilter);
-            _state.label = db::LabelId{};
-            _labelFilter = nullptr;
+        if (addFilter(Match::OneOf, values))
+            emitFilterAddedNotification();
+        else if (removed)
             notifyUpdated();
-            state::writeValue<db::LabelId::ValueType>("filters_label_id", std::nullopt);
-        });
-
-        emitFilterAddedNotification();
-    }
-
-    void Filters::set(db::ReleaseTypeId releaseTypeId)
-    {
-        if (_releaseTypeFilter)
-        {
-            _filters->removeWidget(_releaseTypeFilter);
-            _releaseTypeFilter = nullptr;
-            _state.releaseType = db::ReleaseTypeId{};
-        }
-
-        std::string name;
-        {
-            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-            const auto releaseType{ db::ReleaseType::find(LmsApp->getDbSession(), releaseTypeId) };
-            if (!releaseType)
-            {
-                notifyUpdated();
-                return;
-            }
-
-            name = releaseType->getName();
-        }
-
-        _state.releaseType = releaseTypeId;
-        state::writeValue<db::ReleaseTypeId::ValueType>("filters_release_type_id", releaseTypeId.getValue());
-
-        _releaseTypeFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(name), Wt::WString::tr("Lms.Explore.release-type"), "bg-dark", true));
-        _releaseTypeFilter->clicked().connect(_releaseTypeFilter, [this] {
-            _filters->removeWidget(_releaseTypeFilter);
-            _state.releaseType = db::ReleaseTypeId{};
-            _releaseTypeFilter = nullptr;
-            notifyUpdated();
-            state::writeValue<db::LabelId::ValueType>("filters_release_type_id", std::nullopt);
-        });
-
-        emitFilterAddedNotification();
-    }
-
-    void Filters::set(core::media::Codec codec)
-    {
-        if (_codecFilter)
-        {
-            _filters->removeWidget(_codecFilter);
-            _codecFilter = nullptr;
-            _state.codec.reset();
-        }
-
-        _state.codec = codec;
-        state::writeValue<core::media::Codec>("filters_codec", codec);
-
-        _codecFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(core::media::getCodecDesc(codec).longName.c_str()), Wt::WString::tr("Lms.Explore.codec"), "bg-success", true));
-        _codecFilter->clicked().connect(_codecFilter, [this] {
-            _filters->removeWidget(_codecFilter);
-            _state.codec.reset();
-            _codecFilter = nullptr;
-            notifyUpdated();
-            state::writeValue<db::LabelId::ValueType>("filters_codec", std::nullopt);
-        });
-
-        emitFilterAddedNotification();
     }
 
     void Filters::emitFilterAddedNotification()
@@ -615,6 +563,7 @@ namespace lms::ui
     void Filters::notifyUpdated()
     {
         _dbFilter = createDbFilter();
+        store();
         _sigUpdated.emit();
     }
 } // namespace lms::ui

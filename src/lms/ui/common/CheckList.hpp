@@ -29,14 +29,14 @@
 namespace Wt
 {
     class WCheckBox;
-    class WContainerWidget;
     class WLineEdit;
 } // namespace Wt
 
 namespace lms::ui
 {
+    class InfiniteScrollingContainer;
+
     // List of checkable rows, with a search field on long lists
-    // It takes all the height it needs: the enclosing view scrolls
     class CheckList final : public Wt::WTemplate
     {
     public:
@@ -53,10 +53,15 @@ namespace lms::ui
         Wt::Signal<>& checkedChanged() { return _checkedChanged; }
 
     private:
+        void applySearch();
+        void addRows();
+
         Wt::WLineEdit* _search{};
-        Wt::WContainerWidget* _rows{};
-        std::vector<Wt::WCheckBox*> _checkBoxes;
+        InfiniteScrollingContainer* _rows{};
         std::shared_ptr<Wt::WAbstractItemModel> _model;
+        std::vector<bool> _checked;              // indexed by model row
+        std::vector<std::size_t> _matchingRows;  // model rows matching the search
+        std::vector<Wt::WCheckBox*> _checkBoxes; // displayed rows, the first ones of _matchingRows
         Wt::Signal<> _checkedChanged;
     };
 } // namespace lms::ui

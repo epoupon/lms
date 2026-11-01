@@ -227,6 +227,11 @@
 <message id="Lms.Explore.download">Descargar</message>
 <message id="Lms.Explore.duration">Duración</message>
 <message id="Lms.Explore.filter-added">Filtro añadido</message>
+<message id="Lms.Explore.filter-none-of">no es uno de</message>
+<message id="Lms.Explore.filter-not">excepto {1}</message>
+<message id="Lms.Explore.filter-one-of">es uno de</message>
+<message id="Lms.Explore.filter-or">{1} o {2}</message>
+<message id="Lms.Explore.filter-tooltip">{1}: {2}</message>
 <message id="Lms.Explore.filters">Filtros</message>
 <message id="Lms.Explore.genre">
 	<plural case="0">Género</plural>

@@ -28,6 +28,7 @@
 #include <Wt/WText.h>
 
 #include "core/String.hpp"
+#include "core/Utils.hpp"
 #include "core/media/Codec.hpp"
 #include "core/media/Container.hpp"
 
@@ -39,6 +40,7 @@
 #include "database/objects/Grouping.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/Language.hpp"
+#include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Mood.hpp"
 #include "database/objects/Movement.hpp"
 #include "database/objects/Release.hpp"
@@ -87,6 +89,89 @@ namespace lms::ui::utils
             }
 
             return res;
+        }
+
+        std::unique_ptr<Wt::WInteractWidget> createBadge(const Wt::WString& name, const Wt::WString& tooltip, std::string_view colorStyleClass, bool canDelete)
+        {
+            auto res{ std::make_unique<Wt::WContainerWidget>() };
+            res->setInline(true);
+            res->setStyleClass("Lms-badge-cluster badge me-1 " + std::string{ colorStyleClass }); // HACK
+            res->setToolTip(tooltip, Wt::TextFormat::Plain);
+
+            if (canDelete)
+                res->addNew<Wt::WText>("<i class=\"fa fa-times-circle\"></i> ", Wt::TextFormat::XHTML);
+
+            res->addNew<Wt::WText>(name, Wt::TextFormat::Plain);
+
+            return res;
+        }
+
+        struct FilterValueDesc
+        {
+            std::string name;
+            Wt::WString typeName;
+            std::string_view colorStyleClass;
+        };
+
+        std::string_view getClusterTypeStyleClass(db::ClusterTypeId clusterTypeId)
+        {
+            switch (clusterTypeId.getValue() % 8)
+            {
+            case 0:
+                return "bg-primary";
+            case 1:
+                return "bg-secondary";
+            case 2:
+                return "bg-success";
+            case 3:
+                return "bg-danger";
+            case 4:
+                return "bg-warning text-dark";
+            case 5:
+                return "bg-info text-dark";
+            case 6:
+                return "bg-light text-dark";
+            case 7:
+                return "bg-dark";
+            }
+
+            return "bg-primary";
+        }
+
+        template<typename Object, typename Id>
+        std::optional<FilterValueDesc> findFilterValueDesc(Id id, const Wt::WString& typeName, std::string_view colorStyleClass)
+        {
+            const typename Object::pointer object{ Object::find(LmsApp->getDbSession(), id) };
+            if (!object)
+                return std::nullopt;
+
+            return FilterValueDesc{ std::string{ object->getName() }, typeName, colorStyleClass };
+        }
+
+        // nullopt if the value no longer exists
+        std::optional<FilterValueDesc> getFilterValueDesc(const Filters::Value& value)
+        {
+            return std::visit(core::utils::overloads{
+                                  [](db::ClusterId id) -> std::optional<FilterValueDesc> {
+                                      const db::Cluster::pointer cluster{ db::Cluster::find(LmsApp->getDbSession(), id) };
+                                      if (!cluster)
+                                          return std::nullopt;
+
+                                      const db::ClusterType::pointer clusterType{ cluster->getType() };
+                                      return FilterValueDesc{ std::string{ cluster->getName() }, Wt::WString::fromUTF8(std::string{ clusterType->getName() }), getClusterTypeStyleClass(clusterType->getId()) };
+                                  },
+                                  [](db::MediaLibraryId id) { return findFilterValueDesc<db::MediaLibrary>(id, Wt::WString::tr("Lms.Explore.media-library"), "bg-primary"); },
+                                  [](db::LabelId id) { return findFilterValueDesc<db::Label>(id, Wt::WString::tr("Lms.Explore.label"), "bg-secondary"); },
+                                  [](db::ReleaseTypeId id) { return findFilterValueDesc<db::ReleaseType>(id, Wt::WString::tr("Lms.Explore.release-type"), "bg-dark"); },
+                                  [](core::media::Codec codec) -> std::optional<FilterValueDesc> {
+                                      return FilterValueDesc{ core::media::getCodecDesc(codec).longName.c_str(), Wt::WString::tr("Lms.Explore.codec"), "bg-success" };
+                                  },
+                                  [](db::GenreId id) { return findFilterValueDesc<db::Genre>(id, Wt::WString::trn("Lms.Explore.genre", 1), "bg-info text-dark"); },
+                                  [](db::GroupingId id) { return findFilterValueDesc<db::Grouping>(id, Wt::WString::trn("Lms.Explore.grouping", 1), "bg-secondary"); },
+                                  [](db::LanguageId id) { return findFilterValueDesc<db::Language>(id, Wt::WString::trn("Lms.Explore.language", 1), "bg-primary"); },
+                                  [](db::MoodId id) { return findFilterValueDesc<db::Mood>(id, Wt::WString::trn("Lms.Explore.mood", 1), "bg-warning text-dark"); },
+                              },
+                              value);
         }
     } // namespace
 
@@ -140,98 +225,47 @@ namespace lms::ui::utils
         return image;
     }
 
-    std::unique_ptr<Wt::WInteractWidget> createFilter(const Wt::WString& name, const Wt::WString& tooltip, std::string_view colorStyleClass, bool canDelete)
-    {
-        auto res{ std::make_unique<Wt::WContainerWidget>() };
-        res->setInline(true);
-        res->setStyleClass("Lms-badge-cluster badge me-1 " + std::string{ colorStyleClass }); // HACK
-        res->setToolTip(tooltip, Wt::TextFormat::Plain);
-
-        if (canDelete)
-            res->addNew<Wt::WText>("<i class=\"fa fa-times-circle\"></i> ", Wt::TextFormat::XHTML);
-
-        res->addNew<Wt::WText>(name, Wt::TextFormat::Plain);
-
-        return res;
-    }
-
-    std::unique_ptr<Wt::WInteractWidget> createFilterCluster(db::ClusterId clusterId, bool canDelete)
+    std::unique_ptr<Wt::WInteractWidget> createFilterValue(const Filters::Value& value)
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const db::Cluster::pointer cluster{ db::Cluster::find(LmsApp->getDbSession(), clusterId) };
-        if (!cluster)
+        const std::optional<FilterValueDesc> desc{ getFilterValueDesc(value) };
+        if (!desc)
             return {};
 
-        auto getStyleClass{ [](const db::Cluster::pointer& cluster) -> std::string_view {
-            switch (cluster->getType()->getId().getValue() % 8)
-            {
-            case 0:
-                return "bg-primary";
-            case 1:
-                return "bg-secondary";
-            case 2:
-                return "bg-success";
-            case 3:
-                return "bg-danger";
-            case 4:
-                return "bg-warning text-dark";
-            case 5:
-                return "bg-info text-dark";
-            case 6:
-                return "bg-light text-dark";
-            case 7:
-                return "bg-dark";
-            }
-
-            return "bg-primary";
-        } };
-
-        return createFilter(Wt::WString::fromUTF8(std::string{ cluster->getName() }), Wt::WString::fromUTF8(std::string{ cluster->getType()->getName() }), getStyleClass(cluster), canDelete);
+        return createBadge(Wt::WString::fromUTF8(desc->name), desc->typeName, desc->colorStyleClass, false);
     }
 
-    std::unique_ptr<Wt::WInteractWidget> createFilterGenre(db::GenreId genreId, bool canDelete)
+    std::unique_ptr<Wt::WInteractWidget> createFilter(std::span<const Filters::Value> values, Filters::Match match)
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const db::Genre::pointer genre{ db::Genre::find(LmsApp->getDbSession(), genreId) };
-        if (!genre)
+        std::optional<Wt::WString> text;
+        Wt::WString typeName;
+        std::string_view colorStyleClass;
+        for (const Filters::Value& value : values)
+        {
+            const std::optional<FilterValueDesc> desc{ getFilterValueDesc(value) };
+            if (!desc)
+                return {};
+
+            const Wt::WString name{ Wt::WString::fromUTF8(desc->name) };
+            text = text ? Wt::WString::tr("Lms.Explore.filter-or").arg(*text).arg(name) : name;
+            typeName = desc->typeName;
+            colorStyleClass = desc->colorStyleClass;
+        }
+
+        if (!text)
             return {};
 
-        return createFilter(Wt::WString::fromUTF8(std::string{ genre->getName() }), Wt::WString::trn("Lms.Explore.genre", 1), "bg-info text-dark", canDelete);
-    }
+        if (match == Filters::Match::NoneOf)
+            text = Wt::WString::tr("Lms.Explore.filter-not").arg(*text);
 
-    std::unique_ptr<Wt::WInteractWidget> createFilterGrouping(db::GroupingId groupingId, bool canDelete)
-    {
-        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+        auto filter{ createBadge(*text, Wt::WString::tr("Lms.Explore.filter-tooltip").arg(typeName).arg(*text), colorStyleClass, true) };
+        if (match == Filters::Match::NoneOf)
+            filter->addStyleClass("Lms-badge-none-of");
 
-        const db::Grouping::pointer grouping{ db::Grouping::find(LmsApp->getDbSession(), groupingId) };
-        if (!grouping)
-            return {};
-
-        return createFilter(Wt::WString::fromUTF8(std::string{ grouping->getName() }), Wt::WString::trn("Lms.Explore.grouping", 1), "bg-secondary", canDelete);
-    }
-
-    std::unique_ptr<Wt::WInteractWidget> createFilterLanguage(db::LanguageId languageId, bool canDelete)
-    {
-        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-        const db::Language::pointer language{ db::Language::find(LmsApp->getDbSession(), languageId) };
-        if (!language)
-            return {};
-
-        return createFilter(Wt::WString::fromUTF8(std::string{ language->getName() }), Wt::WString::trn("Lms.Explore.language", 1), "bg-primary", canDelete);
-    }
-
-    std::unique_ptr<Wt::WInteractWidget> createFilterMood(db::MoodId moodId, bool canDelete)
-    {
-        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-        const db::Mood::pointer mood{ db::Mood::find(LmsApp->getDbSession(), moodId) };
-        if (!mood)
-            return {};
-
-        return createFilter(Wt::WString::fromUTF8(std::string{ mood->getName() }), Wt::WString::trn("Lms.Explore.mood", 1), "bg-warning text-dark", canDelete);
+        return filter;
     }
 
     std::unique_ptr<Wt::WContainerWidget> createFilterClustersForTrack(db::Track::pointer track, Filters& filters)
@@ -245,7 +279,7 @@ namespace lms::ui::utils
         {
             Cluster::find(session, Cluster::FindParameters{}.setTrack(track->getId()).setClusterType(clusterTypeId).setSortMethod(ClusterSortMethod::Name).setRange(Range{ 0, 3 }), [&](const Cluster::pointer& cluster) {
                 const ClusterId clusterId{ cluster->getId() };
-                Wt::WInteractWidget* entry{ clusterContainer->addWidget(createFilterCluster(clusterId)) };
+                Wt::WInteractWidget* entry{ clusterContainer->addWidget(createFilterValue(clusterId)) };
                 entry->clicked().connect([&filters, clusterId] {
                     filters.add(clusterId);
                 });

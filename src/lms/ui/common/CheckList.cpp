@@ -19,12 +19,15 @@
 
 #include "CheckList.hpp"
 
-#include <sstream>
+#include <algorithm>
 
 #include <Wt/WAny.h>
 #include <Wt/WCheckBox.h>
-#include <Wt/WContainerWidget.h>
 #include <Wt/WLineEdit.h>
+
+#include "core/String.hpp"
+
+#include "InfiniteScrollingContainer.hpp"
 
 namespace lms::ui
 {
@@ -32,6 +35,13 @@ namespace lms::ui
     {
         // Shorter lists fit on screen
         constexpr int minRowCountForSearch{ 10 };
+        // Some lists have thousands of rows (labels for instance)
+        constexpr std::size_t batchSize{ 50 };
+
+        Wt::WString getText(const Wt::WAbstractItemModel& model, std::size_t row)
+        {
+            return Wt::asString(model.data(model.index(static_cast<int>(row), 0)));
+        }
     } // namespace
 
     CheckList::CheckList()
@@ -39,50 +49,30 @@ namespace lms::ui
     {
         _search = bindNew<Wt::WLineEdit>("search");
         _search->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
-        _rows = bindNew<Wt::WContainerWidget>("rows");
+        _search->textInput().connect([this] { applySearch(); });
 
-        // Filtered in the browser, no round trip on each key stroke
-        std::ostringstream oss;
-        oss << "function(o) {"
-            << " const query = o.value.toLowerCase();"
-            << " for (const row of document.getElementById('" << _rows->id() << "').children)"
-            << "  row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';"
-            << "}";
-        _search->textInput().connect(oss.str());
+        _rows = bindNew<InfiniteScrollingContainer>("rows", Wt::WString::tr("Lms.check-list.template.rows"));
+        _rows->setNoResultsMessage(Wt::WString::tr("Lms.Explore.no-results"));
+        _rows->onRequestElements.connect([this] { addRows(); });
     }
 
     void CheckList::setModel(std::shared_ptr<Wt::WAbstractItemModel> model)
     {
         _model = std::move(model);
+        _checked.assign(static_cast<std::size_t>(_model->rowCount()), false);
 
-        _rows->clear();
-        _checkBoxes.clear();
         _search->setText("");
-
-        for (int row{}; row < _model->rowCount(); ++row)
-        {
-            // The padding is on the inner label, so that a click anywhere on the row toggles its checkbox
-            // (setHtmlTagName("label") would break: Wt cannot create a label tag on later updates)
-            auto rowWidget{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.check-list.template.row")) };
-            rowWidget->setStyleClass("list-group-item p-0");
-            rowWidget->bindString("text", Wt::asString(_model->data(_model->index(row, 0))), Wt::TextFormat::Plain);
-
-            Wt::WCheckBox* checkBox{ rowWidget->bindNew<Wt::WCheckBox>("checkbox") };
-            checkBox->changed().connect([this] { _checkedChanged.emit(); });
-            _checkBoxes.push_back(checkBox);
-
-            _rows->addWidget(std::move(rowWidget));
-        }
-
         _search->setHidden(_model->rowCount() < minRowCountForSearch);
+
+        applySearch();
     }
 
     std::vector<std::size_t> CheckList::getCheckedRows() const
     {
         std::vector<std::size_t> rows;
-        for (std::size_t row{}; row < _checkBoxes.size(); ++row)
+        for (std::size_t row{}; row < _checked.size(); ++row)
         {
-            if (_checkBoxes[row]->isChecked())
+            if (_checked[row])
                 rows.push_back(row);
         }
 
@@ -91,6 +81,51 @@ namespace lms::ui
 
     void CheckList::setChecked(std::size_t row, bool checked)
     {
-        _checkBoxes[row]->setChecked(checked);
+        _checked[row] = checked;
+
+        const auto it{ std::find(std::cbegin(_matchingRows), std::cbegin(_matchingRows) + _checkBoxes.size(), row) };
+        if (it != std::cbegin(_matchingRows) + _checkBoxes.size())
+            _checkBoxes[it - std::cbegin(_matchingRows)]->setChecked(checked);
+    }
+
+    void CheckList::applySearch()
+    {
+        const std::string query{ _search->text().toUTF8() };
+
+        _matchingRows.clear();
+        for (std::size_t row{}; row < _checked.size(); ++row)
+        {
+            if (core::stringUtils::stringCaseInsensitiveContains(getText(*_model, row).toUTF8(), query))
+                _matchingRows.push_back(row);
+        }
+
+        _checkBoxes.clear();
+        _rows->reset();
+        addRows();
+    }
+
+    void CheckList::addRows()
+    {
+        const std::size_t end{ std::min(_checkBoxes.size() + batchSize, _matchingRows.size()) };
+        for (std::size_t i{ _checkBoxes.size() }; i < end; ++i)
+        {
+            const std::size_t row{ _matchingRows[i] };
+
+            auto rowWidget{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.check-list.template.row")) };
+            rowWidget->setStyleClass("list-group-item border-0 p-0");
+            rowWidget->bindString("text", getText(*_model, row), Wt::TextFormat::Plain);
+
+            Wt::WCheckBox* checkBox{ rowWidget->bindNew<Wt::WCheckBox>("checkbox") };
+            checkBox->setChecked(_checked[row]);
+            checkBox->changed().connect([this, checkBox, row] {
+                _checked[row] = checkBox->isChecked();
+                _checkedChanged.emit();
+            });
+            _checkBoxes.push_back(checkBox);
+
+            _rows->add(std::move(rowWidget));
+        }
+
+        _rows->setHasMore(end < _matchingRows.size());
     }
 } // namespace lms::ui

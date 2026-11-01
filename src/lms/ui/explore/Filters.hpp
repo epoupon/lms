@@ -20,6 +20,8 @@
 #pragma once
 
 #include <optional>
+#include <string>
+#include <variant>
 #include <vector>
 
 #include <Wt/WContainerWidget.h>
@@ -40,14 +42,23 @@
 
 namespace lms::ui
 {
+    // The filter bar is an AND of filters. A filter matches the tracks that have one of its values, or none of them
     class Filters : public Wt::WTemplate
     {
     public:
+        using Value = std::variant<db::ClusterId, db::MediaLibraryId, db::LabelId, db::ReleaseTypeId, core::media::Codec, db::GenreId, db::GroupingId, db::LanguageId, db::MoodId>;
+        enum class Match
+        {
+            OneOf,
+            NoneOf,
+        };
+
         Filters();
 
         const std::optional<db::FilterExpr>& getDbFilter() const { return _dbFilter; }
 
         void add(db::ClusterId clusterId);
+        // Replace the "one of" filters of the same type, "none of" filters stay
         void set(db::GenreId genreId);
         void set(db::GroupingId groupingId);
         void set(db::LanguageId languageId);
@@ -56,40 +67,27 @@ namespace lms::ui
         Wt::Signal<>& updated() { return _sigUpdated; }
 
     private:
+        struct Filter
+        {
+            Match match{};
+            std::vector<Value> values; // not empty, all of the same type (and of the same cluster type)
+            Wt::WInteractWidget* widget{};
+        };
+
         void showDialog();
-        void set(db::LabelId labelId);
-        void set(db::MediaLibraryId mediaLibraryId);
-        void set(db::ReleaseTypeId releaseTypeId);
-        void set(core::media::Codec codec);
+        void restore(const std::string& storedFilters);
+        void store() const;
+        // false if the same filter already exists, or if one of its values no longer exists
+        bool addFilter(Match match, std::vector<Value> values);
+        void replaceOneOfFilter(Value value);
         void emitFilterAddedNotification();
         void notifyUpdated();
         std::optional<db::FilterExpr> createDbFilter() const;
 
-        Wt::WContainerWidget* _filters{};
-        Wt::WInteractWidget* _mediaLibraryFilter{};
-        Wt::WInteractWidget* _labelFilter{};
-        Wt::WInteractWidget* _releaseTypeFilter{};
-        Wt::WInteractWidget* _codecFilter{};
-        Wt::WInteractWidget* _genreFilter{};
-        Wt::WInteractWidget* _groupingFilter{};
-        Wt::WInteractWidget* _languageFilter{};
-        Wt::WInteractWidget* _moodFilter{};
+        Wt::WContainerWidget* _filtersContainer{};
+        std::vector<Filter> _filters;
 
         Wt::Signal<> _sigUpdated;
-
-        struct State
-        {
-            db::MediaLibraryId mediaLibrary;
-            std::vector<db::ClusterId> clusters;
-            db::GenreId genre;
-            db::GroupingId grouping;
-            db::LabelId label;
-            db::LanguageId language;
-            db::MoodId mood;
-            db::ReleaseTypeId releaseType;
-            std::optional<core::media::Codec> codec;
-        };
-        State _state;
-        std::optional<db::FilterExpr> _dbFilter; // built from _state on each update, used by many queries
+        std::optional<db::FilterExpr> _dbFilter; // built from _filters on each update, used by many queries
     };
 } // namespace lms::ui

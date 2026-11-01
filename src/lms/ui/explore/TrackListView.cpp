@@ -103,7 +103,7 @@ namespace lms::ui
             {
                 db::Cluster::find(LmsApp->getDbSession(), db::Cluster::FindParameters{}.setTrackList(trackList->getId()).setClusterType(clusterTypeId).setSortMethod(db::ClusterSortMethod::TrackCountDesc).setRange(db::Range{ 0, 3 }), [&](const db::Cluster::pointer& cluster) {
                     const db::ClusterId clusterId{ cluster->getId() };
-                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterCluster(clusterId)) };
+                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(clusterId)) };
                     entry->clicked().connect([this, clusterId] {
                         _filters.add(clusterId);
                     });

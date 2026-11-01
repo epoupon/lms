@@ -20,6 +20,8 @@
 #pragma once
 
 #include <functional>
+#include <optional>
+#include <string_view>
 
 #include "core/LiteralString.hpp"
 
@@ -59,4 +61,5 @@ namespace lms::core::media
     };
     void visitCodecs(const std::function<void(const CodecDesc&)>& visitor);
     const CodecDesc& getCodecDesc(Codec type);
+    std::optional<Codec> findCodec(std::string_view name); // name as in CodecDesc::name
 } // namespace lms::core::media

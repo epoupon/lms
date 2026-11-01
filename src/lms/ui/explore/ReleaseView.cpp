@@ -298,7 +298,7 @@ namespace lms::ui
         {
             db::Genre::find(session, db::Genre::FindParameters{}.setRelease(release->getId()).setSortMethod(db::GenreSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItemCount }), [&](const db::Genre::pointer& genre) {
                 const db::GenreId genreId{ genre->getId() };
-                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterGenre(genreId)) };
+                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(genreId)) };
                 entry->clicked().connect([this, genreId] {
                     _filters.set(genreId);
                 });
@@ -306,7 +306,7 @@ namespace lms::ui
 
             db::Grouping::find(session, db::Grouping::FindParameters{}.setRelease(release->getId()).setSortMethod(db::GroupingSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItemCount }), [&](const db::Grouping::pointer& grouping) {
                 const db::GroupingId groupingId{ grouping->getId() };
-                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterGrouping(groupingId)) };
+                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(groupingId)) };
                 entry->clicked().connect([this, groupingId] {
                     _filters.set(groupingId);
                 });
@@ -314,7 +314,7 @@ namespace lms::ui
 
             db::Language::find(session, db::Language::FindParameters{}.setRelease(release->getId()).setSortMethod(db::LanguageSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItemCount }), [&](const db::Language::pointer& language) {
                 const db::LanguageId languageId{ language->getId() };
-                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterLanguage(languageId)) };
+                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(languageId)) };
                 entry->clicked().connect([this, languageId] {
                     _filters.set(languageId);
                 });
@@ -322,7 +322,7 @@ namespace lms::ui
 
             db::Mood::find(session, db::Mood::FindParameters{}.setRelease(release->getId()).setSortMethod(db::MoodSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItemCount }), [&](const db::Mood::pointer& mood) {
                 const db::MoodId moodId{ mood->getId() };
-                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterMood(moodId)) };
+                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(moodId)) };
                 entry->clicked().connect([this, moodId] {
                     _filters.set(moodId);
                 });
@@ -332,7 +332,7 @@ namespace lms::ui
             {
                 db::Cluster::find(session, db::Cluster::FindParameters{}.setRelease(release->getId()).setClusterType(clusterTypeId).setSortMethod(db::ClusterSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItemCount }), [&](const db::Cluster::pointer& cluster) {
                     const db::ClusterId clusterId{ cluster->getId() };
-                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterCluster(clusterId)) };
+                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(clusterId)) };
                     entry->clicked().connect([this, clusterId] {
                         _filters.add(clusterId);
                     });
