@@ -95,7 +95,7 @@ namespace lms::api::subsonic
 
                     Release::FindParameters params;
                     params.setFilter(std::move(filter));
-                    params.setSortMethod(ReleaseSortMethod::Name);
+                    params.setSortMethod(ReleaseSortMethod::SortName);
                     params.setRange(range);
 
                     releases = Release::findIds(context.getDbSession(), params);
