@@ -24,6 +24,7 @@
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Release.hpp"
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
@@ -223,6 +224,41 @@ namespace lms::db
     {
         auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Directory>>("SELECT d from directory d").where("d.parent_directory_id IS NULL") };
         return utils::execRangeQuery<Directory::pointer>(query, range);
+    }
+
+    std::vector<Directory::ChildRelease> Directory::findChildReleases(Session& session, DirectoryId parentDirectory)
+    {
+        session.checkReadTransaction();
+
+        // Resolves the whole listing at once.
+        //
+        // Read the joins from the track outwards, since tracks are what tie the two together (a
+        // directory has no direct link to a release):
+        //   track -> directory restricts to tracks whose directory is a child of parentDirectory
+        //   track -> release turns the track's release_id into a release row we can return
+        //
+        // Both are INNER JOINs, so a child directory holding no track, or only tracks belonging to
+        // no release, produces no row at all. Such directories are absent from the result rather
+        // than present with an empty release.
+        //
+        // GROUP BY then collapses the many tracks of a directory down to one row per directory.
+        //
+        // The count is returned rather than acted on here so each caller can apply its own rule:
+        // subsonic treats any release as the directory's album, while the folder view only links
+        // straight to a release when the directory holds exactly one.
+        auto query{ session.getDboSession()->query<std::tuple<DirectoryId, Wt::Dbo::ptr<Release>, int>>(
+            "SELECT t.directory_id, r, COUNT(DISTINCT t.release_id)"
+            " FROM track t"
+            " INNER JOIN directory d ON d.id = t.directory_id"
+            " INNER JOIN release r ON r.id = t.release_id") };
+        query.where("d.parent_directory_id = ?").bind(parentDirectory);
+        query.groupBy("t.directory_id");
+
+        std::vector<ChildRelease> result;
+        for (const auto& [directoryId, release, releaseCount] : utils::fetchQueryResults<std::tuple<DirectoryId, Wt::Dbo::ptr<Release>, int>>(query))
+            result.emplace_back(ChildRelease{ directoryId, release, static_cast<std::size_t>(releaseCount) });
+
+        return result;
     }
 
     void Directory::setAbsolutePath(const std::filesystem::path& p)

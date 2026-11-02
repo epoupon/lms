@@ -338,8 +338,21 @@ namespace lms::api::subsonic
             params.setParentDirectory(directory->getId());
             params.setSortMethod(DirectorySortMethod::Name);
 
-            Directory::find(context.getDbSession(), params, [&](const Directory::pointer& subDirectory) {
-                const Release::pointer release{ getReleaseFromDirectory(context.getDbSession(), subDirectory->getId()) };
+            const std::vector<Directory::pointer> subDirectories{ Directory::find(context.getDbSession(), params) };
+
+            std::unordered_map<DirectoryId::ValueType, Release::pointer> releaseByDirectory;
+            // skip leaf directories, which are the common case
+            if (!subDirectories.empty())
+            {
+                for (const Directory::ChildRelease& childRelease : Directory::findChildReleases(context.getDbSession(), directory->getId()))
+                    releaseByDirectory.emplace(childRelease.directory.getValue(), childRelease.release);
+            }
+
+            for (const Directory::pointer& subDirectory : subDirectories)
+            {
+                Release::pointer release;
+                if (const auto it{ releaseByDirectory.find(subDirectory->getId().getValue()) }; it != std::cend(releaseByDirectory))
+                    release = it->second;
 
                 if (release)
                 {
@@ -355,7 +368,7 @@ namespace lms::api::subsonic
 
                     directoryNode.addArrayChild("child", std::move(childNode));
                 }
-            });
+            }
         }
 
         // list all tracks

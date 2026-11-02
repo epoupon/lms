@@ -19,6 +19,8 @@
 
 #include "Common.hpp"
 
+#include <unordered_map>
+
 #include "database/objects/Directory.hpp"
 #include "database/objects/Medium.hpp"
 
@@ -338,6 +340,68 @@ namespace lms::db::tests
             });
             ASSERT_EQ(visitedDirectories.size(), 1);
             EXPECT_EQ(visitedDirectories[0], dir1.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Directory_findChildReleases)
+    {
+        ScopedDirectory root{ session, "/root" };
+        ScopedDirectory singleRelease{ session, "/root/single" };
+        ScopedDirectory multiRelease{ session, "/root/multi" };
+        ScopedDirectory noRelease{ session, "/root/none" };
+        ScopedDirectory notAChild{ session, "/elsewhere" };
+        ScopedRelease release1{ session, "Release1" };
+        ScopedRelease release2{ session, "Release2" };
+        ScopedRelease release3{ session, "Release3" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+        ScopedTrack trackWithoutRelease{ session };
+        ScopedTrack trackElsewhere{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            singleRelease.get().modify()->setParent(root.get());
+            multiRelease.get().modify()->setParent(root.get());
+            noRelease.get().modify()->setParent(root.get());
+
+            track1.get().modify()->setDirectory(singleRelease.get());
+            track1.get().modify()->setRelease(release1.get());
+
+            track2.get().modify()->setDirectory(multiRelease.get());
+            track2.get().modify()->setRelease(release2.get());
+            track3.get().modify()->setDirectory(multiRelease.get());
+            track3.get().modify()->setRelease(release3.get());
+
+            trackWithoutRelease.get().modify()->setDirectory(noRelease.get());
+            trackElsewhere.get().modify()->setDirectory(notAChild.get());
+            trackElsewhere.get().modify()->setRelease(release1.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto results{ Directory::findChildReleases(session, root.getId()) };
+            ASSERT_EQ(results.size(), 2);
+
+            std::unordered_map<DirectoryId::ValueType, Directory::ChildRelease> byDirectory;
+            for (const Directory::ChildRelease& childRelease : results)
+                byDirectory.emplace(childRelease.directory.getValue(), childRelease);
+
+            const Directory::ChildRelease& single{ byDirectory.at(singleRelease.getId().getValue()) };
+            EXPECT_EQ(single.releaseCount, 1);
+            ASSERT_NE(single.release, Release::pointer{});
+            EXPECT_EQ(single.release->getId(), release1.getId());
+
+            const Directory::ChildRelease& multi{ byDirectory.at(multiRelease.getId().getValue()) };
+            EXPECT_EQ(multi.releaseCount, 2);
+            ASSERT_NE(multi.release, Release::pointer{});
+
+            // a directory whose tracks have no release is not reported at all
+            EXPECT_EQ(byDirectory.count(noRelease.getId().getValue()), 0);
+            // nor is a directory that is not a child of the requested parent
+            EXPECT_EQ(byDirectory.count(notAChild.getId().getValue()), 0);
         }
     }
 } // namespace lms::db::tests
