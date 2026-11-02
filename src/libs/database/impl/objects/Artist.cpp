@@ -483,59 +483,38 @@ AND NOT EXISTS (
         return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT 1 FROM artist").where("id = ?").bind(id)) == 1;
     }
 
-    std::vector<Artist::pointer> Artist::findWithMBIDMatchedNameOrSortNameVariants(Session& session, ArtistId& lastRetrievedArtist, std::optional<Range> range)
+    void Artist::findNameUpdates(Session& session, const std::function<void(const pointer& artist, std::string_view newName, std::string_view newSortName)>& func)
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Artist>>(R"(
-        SELECT a FROM artist a
-        WHERE a.id IN (
-            SELECT artist_id FROM (
-                SELECT artist_id, artist_name, artist_sort_name FROM track_artist_link WHERE artist_mbid_matched = 1
-                UNION ALL
-                SELECT artist_id, artist_name, artist_sort_name FROM release_artist_link WHERE artist_mbid_matched = 1
-            ) links
-            GROUP BY artist_id
-            HAVING COUNT(DISTINCT artist_name) > 1 OR COUNT(DISTINCT NULLIF(artist_sort_name, '')) > 1
-        )
-        AND a.id > ?
-    )")
-                        .bind(lastRetrievedArtist) };
+        // Source priority: artist info files, MBID-matched release then track links, other release then track links; then the most recent, then the last created
+        // Only artists with an MBID get renamed: the others are identified by their name
+        // Correlated subqueries served by the artist_id/release_id indexes: automatic indexes are disabled, joins on derived tables would be nested scans
+        const std::string sources{ R"(
+            SELECT a_i.name AS name, a_i.sort_name AS sort_name, CASE WHEN a_i.mbid_matched THEN 0 ELSE 1 END AS priority, NULL AS date, a_i.id AS id
+            FROM artist_info a_i WHERE a_i.artist_id = a_n.id
+            UNION ALL
+            SELECT r_a_l.artist_name, r_a_l.artist_sort_name, CASE WHEN r_a_l.artist_mbid_matched THEN 2 ELSE 4 END, (SELECT MAX(COALESCE(t.original_date, t.date)) FROM track t WHERE t.release_id = r_a_l.release_id), r_a_l.id
+            FROM release_artist_link r_a_l WHERE r_a_l.artist_id = a_n.id
+            UNION ALL
+            SELECT t_a_l.artist_name, t_a_l.artist_sort_name, CASE WHEN t_a_l.artist_mbid_matched THEN 3 ELSE 5 END, COALESCE(t.original_date, t.date), t_a_l.id
+            FROM track_artist_link t_a_l JOIN track t ON t.id = t_a_l.track_id WHERE t_a_l.artist_id = a_n.id)" };
+        const std::string bestSourceFirst{ " ORDER BY s.priority, s.date DESC, s.id DESC LIMIT 1" };
 
-        auto results{ utils::execRangeQuery<Artist::pointer>(query, range) };
+        auto query{ session.getDboSession()->query<std::tuple<Wt::Dbo::ptr<Artist>, std::string, std::string>>(
+            "SELECT a, n.name, n.sort_name FROM ("
+            " SELECT a_n.id AS artist_id,"
+            " CASE WHEN a_n.mbid IS NULL THEN a_n.name ELSE COALESCE((SELECT s.name FROM ("
+            + sources + ") s" + bestSourceFirst + "), a_n.name) END AS name,"
+                                                  " COALESCE((SELECT s.sort_name FROM ("
+            + sources + ") s WHERE s.sort_name <> ''" + bestSourceFirst + "), '') AS sort_name"
+                                                                          " FROM artist a_n) n"
+                                                                          " JOIN artist a ON a.id = n.artist_id"
+                                                                          " WHERE a.name <> n.name OR a.sort_name <> n.sort_name") };
 
-        if (!results.empty())
-            lastRetrievedArtist = results.back()->getId();
-
-        return results;
-    }
-
-    std::vector<Artist::pointer> Artist::findWithNonMBIDSortNameVariants(Session& session, ArtistId& lastRetrievedArtist, std::optional<Range> range)
-    {
-        session.checkReadTransaction();
-
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Artist>>(R"(
-        SELECT a FROM artist a
-        WHERE a.mbid IS NULL
-        AND a.id IN (
-            SELECT artist_id FROM (
-                SELECT artist_id, artist_sort_name FROM track_artist_link WHERE artist_sort_name <> ''
-                UNION ALL
-                SELECT artist_id, artist_sort_name FROM release_artist_link WHERE artist_sort_name <> ''
-            ) links
-            GROUP BY artist_id
-            HAVING COUNT(DISTINCT artist_sort_name) > 1
-        )
-        AND a.id > ?
-    )")
-                        .bind(lastRetrievedArtist) };
-
-        auto results{ utils::execRangeQuery<Artist::pointer>(query, range) };
-
-        if (!results.empty())
-            lastRetrievedArtist = results.back()->getId();
-
-        return results;
+        utils::forEachQueryResult(query, [&](const auto& res) {
+            func(std::get<0>(res), std::get<1>(res), std::get<2>(res));
+        });
     }
 
     void Artist::updatePreferredArtwork(Session& session, ArtistId artistId, ArtworkId artworkId)

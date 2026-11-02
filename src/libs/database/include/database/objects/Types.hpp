@@ -116,12 +116,6 @@ namespace lms::db
         AudioSimilarity = 3,
     };
 
-    enum class ReleaseArtistLinkSortMethod
-    {
-        None,
-        OriginalDateDesc,
-    };
-
     enum class ReleaseSortMethod
     {
         None,
@@ -143,12 +137,6 @@ namespace lms::db
     {
         None,
         Name,
-    };
-
-    enum class TrackArtistLinkSortMethod
-    {
-        None,
-        OriginalDateDesc,
     };
 
     enum class TrackEmbeddedImageSortMethod

@@ -31,7 +31,6 @@
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
-#include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
 
@@ -46,64 +45,10 @@ namespace lms::db
     class TrackArtistLink final : public Object<TrackArtistLink, TrackArtistLinkId>
     {
     public:
-        struct FindParameters
-        {
-            std::optional<Range> range;
-            std::optional<TrackArtistLinkType> linkType; // if set, only artists that have produced at least one track with this link type
-            ArtistId artist;                             // if set, links involved with this artist
-            ReleaseId release;                           // if set, artists involved in this release
-            TrackId track;                               // if set, artists involved in this track
-            std::optional<bool> mbidMatched;
-            bool sortNameNotEmpty{}; // if set, only links whose artist sort name is not empty
-            TrackArtistLinkSortMethod sortMethod{ TrackArtistLinkSortMethod::None };
-
-            FindParameters& setRange(std::optional<Range> _range)
-            {
-                range = _range;
-                return *this;
-            }
-            FindParameters& setLinkType(std::optional<TrackArtistLinkType> _linkType)
-            {
-                linkType = _linkType;
-                return *this;
-            }
-            FindParameters& setArtist(ArtistId _artist)
-            {
-                artist = _artist;
-                return *this;
-            }
-            FindParameters& setRelease(ReleaseId _release)
-            {
-                release = _release;
-                return *this;
-            }
-            FindParameters& setTrack(TrackId _track)
-            {
-                track = _track;
-                return *this;
-            }
-            FindParameters& setMBIDMatched(std::optional<bool> _mbidMatched)
-            {
-                mbidMatched = _mbidMatched;
-                return *this;
-            }
-            FindParameters& setSortNameNotEmpty(bool _sortNameNotEmpty)
-            {
-                sortNameNotEmpty = _sortNameNotEmpty;
-                return *this;
-            }
-            FindParameters& setSortMethod(TrackArtistLinkSortMethod _method)
-            {
-                sortMethod = _method;
-                return *this;
-            }
-        };
-
         TrackArtistLink() = default;
         TrackArtistLink(const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched);
 
         static void find(Session& session, TrackId trackId, const std::function<void(const pointer&, const ObjectPtr<Artist>&)>& func);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
         static pointer find(Session& session, TrackArtistLinkId linkId);
         static std::size_t getCount(Session& session);
         static core::EnumSet<TrackArtistLinkType> findUsedTypes(Session& session, ArtistId _artist);

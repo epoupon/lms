@@ -2,6 +2,7 @@ include(GoogleTest)
 
 add_executable(test-scanner
 	ArtistInfo.cpp
+	ArtistNames.cpp
 	AudioFileUtils.cpp
 	IgnoreRules.cpp
 	Lyrics.cpp
@@ -18,6 +19,7 @@ target_include_directories(test-scanner PRIVATE
 target_link_libraries(test-scanner PRIVATE
 	lmsscanner
 	lmsaudio
+	lmsdatabasetestutils
 	GTest::GTest
 	)
 

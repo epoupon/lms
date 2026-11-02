@@ -53,8 +53,8 @@ _LMS_ supports an Artist information folder to manage metadata and images for ar
 
 The folder must follow a structure defined by Kodi, as detailed [here](https://kodi.wiki/view/Artist_information_folder). `artist.nfo` files are used to define additional artist information such as biography, sort name, and MusicBrainz ArtistID. See the format [here](https://kodi.wiki/view/NFO_files/Artists).
 
-The canonical artist name used by _LMS_ is the one specified in the `artist.nfo` file; If an `artist.nfo` exists but does not provide a name, the name of the containing folder is used.
-If no artist info file is provided, _LMS_ will pick the artist name found on the latest release.
+The canonical artist name used by _LMS_ is the one specified in the `artist.nfo` file; If an `artist.nfo` exists but does not provide a name, the name of the containing folder is used. The same goes for the sort name, when the `artist.nfo` file provides one.
+Otherwise, _LMS_ picks the artist name and sort name found in the most recent album artist tags, then in the most recent artist tags of any kind, tags matched using a MusicBrainz ArtistID first. Artists without a MusicBrainz ArtistID keep their name, as it is what identifies them.
 
 ## Excluding files from scan
 Place a `.lmsignore` file at the root of a media library to exclude files or directories from scanning.

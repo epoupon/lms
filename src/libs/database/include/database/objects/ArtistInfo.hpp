@@ -76,8 +76,8 @@ namespace lms::db
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
         void setDirectory(ObjectPtr<Directory> directory);
         void setArtist(ObjectPtr<Artist> artist);
-        void setName(std::string_view name) { _name = name; }
-        void setSortName(std::string_view sortName) { _sortName = sortName; }
+        void setName(std::string_view name);
+        void setSortName(std::string_view sortName);
         void setType(std::string_view type) { _type = type; }
         void setGender(std::string_view gender) { _gender = gender; }
         void setDisambiguation(std::string_view disambiguation) { _disambiguation = disambiguation; }

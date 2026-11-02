@@ -31,15 +31,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-
-            ReleaseArtistLink::FindParameters params;
-            params.setRelease(release.getId());
-
-            bool visited{};
-            ReleaseArtistLink::find(session, params, [&](const ReleaseArtistLink::pointer&) {
-                visited = true;
-            });
-            EXPECT_FALSE(visited);
+            EXPECT_TRUE(release->getArtistLinks().empty());
         }
 
         {
@@ -52,66 +44,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            ReleaseArtistLink::FindParameters params;
-            params.setRelease(release.getId());
-            params.setMBIDMatched(false);
-
-            bool visited{};
-            ReleaseArtistLink::find(session, params, [&](const ReleaseArtistLink::pointer& link) {
-                visited = true;
-                EXPECT_EQ(link->getArtistId(), artist.getId());
-            });
-            EXPECT_TRUE(visited);
-        }
-    }
-
-    TEST_F(DatabaseFixture, ReleaseArtistLink_findWithSortNameNotEmpty)
-    {
-        ScopedArtist artist{ session, "MyArtist" };
-        ScopedRelease release1{ session, "MyRelease1" };
-        ScopedRelease release2{ session, "MyRelease2" };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            session.create<ReleaseArtistLink>(release1.get(), artist.get(), false);
-            // release2's link has no sort name set at all
-            session.create<ReleaseArtistLink>(release2.get(), artist.get(), false);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            ReleaseArtistLink::FindParameters params;
-            params.setSortNameNotEmpty(true);
-
-            std::vector<ReleaseArtistLink::pointer> links;
-            ReleaseArtistLink::find(session, params, [&](const ReleaseArtistLink::pointer& link) {
-                links.push_back(link);
-            });
-            ASSERT_EQ(links.size(), 0);
-        }
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            ReleaseArtistLink::FindParameters params;
-            ReleaseArtistLink::find(session, params, [&](ReleaseArtistLink::pointer link) {
-                if (link->getRelease()->getId() == release1.getId())
-                    link.modify()->setArtistSortName("MyArtist, Sort");
-            });
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            ReleaseArtistLink::FindParameters params;
-            params.setSortNameNotEmpty(true);
-
-            std::vector<ReleaseArtistLink::pointer> links;
-            ReleaseArtistLink::find(session, params, [&](const ReleaseArtistLink::pointer& link) {
-                links.push_back(link);
-            });
+            const std::vector<ReleaseArtistLink::pointer> links{ release->getArtistLinks() };
             ASSERT_EQ(links.size(), 1);
-            EXPECT_EQ(links[0]->getRelease()->getId(), release1.getId());
+            EXPECT_EQ(links[0]->getArtistId(), artist.getId());
         }
     }
 } // namespace lms::db::tests

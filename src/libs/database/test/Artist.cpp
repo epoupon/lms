@@ -19,6 +19,7 @@
 
 #include "Common.hpp"
 
+#include "database/objects/ArtistInfo.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
@@ -560,7 +561,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             std::vector<TrackArtistLink::pointer> visitedLinks;
-            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const TrackArtistLink::pointer& link) {
+            track->visitArtistLinks([&](const TrackArtistLink::pointer& link) {
                 visitedLinks.push_back(link);
             });
             ASSERT_EQ(visitedLinks.size(), 3);
@@ -640,24 +641,12 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             std::vector<TrackArtistLink::pointer> visitedLinks;
-            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const TrackArtistLink::pointer& link) {
+            track->visitArtistLinks([&](const TrackArtistLink::pointer& link) {
                 visitedLinks.push_back(link);
             });
             ASSERT_EQ(visitedLinks.size(), 2);
             EXPECT_EQ(visitedLinks[0]->getArtist()->getId(), artist1.getId());
             EXPECT_EQ(visitedLinks[1]->getArtist()->getId(), artist2.getId());
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            std::vector<TrackArtistLink::pointer> visitedLinks;
-            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setArtist(artist2.getId()), [&](const TrackArtistLink::pointer& link) {
-                visitedLinks.push_back(link);
-            });
-            ASSERT_EQ(visitedLinks.size(), 1);
-            EXPECT_EQ(visitedLinks[0]->getArtist()->getId(), artist2.getId());
-            EXPECT_EQ(visitedLinks[0]->getTrack()->getId(), track.getId());
         }
 
         {
@@ -1330,232 +1319,299 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Artist_findWithMBIDMatchedNameOrSortNameVariants_name)
+    namespace
     {
-        ScopedArtist artistA{ session, "ArtistA" };
-        ScopedArtist artistB{ session, "ArtistB" };
+        const std::optional<core::UUID> artistMBID{ core::UUID::fromString("38811c52-85e3-4e2e-3319-ab7d9f2cfa5b") };
 
-        ScopedTrack trackA1{ session };
-        ScopedTrack trackA2{ session };
-        ScopedTrack trackB1{ session };
-
+        struct NameUpdate
         {
-            auto transaction{ session.createWriteTransaction() };
+            ArtistId artist;
+            std::string name;
+            std::string sortName;
+        };
 
-            {
-                auto link{ session.create<TrackArtistLink>(trackA1.get(), artistA.get(), TrackArtistLinkType::Artist, true) };
-                link.modify()->setArtistName("ArtistA");
-            }
-            {
-                auto link{ session.create<TrackArtistLink>(trackA2.get(), artistA.get(), TrackArtistLinkType::Artist, true) };
-                link.modify()->setArtistName("AlternateArtistA");
-            }
-
-            {
-                auto link{ session.create<TrackArtistLink>(trackB1.get(), artistB.get(), TrackArtistLinkType::Artist, true) };
-                link.modify()->setArtistName("ArtistB");
-            }
-        }
-
+        std::vector<NameUpdate> findNameUpdates(Session& session)
         {
             auto transaction{ session.createReadTransaction() };
 
-            ArtistId lastRetrievedArtist;
-            const auto results{ Artist::findWithMBIDMatchedNameOrSortNameVariants(session, lastRetrievedArtist) };
-
-            ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0]->getId(), artistA.getId());
-            EXPECT_EQ(lastRetrievedArtist, artistA.getId());
+            std::vector<NameUpdate> updates;
+            Artist::findNameUpdates(session, [&](const Artist::pointer& artist, std::string_view name, std::string_view sortName) {
+                updates.push_back(NameUpdate{ .artist = artist->getId(), .name = std::string{ name }, .sortName = std::string{ sortName } });
+            });
+            return updates;
         }
-    }
 
-    TEST_F(DatabaseFixture, Artist_findWithMBIDMatchedNameOrSortNameVariants_sortName)
+        void createArtistInfo(Session& session, const Artist::pointer& artist, bool mbidMatched, std::string_view name, std::string_view sortName)
+        {
+            ArtistInfo::pointer artistInfo{ session.create<ArtistInfo>() };
+            artistInfo.modify()->setArtist(artist);
+            artistInfo.modify()->setMBIDMatched(mbidMatched);
+            artistInfo.modify()->setName(name);
+            artistInfo.modify()->setSortName(sortName);
+        }
+
+        void createReleaseArtistLink(Session& session, const Release::pointer& release, const Artist::pointer& artist, bool mbidMatched, std::string_view name, std::string_view sortName)
+        {
+            ReleaseArtistLink::pointer link{ session.create<ReleaseArtistLink>(release, artist, mbidMatched) };
+            link.modify()->setArtistName(name);
+            link.modify()->setArtistSortName(sortName);
+        }
+
+        void createTrackArtistLink(Session& session, const Track::pointer& track, const Artist::pointer& artist, bool mbidMatched, std::string_view name, std::string_view sortName)
+        {
+            TrackArtistLink::pointer link{ session.create<TrackArtistLink>(track, artist, TrackArtistLinkType::Artist, mbidMatched) };
+            link.modify()->setArtistName(name);
+            link.modify()->setArtistSortName(sortName);
+        }
+    } // namespace
+
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_upToDate)
     {
-        ScopedArtist artistA{ session, "ArtistA" };
-        ScopedArtist artistB{ session, "ArtistB" };
-
-        ScopedTrack trackA1{ session };
-        ScopedTrack trackA2{ session };
-        ScopedTrack trackB1{ session };
+        ScopedArtist artist{ session, "Artist", artistMBID };
+        ScopedTrack track{ session };
 
         {
             auto transaction{ session.createWriteTransaction() };
-
-            {
-                auto link{ session.create<TrackArtistLink>(trackA1.get(), artistA.get(), TrackArtistLinkType::Artist, true) };
-                link.modify()->setArtistName("ArtistA");
-                link.modify()->setArtistSortName("ArtistA");
-            }
-            {
-                auto link{ session.create<TrackArtistLink>(trackA2.get(), artistA.get(), TrackArtistLinkType::Artist, true) };
-                link.modify()->setArtistName("ArtistA");
-                link.modify()->setArtistSortName("AlternateSortArtistA");
-            }
-
-            {
-                auto link{ session.create<TrackArtistLink>(trackB1.get(), artistB.get(), TrackArtistLinkType::Artist, true) };
-                link.modify()->setArtistName("ArtistB");
-                link.modify()->setArtistSortName("ArtistB");
-            }
+            artist.get().modify()->setSortName("Artist, Sort");
+            createTrackArtistLink(session, track.get(), artist.get(), true, "Artist", "Artist, Sort");
         }
 
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            ArtistId lastRetrievedArtist;
-            const auto results{ Artist::findWithMBIDMatchedNameOrSortNameVariants(session, lastRetrievedArtist) };
-
-            ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0]->getId(), artistA.getId());
-            EXPECT_EQ(lastRetrievedArtist, artistA.getId());
-        }
+        EXPECT_TRUE(findNameUpdates(session).empty());
     }
 
-    TEST_F(DatabaseFixture, Artist_findWithMBIDMatchedNameOrSortNameVariants_emptySortNameIgnored)
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_noSource)
     {
-        ScopedArtist artist{ session, "ArtistA" };
+        ScopedArtist artistWithSortName{ session, "Artist1" };
+        ScopedArtist artistWithoutSortName{ session, "Artist2" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            artistWithSortName.get().modify()->setSortName("Artist1, Stale");
+        }
+
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].artist, artistWithSortName.getId());
+        EXPECT_EQ(updates[0].name, "Artist1");
+        EXPECT_EQ(updates[0].sortName, "");
+    }
+
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_artistInfoFirst)
+    {
+        ScopedArtist artist{ session, "Artist", artistMBID };
+        ScopedRelease release{ session, "Release" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            createArtistInfo(session, artist.get(), true, "Info Artist", "Info, Sort");
+            createReleaseArtistLink(session, release.get(), artist.get(), true, "Artist", "Release, Sort");
+        }
+
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].name, "Info Artist");
+        EXPECT_EQ(updates[0].sortName, "Info, Sort");
+    }
+
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_artistInfoWithoutSortName)
+    {
+        ScopedArtist artist{ session, "Artist", artistMBID };
+        ScopedRelease release{ session, "Release" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            createArtistInfo(session, artist.get(), true, "Info Artist", "");
+            createReleaseArtistLink(session, release.get(), artist.get(), true, "Artist", "Release, Sort");
+        }
+
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].name, "Info Artist");
+        EXPECT_EQ(updates[0].sortName, "Release, Sort");
+    }
+
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_mbidMatchedArtistInfoFirst)
+    {
+        ScopedArtist artist{ session, "Artist", artistMBID };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            createArtistInfo(session, artist.get(), true, "Artist", "Matched, Sort");
+            createArtistInfo(session, artist.get(), false, "Artist", "Other, Sort");
+        }
+
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].sortName, "Matched, Sort");
+    }
+
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_mbidMatchedReleaseBeforeMBIDMatchedTrack)
+    {
+        ScopedArtist artist{ session, "Artist", artistMBID };
+        ScopedRelease release{ session, "Release" };
+        ScopedTrack track{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setDate(core::PartialDateTime{ 2020 }); // more recent, but a lower source
+            createReleaseArtistLink(session, release.get(), artist.get(), true, "Artist", "Release, Sort");
+            createTrackArtistLink(session, track.get(), artist.get(), true, "Artist", "Track, Sort");
+        }
+
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].sortName, "Release, Sort");
+    }
+
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_mbidMatchedTrackBeforeOtherRelease)
+    {
+        ScopedArtist artist{ session, "Artist", artistMBID };
+        ScopedRelease release{ session, "Release" };
+        ScopedTrack track{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            createReleaseArtistLink(session, release.get(), artist.get(), false, "Artist", "Release, Sort");
+            createTrackArtistLink(session, track.get(), artist.get(), true, "Artist", "Track, Sort");
+        }
+
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].sortName, "Track, Sort");
+    }
+
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_otherReleaseBeforeOtherTrack)
+    {
+        ScopedArtist artist{ session, "Artist" };
+        ScopedRelease release{ session, "Release" };
+        ScopedTrack track{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            createReleaseArtistLink(session, release.get(), artist.get(), false, "Artist", "Release, Sort");
+            createTrackArtistLink(session, track.get(), artist.get(), false, "Artist", "Track, Sort");
+        }
+
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].sortName, "Release, Sort");
+    }
+
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_mostRecentTrackFirst)
+    {
+        ScopedArtist artist{ session, "Artist", artistMBID };
+        ScopedTrack recentTrack{ session };
+        ScopedTrack oldTrack{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            recentTrack.get().modify()->setDate(core::PartialDateTime{ 2010 });
+            oldTrack.get().modify()->setDate(core::PartialDateTime{ 2000 });
+            createTrackArtistLink(session, recentTrack.get(), artist.get(), true, "Recent Artist", "Recent, Sort");
+            createTrackArtistLink(session, oldTrack.get(), artist.get(), true, "Old Artist", "Old, Sort");
+        }
+
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].name, "Recent Artist");
+        EXPECT_EQ(updates[0].sortName, "Recent, Sort");
+    }
+
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_trackOriginalDateFirst)
+    {
+        ScopedArtist artist{ session, "Artist", artistMBID };
+        ScopedTrack reissuedTrack{ session };
+        ScopedTrack track{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            reissuedTrack.get().modify()->setDate(core::PartialDateTime{ 2020 });
+            reissuedTrack.get().modify()->setOriginalDate(core::PartialDateTime{ 1990 });
+            track.get().modify()->setDate(core::PartialDateTime{ 2000 });
+            createTrackArtistLink(session, track.get(), artist.get(), true, "Artist", "Track, Sort");
+            createTrackArtistLink(session, reissuedTrack.get(), artist.get(), true, "Artist", "Reissued, Sort");
+        }
+
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].sortName, "Track, Sort");
+    }
+
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_releaseDatedByMostRecentTrack)
+    {
+        ScopedArtist artist{ session, "Artist", artistMBID };
+        ScopedRelease release1{ session, "Release1" };
+        ScopedRelease release2{ session, "Release2" };
+        ScopedTrack release1OldTrack{ session };
+        ScopedTrack release1RecentTrack{ session };
+        ScopedTrack release2Track{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release1OldTrack.get().modify()->setRelease(release1.get());
+            release1OldTrack.get().modify()->setDate(core::PartialDateTime{ 2000 });
+            release1RecentTrack.get().modify()->setRelease(release1.get());
+            release1RecentTrack.get().modify()->setDate(core::PartialDateTime{ 2015 });
+            release2Track.get().modify()->setRelease(release2.get());
+            release2Track.get().modify()->setDate(core::PartialDateTime{ 2010 });
+            createReleaseArtistLink(session, release1.get(), artist.get(), true, "Artist", "Release1, Sort");
+            createReleaseArtistLink(session, release2.get(), artist.get(), true, "Artist", "Release2, Sort");
+        }
+
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].sortName, "Release1, Sort");
+    }
+
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_sameDateLastCreatedFirst)
+    {
+        ScopedArtist artist{ session, "Artist", artistMBID };
         ScopedTrack track1{ session };
         ScopedTrack track2{ session };
 
         {
             auto transaction{ session.createWriteTransaction() };
-
-            {
-                auto link{ session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Artist, true) };
-                link.modify()->setArtistName("ArtistA");
-                link.modify()->setArtistSortName("ArtistA, Sort");
-            }
-            {
-                // no sort name tag on this track: must not count as a variant against the one above
-                auto link{ session.create<TrackArtistLink>(track2.get(), artist.get(), TrackArtistLinkType::Artist, true) };
-                link.modify()->setArtistName("ArtistA");
-            }
+            track1.get().modify()->setDate(core::PartialDateTime{ 2000 });
+            track2.get().modify()->setDate(core::PartialDateTime{ 2000 });
+            createTrackArtistLink(session, track1.get(), artist.get(), true, "Artist", "First, Sort");
+            createTrackArtistLink(session, track2.get(), artist.get(), true, "Artist", "Last, Sort");
         }
 
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            ArtistId lastRetrievedArtist;
-            const auto results{ Artist::findWithMBIDMatchedNameOrSortNameVariants(session, lastRetrievedArtist) };
-
-            ASSERT_EQ(results.size(), 0);
-        }
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].sortName, "Last, Sort");
     }
 
-    TEST_F(DatabaseFixture, Artist_findWithMBIDMatchedNameOrSortNameVariants_releaseOnly)
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_sourceWithoutSortNameSkippedForSortNameOnly)
     {
-        ScopedArtist artist{ session, "ArtistA" };
-        ScopedRelease release1{ session, "Release1" };
-        ScopedRelease release2{ session, "Release2" };
+        ScopedArtist artist{ session, "Artist", artistMBID };
+        ScopedRelease release{ session, "Release" };
+        ScopedTrack track{ session };
 
         {
             auto transaction{ session.createWriteTransaction() };
-
-            {
-                auto link{ session.create<ReleaseArtistLink>(release1.get(), artist.get(), true) };
-                link.modify()->setArtistName("ArtistA");
-            }
-            {
-                auto link{ session.create<ReleaseArtistLink>(release2.get(), artist.get(), true) };
-                link.modify()->setArtistName("AlternateArtistA");
-            }
+            createReleaseArtistLink(session, release.get(), artist.get(), true, "Release Artist", "");
+            createTrackArtistLink(session, track.get(), artist.get(), true, "Track Artist", "Track, Sort");
         }
 
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            ArtistId lastRetrievedArtist;
-            const auto results{ Artist::findWithMBIDMatchedNameOrSortNameVariants(session, lastRetrievedArtist) };
-
-            ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0]->getId(), artist.getId());
-        }
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].name, "Release Artist");
+        EXPECT_EQ(updates[0].sortName, "Track, Sort");
     }
 
-    TEST_F(DatabaseFixture, Artist_findWithNonMBIDSortNameVariants)
+    TEST_F(DatabaseFixture, Artist_findNameUpdates_artistWithoutMBIDNeverRenamed)
     {
-        ScopedArtist artistA{ session, "ArtistA" };
-        ScopedArtist artistB{ session, "ArtistB" };
-        ScopedArtist artistC{ session, "ArtistC", core::UUID::fromString("38811c52-85e3-4e2e-3319-ab7d9f2cfa5b") };
-
-        ScopedTrack trackA1{ session };
-        ScopedTrack trackA2{ session };
-        ScopedTrack trackB1{ session };
-        ScopedTrack trackC1{ session };
-        ScopedTrack trackC2{ session };
+        ScopedArtist artist{ session, "Artist" };
 
         {
             auto transaction{ session.createWriteTransaction() };
-
-            {
-                auto link{ session.create<TrackArtistLink>(trackA1.get(), artistA.get(), TrackArtistLinkType::Artist, false) };
-                link.modify()->setArtistName("ArtistA");
-                link.modify()->setArtistSortName("ArtistA, Sort1");
-            }
-            {
-                auto link{ session.create<TrackArtistLink>(trackA2.get(), artistA.get(), TrackArtistLinkType::Artist, false) };
-                link.modify()->setArtistName("ArtistA");
-                link.modify()->setArtistSortName("ArtistA, Sort2");
-            }
-            {
-                auto link{ session.create<TrackArtistLink>(trackB1.get(), artistB.get(), TrackArtistLinkType::Artist, false) };
-                link.modify()->setArtistName("ArtistB");
-                link.modify()->setArtistSortName("ArtistB, Sort");
-            }
-            // artistC has an MBID: even with conflicting sort names, it must not be selected by this non-MBID query
-            {
-                auto link{ session.create<TrackArtistLink>(trackC1.get(), artistC.get(), TrackArtistLinkType::Artist, true) };
-                link.modify()->setArtistName("ArtistC");
-                link.modify()->setArtistSortName("ArtistC, Sort1");
-            }
-            {
-                auto link{ session.create<TrackArtistLink>(trackC2.get(), artistC.get(), TrackArtistLinkType::Artist, true) };
-                link.modify()->setArtistName("ArtistC");
-                link.modify()->setArtistSortName("ArtistC, Sort2");
-            }
+            createArtistInfo(session, artist.get(), false, "Info Artist", "Info, Sort");
         }
 
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            ArtistId lastRetrievedArtist;
-            const auto results{ Artist::findWithNonMBIDSortNameVariants(session, lastRetrievedArtist) };
-
-            ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0]->getId(), artistA.getId());
-            EXPECT_EQ(lastRetrievedArtist, artistA.getId());
-        }
-    }
-
-    TEST_F(DatabaseFixture, Artist_findWithNonMBIDSortNameVariants_releaseOnly)
-    {
-        ScopedArtist artist{ session, "ArtistA" };
-        ScopedRelease release1{ session, "Release1" };
-        ScopedRelease release2{ session, "Release2" };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-
-            {
-                auto link{ session.create<ReleaseArtistLink>(release1.get(), artist.get(), false) };
-                link.modify()->setArtistName("ArtistA");
-                link.modify()->setArtistSortName("ArtistA, Sort1");
-            }
-            {
-                auto link{ session.create<ReleaseArtistLink>(release2.get(), artist.get(), false) };
-                link.modify()->setArtistName("ArtistA");
-                link.modify()->setArtistSortName("ArtistA, Sort2");
-            }
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            ArtistId lastRetrievedArtist;
-            const auto results{ Artist::findWithNonMBIDSortNameVariants(session, lastRetrievedArtist) };
-
-            ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0]->getId(), artist.getId());
-        }
+        const std::vector<NameUpdate> updates{ findNameUpdates(session) };
+        ASSERT_EQ(updates.size(), 1);
+        EXPECT_EQ(updates[0].name, "Artist");
+        EXPECT_EQ(updates[0].sortName, "Info, Sort");
     }
 } // namespace lms::db::tests

@@ -39,51 +39,6 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::TrackArtistLink)
 
 namespace lms::db
 {
-    namespace
-    {
-        Wt::Dbo::Query<Wt::Dbo::ptr<TrackArtistLink>> createQuery(Session& session, const TrackArtistLink::FindParameters& params)
-        {
-            session.checkReadTransaction();
-
-            auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
-
-            if (params.linkType)
-                query.where("t_a_l.type = ?").bind(*params.linkType);
-
-            if (params.track.isValid())
-                query.where("t_a_l.track_id = ?").bind(params.track);
-
-            if (params.artist.isValid())
-                query.where("t_a_l.artist_id = ?").bind(params.artist);
-
-            if (params.release.isValid()
-                || params.sortMethod == TrackArtistLinkSortMethod::OriginalDateDesc)
-            {
-                query.join("track t ON t.id = t_a_l.track_id");
-
-                if (params.release.isValid())
-                    query.where("t.release_id = ?").bind(params.release);
-            }
-
-            if (params.mbidMatched)
-                query.where("t_a_l.artist_mbid_matched = ?").bind(*params.mbidMatched);
-
-            if (params.sortNameNotEmpty)
-                query.where("t_a_l.artist_sort_name <> ''");
-
-            switch (params.sortMethod)
-            {
-            case TrackArtistLinkSortMethod::None:
-                break;
-            case TrackArtistLinkSortMethod::OriginalDateDesc:
-                query.orderBy("COALESCE(t.original_date, t.date) DESC");
-                break;
-            }
-
-            return query;
-        }
-    } // namespace
-
     TrackArtistLink::TrackArtistLink(const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched)
         : _type{ type }
         , _subType{ subType }
@@ -129,12 +84,6 @@ namespace lms::db
         utils::forEachQueryResult(query, [&](const ResultType& result) {
             func(std::get<Wt::Dbo::ptr<TrackArtistLink>>(result), std::get<Wt::Dbo::ptr<Artist>>(result));
         });
-    }
-
-    void TrackArtistLink::find(Session& session, const FindParameters& params, const std::function<void(const TrackArtistLink::pointer&)>& func)
-    {
-        auto query{ createQuery(session, params) };
-        utils::forEachQueryRangeResult(query, params.range, func);
     }
 
     core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session, ArtistId artistId)

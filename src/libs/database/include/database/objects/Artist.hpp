@@ -131,8 +131,7 @@ namespace lms::db
         static std::vector<ArtistId> findIds(Session& session, const FindParameters& params);
         static std::vector<ArtistId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // No track related
         static bool exists(Session& session, ArtistId id);
-        static std::vector<pointer> findWithMBIDMatchedNameOrSortNameVariants(Session& session, ArtistId& lastRetrievedArtist, std::optional<Range> range = std::nullopt);
-        static std::vector<pointer> findWithNonMBIDSortNameVariants(Session& session, ArtistId& lastRetrievedArtist, std::optional<Range> range = std::nullopt);
+        static void findNameUpdates(Session& session, const std::function<void(const pointer& artist, std::string_view newName, std::string_view newSortName)>& func);
 
         // Updates
         static void updatePreferredArtwork(Session& session, ArtistId artistId, ArtworkId artworkId);
