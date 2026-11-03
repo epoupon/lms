@@ -69,6 +69,8 @@ namespace lms::db
                 LMS_LOG(DB, DEBUG, "Setting per-connection settings...");
                 executeSql("PRAGMA journal_mode=WAL");
                 executeSql("PRAGMA synchronous=normal");
+                executeSql("PRAGMA temp_store=MEMORY");
+                executeSql("PRAGMA automatic_index=0");
                 LMS_LOG(DB, DEBUG, "Setting per-connection settings done!");
             }
 
@@ -228,10 +230,6 @@ namespace lms::db
         connectionPool->setTimeout(std::chrono::seconds{ 10 });
 
         _connectionPool = std::move(connectionPool);
-
-        executeSql("PRAGMA temp_store=MEMORY");
-        executeSql("PRAGMA cache_size=-8000");
-        executeSql("PRAGMA automatic_index=0");
 
         logPageSize();
         logCacheSize();
