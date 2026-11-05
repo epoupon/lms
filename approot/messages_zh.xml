@@ -219,6 +219,11 @@
 <message id="Lms.Explore.download">下载</message>
 <message id="Lms.Explore.duration">时长</message>
 <message id="Lms.Explore.filter-added">过滤器已添加</message>
+<message id="Lms.Explore.filter-none-of">不是以下之一</message>
+<message id="Lms.Explore.filter-not">排除 {1}</message>
+<message id="Lms.Explore.filter-one-of">是以下之一</message>
+<message id="Lms.Explore.filter-or">{1} 或 {2}</message>
+<message id="Lms.Explore.filter-tooltip">{1}：{2}</message>
 <message id="Lms.Explore.filters">过滤器</message>
 <message id="Lms.Explore.genre">流派</message>
 <message id="Lms.Explore.grouping">分组</message>

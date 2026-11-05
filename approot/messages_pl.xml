@@ -246,6 +246,11 @@
 <message id="Lms.Explore.download">Pobierz</message>
 <message id="Lms.Explore.duration">Długość</message>
 <message id="Lms.Explore.filter-added">Filtr dodany</message>
+<message id="Lms.Explore.filter-none-of">nie jest jednym z</message>
+<message id="Lms.Explore.filter-not">oprócz {1}</message>
+<message id="Lms.Explore.filter-one-of">jest jednym z</message>
+<message id="Lms.Explore.filter-or">{1} lub {2}</message>
+<message id="Lms.Explore.filter-tooltip">{1}: {2}</message>
 <message id="Lms.Explore.filters">Filtry</message>
 <message id="Lms.Explore.genre">
 	<plural case="0">Gatunek</plural>

@@ -35,6 +35,14 @@ namespace lms::db::tests
     using ScopedMedium = ScopedEntity<db::Medium>;
     using ScopedReleaseType = ScopedEntity<db::ReleaseType>;
 
+    namespace
+    {
+        FilterExpr yearBetween(IntegerField field, std::int64_t min, std::int64_t max)
+        {
+            return FilterExpr::condition(IntegerCondition{ field, FilterOperator::Between, FilterRange<std::int64_t>{ min, max } });
+        }
+    } // namespace
+
     TEST_F(DatabaseFixture, Release)
     {
         {
@@ -339,13 +347,13 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId()))) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setFilter(FilterExpr::equal(library->getId()))) };
             ASSERT_EQ(releases.size(), 1);
             EXPECT_EQ(releases.front(), release.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setFilters(Filters{}.setMediaLibrary(otherLibrary->getId()))) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setFilter(FilterExpr::equal(otherLibrary->getId()))) };
             EXPECT_EQ(releases.size(), 0);
         }
     }
@@ -412,6 +420,41 @@ namespace lms::db::tests
                 const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "MyRelease%Foo" })) };
                 ASSERT_EQ(releases.size(), 1);
                 EXPECT_EQ(releases[0], release4.getId());
+            }
+        }
+    }
+
+    TEST_F(DatabaseFixture, MulitpleReleaseSearchByNameWithBackslash)
+    {
+        ScopedRelease release1{ session, R"(AC\DC)" };
+        ScopedRelease release2{ session, "ACDC" };
+        ScopedRelease release3{ session, R"(MyRelease\)" };
+
+        // filters does not work on orphans
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            track1.get().modify()->setRelease(release1.get());
+            track2.get().modify()->setRelease(release2.get());
+            track3.get().modify()->setRelease(release3.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            {
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ R"(AC\DC)" })) };
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases[0], release1.getId());
+            }
+            {
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ R"(MyRelease\)" })) };
+                ASSERT_EQ(releases.size(), 1);
+                EXPECT_EQ(releases[0], release3.getId());
             }
         }
     }
@@ -633,7 +676,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ -3000, 3000 })) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setFilter(yearBetween(IntegerField::Year, -3000, 3000))) };
             EXPECT_EQ(releases.size(), 0);
         }
 
@@ -660,15 +703,15 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1950, 2000 })) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setFilter(yearBetween(IntegerField::Year, 1950, 2000))) };
             ASSERT_EQ(releases.size(), 1);
             EXPECT_EQ(releases.front(), release1.getId());
 
-            releases = Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1994, 1994 }));
+            releases = Release::findIds(session, Release::FindParameters{}.setFilter(yearBetween(IntegerField::Year, 1994, 1994)));
             ASSERT_EQ(releases.size(), 1);
             EXPECT_EQ(releases.front(), release1.getId());
 
-            releases = Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1993, 1993 }));
+            releases = Release::findIds(session, Release::FindParameters{}.setFilter(yearBetween(IntegerField::Year, 1993, 1993)));
             ASSERT_EQ(releases.size(), 0);
         }
     }
@@ -689,7 +732,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters{}.setOriginalDateRange(YearRange{ -3000, 3000 })) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setFilter(yearBetween(IntegerField::OriginalYear, -3000, 3000))) };
             EXPECT_EQ(releases.size(), 0);
         }
 
@@ -714,15 +757,15 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases = Release::findIds(session, Release::FindParameters{}.setOriginalDateRange(YearRange{ 1950, 2000 }));
+            auto releases = Release::findIds(session, Release::FindParameters{}.setFilter(yearBetween(IntegerField::OriginalYear, 1950, 2000)));
             ASSERT_EQ(releases.size(), 1);
             EXPECT_EQ(releases.front(), release1.getId());
 
-            releases = Release::findIds(session, Release::FindParameters{}.setOriginalDateRange(YearRange{ 1993, 1993 }));
+            releases = Release::findIds(session, Release::FindParameters{}.setFilter(yearBetween(IntegerField::OriginalYear, 1993, 1993)));
             ASSERT_EQ(releases.size(), 1);
             EXPECT_EQ(releases.front(), release1.getId());
 
-            releases = Release::findIds(session, Release::FindParameters{}.setOriginalDateRange(YearRange{ 1994, 1994 }));
+            releases = Release::findIds(session, Release::FindParameters{}.setFilter(yearBetween(IntegerField::OriginalYear, 1994, 1994)));
             ASSERT_EQ(releases.size(), 0);
         }
     }
@@ -742,7 +785,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 0, 3000 })) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setFilter(yearBetween(IntegerField::Year, 0, 3000))) };
             EXPECT_EQ(releases.size(), 0);
         }
 
@@ -766,48 +809,16 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1950, 2000 })) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setFilter(yearBetween(IntegerField::Year, 1950, 2000))) };
             ASSERT_EQ(releases.size(), 1);
             EXPECT_EQ(releases.front(), release1.getId());
 
-            releases = Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1994, 1994 }));
+            releases = Release::findIds(session, Release::FindParameters{}.setFilter(yearBetween(IntegerField::Year, 1994, 1994)));
             ASSERT_EQ(releases.size(), 1);
             EXPECT_EQ(releases.front(), release1.getId());
 
-            releases = Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1993, 1993 }));
+            releases = Release::findIds(session, Release::FindParameters{}.setFilter(yearBetween(IntegerField::Year, 1993, 1993)));
             ASSERT_EQ(releases.size(), 0);
-        }
-    }
-
-    TEST_F(DatabaseFixture, Release_writtenAfter)
-    {
-        ScopedRelease release{ session, "MyRelease" };
-        ScopedTrack track{ session };
-
-        const Wt::WDateTime dateTime{ Wt::WDate{ 1950, 1, 1 }, Wt::WTime{ 12, 30, 20 } };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setLastWriteTime(dateTime);
-            track.get().modify()->setRelease(release.get());
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            const auto releases{ Release::findIds(session, Release::FindParameters{}) };
-            EXPECT_EQ(releases.size(), 1);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            const auto releases{ Release::findIds(session, Release::FindParameters{}.setWrittenAfter(dateTime.addSecs(-1))) };
-            EXPECT_EQ(releases.size(), 1);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            const auto releases{ Release::findIds(session, Release::FindParameters{}.setWrittenAfter(dateTime.addSecs(+1))) };
-            EXPECT_EQ(releases.size(), 0);
         }
     }
 
@@ -1617,7 +1628,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             Release::FindParameters params;
-            params.setFilters(Filters{}.setCodec(core::media::Codec::MP3));
+            params.setFilter(FilterExpr::equal(core::media::Codec::MP3));
 
             auto releases{ Release::findIds(session, params) };
             ASSERT_EQ(releases.size(), 1);

@@ -69,6 +69,7 @@
 #include "database/objects/User.hpp"
 #include "database/objects/Work.hpp"
 
+#include "ConnectionPool.hpp"
 #include "Db.hpp"
 #include "Migration.hpp"
 #include "TransactionChecker.hpp"
@@ -216,6 +217,7 @@ namespace lms::db
         constexpr std::string_view indexSqls[]{
             "CREATE INDEX IF NOT EXISTS artist_name_mbid_idx ON artist(name, mbid)",
             "CREATE INDEX IF NOT EXISTS artist_name_nocase_idx ON artist(name COLLATE NOCASE)",
+            "CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(COALESCE(NULLIF(sort_name, ''), name) COLLATE NOCASE)",
             "CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)",
             "CREATE INDEX IF NOT EXISTS artist_preferred_artwork_idx ON artist(preferred_artwork_id) WHERE preferred_artwork_id IS NOT NULL",
 
@@ -418,7 +420,14 @@ namespace lms::db
         for (const std::string& entry : entries)
             analyzeEntry(entry);
 
+        requestConnectionsReload();
+
         LMS_LOG(DB, INFO, "Analyze complete!");
+    }
+
+    void Session::requestConnectionsReload()
+    {
+        static_cast<Db&>(_db).getConnectionPool().requestConnectionsReload();
     }
 
     bool Session::areAllTablesEmpty()

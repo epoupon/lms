@@ -40,42 +40,6 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::ReleaseArtistLink)
 
 namespace lms::db
 {
-    namespace
-    {
-        Wt::Dbo::Query<Wt::Dbo::ptr<ReleaseArtistLink>> createQuery(Session& session, const ReleaseArtistLink::FindParameters& params)
-        {
-            session.checkReadTransaction();
-
-            auto query{ session.getDboSession()->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l FROM release_artist_link r_a_l") };
-
-            if (params.release.isValid())
-                query.where("r_a_l.release_id = ?").bind(params.release);
-
-            if (params.artist.isValid())
-                query.where("r_a_l.artist_id = ?").bind(params.artist);
-
-            if (params.sortMethod == ReleaseArtistLinkSortMethod::OriginalDateDesc)
-                query.join("track t ON t.release_id = r_a_l.release_id");
-
-            if (params.mbidMatched)
-                query.where("r_a_l.artist_mbid_matched = ?").bind(*params.mbidMatched);
-
-            if (params.sortNameNotEmpty)
-                query.where("r_a_l.artist_sort_name <> ''");
-
-            switch (params.sortMethod)
-            {
-            case ReleaseArtistLinkSortMethod::None:
-                break;
-            case ReleaseArtistLinkSortMethod::OriginalDateDesc:
-                query.orderBy("COALESCE(t.original_date, t.date) DESC");
-                break;
-            }
-
-            return query;
-        }
-    } // namespace
-
     ReleaseArtistLink::ReleaseArtistLink(const ObjectPtr<Release>& release, const ObjectPtr<Artist>& artist, bool artistMBIDMatched)
         : _artistMBIDMatched{ artistMBIDMatched }
         , _release{ getDboPtr(release) }
@@ -100,12 +64,6 @@ namespace lms::db
     {
         session.checkReadTransaction();
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l").where("r_a_l.id = ?").bind(id));
-    }
-
-    void ReleaseArtistLink::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
-    {
-        auto query{ createQuery(session, params) };
-        utils::forEachQueryRangeResult(query, params.range, func);
     }
 
     void ReleaseArtistLink::findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const ReleaseArtistLink::pointer&)>& func)

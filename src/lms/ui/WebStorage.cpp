@@ -29,8 +29,9 @@
 
 namespace lms::ui
 {
-    WebStorage::WebStorage(Wt::WApplication& app)
+    WebStorage::WebStorage(Wt::WApplication& app, const core::UUID& serverInstanceId, db::UserId userId)
         : _app{ app }
+        , _keyPrefix{ "lms." + serverInstanceId.toString() + "." + userId.toString() + "." }
         , _itemLoaded{ &app, "webStorageItemLoaded" }
     {
         _itemLoaded.connect([this](int requestId, bool found, const std::string& value) {
@@ -46,7 +47,7 @@ namespace lms::ui
     void WebStorage::setItem(std::string_view key, std::string_view value)
     {
         std::ostringstream oss;
-        oss << "localStorage.setItem('" << core::stringUtils::jsEscape(key) << "', '" << core::stringUtils::jsEscape(value) << "')";
+        oss << "localStorage.setItem('" << core::stringUtils::jsEscape(getLocalStorageKey(key)) << "', '" << core::stringUtils::jsEscape(value) << "')";
 
         LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
         _app.doJavaScript(oss.str());
@@ -55,7 +56,7 @@ namespace lms::ui
     void WebStorage::removeItem(std::string_view key)
     {
         std::ostringstream oss;
-        oss << "localStorage.removeItem('" << core::stringUtils::jsEscape(key) << "')";
+        oss << "localStorage.removeItem('" << core::stringUtils::jsEscape(getLocalStorageKey(key)) << "')";
 
         LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
         _app.doJavaScript(oss.str());
@@ -71,7 +72,7 @@ namespace lms::ui
         });
         _pendingRequests.emplace(requestId, std::move(signal));
 
-        const std::string keyEscaped{ core::stringUtils::jsEscape(key) };
+        const std::string keyEscaped{ core::stringUtils::jsEscape(getLocalStorageKey(key)) };
 
         std::ostringstream oss;
         oss << "(function(){"
@@ -81,5 +82,10 @@ namespace lms::ui
 
         LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
         _app.doJavaScript(oss.str());
+    }
+
+    std::string WebStorage::getLocalStorageKey(std::string_view key) const
+    {
+        return _keyPrefix + std::string{ key };
     }
 } // namespace lms::ui

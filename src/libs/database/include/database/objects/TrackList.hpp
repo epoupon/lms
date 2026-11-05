@@ -30,7 +30,7 @@
 
 #include "database/Object.hpp"
 #include "database/Types.hpp"
-#include "database/objects/Filters.hpp"
+#include "database/objects/FilterExpr.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
 #include "database/objects/Types.hpp"
@@ -62,7 +62,8 @@ namespace lms::db
         // Search utility
         struct FindParameters
         {
-            Filters filters;
+            std::optional<FilterExpr> filter;       // if set, tracklists must have a track matching this expression
+            UserId filterUser;                      // required if filter has per-user fields
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords (on either name field OR sort name field)
             std::optional<Range> range;
             std::optional<TrackListType> type;
@@ -71,9 +72,10 @@ namespace lms::db
             TrackListSortMethod sortMethod{ TrackListSortMethod::None };
             std::optional<Visibility> visibility;
 
-            FindParameters& setFilters(const Filters& _filters)
+            FindParameters& setFilter(std::optional<FilterExpr> _filter, UserId _user = {})
             {
-                filters = _filters;
+                filter = std::move(_filter);
+                filterUser = _user;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -142,14 +144,14 @@ namespace lms::db
         std::vector<ObjectPtr<TrackListEntry>> getEntries(std::optional<Range> range = {}) const;
         ObjectPtr<TrackListEntry> getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const;
 
-        std::vector<TrackId> getTrackIds() const;
+        std::vector<TrackId> getTrackIds(std::optional<Range> range = {}) const;
+        void visitTracks(const std::function<void(const ObjectPtr<Track>&)>& func) const;
         std::chrono::milliseconds getDuration() const;
 
         void setLastModifiedDateTime(const Wt::WDateTime& dateTime);
 
         // Get clusters, order by occurence
         std::vector<ObjectPtr<Cluster>> getClusters() const;
-        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const;
 
         // Ordered from most clusters in common
         std::vector<ObjectPtr<Track>> getSimilarTracks(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;

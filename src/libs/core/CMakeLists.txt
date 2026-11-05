@@ -33,6 +33,7 @@ add_library(lmscore STATIC
 	impl/Path.cpp
 	impl/Random.cpp
 	impl/RecursiveSharedMutex.cpp
+	impl/ScopedTmpDirectory.cpp
 	impl/String.cpp
 	impl/TraceLogger.cpp
 	impl/UUID.cpp

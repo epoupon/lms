@@ -23,26 +23,13 @@
 #include <cstdint>
 #include <filesystem>
 #include <span>
-#include <string_view>
 #include <vector>
+
+#include "core/ScopedTmpDirectory.hpp"
 
 namespace lms::audio::tests
 {
-    // A private directory removed on destruction, for a test to write scratch files into
-    class ScopedTmpDirectory
-    {
-    public:
-        ScopedTmpDirectory();
-        ~ScopedTmpDirectory();
-
-        ScopedTmpDirectory(const ScopedTmpDirectory&) = delete;
-        ScopedTmpDirectory& operator=(const ScopedTmpDirectory&) = delete;
-
-        std::filesystem::path operator/(std::string_view fileName) const;
-
-    private:
-        std::filesystem::path _path;
-    };
+    using core::ScopedTmpDirectory;
 
     void writeFile(const std::filesystem::path& path, std::span<const std::byte> data);
 

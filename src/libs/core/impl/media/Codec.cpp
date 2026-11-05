@@ -65,4 +65,13 @@ namespace lms::core::media
 
         return *it;
     }
+
+    std::optional<Codec> findCodec(std::string_view name)
+    {
+        const auto it{ std::find_if(codecDescs.begin(), codecDescs.end(), [name](const auto& desc) { return desc.name.str() == name; }) };
+        if (it == codecDescs.end())
+            return std::nullopt;
+
+        return it->type;
+    }
 } // namespace lms::core::media

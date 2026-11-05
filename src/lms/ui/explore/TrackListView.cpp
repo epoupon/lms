@@ -99,30 +99,19 @@ namespace lms::ui
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
         {
-            const auto clusterTypeIds{ db::ClusterType::findIds(LmsApp->getDbSession()) };
-            const auto clusterGroups{ trackList->getClusterGroups(clusterTypeIds, 3) };
-
-            for (const auto& clusters : clusterGroups)
+            for (const db::ClusterTypeId clusterTypeId : db::ClusterType::findIds(LmsApp->getDbSession()))
             {
-                for (const db::Cluster::pointer& cluster : clusters)
-                {
+                db::Cluster::find(LmsApp->getDbSession(), db::Cluster::FindParameters{}.setTrackList(trackList->getId()).setClusterType(clusterTypeId).setSortMethod(db::ClusterSortMethod::TrackCountDesc).setRange(db::Range{ 0, 3 }), [&](const db::Cluster::pointer& cluster) {
                     const db::ClusterId clusterId{ cluster->getId() };
-                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterCluster(clusterId)) };
+                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(clusterId)) };
                     entry->clicked().connect([this, clusterId] {
                         _filters.add(clusterId);
                     });
-                }
+                });
             }
         }
 
-        _trackIds.clear();
-        {
-            db::Track::FindParameters params;
-            params.setTrackList(_trackListId);
-            params.setSortMethod(db::TrackSortMethod::TrackList);
-            params.setRange(db::Range{ 0, _maxCount });
-            _trackIds = db::Track::findIds(LmsApp->getDbSession(), params);
-        }
+        _trackIds = trackList->getTrackIds(db::Range{ 0, _maxCount });
 
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
             ->clicked()

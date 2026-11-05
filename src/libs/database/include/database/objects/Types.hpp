@@ -29,12 +29,6 @@ namespace lms::db
     // For enums that have explicit values, never change enum values as they are stored in database.
     // => only add new values or remove unused values, do not recycle values.
 
-    struct YearRange
-    {
-        int begin{};
-        int end{};
-    };
-
     struct FileInfo
     {
         Wt::WDateTime lastWrittenTime;
@@ -57,6 +51,7 @@ namespace lms::db
     {
         None,
         Name,
+        TrackCountDesc,
     };
 
     enum class DirectorySortMethod
@@ -121,12 +116,6 @@ namespace lms::db
         AudioSimilarity = 3,
     };
 
-    enum class ReleaseArtistLinkSortMethod
-    {
-        None,
-        OriginalDateDesc,
-    };
-
     enum class ReleaseSortMethod
     {
         None,
@@ -148,12 +137,6 @@ namespace lms::db
     {
         None,
         Name,
-    };
-
-    enum class TrackArtistLinkSortMethod
-    {
-        None,
-        OriginalDateDesc,
     };
 
     enum class TrackEmbeddedImageSortMethod
@@ -190,8 +173,7 @@ namespace lms::db
         Name,
         DateDescAndRelease,
         OriginalDateDescAndRelease,
-        Release,   // order by disc/track number
-        TrackList, // order by asc order in tracklist
+        Release, // order by disc/track number
         TrackNumber,
     };
 

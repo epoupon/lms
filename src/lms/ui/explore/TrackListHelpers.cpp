@@ -112,7 +112,7 @@ namespace lms::ui::TrackListHelpers
             for (const db::Genre::pointer& genre : track->getGenres())
             {
                 const db::GenreId genreId{ genre->getId() };
-                Wt::WInteractWidget* entry{ genreContainer->addWidget(utils::createFilterGenre(genreId)) };
+                Wt::WInteractWidget* entry{ genreContainer->addWidget(utils::createFilterValue(genreId)) };
                 entry->clicked().connect([&filters, genreId] { filters.set(genreId); });
             }
             if (const int count{ genreContainer->count() }; count > 0)
@@ -127,7 +127,7 @@ namespace lms::ui::TrackListHelpers
             for (const db::Grouping::pointer& grouping : track->getGroupings())
             {
                 const db::GroupingId groupingId{ grouping->getId() };
-                Wt::WInteractWidget* entry{ groupingContainer->addWidget(utils::createFilterGrouping(groupingId)) };
+                Wt::WInteractWidget* entry{ groupingContainer->addWidget(utils::createFilterValue(groupingId)) };
                 entry->clicked().connect([&filters, groupingId] { filters.set(groupingId); });
             }
             if (const int count{ groupingContainer->count() }; count > 0)
@@ -142,7 +142,7 @@ namespace lms::ui::TrackListHelpers
             for (const db::Language::pointer& language : track->getLanguages())
             {
                 const db::LanguageId languageId{ language->getId() };
-                Wt::WInteractWidget* entry{ languageContainer->addWidget(utils::createFilterLanguage(languageId)) };
+                Wt::WInteractWidget* entry{ languageContainer->addWidget(utils::createFilterValue(languageId)) };
                 entry->clicked().connect([&filters, languageId] { filters.set(languageId); });
             }
             if (const int count{ languageContainer->count() }; count > 0)
@@ -157,7 +157,7 @@ namespace lms::ui::TrackListHelpers
             for (const db::Mood::pointer& mood : track->getMoods())
             {
                 const db::MoodId moodId{ mood->getId() };
-                Wt::WInteractWidget* entry{ moodContainer->addWidget(utils::createFilterMood(moodId)) };
+                Wt::WInteractWidget* entry{ moodContainer->addWidget(utils::createFilterValue(moodId)) };
                 entry->clicked().connect([&filters, moodId] { filters.set(moodId); });
             }
             if (const int count{ moodContainer->count() }; count > 0)

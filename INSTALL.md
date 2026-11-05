@@ -117,7 +117,7 @@ sqlite3 /var/lms/lms.db
 ```
 Now force reset the password of the admin user to `adminadmin`:
 ```sqlite3
-UPDATE user SET password_salt="sliIgHUpEoAlBMquivH4VzKXbSzexlvS", password_hash="$2y$07$a0vnQUbGTV/DZyDqOizvbOdCaytNjDhkOPcGoBZup4V0MRKDzOpEG" WHERE id=1;
+UPDATE user SET password_salt='sliIgHUpEoAlBMquivH4VzKXbSzexlvS', password_hash='$2y$07$a0vnQUbGTV/DZyDqOizvbOdCaytNjDhkOPcGoBZup4V0MRKDzOpEG' WHERE id=1;
 .quit
 ```
 ## Deploy on non root path

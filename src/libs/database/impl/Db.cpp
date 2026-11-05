@@ -18,11 +18,10 @@
  */
 
 #include <functional>
-#include <memory>
 
-#include <Wt/Dbo/FixedSqlConnectionPool.h>
 #include <Wt/Dbo/Logger.h>
-#include <Wt/Dbo/backend/Sqlite3.h>
+#include <Wt/Dbo/SqlConnection.h>
+#include <Wt/Dbo/SqlStatement.h>
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
@@ -30,51 +29,13 @@
 #include "database/Session.hpp"
 #include "database/objects/User.hpp"
 
+#include "ConnectionPool.hpp"
 #include "Db.hpp"
 
 namespace lms::db
 {
     namespace
     {
-        class Connection : public Wt::Dbo::backend::Sqlite3
-        {
-        public:
-            Connection(const std::filesystem::path& dbPath)
-                : Wt::Dbo::backend::Sqlite3{ dbPath.string() }
-                , _dbPath{ dbPath }
-            {
-                prepare();
-            }
-
-            Connection(const Connection& other)
-                : Wt::Dbo::backend::Sqlite3{ other }
-                , _dbPath{ other._dbPath }
-            {
-                prepare();
-            }
-            ~Connection() override = default;
-
-        private:
-            Connection& operator=(const Connection&) = delete;
-            Connection(Connection&&) = delete;
-            Connection&& operator=(Connection&&) = delete;
-
-            std::unique_ptr<SqlConnection> clone() const override
-            {
-                return std::make_unique<Connection>(*this);
-            }
-
-            void prepare()
-            {
-                LMS_LOG(DB, DEBUG, "Setting per-connection settings...");
-                executeSql("PRAGMA journal_mode=WAL");
-                executeSql("PRAGMA synchronous=normal");
-                LMS_LOG(DB, DEBUG, "Setting per-connection settings done!");
-            }
-
-            std::filesystem::path _dbPath;
-        };
-
         enum class IntegrityCheckType
         {
             Quick,
@@ -204,34 +165,27 @@ namespace lms::db
         }
     } // namespace
 
-    std::unique_ptr<IDb> createDb(const std::filesystem::path& dbPath, std::size_t connectionCount)
+    std::unique_ptr<IDb> createDb(const std::filesystem::path& dbPath)
     {
-        return std::make_unique<Db>(dbPath, connectionCount);
+        return std::make_unique<Db>(dbPath);
     }
 
     // Session living class handling the database and the login
-    Db::Db(const std::filesystem::path& dbPath, std::size_t connectionCount)
+    Db::Db(const std::filesystem::path& dbPath)
     {
         Wt::Dbo::logToWt();
 
+        bool showQueries{};
         std::string checkType{ "quick" };
         LMS_LOG(DB, INFO, "Creating connection pool on file " << dbPath);
 
-        auto connection{ std::make_unique<Connection>(dbPath) };
         if (core::IConfig * config{ core::Service<core::IConfig>::get() }) // may not be here on testU
         {
-            connection->setProperty("show-queries", config->getBool("db-show-queries", false) ? "true" : "false");
+            showQueries = config->getBool("db-show-queries", false);
             checkType = config->getString("db-integrity-check", "quick");
         }
 
-        auto connectionPool{ std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), connectionCount) };
-        connectionPool->setTimeout(std::chrono::seconds{ 10 });
-
-        _connectionPool = std::move(connectionPool);
-
-        executeSql("PRAGMA temp_store=MEMORY");
-        executeSql("PRAGMA cache_size=-8000");
-        executeSql("PRAGMA automatic_index=0");
+        _connectionPool = std::make_unique<ConnectionPool>(dbPath, showQueries);
 
         logPageSize();
         logCacheSize();
@@ -251,6 +205,8 @@ namespace lms::db
             throw Exception{ "Invalid 'db-integrity-check' value: '" + checkType + "'. Expected 'quick', 'full' or 'none'." };
         }
     }
+
+    Db::~Db() = default;
 
     void Db::executeSql(const std::string& sql)
     {

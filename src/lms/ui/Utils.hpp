@@ -22,6 +22,7 @@
 #include <chrono>
 #include <map>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -36,13 +37,9 @@
 #include "audio/TranscodeTypes.hpp"
 
 #include "database/Object.hpp"
-#include "database/objects/ClusterId.hpp"
-#include "database/objects/GenreId.hpp"
-#include "database/objects/GroupingId.hpp"
-#include "database/objects/LanguageId.hpp"
-#include "database/objects/MoodId.hpp"
 #include "database/objects/Types.hpp"
 
+#include "explore/Filters.hpp"
 #include "resource/ArtworkResource.hpp"
 
 namespace lms::db
@@ -54,11 +51,6 @@ namespace lms::db
     class TrackList;
 } // namespace lms::db
 
-namespace lms::ui
-{
-    class Filters;
-}
-
 namespace lms::ui::utils
 {
     std::string durationToString(std::chrono::milliseconds msDuration);
@@ -68,12 +60,10 @@ namespace lms::ui::utils
     std::unique_ptr<Wt::WImage> createArtworkImage(db::ArtworkId artworkId, ArtworkResource::DefaultArtworkType type, ArtworkResource::Size size);
     std::unique_ptr<Wt::WImage> createDefaultArtworkImage(ArtworkResource::DefaultArtworkType type);
 
-    std::unique_ptr<Wt::WInteractWidget> createFilter(const Wt::WString& name, const Wt::WString& tooltip, std::string_view colorStyleClass, bool canDelete = false);
-    std::unique_ptr<Wt::WInteractWidget> createFilterCluster(db::ClusterId clusterId, bool canDelete = false);
-    std::unique_ptr<Wt::WInteractWidget> createFilterGenre(db::GenreId genreId, bool canDelete = false);
-    std::unique_ptr<Wt::WInteractWidget> createFilterGrouping(db::GroupingId groupingId, bool canDelete = false);
-    std::unique_ptr<Wt::WInteractWidget> createFilterLanguage(db::LanguageId languageId, bool canDelete = false);
-    std::unique_ptr<Wt::WInteractWidget> createFilterMood(db::MoodId moodId, bool canDelete = false);
+    // nullptr if the value no longer exists
+    std::unique_ptr<Wt::WInteractWidget> createFilterValue(const Filters::Value& value);
+    // nullptr if one of the values no longer exists
+    std::unique_ptr<Wt::WInteractWidget> createFilter(std::span<const Filters::Value> values, Filters::Match match);
     std::unique_ptr<Wt::WContainerWidget> createFilterClustersForTrack(db::ObjectPtr<db::Track> track, Filters& filters);
 
     std::unique_ptr<Wt::WAnchor> createArtistAnchor(db::ObjectPtr<db::Artist> artist, bool setText = true);

@@ -51,7 +51,7 @@ namespace lms::ui
 {
     namespace
     {
-        constexpr std::string_view settingsStorageKey{ "lms.mediaplayer.settings" };
+        constexpr std::string_view settingsStorageKey{ "mediaplayer.settings" };
 
         Wt::WString transcodingOutputFormatToLabel(MediaPlayer::Format format)
         {

@@ -145,7 +145,7 @@ namespace lms::ui
         {
             db::Genre::find(LmsApp->getDbSession(), db::Genre::FindParameters{}.setArtist(_artistId).setSortMethod(db::GenreSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Genre::pointer& genre) {
                 const db::GenreId genreId{ genre->getId() };
-                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterGenre(genreId)) };
+                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(genreId)) };
                 entry->clicked().connect([this, genreId] {
                     _filters.set(genreId);
                 });
@@ -153,7 +153,7 @@ namespace lms::ui
 
             db::Grouping::find(LmsApp->getDbSession(), db::Grouping::FindParameters{}.setArtist(_artistId).setSortMethod(db::GroupingSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Grouping::pointer& grouping) {
                 const db::GroupingId groupingId{ grouping->getId() };
-                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterGrouping(groupingId)) };
+                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(groupingId)) };
                 entry->clicked().connect([this, groupingId] {
                     _filters.set(groupingId);
                 });
@@ -161,7 +161,7 @@ namespace lms::ui
 
             db::Language::find(LmsApp->getDbSession(), db::Language::FindParameters{}.setArtist(_artistId).setSortMethod(db::LanguageSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Language::pointer& language) {
                 const db::LanguageId languageId{ language->getId() };
-                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterLanguage(languageId)) };
+                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(languageId)) };
                 entry->clicked().connect([this, languageId] {
                     _filters.set(languageId);
                 });
@@ -169,25 +169,21 @@ namespace lms::ui
 
             db::Mood::find(LmsApp->getDbSession(), db::Mood::FindParameters{}.setArtist(_artistId).setSortMethod(db::MoodSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Mood::pointer& mood) {
                 const db::MoodId moodId{ mood->getId() };
-                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterMood(moodId)) };
+                Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(moodId)) };
                 entry->clicked().connect([this, moodId] {
                     _filters.set(moodId);
                 });
             });
 
-            auto clusterTypes{ db::ClusterType::findIds(LmsApp->getDbSession()) };
-            auto clusterGroups{ artist->getClusterGroups(clusterTypes, 3) };
-
-            for (const auto& clusters : clusterGroups)
+            for (const db::ClusterTypeId clusterTypeId : db::ClusterType::findIds(LmsApp->getDbSession()))
             {
-                for (const db::Cluster::pointer& cluster : clusters)
-                {
-                    const db::ClusterId clusterId = cluster->getId();
-                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterCluster(clusterId)) };
+                db::Cluster::find(LmsApp->getDbSession(), db::Cluster::FindParameters{}.setArtist(_artistId).setClusterType(clusterTypeId).setSortMethod(db::ClusterSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Cluster::pointer& cluster) {
+                    const db::ClusterId clusterId{ cluster->getId() };
+                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(clusterId)) };
                     entry->clicked().connect([this, clusterId] {
                         _filters.add(clusterId);
                     });
-                }
+                });
             }
         }
 
@@ -196,27 +192,23 @@ namespace lms::ui
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
             ->clicked()
             .connect([this] {
-                db::ArtistId artists[]{ _artistId };
-                _playQueueController.processCommand(PlayQueueController::Command::Play, artists);
+                _playQueueController.processCommand(PlayQueueController::Command::Play, getTracksToPlay());
             });
 
         bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
             ->clicked()
             .connect([this] {
-                db::ArtistId artists[]{ _artistId };
-                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, artists);
+                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, getTracksToPlay());
             });
         bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
             ->clicked()
             .connect([this] {
-                db::ArtistId artists[]{ _artistId };
-                _playQueueController.processCommand(PlayQueueController::Command::PlayNext, artists);
+                _playQueueController.processCommand(PlayQueueController::Command::PlayNext, getTracksToPlay());
             });
         bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
             ->clicked()
             .connect([this] {
-                db::ArtistId artists[]{ _artistId };
-                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, artists);
+                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, getTracksToPlay());
             });
 
         if (LmsApp->areDownloadsEnabled())
@@ -401,14 +393,20 @@ namespace lms::ui
 
     void Artist::refreshNonReleaseTracks()
     {
+        db::Track::FindParameters params;
+        params.setArtist(_artistId);
+        params.setSortMethod(db::TrackSortMethod::Name);
+        params.setNonRelease(true);
+
+        _nonReleaseTracks = db::Track::findIds(LmsApp->getDbSession(), params);
+        if (_nonReleaseTracks.empty())
+            return;
+
         setCondition("if-has-non-release-tracks", true);
         _trackContainer = bindNew<InfiniteScrollingContainer>("tracks");
         _trackContainer->onRequestElements.connect(this, [this] {
             addSomeNonReleaseTracks();
         });
-
-        const bool added{ addSomeNonReleaseTracks() };
-        setCondition("if-has-non-release-tracks", added);
     }
 
     void Artist::refreshRelatedArtists(const std::vector<db::ArtistId>& similarArtistsId)
@@ -455,34 +453,54 @@ namespace lms::ui
         releaseContainer.container->setHasMore(false);
     }
 
-    bool Artist::addSomeNonReleaseTracks()
+    void Artist::addSomeNonReleaseTracks()
     {
-        bool areTracksAdded{};
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const db::Range range{ static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize };
+        const std::size_t startIndex{ static_cast<std::size_t>(_trackContainer->getCount()) };
+        const std::size_t endIndex{ std::min(startIndex + _tracksBatchSize, _nonReleaseTracks.size()) };
 
-        db::Track::FindParameters params;
-        params.setArtist(_artistId);
-        params.setRange(range);
-        params.setSortMethod(db::TrackSortMethod::Name);
-        params.setNonRelease(true);
+        for (std::size_t index{ startIndex }; index < endIndex; ++index)
+        {
+            if (const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), _nonReleaseTracks[index]) })
+                _trackContainer->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
+        }
+
+        _trackContainer->setHasMore(endIndex < _nonReleaseTracks.size());
+    }
+
+    // Own releases whole, then only the artist's tracks on the appears-on releases
+    std::vector<db::TrackId> Artist::getTracksToPlay() const
+    {
+        std::vector<db::TrackId> tracks;
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const auto tracks{ db::Track::find(LmsApp->getDbSession(), params) };
-        for (const db::Track::pointer& track : tracks)
+        auto addReleaseTracks{ [&](db::ReleaseId releaseId, db::ArtistId artistId) {
+            db::Track::FindParameters params;
+            params.setRelease(releaseId);
+            params.setArtist(artistId);
+            params.setSortMethod(db::TrackSortMethod::Release);
+
+            const std::vector<db::TrackId> releaseTracks{ db::Track::findIds(LmsApp->getDbSession(), params) };
+            tracks.insert(std::cend(tracks), std::cbegin(releaseTracks), std::cend(releaseTracks));
+        } };
+
+        for (const auto& [releaseType, releaseContainer] : _releaseContainers)
         {
-            // TODO handle this with range
-            if (_trackContainer->getCount() == _tracksMaxCount)
-                break;
-
-            _trackContainer->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
-
-            areTracksAdded = true;
+            for (const db::ReleaseId releaseId : releaseContainer.releases)
+                addReleaseTracks(releaseId, db::ArtistId{});
         }
 
-        _trackContainer->setHasMore(tracks.size() == range.size);
+        // all roles, whatever the role selected in the appears-on container
+        if (const auto it{ _appearsOnReleases.find(std::nullopt) }; it != std::cend(_appearsOnReleases))
+        {
+            for (const db::ReleaseId releaseId : it->second)
+                addReleaseTracks(releaseId, _artistId);
+        }
 
-        return areTracksAdded;
+        tracks.insert(std::cend(tracks), std::cbegin(_nonReleaseTracks), std::cend(_nonReleaseTracks));
+
+        return tracks;
     }
 } // namespace lms::ui

@@ -28,7 +28,6 @@
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
-#include "database/objects/ReleaseId.hpp"
 #include "database/objects/Types.hpp"
 
 LMS_DECLARE_IDTYPE(ReleaseArtistLinkId)
@@ -42,52 +41,10 @@ namespace lms::db
     class ReleaseArtistLink final : public Object<ReleaseArtistLink, ReleaseArtistLinkId>
     {
     public:
-        struct FindParameters
-        {
-            std::optional<Range> range;
-            ArtistId artist;   // if set, links involved with this artist
-            ReleaseId release; // if set, artists involved in this release
-            std::optional<bool> mbidMatched;
-            bool sortNameNotEmpty{}; // if set, only links whose artist sort name is not empty
-            ReleaseArtistLinkSortMethod sortMethod{ ReleaseArtistLinkSortMethod::None };
-
-            FindParameters& setRange(std::optional<Range> _range)
-            {
-                range = _range;
-                return *this;
-            }
-            FindParameters& setArtist(ArtistId _artist)
-            {
-                artist = _artist;
-                return *this;
-            }
-            FindParameters& setRelease(ReleaseId _release)
-            {
-                release = _release;
-                return *this;
-            }
-            FindParameters& setMBIDMatched(std::optional<bool> _mbidMatched)
-            {
-                mbidMatched = _mbidMatched;
-                return *this;
-            }
-            FindParameters& setSortNameNotEmpty(bool _sortNameNotEmpty)
-            {
-                sortNameNotEmpty = _sortNameNotEmpty;
-                return *this;
-            }
-            FindParameters& setSortMethod(ReleaseArtistLinkSortMethod _method)
-            {
-                sortMethod = _method;
-                return *this;
-            }
-        };
-
         ReleaseArtistLink() = default;
         ReleaseArtistLink(const ObjectPtr<Release>& release, const ObjectPtr<Artist>& artist, bool artistMBIDMatched);
 
         static pointer find(Session& session, ReleaseArtistLinkId linkId);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
         static std::size_t getCount(Session& session);
 
         static void findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const pointer&)>& func);

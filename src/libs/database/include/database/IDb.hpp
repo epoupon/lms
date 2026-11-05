@@ -33,5 +33,5 @@ namespace lms::db
         virtual Session& getTLSSession() = 0;
     };
 
-    std::unique_ptr<IDb> createDb(const std::filesystem::path& dbPath, std::size_t connectionCount = 10);
+    std::unique_ptr<IDb> createDb(const std::filesystem::path& dbPath);
 } // namespace lms::db

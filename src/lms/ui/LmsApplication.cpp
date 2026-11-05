@@ -19,7 +19,9 @@
 
 #include "LmsApplication.hpp"
 
-#include <Wt/WConfig.h>
+#include <cassert>
+
+#include "WtDefs.hpp"
 
 #include <Wt/WAnchor.h>
 #include <Wt/WEnvironment.h>
@@ -27,6 +29,9 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WServer.h>
 #include <Wt/WStackedWidget.h>
+#if LMS_WT_HAS_FAVICON
+    #include <Wt/WUrlFavicon.h>
+#endif
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
@@ -165,7 +170,6 @@ namespace lms::ui
         , _authBackend{ authBackend }
         , _serverInstanceId{ serverInstanceId }
         , _areDownloadsEnabled(core::Service<core::IConfig>::get()->getBool("ui-allow-downloads", true))
-        , _webStorage{ std::make_unique<WebStorage>(*this) }
     {
         try
         {
@@ -227,6 +231,12 @@ namespace lms::ui
         return _user->userLoginName;
     }
 
+    WebStorage& LmsApplication::getWebStorage() const
+    {
+        assert(_webStorage);
+        return *_webStorage;
+    }
+
     bool LmsApplication::areDownloadsEnabled() const
     {
         return _areDownloadsEnabled;
@@ -240,6 +250,10 @@ namespace lms::ui
 
         useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
         require("js/mediaplayer.js");
+
+#if LMS_WT_HAS_FAVICON
+        setFavicon(std::make_unique<Wt::WUrlFavicon>(resolveRelativeUrl("images/favicon.svg")));
+#endif // LMS_WT_HAS_FAVICON
 
         setTitle();
         setLocalizedStrings(getOrCreateMessageBundle());
@@ -343,6 +357,7 @@ namespace lms::ui
         root()->clear();
 
         setUserInfo(userId, strongAuth);
+        _webStorage = std::make_unique<WebStorage>(*this, _serverInstanceId, userId);
 
         LMS_LOG(UI, INFO, "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent() << ", locale = '" << locale().name() << "', timezone = '" << environment().timeZoneName() << "'");
 
@@ -478,8 +493,6 @@ namespace lms::ui
 
         if (getUserType() == db::UserType::ADMIN)
             mainRouter->add<AdminView>("/admin", std::nullopt);
-
-        explore->getPlayQueueController().setMaxTrackCountToEnqueue(_playQueue->getCapacity());
 
         // Events from MediaPlayer
         _mediaPlayer->playNext.connect([this] {

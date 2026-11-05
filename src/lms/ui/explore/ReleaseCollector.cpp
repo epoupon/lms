@@ -40,7 +40,7 @@ namespace lms::ui
                 if (!_randomReleases)
                 {
                     db::Release::FindParameters params;
-                    params.setFilters(getDbFilters());
+                    params.setFilter(getDbFilter());
                     params.setKeywords(getSearchKeywords());
                     params.setSortMethod(db::ReleaseSortMethod::Random);
                     params.setRange(db::Range{ 0, getMaxCount() });
@@ -61,7 +61,7 @@ namespace lms::ui
         case Mode::Feedback:
             {
                 db::Release::FindParameters params;
-                params.setFilters(getDbFilters());
+                params.setFilter(getDbFilter());
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::ReleaseSortMethod::FeedbackDateDesc);
                 params.setRange(range);
@@ -76,7 +76,7 @@ namespace lms::ui
         case Mode::RecentlyPlayed:
             {
                 db::Listen::StatsFindParameters params;
-                params.setFilters(getDbFilters());
+                params.setFilter(getDbFilter());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
                 params.setUser(LmsApp->getUserId());
@@ -89,7 +89,7 @@ namespace lms::ui
         case Mode::MostPlayed:
             {
                 db::Listen::StatsFindParameters params;
-                params.setFilters(getDbFilters());
+                params.setFilter(getDbFilter());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
                 params.setUser(LmsApp->getUserId());
@@ -102,7 +102,7 @@ namespace lms::ui
         case Mode::RecentlyAdded:
             {
                 db::Release::FindParameters params;
-                params.setFilters(getDbFilters());
+                params.setFilter(getDbFilter());
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::ReleaseSortMethod::AddedDesc);
                 params.setRange(range);
@@ -115,7 +115,7 @@ namespace lms::ui
         case Mode::RecentlyModified:
             {
                 db::Release::FindParameters params;
-                params.setFilters(getDbFilters());
+                params.setFilter(getDbFilter());
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(db::ReleaseSortMethod::LastWrittenDesc);
                 params.setRange(range);
@@ -128,7 +128,7 @@ namespace lms::ui
         case Mode::All:
             {
                 db::Release::FindParameters params;
-                params.setFilters(getDbFilters());
+                params.setFilter(getDbFilter());
                 params.setSortMethod(db::ReleaseSortMethod::SortName);
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);

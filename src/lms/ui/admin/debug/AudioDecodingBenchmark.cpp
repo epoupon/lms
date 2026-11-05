@@ -37,7 +37,7 @@
 #include "core/media/Codec.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/objects/Filters.hpp"
+#include "database/objects/FilterExpr.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/Types.hpp"
 
@@ -74,7 +74,7 @@ namespace lms::ui
             auto transaction{ session.createReadTransaction() };
 
             db::Track::FindParameters params;
-            params.setFilters(db::Filters{}.setCodec(codec));
+            params.setFilter(db::FilterExpr::equal(codec));
             params.setSortMethod(db::TrackSortMethod::Random);
             params.setRange(db::Range{ .offset = 0, .size = queryBatchSize });
 

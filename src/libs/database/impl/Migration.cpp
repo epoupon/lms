@@ -38,7 +38,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 115 };
+        static constexpr Version LMS_DATABASE_VERSION{ 117 };
     }
 
     VersionInfo::VersionInfo()
@@ -2177,6 +2177,23 @@ GROUP BY c.canonical_id, s.backend)");
         utils::executeCommand(dboSession, "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
     }
 
+    void migrateFromV115(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        // migrateFromV112 forgot release_artist_link.artist_sort_name (the link's own cached copy)
+        utils::executeCommand(dboSession, "UPDATE release_artist_link SET artist_sort_name = ''");
+
+        // Just increment the scan versions to make the next scan rescan everything
+        utils::executeCommand(dboSession, "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
+    }
+
+    void migrateFromV116(Session& session)
+    {
+        // The UI filters are now stored in the browser
+        utils::executeCommand(*session.getDboSession(), R"(DELETE FROM ui_state WHERE item IN ('filters_media_library_id', 'filters_label_id', 'filters_release_type_id', 'filters_codec', 'filters_genre_id', 'filters_grouping_id', 'filters_language_id', 'filters_mood_id'))");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -2268,6 +2285,8 @@ GROUP BY c.canonical_id, s.backend)");
             { 112, migrateFromV112 },
             { 113, migrateFromV113 },
             { 114, migrateFromV114 },
+            { 115, migrateFromV115 },
+            { 116, migrateFromV116 },
         };
 
         LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");

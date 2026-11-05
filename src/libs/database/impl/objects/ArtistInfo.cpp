@@ -22,6 +22,9 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
+#include "core/ILogger.hpp"
+#include "core/String.hpp"
+
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfoId.hpp"
@@ -164,5 +167,18 @@ namespace lms::db
     void ArtistInfo::setArtist(ObjectPtr<Artist> artist)
     {
         _artist = getDboPtr(artist);
+    }
+
+    // Truncated as the artist name/sort name, or they would never match
+    void ArtistInfo::setName(std::string_view name)
+    {
+        _name = core::stringUtils::utf8Truncate(name, Artist::maxNameLength);
+        LMS_LOG_IF(DB, WARNING, name.size() > Artist::maxNameLength, "Artist info name too long, truncated to '" << _name << "'");
+    }
+
+    void ArtistInfo::setSortName(std::string_view sortName)
+    {
+        _sortName = core::stringUtils::utf8Truncate(sortName, Artist::maxNameLength);
+        LMS_LOG_IF(DB, WARNING, sortName.size() > Artist::maxNameLength, "Artist info sort name too long, truncated to '" << _sortName << "'");
     }
 } // namespace lms::db

@@ -62,6 +62,7 @@
 #include "scanners/IFileScanOperation.hpp"
 #include "scanners/Utils.hpp"
 #include "scanners/audiofile/TrackMetadataParser.hpp"
+#include "scanners/audiofile/Utils.hpp"
 
 namespace lms::scanner
 {
@@ -521,53 +522,6 @@ namespace lms::scanner
             return res;
         }
 
-        void fillInArtistsWithMbid(std::span<const Artist> artists, std::unordered_map<std::string_view, core::UUID>& artistsWithMbid)
-        {
-            for (const Artist& artist : artists)
-            {
-                if (artist.mbid.has_value())
-                {
-                    // there may collisions, we don't want to replace
-                    artistsWithMbid.emplace(artist.name, *artist.mbid);
-                }
-            }
-        }
-
-        void fillInMbids(std::span<Artist> artists, const std::unordered_map<std::string_view, core::UUID>& artistsWithMbid)
-        {
-            for (Artist& artist : artists)
-            {
-                if (!artist.mbid)
-                {
-                    const auto it{ artistsWithMbid.find(artist.name) };
-                    if (it != std::cend(artistsWithMbid))
-                        artist.mbid = it->second;
-                }
-            }
-        }
-
-        void fillMissingMbids(Track& track)
-        {
-            // first pass: collect all artists that have mbids
-            std::unordered_map<std::string_view, core::UUID> artistsWithMbid;
-
-            // For now, mbids can only set in artist and album artist tags
-            // filling order is important: we estimate track-level artists are more likely
-            // to be set in other fields than album artists
-            fillInArtistsWithMbid(track.artists, artistsWithMbid);
-            if (track.medium && track.medium->release)
-                fillInArtistsWithMbid(track.medium->release->artists, artistsWithMbid);
-
-            // second pass: fill in all artists that have no mbid set with the same name
-            fillInMbids(track.conductorArtists, artistsWithMbid);
-            fillInMbids(track.composerArtists, artistsWithMbid);
-            fillInMbids(track.lyricistArtists, artistsWithMbid);
-            fillInMbids(track.mixerArtists, artistsWithMbid);
-            fillInMbids(track.producerArtists, artistsWithMbid);
-            fillInMbids(track.remixerArtists, artistsWithMbid);
-            for (auto& [role, artists] : track.performerArtists)
-                fillInMbids(artists, artistsWithMbid);
-        }
     } // namespace
 
     AudioFileScanOperation::AudioFileScanOperation(FileToScan&& fileToScan, db::IDb& db, const ScannerSettings& settings, const audio::IAudioFileInfoParser& parser, audio::AudioFileInfoParseOptions::AudioPropertiesReadStyle audioPropertiesReadStyle, const TrackMetadataParser& metadataParser)
@@ -601,8 +555,8 @@ namespace lms::scanner
             _file->audioProperties = *audioFileInfo->getAudioProperties();
             _file->track = _metadataParser.parseTrackMetaData(*audioFileInfo->getTagReader());
 
-            // We fill missing artist mbids with mbids found on other artist roles
-            fillMissingMbids(_file->track);
+            // We fill missing artist mbids/sort names with the ones found on other artist roles
+            utils::fillMissingArtistMetadata(_file->track);
 
             std::size_t index{};
             audioFileInfo->getImageReader()->visitImages([&](const audio::Image& image) {

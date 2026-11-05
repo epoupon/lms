@@ -828,12 +828,11 @@ namespace lms::ui
         trackList.modify()->clear();
         trackList.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
 
-        Track::FindParameters params;
-        params.setTrackList(_queueId);
-        params.setSortMethod(TrackSortMethod::TrackList);
-
-        Track::find(session, params, [&](const Track::pointer& track) {
-            session.create<TrackListEntry>(track, trackList);
-        });
+        if (const TrackList::pointer queue{ TrackList::find(session, _queueId) })
+        {
+            queue->visitTracks([&](const Track::pointer& track) {
+                session.create<TrackListEntry>(track, trackList);
+            });
+        }
     }
 } // namespace lms::ui

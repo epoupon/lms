@@ -32,9 +32,9 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 
-#include "SqlQuery.hpp"
+#include "JoinSet.hpp"
 #include "Utils.hpp"
-#include "objects/detail/Types.hpp"
+#include "objects/FilterExprCompiler.hpp"
 #include "traits/IdTypeTraits.hpp"
 
 DBO_INSTANTIATE_TEMPLATES(lms::db::Listen)
@@ -43,273 +43,136 @@ namespace lms::db
 {
     namespace
     {
-        Wt::Dbo::Query<ArtistId> createArtistsQuery(Session& session, const Listen::ArtistStatsFindParameters& params)
+        // The listens of an artist are the ones of the tracks it is track artist of
+        SqlFragment createArtistsConditions(const Listen::ArtistStatsFindParameters& params, JoinSet& joins)
         {
-            auto query{ session.getDboSession()->query<ArtistId>("SELECT a.id from artist a").join("track_artist_link t_a_l ON t_a_l.artist_id = a.id").join("listen l ON l.track_id = t_a_l.track_id") };
-
-            if (params.user.isValid())
-                query.where("l.user_id = ?").bind(params.user);
-
             assert(!params.artist.isValid()); // poor check
 
-            if (params.filters.mediaLibrary.isValid()
-                || params.filters.codec.has_value()
-                || params.filters.label.isValid()
-                || params.filters.releaseType.isValid()
-                || params.trackArtistLinkType.has_value()
-                || params.filters.genre.isValid()
-                || params.filters.grouping.isValid()
-                || params.filters.language.isValid()
-                || params.filters.mood.isValid())
-            {
-                query.join("track t ON t.id = t_a_l.track_id");
+            joins.add("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
+            joins.add("listen l ON l.track_id = t_a_l.track_id");
 
-                if (params.filters.codec.has_value())
-                    query.where("t.codec = ?").bind(detail::getDbCodec(*params.filters.codec));
+            SqlFragment res;
 
-                if (params.filters.mediaLibrary.isValid())
-                    query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
-
-                if (params.filters.label.isValid())
-                {
-                    query.join("release_label r_l ON r_l.release_id = t.release_id");
-                    query.where("r_l.label_id = ?").bind(params.filters.label);
-                }
-
-                if (params.filters.releaseType.isValid())
-                {
-                    query.join("release_release_type r_r_t ON r_r_t.release_id = t.release_id");
-                    query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
-                }
-
-                if (params.filters.genre.isValid())
-                {
-                    query.join("track_genre t_g ON t_g.track_id = t.id");
-                    query.where("t_g.genre_id = ?").bind(params.filters.genre);
-                }
-
-                if (params.filters.grouping.isValid())
-                {
-                    query.join("track_grouping t_gr ON t_gr.track_id = t.id");
-                    query.where("t_gr.grouping_id = ?").bind(params.filters.grouping);
-                }
-
-                if (params.filters.language.isValid())
-                {
-                    query.join("track_language t_l ON t_l.track_id = t.id");
-                    query.where("t_l.language_id = ?").bind(params.filters.language);
-                }
-
-                if (params.filters.mood.isValid())
-                {
-                    query.join("track_mood t_m ON t_m.track_id = t.id");
-                    query.where("t_m.mood_id = ?").bind(params.filters.mood);
-                }
-            }
-
-            if (params.releaseArtistsOnly)
-                query.join("release_artist_link r_a_l ON r_a_l.artist_id = a.id");
+            if (params.user.isValid())
+                res.combineWithAnd({ "l.user_id = ?", { params.user.getValue() } });
 
             if (params.trackArtistLinkType.has_value())
-                query.where("t_a_l.type = ?").bind(params.trackArtistLinkType.value());
+                res.combineWithAnd({ "t_a_l.type = ?", { static_cast<int>(*params.trackArtistLinkType) } });
 
-            if (!params.filters.clusters.empty())
-            {
-                std::ostringstream oss;
-                oss << "a.id IN (SELECT DISTINCT t_a_l.artist_id FROM track_artist_link t_a_l"
-                       " INNER JOIN track_cluster t_c ON t_c.track_id = t_a_l.track_id";
-
-                WhereClause clusterClause;
-                for (const db::ClusterId id : params.filters.clusters)
-                {
-                    clusterClause.Or(WhereClause{ "t_c.cluster_id = ?" });
-                    query.bind(id);
-                }
-
-                oss << " " << clusterClause.get();
-                oss << " GROUP BY t_a_l.track_id,t_a_l.artist_id HAVING COUNT(DISTINCT t_c.cluster_id) = " << params.filters.clusters.size() << ")";
-
-                query.where(oss.str());
-            }
+            if (params.releaseArtistsOnly)
+                joins.add("release_artist_link r_a_l ON r_a_l.artist_id = a.id");
 
             if (!params.keywords.empty())
             {
-                std::vector<std::string> clauses;
-                std::vector<std::string> sortClauses;
+                const auto createKeywordClauses{ [&](std::string_view column) {
+                    SqlFragment clauses;
+                    for (const std::string_view keyword : params.keywords)
+                    {
+                        if (!clauses.isEmpty())
+                            clauses.append(" AND ");
+                        clauses.append(std::string{ column } + " LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" });
+                    }
+                    return clauses;
+                } };
 
-                for (const std::string_view keyword : params.keywords)
-                {
-                    clauses.push_back("a.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-                    query.bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
-                }
-
-                for (const std::string_view keyword : params.keywords)
-                {
-                    sortClauses.push_back("a.sort_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-                    query.bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
-                }
-
-                query.where("(" + core::stringUtils::joinStrings(clauses, " AND ") + ") OR (" + core::stringUtils::joinStrings(sortClauses, " AND ") + ")");
+                SqlFragment keywords{ "(" };
+                keywords.append(createKeywordClauses("a.name"));
+                keywords.append(") OR (");
+                keywords.append(createKeywordClauses("a.sort_name"));
+                keywords.append(")");
+                res.combineWithAnd(keywords);
             }
 
+            if (params.filter)
+            {
+                joins.add("track t ON t.id = t_a_l.track_id");
+                res.combineWithAnd(compileFilterExpr(*params.filter, params.filterUser));
+            }
+
+            return res;
+        }
+
+        Wt::Dbo::Query<ArtistId> createArtistsQuery(Session& session, const Listen::ArtistStatsFindParameters& params)
+        {
+            JoinSet joins;
+            const SqlFragment where{ createArtistsConditions(params, joins) };
+
+            auto query{ session.getDboSession()->query<ArtistId>("SELECT a.id from artist a") };
+            joins.apply(query);
+            applyWhereFragment(query, where);
+
             return query;
+        }
+
+        SqlFragment createReleasesConditions(const Listen::StatsFindParameters& params, JoinSet& joins)
+        {
+            joins.add("track t ON t.release_id = r.id");
+            joins.add("listen l ON l.track_id = t.id");
+
+            SqlFragment res;
+
+            if (params.user.isValid())
+                res.combineWithAnd({ "l.user_id = ?", { params.user.getValue() } });
+
+            if (params.artist.isValid())
+            {
+                joins.add("track_artist_link t_a_l ON t_a_l.track_id = t.id");
+                res.combineWithAnd({ "t_a_l.artist_id = ?", { params.artist.getValue() } });
+            }
+
+            for (const std::string_view keyword : params.keywords)
+                res.combineWithAnd({ "r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" } });
+
+            if (params.filter)
+                res.combineWithAnd(compileFilterExpr(*params.filter, params.filterUser));
+
+            return res;
         }
 
         Wt::Dbo::Query<ReleaseId> createReleasesQuery(Session& session, const Listen::StatsFindParameters& params)
         {
-            auto query{ session.getDboSession()->query<ReleaseId>("SELECT r.id from release r").join("track t ON t.release_id = r.id").join("listen l ON l.track_id = t.id") };
+            JoinSet joins;
+            const SqlFragment where{ createReleasesConditions(params, joins) };
 
-            if (params.user.isValid())
-                query.where("l.user_id = ?").bind(params.user);
-
-            if (params.artist.isValid())
-            {
-                query.join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
-                    .where("t_a_l.artist_id = ?")
-                    .bind(params.artist);
-            }
-
-            if (params.filters.mediaLibrary.isValid())
-                query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
-
-            if (params.filters.label.isValid())
-            {
-                query.join("release_label r_l ON r_l.release_id = r.id");
-                query.where("r_l.label_id = ?").bind(params.filters.label);
-            }
-
-            if (params.filters.releaseType.isValid())
-            {
-                query.join("release_release_type r_r_t ON r_r_t.release_id = r.id");
-                query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
-            }
-
-            if (params.filters.genre.isValid())
-            {
-                query.join("track_genre t_g ON t_g.track_id = t.id");
-                query.where("t_g.genre_id = ?").bind(params.filters.genre);
-            }
-
-            if (params.filters.grouping.isValid())
-            {
-                query.join("track_grouping t_gr ON t_gr.track_id = t.id");
-                query.where("t_gr.grouping_id = ?").bind(params.filters.grouping);
-            }
-
-            if (params.filters.language.isValid())
-            {
-                query.join("track_language t_l ON t_l.track_id = t.id");
-                query.where("t_l.language_id = ?").bind(params.filters.language);
-            }
-
-            if (params.filters.mood.isValid())
-            {
-                query.join("track_mood t_m ON t_m.track_id = t.id");
-                query.where("t_m.mood_id = ?").bind(params.filters.mood);
-            }
-
-            if (!params.filters.clusters.empty())
-            {
-                std::ostringstream oss;
-                oss << "r.id IN (SELECT DISTINCT r.id FROM release r"
-                       " INNER JOIN track t ON t.release_id = r.id"
-                       " INNER JOIN cluster c ON c.id = t_c.cluster_id"
-                       " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
-
-                WhereClause clusterClause;
-                for (const ClusterId id : params.filters.clusters)
-                {
-                    clusterClause.Or(WhereClause{ "c.id = ?" });
-                    query.bind(id);
-                }
-
-                oss << " " << clusterClause.get();
-                oss << " GROUP BY t.id HAVING COUNT(DISTINCT c.id) = " << params.filters.clusters.size() << ")";
-
-                query.where(oss.str());
-            }
-
-            for (std::string_view keyword : params.keywords)
-                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
+            auto query{ session.getDboSession()->query<ReleaseId>("SELECT r.id from release r") };
+            joins.apply(query);
+            applyWhereFragment(query, where);
 
             return query;
         }
 
-        Wt::Dbo::Query<TrackId> createTracksQuery(Session& session, const Listen::StatsFindParameters& params)
+        SqlFragment createTracksConditions(const Listen::StatsFindParameters& params, JoinSet& joins)
         {
-            auto query{ session.getDboSession()->query<TrackId>("SELECT t.id from track t").join("listen l ON l.track_id = t.id") };
+            joins.add("listen l ON l.track_id = t.id");
+
+            SqlFragment res;
 
             if (params.user.isValid())
-                query.where("l.user_id = ?").bind(params.user);
+                res.combineWithAnd({ "l.user_id = ?", { params.user.getValue() } });
 
             if (params.artist.isValid())
             {
-                query.join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
-                    .where("t_a_l.artist_id = ?")
-                    .bind(params.artist);
+                joins.add("track_artist_link t_a_l ON t_a_l.track_id = t.id");
+                res.combineWithAnd({ "t_a_l.artist_id = ?", { params.artist.getValue() } });
             }
 
-            if (params.filters.mediaLibrary.isValid())
-                query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
+            for (const std::string_view keyword : params.keywords)
+                res.combineWithAnd({ "t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" } });
 
-            if (params.filters.label.isValid())
-            {
-                query.join("release_label r_l ON r_l.release_id = t.release_id");
-                query.where("r_l.label_id = ?").bind(params.filters.label);
-            }
+            if (params.filter)
+                res.combineWithAnd(compileFilterExpr(*params.filter, params.filterUser));
 
-            if (params.filters.releaseType.isValid())
-            {
-                query.join("release_release_type r_r_t ON r_r_t.release_id = t.release_id");
-                query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
-            }
+            return res;
+        }
 
-            if (params.filters.genre.isValid())
-            {
-                query.join("track_genre t_g ON t_g.track_id = t.id");
-                query.where("t_g.genre_id = ?").bind(params.filters.genre);
-            }
+        Wt::Dbo::Query<TrackId> createTracksQuery(Session& session, const Listen::StatsFindParameters& params)
+        {
+            JoinSet joins;
+            const SqlFragment where{ createTracksConditions(params, joins) };
 
-            if (params.filters.grouping.isValid())
-            {
-                query.join("track_grouping t_gr ON t_gr.track_id = t.id");
-                query.where("t_gr.grouping_id = ?").bind(params.filters.grouping);
-            }
-
-            if (params.filters.language.isValid())
-            {
-                query.join("track_language t_l ON t_l.track_id = t.id");
-                query.where("t_l.language_id = ?").bind(params.filters.language);
-            }
-
-            if (params.filters.mood.isValid())
-            {
-                query.join("track_mood t_m ON t_m.track_id = t.id");
-                query.where("t_m.mood_id = ?").bind(params.filters.mood);
-            }
-
-            if (!params.filters.clusters.empty())
-            {
-                std::ostringstream oss;
-                oss << "t.id IN (SELECT DISTINCT t.id FROM track t"
-                       " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-                       " INNER JOIN cluster c ON c.id = t_c.cluster_id";
-
-                WhereClause clusterClause;
-                for (const ClusterId id : params.filters.clusters)
-                {
-                    clusterClause.Or(WhereClause{ "c.id = ?" }).bind(id.toString());
-                    query.bind(id);
-                }
-
-                oss << " " << clusterClause.get();
-                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.filters.clusters.size() << ")";
-
-                query.where(oss.str());
-            }
-
-            for (std::string_view keyword : params.keywords)
-                query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
+            auto query{ session.getDboSession()->query<TrackId>("SELECT t.id from track t") };
+            joins.apply(query);
+            applyWhereFragment(query, where);
 
             return query;
         }

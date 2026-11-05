@@ -25,10 +25,8 @@
 			</div>
 		</div>
 		<div class="col-12">
-			<label class="form-label" for="${id:inline-artist-relationships}">
-				${tr:Lms.Settings.inline-artist-relationships}
-			</label>
-			${inline-artist-relationships class="form-control"}
+			<div class="form-label">${tr:Lms.Settings.inline-artist-relationships}</div>
+			${inline-artist-relationships}
 			<div class="invalid-feedback">
 				${inline-artist-relationships-info}
 			</div>

@@ -92,50 +92,50 @@ namespace lms::core::http::tests
             params.onFailureFunc = [&failureCalled] { failureCalled = true; };
             return std::make_unique<ClientRequest>(std::move(params));
         }
+    } // namespace
 
-        class SendQueueTest : public ::testing::Test
+    class SendQueueTest : public ::testing::Test
+    {
+    protected:
+        static constexpr RetryPolicy fastRetryPolicy{
+            .maxRetryCount{ 2 },
+            .defaultRetryWaitDuration{ std::chrono::seconds{ 0 } },
+            .minRetryWaitDuration{ std::chrono::seconds{ 0 } },
+            .maxRetryWaitDuration{ std::chrono::seconds{ 0 } },
+        };
+
+        SendQueueTest()
         {
-        protected:
-            static constexpr RetryPolicy fastRetryPolicy{
-                .maxRetryCount{ 2 },
-                .defaultRetryWaitDuration{ std::chrono::seconds{ 0 } },
-                .minRetryWaitDuration{ std::chrono::seconds{ 0 } },
-                .maxRetryWaitDuration{ std::chrono::seconds{ 0 } },
-            };
+            auto httpClient{ std::make_unique<StubWtHttpClient>() };
+            _httpClient = httpClient.get();
+            _queue = std::make_unique<SendQueue>(_ioContext, "http://example.com", std::move(httpClient), fastRetryPolicy);
+        }
 
-            SendQueueTest()
-            {
-                auto httpClient{ std::make_unique<StubWtHttpClient>() };
-                _httpClient = httpClient.get();
-                _queue = std::make_unique<SendQueue>(_ioContext, "http://example.com", std::move(httpClient), fastRetryPolicy);
-            }
-
-            ~SendQueueTest() override
-            {
-                auto workGuard{ boost::asio::make_work_guard(_ioContext) };
-                std::thread runner{ [this] {
-                    _ioContext.restart();
-                    _ioContext.run();
-                } };
-                _queue.reset();
-                workGuard.reset();
-                runner.join();
-            }
-
-            SendQueueTest(const SendQueueTest&) = delete;
-            SendQueueTest& operator=(const SendQueueTest&) = delete;
-
-            void pump()
-            {
+        ~SendQueueTest() override
+        {
+            auto workGuard{ boost::asio::make_work_guard(_ioContext) };
+            std::thread runner{ [this] {
                 _ioContext.restart();
                 _ioContext.run();
-            }
+            } };
+            _queue.reset();
+            workGuard.reset();
+            runner.join();
+        }
 
-            boost::asio::io_context _ioContext;
-            StubWtHttpClient* _httpClient{};
-            std::unique_ptr<SendQueue> _queue;
-        };
-    } // namespace
+        SendQueueTest(const SendQueueTest&) = delete;
+        SendQueueTest& operator=(const SendQueueTest&) = delete;
+
+        void pump()
+        {
+            _ioContext.restart();
+            _ioContext.run();
+        }
+
+        boost::asio::io_context _ioContext;
+        StubWtHttpClient* _httpClient{};
+        std::unique_ptr<SendQueue> _queue;
+    };
 
     TEST_F(SendQueueTest, CleanSuccess)
     {

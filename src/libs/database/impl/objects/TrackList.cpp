@@ -35,9 +35,8 @@
 #include "database/objects/User.hpp"
 #include "database/objects/Work.hpp"
 
-#include "SqlQuery.hpp"
 #include "Utils.hpp"
-#include "objects/detail/Types.hpp"
+#include "objects/FilterExprCompiler.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
@@ -48,83 +47,40 @@ namespace lms::db
 {
     namespace
     {
-        template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const TrackList::FindParameters& params)
+        SqlFragment createParamsConditions(const TrackList::FindParameters& params)
         {
             assert(!params.user.isValid() || !params.excludedUser.isValid());
 
-            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM tracklist t_l") };
+            SqlFragment res;
 
-            if (!params.filters.clusters.empty()
-                || params.filters.codec.has_value()
-                || params.filters.mediaLibrary.isValid()
-                || params.filters.label.isValid()
-                || params.filters.releaseType.isValid())
-            {
-                query.join("tracklist_entry t_l_e ON t_l_e.tracklist_id = t_l.id");
-                query.groupBy("t_l.id");
-            }
-
-            for (std::string_view keyword : params.keywords)
-                query.where("t_l.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
-
-            if (params.filters.mediaLibrary.isValid()
-                || params.filters.codec.has_value()
-                || params.filters.label.isValid()
-                || params.filters.releaseType.isValid())
-            {
-                query.join("track t ON t.id = t_l_e.track_id");
-
-                if (params.filters.codec.has_value())
-                    query.where("t.codec = ?").bind(detail::getDbCodec(*params.filters.codec));
-
-                if (params.filters.mediaLibrary.isValid())
-                    query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
-
-                if (params.filters.label.isValid())
-                {
-                    query.join("release_label r_l ON r_l.release_id = t.release_id");
-                    query.where("r_l.label_id = ?").bind(params.filters.label);
-                }
-
-                if (params.filters.releaseType.isValid())
-                {
-                    query.join("release_release_type r_r_t ON r_r_t.release_id = t.release_id");
-                    query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
-                }
-            }
+            for (const std::string_view keyword : params.keywords)
+                res.combineWithAnd({ "t_l.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" } });
 
             if (params.user.isValid())
-                query.where("t_l.user_id = ?").bind(params.user);
+                res.combineWithAnd({ "t_l.user_id = ?", { params.user.getValue() } });
             else if (params.excludedUser.isValid())
-                query.where("t_l.user_id <> ? OR t_l.user_id IS NULL").bind(params.excludedUser);
+                res.combineWithAnd({ "t_l.user_id <> ? OR t_l.user_id IS NULL", { params.excludedUser.getValue() } });
 
             if (params.type)
-                query.where("t_l.type = ?").bind(*params.type);
+                res.combineWithAnd({ "t_l.type = ?", { static_cast<int>(*params.type) } });
 
             if (params.visibility)
-                query.where("t_l.visibility = ?").bind(*params.visibility);
+                res.combineWithAnd({ "t_l.visibility = ?", { static_cast<int>(*params.visibility) } });
 
-            if (!params.filters.clusters.empty())
+            if (params.filter)
             {
-                std::ostringstream oss;
-                oss << "t_l_e.track_id IN (SELECT DISTINCT t.id FROM track t"
-                       " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-                       " INNER JOIN cluster c ON c.id = t_c.cluster_id";
-
-                WhereClause clusterClause;
-                for (const ClusterId clusterId : params.filters.clusters)
-                {
-                    clusterClause.Or(WhereClause{ "c.id = ?" });
-                    query.bind(clusterId);
-                }
-
-                oss << " " << clusterClause.get();
-                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.filters.clusters.size() << ")";
-
-                query.where(oss.str());
+                SqlFragment filter{ "t_l.id IN (SELECT t_l_e.tracklist_id FROM tracklist_entry t_l_e WHERE " };
+                filter.append(createMatchingTracksCondition("t_l_e.track_id", *params.filter, params.filterUser));
+                filter.append(")");
+                res.combineWithAnd(filter);
             }
 
+            return res;
+        }
+
+        template<typename ResultType>
+        void applySortMethod(Wt::Dbo::Query<ResultType>& query, const TrackList::FindParameters& params)
+        {
             switch (params.sortMethod)
             {
             case TrackListSortMethod::None:
@@ -136,23 +92,16 @@ namespace lms::db
                 query.orderBy("t_l.last_modified_date_time DESC");
                 break;
             }
-
-            return query;
         }
 
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, const TrackList::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createListQuery(Session& session, std::string_view selectedItem, const TrackList::FindParameters& params)
         {
-            std::string_view itemToSelect;
+            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ selectedItem } + " FROM tracklist t_l") };
+            applyWhereFragment(query, createParamsConditions(params));
+            applySortMethod(query, params);
 
-            if constexpr (std::is_same_v<ResultType, TrackListId>)
-                itemToSelect = "t_l.id";
-            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<TrackList>>)
-                itemToSelect = "t_l";
-            else
-                static_assert("Unhandled type");
-
-            return createQuery<ResultType>(session, itemToSelect, params);
+            return query;
         }
     } // namespace
 
@@ -187,14 +136,14 @@ namespace lms::db
     std::vector<TrackListId> TrackList::find(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
-        auto query{ createQuery<TrackListId>(session, params) };
+        auto query{ createListQuery<TrackListId>(session, "t_l.id", params) };
         return utils::execRangeQuery<TrackListId>(query, params.range);
     }
 
     void TrackList::find(Session& session, const FindParameters& params, const std::function<void(const TrackList::pointer&)>& func)
     {
         session.checkReadTransaction();
-        auto query{ createQuery<Wt::Dbo::ptr<TrackList>>(session, params) };
+        auto query{ createListQuery<Wt::Dbo::ptr<TrackList>>(session, "t_l", params) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
@@ -251,54 +200,6 @@ namespace lms::db
         return utils::fetchQueryResults<Cluster::pointer>(query);
     }
 
-    std::vector<std::vector<Cluster::pointer>> TrackList::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const
-    {
-        assert(session());
-        std::vector<std::vector<Cluster::pointer>> res;
-
-        if (clusterTypeIds.empty())
-            return res;
-
-        auto query{ session()->query<Wt::Dbo::ptr<Cluster>>("SELECT c from cluster c") };
-
-        query.join("track t ON c.id = t_c.cluster_id")
-            .join("track_cluster t_c ON t_c.track_id = t.id")
-            .join("cluster_type c_type ON c.cluster_type_id = c_type.id")
-            .join("tracklist_entry t_l_e ON t_l_e.track_id = t.id")
-            .join("tracklist t_l ON t_l.id = t_l_e.tracklist_id")
-            .where("t_l.id = ?")
-            .bind(getId());
-
-        {
-            std::ostringstream oss;
-            oss << "c_type.id IN (";
-            bool first{ true };
-            for (ClusterTypeId clusterTypeId : clusterTypeIds)
-            {
-                if (!first)
-                    oss << ", ";
-                oss << "?";
-                query.bind(clusterTypeId);
-                first = false;
-            }
-            oss << ")";
-            query.where(oss.str());
-        }
-        query.groupBy("c.id");
-        query.orderBy("COUNT(c.id) DESC");
-
-        std::map<ClusterTypeId, std::vector<Cluster::pointer>> clustersByType;
-        utils::forEachQueryResult(query, [&](const Cluster::pointer& cluster) {
-            if (clustersByType[cluster->getType()->getId()].size() < size)
-                clustersByType[cluster->getType()->getId()].push_back(cluster);
-        });
-
-        for (const auto& [clusterTypeId, clusters] : clustersByType)
-            res.push_back(clusters);
-
-        return res;
-    }
-
     std::vector<Track::pointer> TrackList::getSimilarTracks(std::optional<std::size_t> offset, std::optional<std::size_t> size) const
     {
         assert(session());
@@ -319,13 +220,24 @@ namespace lms::db
         return utils::fetchQueryResults<Track::pointer>(query);
     }
 
-    std::vector<TrackId> TrackList::getTrackIds() const
+    std::vector<TrackId> TrackList::getTrackIds(std::optional<Range> range) const
     {
         assert(session());
 
-        auto query{ session()->query<TrackId>("SELECT p_e.track_id from tracklist_entry p_e INNER JOIN tracklist p ON p_e.tracklist_id = p.id").where("p.id = ?").bind(getId()) };
+        auto query{ session()->query<TrackId>("SELECT track_id FROM tracklist_entry").where("tracklist_id = ?").bind(getId()).orderBy("id") };
 
-        return utils::fetchQueryResults(query);
+        return utils::execRangeQuery<TrackId>(query, range);
+    }
+
+    void TrackList::visitTracks(const std::function<void(const ObjectPtr<Track>&)>& func) const
+    {
+        assert(session());
+
+        auto query{ session()->query<Wt::Dbo::ptr<Track>>("SELECT t FROM track t").join("tracklist_entry t_l_e ON t_l_e.track_id = t.id").where("t_l_e.tracklist_id = ?").bind(getId()).orderBy("t_l_e.id") };
+
+        utils::forEachQueryResult(query, [&](const Track::pointer& track) {
+            func(track);
+        });
     }
 
     std::chrono::milliseconds TrackList::getDuration() const

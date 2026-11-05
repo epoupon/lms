@@ -25,18 +25,6 @@
 
 namespace lms::db::tests
 {
-    TmpDatabase::TmpDatabase()
-        : _tmpFile{ std::tmpnam(nullptr) }
-        , _fileDeleter{ _tmpFile }
-        , _db{ createDb(_tmpFile) }
-    {
-    }
-
-    db::IDb& TmpDatabase::getDb()
-    {
-        return *_db;
-    }
-
     DatabaseFixture::~DatabaseFixture()
     {
         testDatabaseEmpty();

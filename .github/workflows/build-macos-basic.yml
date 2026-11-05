@@ -18,7 +18,7 @@ jobs:
 
       - name: Build and install Wt
         run: |
-          WT_VERSION=4.12.1
+          WT_VERSION=4.15.0
           git clone https://github.com/emweb/wt.git /tmp/wt
           cd /tmp/wt
           git checkout ${WT_VERSION}

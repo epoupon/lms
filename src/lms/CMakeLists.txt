@@ -37,6 +37,7 @@ add_executable(lms
 	ui/admin/ScanSettingsView.cpp
 	ui/admin/UserView.cpp
 	ui/admin/UsersView.cpp
+	ui/common/CheckList.cpp
 	ui/common/DoubleValidator.cpp
 	ui/common/PathRouter.cpp
 	ui/common/InfiniteScrollingContainer.cpp

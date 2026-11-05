@@ -21,9 +21,7 @@
 
 #include <ostream>
 
-#include "core/ILogger.hpp"
 #include "database/Session.hpp"
-#include "database/objects/ArtistInfo.hpp"
 
 #include "types/TrackMetadata.hpp"
 
@@ -55,23 +53,6 @@ namespace lms::scanner::helpers
 
             return artist;
         }
-
-        void updateSortNameIfNeeded(db::Session& session, db::Artist::pointer& artist, const Artist& artistInfo)
-        {
-            if (!artistInfo.sortName || artist->getSortName() == *artistInfo.sortName)
-                return;
-
-            // an artist info file, if any, is the authoritative source and must not be overridden by a track/release tag
-            bool hasArtistInfo{};
-            db::ArtistInfo::find(session, artist->getId(), db::Range{ .offset = 0, .size = 1 }, [&](const db::ArtistInfo::pointer&) {
-                hasArtistInfo = true;
-            });
-            if (hasArtistInfo)
-                return;
-
-            LMS_LOG(DBUPDATER, DEBUG, "Updating artist " << artist << " sort name from '" << artist->getSortName() << "' to '" << *artistInfo.sortName << "'");
-            artist.modify()->setSortName(*artistInfo.sortName);
-        }
     } // namespace
 
     db::Artist::pointer getOrCreateArtistByMBID(db::Session& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
@@ -99,8 +80,6 @@ namespace lms::scanner::helpers
             if (!artist)
                 artist = createArtist(session, artistInfo);
         }
-
-        updateSortNameIfNeeded(session, artist, artistInfo);
 
         return artist;
     }
@@ -134,10 +113,6 @@ namespace lms::scanner::helpers
             else
                 artist = createArtist(session, artistInfo);
         }
-
-        // don't override a sort name coming from a higher-confidence MBID-matched artist, but do fill in a missing one
-        if (!artist->hasMBID() || artist->getSortName().empty())
-            updateSortNameIfNeeded(session, artist, artistInfo);
 
         return artist;
     }

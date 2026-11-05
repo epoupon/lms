@@ -415,7 +415,8 @@ namespace lms::api::subsonic
                 break;
             }
         }
-        parameters.filters.setMediaLibrary(mediaLibrary);
+        if (mediaLibrary.isValid())
+            parameters.setFilter(FilterExpr::equal(mediaLibrary));
 
         // This endpoint does not scale: make short lived transactions in order not to block the whole application
 

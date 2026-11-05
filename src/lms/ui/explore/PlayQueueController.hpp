@@ -21,20 +21,18 @@
 
 #include <span>
 
-#include "database/objects/ArtistId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 
 namespace lms::ui
 {
-    class Filters;
     class PlayQueue;
 
-    // Used to interact with the play queue, using the current exploration filters
+    // Used to interact with the play queue: callers give what they show, releases are played whole
     class PlayQueueController
     {
     public:
-        PlayQueueController(Filters& filters, PlayQueue& playQueue);
+        explicit PlayQueueController(PlayQueue& playQueue);
         ~PlayQueueController() = default;
         PlayQueueController(const PlayQueueController&) = delete;
         PlayQueueController& operator=(const PlayQueueController&) = delete;
@@ -47,17 +45,12 @@ namespace lms::ui
             PlayShuffled,
         };
 
-        void processCommand(Command command, std::span<const db::ArtistId> artists);
         void processCommand(Command command, std::span<const db::ReleaseId> releases);
         void processCommand(Command command, std::span<const db::TrackId> tracks);
 
         void playAtIndex(std::span<const db::TrackId> trackIds, std::size_t index);
 
-        void setMaxTrackCountToEnqueue(std::size_t maxTrackCount) { _maxTrackCountToEnqueue = maxTrackCount; }
-
     private:
-        Filters& _filters;
         PlayQueue& _playQueue;
-        std::size_t _maxTrackCountToEnqueue{};
     };
 } // namespace lms::ui

@@ -21,30 +21,12 @@
 
 #include <array>
 #include <fstream>
-#include <random>
 
 #include "audio/IAudioDecoder.hpp"
 #include "audio/PcmTypes.hpp"
 
 namespace lms::audio::tests
 {
-    ScopedTmpDirectory::ScopedTmpDirectory()
-        : _path{ std::filesystem::temp_directory_path() / ("lms-audio-test-" + std::to_string(std::random_device{}())) }
-    {
-        std::filesystem::create_directories(_path);
-    }
-
-    ScopedTmpDirectory::~ScopedTmpDirectory()
-    {
-        std::error_code ec;
-        std::filesystem::remove_all(_path, ec);
-    }
-
-    std::filesystem::path ScopedTmpDirectory::operator/(std::string_view fileName) const
-    {
-        return _path / fileName;
-    }
-
     void writeFile(const std::filesystem::path& path, std::span<const std::byte> data)
     {
         std::ofstream os{ path, std::ios::binary };

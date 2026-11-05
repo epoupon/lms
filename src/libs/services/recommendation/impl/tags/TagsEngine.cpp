@@ -194,7 +194,7 @@ namespace lms::recommendation
             const TagId tagId{ .type = TagId::Type::Genre, .id = genre->getId() };
 
             db::Track::FindParameters params;
-            params.filters.setGenre(genre->getId());
+            params.setFilter(db::FilterExpr::equal(genre->getId()));
 
             db::Track::find(session, params, [&](const db::Track::pointer& track) {
                 _trackTags[track->getId()].push_back(tagId);
@@ -205,7 +205,7 @@ namespace lms::recommendation
             const TagId tagId{ .type = TagId::Type::Mood, .id = mood->getId() };
 
             db::Track::FindParameters params;
-            params.filters.setMood(mood->getId());
+            params.setFilter(db::FilterExpr::equal(mood->getId()));
 
             db::Track::find(session, params, [&](const db::Track::pointer& track) {
                 _trackTags[track->getId()].push_back(tagId);
@@ -216,7 +216,7 @@ namespace lms::recommendation
             const TagId tagId{ .type = TagId::Type::Grouping, .id = grouping->getId() };
 
             db::Track::FindParameters params;
-            params.filters.setGrouping(grouping->getId());
+            params.setFilter(db::FilterExpr::equal(grouping->getId()));
 
             db::Track::find(session, params, [&](const db::Track::pointer& track) {
                 _trackTags[track->getId()].push_back(tagId);
@@ -227,7 +227,7 @@ namespace lms::recommendation
             const TagId tagId{ .type = TagId::Type::Language, .id = language->getId() };
 
             db::Track::FindParameters params;
-            params.filters.setLanguage(language->getId());
+            params.setFilter(db::FilterExpr::equal(language->getId()));
 
             db::Track::find(session, params, [&](const db::Track::pointer& track) {
                 _trackTags[track->getId()].push_back(tagId);

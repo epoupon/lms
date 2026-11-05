@@ -257,7 +257,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             Track::FindParameters params;
-            params.setFilters(Filters{}.setCodec(core::media::Codec::FLAC));
+            params.setFilter(FilterExpr::equal(core::media::Codec::FLAC));
 
             const auto tracks{ Track::find(session, params) };
             ASSERT_EQ(tracks.size(), 1);
@@ -290,13 +290,13 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId()))) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setFilter(FilterExpr::equal(library->getId()))) };
             ASSERT_EQ(tracks.size(), 1);
             EXPECT_EQ(tracks.front(), track.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setFilters(Filters{}.setMediaLibrary(otherLibrary->getId()))) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setFilter(FilterExpr::equal(otherLibrary->getId()))) };
             EXPECT_EQ(tracks.size(), 0);
         }
     }
@@ -388,6 +388,35 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, MultipleTracksSearchByFilterWithBackslash)
+    {
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track1.get().modify()->setName(R"(AC\DC)");
+            track2.get().modify()->setName("ACDC");
+            track3.get().modify()->setName(R"(MyTrack\)");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            {
+                const auto tracks{ Track::findIds(session, Track::FindParameters{}.setKeywords({ R"(AC\DC)" })) };
+                ASSERT_EQ(tracks.size(), 1);
+                EXPECT_EQ(tracks[0], track1.getId());
+            }
+            {
+                const auto tracks{ Track::findIds(session, Track::FindParameters{}.setKeywords({ R"(MyTrack\)" })) };
+                ASSERT_EQ(tracks.size(), 1);
+                EXPECT_EQ(tracks[0], track3.getId());
+            }
+        }
+    }
+
     TEST_F(DatabaseFixture, Track_date)
     {
         ScopedTrack track{ session };
@@ -417,36 +446,6 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(track->getYear(), date.getYear());
             EXPECT_EQ(track->getOriginalYear(), originalDate.getYear());
-        }
-    }
-
-    TEST_F(DatabaseFixture, Track_writtenAfter)
-    {
-        ScopedTrack track{ session };
-
-        const Wt::WDateTime dateTime{ Wt::WDate{ 1950, 1, 1 }, Wt::WTime{ 12, 30, 20 } };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setLastWriteTime(dateTime);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}) };
-            EXPECT_EQ(tracks.size(), 1);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setWrittenAfter(dateTime.addSecs(-1))) };
-            EXPECT_EQ(tracks.size(), 1);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setWrittenAfter(dateTime.addSecs(+1))) };
-            EXPECT_EQ(tracks.size(), 0);
         }
     }
 
@@ -595,6 +594,27 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Track_countByArtist_linkedSeveralTimes)
+    {
+        ScopedTrack track{ session };
+        ScopedArtist artist{ session, "MyArtist" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Composer);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const Track::FindParameters params{ Track::FindParameters{}.setArtist(artist.getId()) };
+            EXPECT_EQ(Track::findIds(session, params).size(), 1);
+            EXPECT_EQ(Track::getCount(session, params), 1);
+        }
+    }
+
     TEST_F(DatabaseFixture, Track_combinedTagFilters)
     {
         ScopedTrack track1{ session };
@@ -618,7 +638,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto results{ Track::findIds(session, Track::FindParameters{}.setFilters(Filters{}.setGenre(genre.getId()).setMood(mood.getId()).setGrouping(grouping.getId()).setLanguage(language.getId()))) };
+            const auto results{ Track::findIds(session, Track::FindParameters{}.setFilter(FilterExpr::And({ FilterExpr::equal(genre.getId()), FilterExpr::equal(mood.getId()), FilterExpr::equal(grouping.getId()), FilterExpr::equal(language.getId()) }))) };
             ASSERT_EQ(results.size(), 1);
             EXPECT_EQ(results.front(), track1.getId());
         }

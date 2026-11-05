@@ -40,7 +40,7 @@
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/CountryId.hpp"
 #include "database/objects/DirectoryId.hpp"
-#include "database/objects/Filters.hpp"
+#include "database/objects/FilterExpr.hpp"
 #include "database/objects/LabelId.hpp"
 #include "database/objects/MediaLibraryId.hpp"
 #include "database/objects/ReleaseId.hpp"
@@ -162,14 +162,12 @@ namespace lms::db
     public:
         struct FindParameters
         {
-            Filters filters;
-            std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords (cannot be set with keywords)
-            std::string name;                       // must match this name (cannot be set with keywords)
-            ReleaseSortMethod sortMethod{ ReleaseSortMethod::None };
+            std::optional<FilterExpr> filter;                        // if set, releases must have a track matching this expression
+            UserId filterUser;                                       // required if filter has per-user fields
+            std::vector<std::string_view> keywords;                  // if non empty, name must match all of these keywords (cannot be set with keywords)
+            std::string name;                                        // must match this name (cannot be set with keywords)
+            ReleaseSortMethod sortMethod{ ReleaseSortMethod::None }; // the date sorts consider all the tracks of the release, not only the ones matching the filter
             std::optional<Range> range;
-            Wt::WDateTime writtenAfter;
-            std::optional<YearRange> dateRange;
-            std::optional<YearRange> originalDateRange;
             UserId feedbackUser;                                     // if valid, only releases that have feedback from this user
             std::optional<FeedbackValue> feedbackValue;              // if set, only releases with feedback matching this value (any user, unless feedbackUser is also set)
             ArtistId artist;                                         // only releases by this release artist
@@ -180,9 +178,10 @@ namespace lms::db
             DirectoryId directory;                                   // if set, releases in this directory (cannot be set with parent directory)
             DirectoryId parentDirectory;                             // if set, releases in this parent directory (cannot be set with directory)
 
-            FindParameters& setFilters(const Filters& _filters)
+            FindParameters& setFilter(std::optional<FilterExpr> _filter, UserId _user = {})
             {
-                filters = _filters;
+                filter = std::move(_filter);
+                filterUser = _user;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -203,21 +202,6 @@ namespace lms::db
             FindParameters& setRange(std::optional<Range> _range)
             {
                 range = _range;
-                return *this;
-            }
-            FindParameters& setWrittenAfter(const Wt::WDateTime& _after)
-            {
-                writtenAfter = _after;
-                return *this;
-            }
-            FindParameters& setDateRange(const std::optional<YearRange>& _dateRange)
-            {
-                dateRange = _dateRange;
-                return *this;
-            }
-            FindParameters& setOriginalDateRange(const std::optional<YearRange>& _originalDateRange)
-            {
-                originalDateRange = _originalDateRange;
                 return *this;
             }
             FindParameters& setFeedbackUser(UserId _user)
@@ -282,10 +266,6 @@ namespace lms::db
         // Updates
         static void updatePreferredArtwork(Session& session, ReleaseId id, ArtworkId artworkId);
 
-        // Get the cluster of the tracks that belong to this release
-        // Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)
-        // size is the max number of cluster per cluster type
-        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const;
         std::vector<ObjectPtr<Cluster>> getClusters(ClusterTypeId clusterTypeId, std::size_t maxCount) const;
 
         // Utility functions (if all tracks have the same values, which is legit to not be the case)

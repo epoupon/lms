@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <filesystem>
 #include <memory>
 
 #include <gtest/gtest.h>
@@ -42,6 +41,8 @@
 #include "database/objects/TrackBookmark.hpp"
 #include "database/objects/TrackList.hpp"
 #include "database/objects/User.hpp"
+
+#include "TmpDatabase.hpp"
 
 namespace lms::db::tests
 {
@@ -112,35 +113,6 @@ namespace lms::db::tests
     using ScopedTrack = ScopedEntity<db::Track>;
     using ScopedTrackList = ScopedEntity<db::TrackList>;
     using ScopedUser = ScopedEntity<db::User>;
-
-    class ScopedFileDeleter final
-    {
-    public:
-        ScopedFileDeleter(const std::filesystem::path& path)
-            : _path{ path } {}
-        ~ScopedFileDeleter() { std::filesystem::remove(_path); }
-
-    private:
-        ScopedFileDeleter(const ScopedFileDeleter&) = delete;
-        ScopedFileDeleter(ScopedFileDeleter&&) = delete;
-        ScopedFileDeleter operator=(const ScopedFileDeleter&) = delete;
-        ScopedFileDeleter operator=(ScopedFileDeleter&&) = delete;
-
-        const std::filesystem::path _path;
-    };
-
-    class TmpDatabase final
-    {
-    public:
-        TmpDatabase();
-
-        IDb& getDb();
-
-    private:
-        const std::filesystem::path _tmpFile;
-        ScopedFileDeleter _fileDeleter;
-        std::unique_ptr<IDb> _db;
-    };
 
     class DatabaseFixture : public ::testing::Test
     {

@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -27,7 +28,7 @@
 
 namespace lms::db
 {
-    struct Filters;
+    class FilterExpr;
 }
 
 namespace lms::ui
@@ -61,7 +62,7 @@ namespace lms::ui
     protected:
         Range getActualRange(Range range) const;
         std::size_t getMaxCount() const;
-        const db::Filters& getDbFilters() const;
+        const std::optional<db::FilterExpr>& getDbFilter() const;
         const std::vector<std::string_view>& getSearchKeywords() const { return _searchKeywords; }
 
     private:

@@ -65,9 +65,10 @@ namespace lms::api::subsonic
             if (type == "alphabeticalByName")
             {
                 Release::FindParameters params;
-                params.setSortMethod(ReleaseSortMethod::Name);
+                params.setSortMethod(ReleaseSortMethod::SortName);
                 params.setRange(range);
-                params.filters.setMediaLibrary(mediaLibraryId);
+                if (mediaLibraryId.isValid())
+                    params.setFilter(FilterExpr::equal(mediaLibraryId));
 
                 releases = Release::findIds(context.getDbSession(), params);
             }
@@ -76,7 +77,8 @@ namespace lms::api::subsonic
                 Release::FindParameters params;
                 params.setSortMethod(ReleaseSortMethod::ArtistNameThenName);
                 params.setRange(range);
-                params.filters.setMediaLibrary(mediaLibraryId);
+                if (mediaLibraryId.isValid())
+                    params.setFilter(FilterExpr::equal(mediaLibraryId));
 
                 releases = Release::findIds(context.getDbSession(), params);
             }
@@ -87,10 +89,13 @@ namespace lms::api::subsonic
 
                 if (const Genre::pointer genreObj{ Genre::find(context.getDbSession(), genre) })
                 {
+                    FilterExpr filter{ FilterExpr::equal(genreObj->getId()) };
+                    if (mediaLibraryId.isValid())
+                        filter = FilterExpr::And({ filter, FilterExpr::equal(mediaLibraryId) });
+
                     Release::FindParameters params;
-                    params.filters.setMediaLibrary(mediaLibraryId);
-                    params.filters.setGenre(genreObj->getId());
-                    params.setSortMethod(ReleaseSortMethod::Name);
+                    params.setFilter(std::move(filter));
+                    params.setSortMethod(ReleaseSortMethod::SortName);
                     params.setRange(range);
 
                     releases = Release::findIds(context.getDbSession(), params);
@@ -104,8 +109,11 @@ namespace lms::api::subsonic
                 Release::FindParameters params;
                 params.setSortMethod(fromYear > toYear ? ReleaseSortMethod::OriginalDateDesc : ReleaseSortMethod::OriginalDate);
                 params.setRange(range);
-                params.setOriginalDateRange(YearRange{ std::min(fromYear, toYear), std::max(fromYear, toYear) });
-                params.filters.setMediaLibrary(mediaLibraryId);
+
+                FilterExpr filter{ FilterExpr::condition(IntegerCondition{ IntegerField::OriginalYear, FilterOperator::Between, FilterRange<std::int64_t>{ std::min(fromYear, toYear), std::max(fromYear, toYear) } }) };
+                if (mediaLibraryId.isValid())
+                    filter = FilterExpr::And({ filter, FilterExpr::equal(mediaLibraryId) });
+                params.setFilter(std::move(filter));
 
                 releases = Release::findIds(context.getDbSession(), params);
             }
@@ -114,7 +122,8 @@ namespace lms::api::subsonic
                 Listen::StatsFindParameters params;
                 params.setUser(context.getUser()->getId());
                 params.setRange(range);
-                params.filters.setMediaLibrary(mediaLibraryId);
+                if (mediaLibraryId.isValid())
+                    params.setFilter(FilterExpr::equal(mediaLibraryId));
 
                 releases = Listen::getTopReleases(context.getDbSession(), params);
             }
@@ -123,7 +132,8 @@ namespace lms::api::subsonic
                 Release::FindParameters params;
                 params.setSortMethod(ReleaseSortMethod::AddedDesc);
                 params.setRange(range);
-                params.filters.setMediaLibrary(mediaLibraryId);
+                if (mediaLibraryId.isValid())
+                    params.setFilter(FilterExpr::equal(mediaLibraryId));
 
                 releases = Release::findIds(context.getDbSession(), params);
             }
@@ -134,7 +144,8 @@ namespace lms::api::subsonic
                 Release::FindParameters params;
                 params.setSortMethod(ReleaseSortMethod::Random);
                 params.setRange(Range{ 0, size });
-                params.filters.setMediaLibrary(mediaLibraryId);
+                if (mediaLibraryId.isValid())
+                    params.setFilter(FilterExpr::equal(mediaLibraryId));
 
                 releases = Release::findIds(context.getDbSession(), params);
             }
@@ -143,7 +154,8 @@ namespace lms::api::subsonic
                 Listen::StatsFindParameters params;
                 params.setUser(context.getUser()->getId());
                 params.setRange(range);
-                params.filters.setMediaLibrary(mediaLibraryId);
+                if (mediaLibraryId.isValid())
+                    params.setFilter(FilterExpr::equal(mediaLibraryId));
 
                 releases = Listen::getRecentReleases(context.getDbSession(), params);
             }
@@ -154,7 +166,8 @@ namespace lms::api::subsonic
                 params.setFeedbackValue(db::FeedbackValue::Loved);
                 params.setSortMethod(ReleaseSortMethod::FeedbackDateDesc);
                 params.setRange(range);
-                params.filters.setMediaLibrary(mediaLibraryId);
+                if (mediaLibraryId.isValid())
+                    params.setFilter(FilterExpr::equal(mediaLibraryId));
 
                 releases = Release::findIds(context.getDbSession(), params);
             }
@@ -203,7 +216,8 @@ namespace lms::api::subsonic
             releaseFindParameters.setFeedbackUser(context.getUser()->getId());
             releaseFindParameters.setFeedbackValue(db::FeedbackValue::Loved);
             releaseFindParameters.setSortMethod(ReleaseSortMethod::FeedbackDateDesc);
-            releaseFindParameters.filters.setMediaLibrary(mediaLibrary);
+            if (mediaLibrary.isValid())
+                releaseFindParameters.setFilter(FilterExpr::equal(mediaLibrary));
 
             for (const ReleaseId releaseId : Release::findIds(context.getDbSession(), releaseFindParameters))
             {
@@ -215,7 +229,8 @@ namespace lms::api::subsonic
             trackFindParameters.setFeedbackUser(context.getUser()->getId());
             trackFindParameters.setFeedbackValue(db::FeedbackValue::Loved);
             trackFindParameters.setSortMethod(TrackSortMethod::FeedbackDateDesc);
-            trackFindParameters.filters.setMediaLibrary(mediaLibrary);
+            if (mediaLibrary.isValid())
+                trackFindParameters.setFilter(FilterExpr::equal(mediaLibrary));
 
             for (const TrackId trackId : Track::findIds(context.getDbSession(), trackFindParameters))
             {
@@ -253,7 +268,8 @@ namespace lms::api::subsonic
         Track::FindParameters params;
         params.setSortMethod(TrackSortMethod::Random);
         params.setRange(Range{ 0, size });
-        params.filters.setMediaLibrary(mediaLibraryId);
+        if (mediaLibraryId.isValid())
+            params.setFilter(FilterExpr::equal(mediaLibraryId));
 
         Track::find(context.getDbSession(), params, [&](const Track::pointer& track) {
             randomSongsNode.addArrayChild("song", createSongNode(context, track, context.getUser()));
@@ -284,9 +300,12 @@ namespace lms::api::subsonic
         Response response{ Response::createOkResponse() };
         Response::Node& songsByGenreNode{ response.createNode("songsByGenre") };
 
+        FilterExpr filter{ FilterExpr::equal(genreObj->getId()) };
+        if (mediaLibrary.isValid())
+            filter = FilterExpr::And({ filter, FilterExpr::equal(mediaLibrary) });
+
         Track::FindParameters params;
-        params.filters.setGenre(genreObj->getId());
-        params.filters.setMediaLibrary(mediaLibrary);
+        params.setFilter(std::move(filter));
         params.setRange(Range{ offset, count });
 
         Track::find(context.getDbSession(), params, [&](const Track::pointer& track) {

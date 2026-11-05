@@ -30,9 +30,11 @@
 
 #include "database/Object.hpp"
 #include "database/Types.hpp"
+#include "database/objects/ArtistId.hpp"
 #include "database/objects/ClusterId.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/TrackId.hpp"
+#include "database/objects/TrackListId.hpp"
 #include "database/objects/Types.hpp"
 
 namespace lms::db
@@ -54,6 +56,8 @@ namespace lms::db
             std::string clusterTypeName; // if non empty, clusters that belong to this cluster type
             TrackId track;               // if set, clusters involved in this track
             ReleaseId release;           // if set, clusters involved in this release
+            ArtistId artist;             // if set, clusters involved in the tracks of this artist
+            TrackListId trackList;       // if set, clusters involved in the tracks of this track list
 
             FindParameters& setRange(std::optional<Range> _range)
             {
@@ -83,6 +87,16 @@ namespace lms::db
             FindParameters& setRelease(ReleaseId _release)
             {
                 release = _release;
+                return *this;
+            }
+            FindParameters& setArtist(ArtistId _artist)
+            {
+                artist = _artist;
+                return *this;
+            }
+            FindParameters& setTrackList(TrackListId _trackList)
+            {
+                trackList = _trackList;
                 return *this;
             }
         };

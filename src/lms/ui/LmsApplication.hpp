@@ -93,7 +93,7 @@ namespace lms::ui
         MediaPlayer& getMediaPlayer() const { return *_mediaPlayer; }
         PlayQueue& getPlayQueue() const { return *_playQueue; }
         ModalManager& getModalManager() const { return *_modalManager; }
-        WebStorage& getWebStorage() const { return *_webStorage; }
+        WebStorage& getWebStorage() const; // user must be logged in prior this call
 
         // Signal emitted just before the session ends (user may already be logged out)
         Wt::Signal<>& preQuit() { return _preQuit; }
