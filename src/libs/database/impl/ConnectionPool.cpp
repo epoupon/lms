@@ -74,7 +74,7 @@ namespace lms::db
         std::unique_ptr<Wt::Dbo::SqlConnection> connection;
         {
             const std::scoped_lock lock{ _mutex };
-            
+
             if (!_freeConnections.empty())
             {
                 connection = std::move(_freeConnections.back());
