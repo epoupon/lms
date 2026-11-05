@@ -21,7 +21,7 @@
 
 #include <cassert>
 
-#include <Wt/WConfig.h>
+#include "WtDefs.hpp"
 
 #include <Wt/WAnchor.h>
 #include <Wt/WEnvironment.h>
@@ -29,6 +29,9 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WServer.h>
 #include <Wt/WStackedWidget.h>
+#if LMS_WT_HAS_FAVICON
+    #include <Wt/WUrlFavicon.h>
+#endif
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
@@ -247,6 +250,10 @@ namespace lms::ui
 
         useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
         require("js/mediaplayer.js");
+
+#if LMS_WT_HAS_FAVICON
+        setFavicon(std::make_unique<Wt::WUrlFavicon>(resolveRelativeUrl("images/favicon.svg")));
+#endif // LMS_WT_HAS_FAVICON
 
         setTitle();
         setLocalizedStrings(getOrCreateMessageBundle());
