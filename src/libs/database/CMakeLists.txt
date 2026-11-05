@@ -47,6 +47,7 @@ add_library(lmsdatabase STATIC
 	impl/objects/Types.cpp
 	impl/objects/UIState.cpp
 	impl/objects/User.cpp
+	impl/ConnectionPool.cpp
 	impl/Db.cpp
 	impl/IdType.cpp
 	impl/JoinSet.cpp

@@ -448,8 +448,7 @@ namespace lms
             if (config->getBool("db-profile-queries", false))
                 QueryProfiler.assign(db::createQueryProfiler());
 
-            // Connection pool size must be twice the number of threads: we have at least 2 io pools with getThreadCount() each and they all may access the database
-            auto database{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db", getThreadCount() * 2) };
+            auto database{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db") };
             core::UUID serverInstanceId;
             {
                 db::Session session{ *database };

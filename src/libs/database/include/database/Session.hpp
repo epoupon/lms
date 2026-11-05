@@ -50,9 +50,12 @@ namespace lms::db
         void execute(std::string_view statement);
 
         // All these methods will acquire transactions
-        void fullAnalyze(); // helper for retrieveEntriesToAnalyze + analyzeEntry
+        void fullAnalyze(); // helper for retrieveEntriesToAnalyze + analyzeEntry + requestConnectionsReload
         void retrieveEntriesToAnalyze(std::vector<std::string>& entryList);
         void analyzeEntry(const std::string& entry);
+
+        // To be called after the last analyzeEntry
+        void requestConnectionsReload();
 
         bool areAllTablesEmpty(); // need to acquire a read transaction
         FileStats getFileStats(); // need to acquire a read transaction

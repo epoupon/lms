@@ -64,6 +64,8 @@ namespace lms::scanner
             _progressCallback(context.currentStepStats);
         }
 
+        session.requestConnectionsReload();
+
         LMS_LOG(DBUPDATER, INFO, "Database analyze complete");
     }
 } // namespace lms::scanner

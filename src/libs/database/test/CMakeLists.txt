@@ -7,6 +7,7 @@ add_executable(test-database
 	AuthToken.cpp
 	Cluster.cpp
 	Common.cpp
+	ConnectionPool.cpp
 	DatabaseTest.cpp
 	Directory.cpp
 	FilterExpr.cpp

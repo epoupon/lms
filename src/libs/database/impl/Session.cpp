@@ -69,6 +69,7 @@
 #include "database/objects/User.hpp"
 #include "database/objects/Work.hpp"
 
+#include "ConnectionPool.hpp"
 #include "Db.hpp"
 #include "Migration.hpp"
 #include "TransactionChecker.hpp"
@@ -419,7 +420,14 @@ namespace lms::db
         for (const std::string& entry : entries)
             analyzeEntry(entry);
 
+        requestConnectionsReload();
+
         LMS_LOG(DB, INFO, "Analyze complete!");
+    }
+
+    void Session::requestConnectionsReload()
+    {
+        static_cast<Db&>(_db).getConnectionPool().requestConnectionsReload();
     }
 
     bool Session::areAllTablesEmpty()

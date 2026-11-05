@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -31,10 +32,13 @@
 
 namespace lms::db
 {
+    class ConnectionPool;
+
     class Db : public IDb
     {
     public:
-        Db(const std::filesystem::path& dbPath, std::size_t connectionCount);
+        Db(const std::filesystem::path& dbPath);
+        ~Db() override;
 
         void executeSql(const std::string& sql);
 
@@ -47,7 +51,7 @@ namespace lms::db
         Session& getTLSSession() override;
 
         core::RecursiveSharedMutex& getMutex() { return _sharedMutex; }
-        Wt::Dbo::SqlConnectionPool& getConnectionPool() { return *_connectionPool; }
+        ConnectionPool& getConnectionPool() { return *_connectionPool; }
 
         void logPageSize();
         void logCacheSize();
@@ -75,7 +79,7 @@ namespace lms::db
         };
 
         core::RecursiveSharedMutex _sharedMutex;
-        std::unique_ptr<Wt::Dbo::SqlConnectionPool> _connectionPool;
+        std::unique_ptr<ConnectionPool> _connectionPool;
 
         std::mutex _tlsSessionsMutex;
         std::vector<std::unique_ptr<Session>> _tlsSessions;
