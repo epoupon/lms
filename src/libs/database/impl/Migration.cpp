@@ -73,11 +73,11 @@ namespace lms::db::Migration
         ScopedNoForeignKeys(Db& db)
             : _db{ db }
         {
-            _db.executeSql("PRAGMA foreign_keys=OFF");
+            _db.executeOutsideTransaction("PRAGMA foreign_keys=OFF");
         }
         ~ScopedNoForeignKeys()
         {
-            _db.executeSql("PRAGMA foreign_keys=ON");
+            _db.executeOutsideTransaction("PRAGMA foreign_keys=ON");
         }
 
     private:
@@ -2198,7 +2198,7 @@ GROUP BY c.canonical_id, s.backend)");
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
 
-        ScopedNoForeignKeys noPragmaKeys{ static_cast<Db&>(session.getDb()) };
+        ScopedNoForeignKeys noPragmaKeys{ session.getDb() };
 
         using MigrationFunction = std::function<void(Session&)>;
 

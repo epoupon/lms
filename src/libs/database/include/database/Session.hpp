@@ -32,6 +32,7 @@
 
 namespace lms::db
 {
+    class Db;
     class IDb;
     class Session
     {
@@ -72,7 +73,7 @@ namespace lms::db
         Wt::Dbo::Session* getDboSession() { return &_session; }
         const Wt::Dbo::Session* getDboSession() const { return &_session; }
 
-        IDb& getDb() { return _db; }
+        Db& getDb() { return _db; }
 
         template<typename Object, typename... Args>
         typename Object::pointer create(Args&&... args)
@@ -98,13 +99,13 @@ namespace lms::db
 
             const std::string query{ std::string{ "DELETE FROM " } + _session.tableName<Object>() + " WHERE id = ?" };
             for (typename Object::IdType id : ids)
-                execute(query, id.getValue());
+                executeWithId(query, id.getValue());
         }
 
     private:
-        void execute(std::string_view query, long long id);
+        void executeWithId(std::string_view query, long long id);
 
-        IDb& _db;
+        Db& _db;
         Wt::Dbo::Session _session;
     };
 } // namespace lms::db

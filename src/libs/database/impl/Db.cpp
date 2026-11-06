@@ -17,17 +17,21 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <functional>
+#include <cassert>
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
 
 #include <Wt/Dbo/Logger.h>
 #include <Wt/Dbo/SqlConnection.h>
+#include <Wt/Dbo/SqlConnectionPool.h>
 #include <Wt/Dbo/SqlStatement.h>
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/Service.hpp"
 #include "database/Session.hpp"
-#include "database/objects/User.hpp"
 
 #include "ConnectionPool.hpp"
 #include "Db.hpp"
@@ -36,132 +40,127 @@ namespace lms::db
 {
     namespace
     {
-        enum class IntegrityCheckType
+        class ScopedConnection
         {
-            Quick,
-            Full
-        };
-        bool checkDbIntegrity(Wt::Dbo::SqlConnection& connection, IntegrityCheckType checkType, std::function<void(std::string_view error)> errorCallback)
-        {
-            bool integrityCheckPassed{};
+        public:
+            ScopedConnection(Wt::Dbo::SqlConnectionPool& pool)
+                : _connectionPool{ pool }
+                , _connection{ _connectionPool.getConnection() }
+            {
+            }
 
-            auto statement = connection.prepareStatement(checkType == IntegrityCheckType::Full ? "PRAGMA integrity_check" : "PRAGMA quick_check");
+            ~ScopedConnection()
+            {
+                _connectionPool.returnConnection(std::move(_connection));
+            }
+
+            ScopedConnection(const ScopedConnection&) = delete;
+            ScopedConnection& operator=(const ScopedConnection&) = delete;
+
+            Wt::Dbo::SqlConnection* operator->() const { return _connection.get(); }
+            Wt::Dbo::SqlConnection& operator*() const { return *_connection; }
+
+        private:
+            Wt::Dbo::SqlConnectionPool& _connectionPool;
+            std::unique_ptr<Wt::Dbo::SqlConnection> _connection;
+        };
+
+        template<typename T>
+        std::optional<T> readPragma(Wt::Dbo::SqlConnection& connection, const std::string& pragma)
+        {
+            auto statement{ connection.prepareStatement("PRAGMA " + pragma) };
             statement->execute();
 
-            std::string result;
-            result.reserve(32);
+            T value{};
+            if (statement->nextRow() && statement->getResult(0, &value))
+                return value;
+
+            return std::nullopt;
+        }
+
+        void logConnectionSettings(Wt::Dbo::SqlConnection& connection)
+        {
+            if (const auto pageSize{ readPragma<int>(connection, "page_size") })
+                LMS_LOG(DB, INFO, "Page size set to " << *pageSize);
+
+            if (const auto cacheSize{ readPragma<int>(connection, "cache_size") })
+                LMS_LOG(DB, INFO, "Cache size set to " << *cacheSize);
+
+            if (const auto mmapSize{ readPragma<long long>(connection, "mmap_size") })
+                LMS_LOG(DB, INFO, "Mmap size set to " << *mmapSize);
+        }
+
+        void logCompileOptions(Wt::Dbo::SqlConnection& connection)
+        {
+            LMS_LOG(DB, INFO, "Sqlite3 compile options:");
+
+            auto statement{ connection.prepareStatement("PRAGMA compile_options") };
+            statement->execute();
+
             while (statement->nextRow())
             {
-                result.clear();
-                statement->getResult(0, &result, result.capacity());
+                std::string compileOption;
+                if (statement->getResult(0, &compileOption, static_cast<int>(compileOption.capacity())))
+                    LMS_LOG(DB, INFO, compileOption);
+            }
+        }
+
+        void checkIntegrity(Wt::Dbo::SqlConnection& connection, const std::string& pragma, std::string_view checkName)
+        {
+            LMS_LOG(DB, INFO, checkName << "...");
+
+            auto statement{ connection.prepareStatement("PRAGMA " + pragma) };
+            statement->execute();
+
+            bool passed{};
+            while (statement->nextRow())
+            {
+                std::string result;
+                statement->getResult(0, &result, static_cast<int>(result.capacity()));
 
                 if (result == "ok")
                 {
-                    integrityCheckPassed = true;
+                    passed = true;
                     break;
                 }
 
-                errorCallback(result);
+                LMS_LOG(DB, ERROR, checkName << " error: " << result);
             }
 
-            return integrityCheckPassed;
+            if (passed)
+                LMS_LOG(DB, INFO, checkName << " passed!");
+            else
+                LMS_LOG(DB, ERROR, checkName << " done with errors!");
         }
 
-        bool checkDbForeignKeyConstraints(Wt::Dbo::SqlConnection& connection, std::function<void(std::string_view table, long long rowId, std::string_view referredTable)> errorCallback)
+        void checkForeignKeyConstraints(Wt::Dbo::SqlConnection& connection)
         {
-            bool foreignKeyConstraintsPassed{ true };
+            LMS_LOG(DB, INFO, "Checking foreign key constraints...");
 
-            auto statement = connection.prepareStatement("PRAGMA foreign_key_check");
+            auto statement{ connection.prepareStatement("PRAGMA foreign_key_check") };
             statement->execute();
 
-            std::string table;
-            std::string foreignTable;
+            bool passed{ true };
             // see https://www.sqlite.org/pragma.html#pragma_foreign_key_check for expected result
             while (statement->nextRow())
             {
-                foreignKeyConstraintsPassed = false;
+                passed = false;
 
-                table.clear();
-                foreignTable.clear();
+                std::string table;
                 long long rowId{};
+                std::string referredTable;
 
                 statement->getResult(0, &table, static_cast<int>(table.capacity()));
                 statement->getResult(1, &rowId);
-                statement->getResult(2, &foreignTable, static_cast<int>(foreignTable.capacity()));
+                statement->getResult(2, &referredTable, static_cast<int>(referredTable.capacity()));
 
-                errorCallback(table, rowId, foreignTable);
+                LMS_LOG(DB, ERROR, "Foreign key constraint failed in table '" << table << "', rowid = " << rowId << ", referred table = '" << referredTable << "'");
             }
 
-            return foreignKeyConstraintsPassed;
-        }
+            if (!passed)
+                throw Exception{ "Foreign key constraints check failed! Please restore from a backup or recreate the database." };
 
-        std::optional<int> getPageSize(Wt::Dbo::SqlConnection& connection)
-        {
-            auto statement = connection.prepareStatement("PRAGMA page_size");
-            statement->execute();
-
-            std::optional<int> res;
-            while (statement->nextRow())
-            {
-                assert(!res);
-                int value{};
-                if (statement->getResult(0, &value))
-                    res = value;
-                break;
-            }
-
-            return res;
-        }
-
-        std::optional<int> getCacheSize(Wt::Dbo::SqlConnection& connection)
-        {
-            auto statement = connection.prepareStatement("PRAGMA cache_size");
-            statement->execute();
-
-            std::optional<int> res;
-            while (statement->nextRow())
-            {
-                assert(!res);
-                int value{};
-                if (statement->getResult(0, &value))
-                    res = value;
-                break;
-            }
-
-            return res;
-        }
-
-        std::optional<long long> getMmapSize(Wt::Dbo::SqlConnection& connection)
-        {
-            auto statement = connection.prepareStatement("PRAGMA mmap_size");
-            statement->execute();
-
-            std::optional<long long> res;
-            while (statement->nextRow())
-            {
-                assert(!res);
-                long long value{};
-                if (statement->getResult(0, &value))
-                    res = value;
-                break;
-            }
-
-            return res;
-        }
-
-        void getCompileOptions(Wt::Dbo::SqlConnection& connection, std::function<void(std::string_view compileOption)> callback)
-        {
-            auto statement = connection.prepareStatement("PRAGMA compile_options");
-            statement->execute();
-
-            std::string res;
-            while (statement->nextRow())
-            {
-                res.clear();
-
-                if (statement->getResult(0, &res, static_cast<int>(res.capacity())))
-                    callback(res);
-            }
+            LMS_LOG(DB, INFO, "Foreign key constraints check passed!");
         }
     } // namespace
 
@@ -170,7 +169,6 @@ namespace lms::db
         return std::make_unique<Db>(dbPath);
     }
 
-    // Session living class handling the database and the login
     Db::Db(const std::filesystem::path& dbPath)
     {
         Wt::Dbo::logToWt();
@@ -187,18 +185,19 @@ namespace lms::db
 
         _connectionPool = std::make_unique<ConnectionPool>(dbPath, showQueries);
 
-        logPageSize();
-        logCacheSize();
-        logMmapSize();
-        logCompileOptions();
+        ScopedConnection connection{ *_connectionPool };
+
+        logConnectionSettings(*connection);
+        logCompileOptions(*connection);
+
         if (checkType == "quick")
         {
-            performQuickCheck();
+            checkIntegrity(*connection, "quick_check", "Quick database check");
         }
         else if (checkType == "full")
         {
-            performIntegrityCheck();
-            performForeignKeyConstraintsCheck();
+            checkIntegrity(*connection, "integrity_check", "Database integrity check");
+            checkForeignKeyConstraints(*connection);
         }
         else if (checkType != "none")
         {
@@ -208,7 +207,7 @@ namespace lms::db
 
     Db::~Db() = default;
 
-    void Db::executeSql(const std::string& sql)
+    void Db::executeOutsideTransaction(const std::string& sql)
     {
         ScopedConnection connection{ *_connectionPool };
         connection->executeSql(sql);
@@ -234,107 +233,4 @@ namespace lms::db
 
         return *tlsSession;
     }
-
-    void Db::logPageSize()
-    {
-        ScopedConnection connection{ *_connectionPool };
-        const std::optional<int> pageSize{ getPageSize(*connection) };
-
-        if (pageSize)
-            LMS_LOG(DB, INFO, "Page size set to " << *pageSize);
-    }
-
-    void Db::logCacheSize()
-    {
-        ScopedConnection connection{ *_connectionPool };
-        const std::optional<int> cacheSize{ getCacheSize(*connection) };
-
-        if (cacheSize)
-            LMS_LOG(DB, INFO, "Cache size set to " << *cacheSize);
-    }
-
-    void Db::logMmapSize()
-    {
-        ScopedConnection connection{ *_connectionPool };
-        const std::optional<long long> mmapSize{ getMmapSize(*connection) };
-
-        if (mmapSize)
-            LMS_LOG(DB, INFO, "Mmap size set to " << *mmapSize);
-    }
-
-    void Db::logCompileOptions()
-    {
-        ScopedConnection connection{ *_connectionPool };
-
-        LMS_LOG(DB, INFO, "Sqlite3 compile options:");
-        getCompileOptions(*connection, [](std::string_view compileOption) {
-            LMS_LOG(DB, INFO, compileOption);
-        });
-    }
-
-    void Db::performQuickCheck()
-    {
-        ScopedConnection connection{ *_connectionPool };
-
-        LMS_LOG(DB, INFO, "Performing quick database check...");
-
-        // Quick check is just a simple integrity check
-        const bool quickCheckPassed{ checkDbIntegrity(*connection, IntegrityCheckType::Quick, [&](std::string_view error) {
-            LMS_LOG(DB, ERROR, "Quick check error: " << error);
-        }) };
-
-        if (quickCheckPassed)
-            LMS_LOG(DB, INFO, "Quick database check passed!");
-        else
-            LMS_LOG(DB, ERROR, "Quick database check done with errors!");
-    }
-
-    void Db::performIntegrityCheck()
-    {
-        ScopedConnection connection{ *_connectionPool };
-
-        LMS_LOG(DB, INFO, "Checking database integrity...");
-
-        const bool integrityCheckPassed{ checkDbIntegrity(*connection, IntegrityCheckType::Full, [&](std::string_view error) {
-            LMS_LOG(DB, ERROR, "Integrity check error: " << error);
-        }) };
-
-        if (integrityCheckPassed)
-            LMS_LOG(DB, INFO, "Database integrity check passed!");
-        else
-            LMS_LOG(DB, ERROR, "Database integrity check done with errors!");
-    }
-
-    void Db::performForeignKeyConstraintsCheck()
-    {
-        ScopedConnection connection{ *_connectionPool };
-
-        LMS_LOG(DB, INFO, "Checking foreign key constraints...");
-
-        const bool foreignKeyConstraintsPassed{ checkDbForeignKeyConstraints(*connection, [&](std::string_view table, long long rowId, std::string_view referredTable) {
-            LMS_LOG(DB, ERROR, "Foreign key constraint failed in table '" << table << "', rowid = " << rowId << ", referred table = '" << referredTable << "'");
-        }) };
-
-        if (!foreignKeyConstraintsPassed)
-            throw Exception{ "Foreign key constraints check failed! Please restore from a backup or recreate the database." };
-
-        LMS_LOG(DB, INFO, "Foreign key constraints check passed!");
-    }
-
-    Db::ScopedConnection::ScopedConnection(Wt::Dbo::SqlConnectionPool& pool)
-        : _connectionPool{ pool }
-        , _connection{ _connectionPool.getConnection() }
-    {
-    }
-
-    Db::ScopedConnection::~ScopedConnection()
-    {
-        _connectionPool.returnConnection(std::move(_connection));
-    }
-
-    Wt::Dbo::SqlConnection* Db::ScopedConnection::operator->() const
-    {
-        return _connection.get();
-    }
-
 } // namespace lms::db

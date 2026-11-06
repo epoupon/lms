@@ -83,9 +83,9 @@
 namespace lms::db
 {
     Session::Session(IDb& db)
-        : _db{ db }
+        : _db{ static_cast<Db&>(db) }
     {
-        _session.setConnectionPool(static_cast<Db&>(_db).getConnectionPool());
+        _session.setConnectionPool(_db.getConnectionPool());
 
         _session.mapClass<Artist>("artist");
         _session.mapClass<ArtistInfo>("artist_info");
@@ -141,7 +141,7 @@ namespace lms::db
 
     WriteTransaction Session::createWriteTransaction()
     {
-        return WriteTransaction{ static_cast<Db&>(_db).getMutex(), _session };
+        return WriteTransaction{ _db.getMutex(), _session };
     }
 
     ReadTransaction Session::createReadTransaction()
@@ -401,8 +401,8 @@ namespace lms::db
 
         // We manually take a lock here since vacuum cannot be inside a transaction.
         {
-            std::unique_lock lock{ static_cast<Db&>(_db).getMutex() };
-            static_cast<Db&>(_db).executeSql("VACUUM");
+            std::unique_lock lock{ _db.getMutex() };
+            _db.executeOutsideTransaction("VACUUM");
         }
 
         LMS_LOG(DB, INFO, "Vacuum complete!");
@@ -427,7 +427,7 @@ namespace lms::db
 
     void Session::requestConnectionsReload()
     {
-        static_cast<Db&>(_db).getConnectionPool().requestConnectionsReload();
+        _db.getConnectionPool().requestConnectionsReload();
     }
 
     bool Session::areAllTablesEmpty()
@@ -471,7 +471,7 @@ namespace lms::db
         LMS_LOG(DB, DEBUG, "Analyzing " << entry << ": done!");
     }
 
-    void Session::execute(std::string_view query, long long id)
+    void Session::executeWithId(std::string_view query, long long id)
     {
         utils::executeCommand(_session, query, id);
     }
