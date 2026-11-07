@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <Wt/Dbo/ptr.h>
 #include <Wt/WResource.h>
 
 #include "database/objects/TrackId.hpp"
