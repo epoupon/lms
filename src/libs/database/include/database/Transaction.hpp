@@ -21,8 +21,6 @@
 
 #include <mutex>
 
-#include <Wt/Dbo/Transaction.h>
-
 #include "core/ITraceLogger.hpp"
 
 namespace lms::core
@@ -32,36 +30,38 @@ namespace lms::core
 
 namespace lms::db
 {
+    class Session;
+
     class WriteTransaction
     {
     public:
-        ~WriteTransaction();
+        ~WriteTransaction() noexcept(false);
 
     private:
         friend class Session;
-        WriteTransaction(core::RecursiveSharedMutex& mutex, Wt::Dbo::Session& session);
+        WriteTransaction(core::RecursiveSharedMutex& mutex, Session& session);
 
         WriteTransaction(const WriteTransaction&) = delete;
         WriteTransaction& operator=(const WriteTransaction&) = delete;
 
+        Session& _session;
         const std::unique_lock<core::RecursiveSharedMutex> _lock;
-        const core::tracing::ScopedTrace _trace; // before actual transaction
-        Wt::Dbo::Transaction _transaction;
+        const core::tracing::ScopedTrace _trace;
     };
 
     class ReadTransaction
     {
     public:
-        ~ReadTransaction();
+        ~ReadTransaction() noexcept(false);
 
     private:
         friend class Session;
-        ReadTransaction(Wt::Dbo::Session& session);
+        explicit ReadTransaction(Session& session);
 
         ReadTransaction(const ReadTransaction&) = delete;
         ReadTransaction& operator=(const ReadTransaction&) = delete;
 
-        const core::tracing::ScopedTrace _trace; // before actual transaction
-        Wt::Dbo::Transaction _transaction;
+        Session& _session;
+        const core::tracing::ScopedTrace _trace;
     };
 } // namespace lms::db

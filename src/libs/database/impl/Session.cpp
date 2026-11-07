@@ -19,6 +19,8 @@
 
 #include "Session.hpp"
 
+#include <exception>
+
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "database/objects/Artist.hpp"
@@ -136,11 +138,43 @@ namespace lms::db
 
     WriteTransaction Session::createWriteTransaction()
     {
-        return WriteTransaction{ _db.getMutex(), _session };
+        return WriteTransaction{ _db.getMutex(), *this };
     }
 
     ReadTransaction Session::createReadTransaction()
     {
-        return ReadTransaction{ _session };
+        return ReadTransaction{ *this };
+    }
+
+    void Session::openTransaction()
+    {
+        _transactions.emplace_back(_session);
+    }
+
+    void Session::closeTransaction()
+    {
+        const bool unwinding{ std::uncaught_exceptions() != 0 };
+
+        try
+        {
+            // Not left to the Wt destructor: pop_back is noexcept, a failed commit would terminate
+            if (!unwinding)
+            {
+                const core::tracing::ScopedTrace trace{ "Database", core::tracing::Level::Detailed, "Commit" };
+                _transactions.back().commit();
+            }
+        }
+        catch (...)
+        {
+            _transactions.pop_back();
+            _session.discardUnflushed();
+            throw;
+        }
+
+        _transactions.pop_back();
+
+        // Wt's rollback keeps modified objects pending: the next flush would write them
+        if (unwinding)
+            _session.discardUnflushed();
     }
 } // namespace lms::db

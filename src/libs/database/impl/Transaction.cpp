@@ -21,43 +21,49 @@
 
 #include "core/RecursiveSharedMutex.hpp"
 
+#include "Session.hpp"
 #include "TransactionChecker.hpp"
 
 namespace lms::db
 {
-    WriteTransaction::WriteTransaction(core::RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
-        : _lock{ mutex }
+    WriteTransaction::WriteTransaction(core::RecursiveSharedMutex& mutex, Session& session)
+        : _session{ session }
+        , _lock{ mutex }
         , _trace{ "Database", core::tracing::Level::Detailed, "WriteTransaction" }
-        , _transaction{ session }
     {
+        _session.openTransaction();
+
 #if LMS_CHECK_TRANSACTION_ACCESSES
-        TransactionChecker::pushWriteTransaction(_transaction.session());
+        TransactionChecker::pushWriteTransaction(*_session.getDboSession());
 #endif
     }
 
-    WriteTransaction::~WriteTransaction()
+    WriteTransaction::~WriteTransaction() noexcept(false)
     {
 #if LMS_CHECK_TRANSACTION_ACCESSES
-        TransactionChecker::popWriteTransaction(_transaction.session());
+        TransactionChecker::popWriteTransaction(*_session.getDboSession());
 #endif
 
-        core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "Commit" };
-        _transaction.commit();
+        _session.closeTransaction();
     }
 
-    ReadTransaction::ReadTransaction(Wt::Dbo::Session& session)
-        : _trace{ "Database", core::tracing::Level::Detailed, "ReadTransaction" }
-        , _transaction{ session }
+    ReadTransaction::ReadTransaction(Session& session)
+        : _session{ session }
+        , _trace{ "Database", core::tracing::Level::Detailed, "ReadTransaction" }
     {
+        _session.openTransaction();
+
 #if LMS_CHECK_TRANSACTION_ACCESSES
-        TransactionChecker::pushReadTransaction(_transaction.session());
+        TransactionChecker::pushReadTransaction(*_session.getDboSession());
 #endif
     }
 
-    ReadTransaction::~ReadTransaction()
+    ReadTransaction::~ReadTransaction() noexcept(false)
     {
 #if LMS_CHECK_TRANSACTION_ACCESSES
-        TransactionChecker::popReadTransaction(_transaction.session());
+        TransactionChecker::popReadTransaction(*_session.getDboSession());
 #endif
+
+        _session.closeTransaction();
     }
 } // namespace lms::db

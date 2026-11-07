@@ -41,6 +41,7 @@ add_executable(test-database
 	TrackFeedback.cpp
 	TrackList.cpp
 	TrackLyrics.cpp
+	Transaction.cpp
 	User.cpp
 	Work.cpp
 	)

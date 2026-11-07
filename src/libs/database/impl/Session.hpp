@@ -19,7 +19,10 @@
 
 #pragma once
 
+#include <deque>
+
 #include <Wt/Dbo/Session.h>
+#include <Wt/Dbo/Transaction.h>
 
 #include "database/ISession.hpp"
 
@@ -46,8 +49,15 @@ namespace lms::db
         Db& getDb() { return _db; }
 
     private:
+        friend class WriteTransaction;
+        friend class ReadTransaction;
+
+        void openTransaction();
+        void closeTransaction();
+
         Db& _db;
         Wt::Dbo::Session _session;
+        std::deque<Wt::Dbo::Transaction> _transactions;
     };
 
     inline Wt::Dbo::Session* getDboSession(ISession& session)
