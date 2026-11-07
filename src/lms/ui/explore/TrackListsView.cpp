@@ -22,7 +22,7 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/TrackList.hpp"
 
 #include "DropDownMenuSelector.hpp"
@@ -113,7 +113,7 @@ namespace lms::ui
     {
         const db::Range range{ static_cast<std::size_t>(_container->getCount()), _batchSize };
 
-        db::Session& session{ LmsApp->getDbSession() };
+        db::ISession& session{ LmsApp->getDbSession() };
         auto transaction{ session.createReadTransaction() };
 
         db::TrackList::FindParameters params;

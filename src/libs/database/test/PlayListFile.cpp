@@ -110,7 +110,7 @@ namespace lms::db::tests
 
             {
                 auto transaction{ session.createWriteTransaction() };
-                TrackList::pointer trackList{ session.create<TrackList>("MyTrackList", TrackListType::PlayList) };
+                TrackList::pointer trackList{ TrackList::create(session, "MyTrackList", TrackListType::PlayList) };
                 playlist.get().modify()->setTrackList(trackList);
             }
             {

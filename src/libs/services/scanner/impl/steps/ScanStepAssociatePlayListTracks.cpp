@@ -26,7 +26,7 @@
 #include "core/IJob.hpp"
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/PlayListFile.hpp"
 #include "database/objects/ReleaseId.hpp"
@@ -56,7 +56,7 @@ namespace lms::scanner
         };
         using PlayListFileAssociationContainer = std::deque<PlayListFileAssociation>;
 
-        db::Track::pointer getMatchingTrack(db::Session& session, const std::filesystem::path& filePath, const db::Directory::pointer& playListDirectory)
+        db::Track::pointer getMatchingTrack(db::ISession& session, const std::filesystem::path& filePath, const db::Directory::pointer& playListDirectory)
         {
             db::Track::pointer matchingTrack;
             if (filePath.is_absolute())
@@ -81,7 +81,7 @@ namespace lms::scanner
             return std::all_of(std::cbegin(tracks) + 1, std::cend(tracks), [=](const TrackInfo& trackInfo) { return trackInfo.releaseId == releaseId; });
         }
 
-        bool trackListNeedsUpdate(db::Session& session, std::string_view name, std::span<const TrackInfo> tracks, const db::TrackList::pointer& trackList)
+        bool trackListNeedsUpdate(db::ISession& session, std::string_view name, std::span<const TrackInfo> tracks, const db::TrackList::pointer& trackList)
         {
             if (trackList->getName() != name)
                 return true;
@@ -104,7 +104,7 @@ namespace lms::scanner
             return needUpdate;
         }
 
-        void updatePlayList(db::Session& session, const PlayListFileAssociation& playListFileAssociation)
+        void updatePlayList(db::ISession& session, const PlayListFileAssociation& playListFileAssociation)
         {
             db::PlayListFile::pointer playListFile{ db::PlayListFile::find(session, playListFileAssociation.playListFileIdId) };
             assert(playListFile);
@@ -124,7 +124,7 @@ namespace lms::scanner
             const bool createTrackList{ !trackList };
             if (createTrackList)
             {
-                trackList = session.create<db::TrackList>(playListFile->getName(), db::TrackListType::PlayList);
+                trackList = db::TrackList::create(session, playListFile->getName(), db::TrackListType::PlayList);
                 playListFile.modify()->setTrackList(trackList);
             }
 
@@ -137,13 +137,13 @@ namespace lms::scanner
             {
                 // TODO no need to fetch the whole track for that
                 if (db::Track::pointer track{ db::Track::find(session, trackInfo.trackId) })
-                    session.create<db::TrackListEntry>(track, trackList, playListFile->getLastWriteTime());
+                    db::TrackListEntry::create(session, track, trackList, playListFile->getLastWriteTime());
             }
 
             LMS_LOG(DBUPDATER, DEBUG, std::string_view{ createTrackList ? "Created" : "Updated" } << " associated tracklist for " << playListFile->getAbsoluteFilePath() << " (" << playListFileAssociation.tracks.size() << " tracks)");
         }
 
-        void updatePlayLists(db::Session& session, PlayListFileAssociationContainer& playListFileAssociations, bool forceFullBatch)
+        void updatePlayLists(db::ISession& session, PlayListFileAssociationContainer& playListFileAssociations, bool forceFullBatch)
         {
             constexpr std::size_t writeBatchSize{ 5 };
 
@@ -159,7 +159,7 @@ namespace lms::scanner
             }
         }
 
-        bool fetchNextPlayListFileIdRange(db::Session& session, db::PlayListFileId& lastPlayListFileId, db::IdRange<db::PlayListFileId>& idRange)
+        bool fetchNextPlayListFileIdRange(db::ISession& session, db::PlayListFileId& lastPlayListFileId, db::IdRange<db::PlayListFileId>& idRange)
         {
             constexpr std::size_t readBatchSize{ 100 };
 

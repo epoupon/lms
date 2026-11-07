@@ -27,7 +27,7 @@
 namespace lms::db
 {
     class IDb;
-    class Session;
+    class ISession;
 } // namespace lms::db
 
 namespace Wt

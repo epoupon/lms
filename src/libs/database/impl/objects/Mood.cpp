@@ -24,7 +24,6 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
@@ -43,6 +42,7 @@
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/Work.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
@@ -54,11 +54,11 @@ namespace lms::db
     namespace
     {
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Mood::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createQuery(ISession& session, std::string_view itemToSelect, const Mood::FindParameters& params)
         {
-            session.checkReadTransaction();
+            checkReadTransaction(session);
 
-            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM mood m") };
+            auto query{ getDboSession(session)->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM mood m") };
 
             if (params.artist.isValid() || params.track.isValid() || params.release.isValid()
                 || params.sortMethod == MoodSortMethod::TrackCountDesc)
@@ -99,7 +99,7 @@ namespace lms::db
         }
 
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, const Mood::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createQuery(ISession& session, const Mood::FindParameters& params)
         {
             std::string_view itemToSelect;
 
@@ -120,57 +120,62 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Mood name too long, truncated to '" << _name << "'");
     }
 
-    Mood::pointer Mood::create(Session& session, std::string_view name)
+    Mood::pointer Mood::create(ISession& session, std::string_view name)
     {
-        return session.getDboSession()->add(std::unique_ptr<Mood>{ new Mood{ name } });
+        return utils::addObject(session, std::unique_ptr<Mood>{ new Mood{ name } });
     }
 
-    std::size_t Mood::getCount(Session& session)
+    void Mood::destroy(ISession& session, std::span<const MoodId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM mood"));
+        utils::destroyObjects<Mood>(session, ids);
     }
 
-    std::vector<MoodId> Mood::findIds(Session& session, const FindParameters& params)
+    std::size_t Mood::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM mood"));
+    }
+
+    std::vector<MoodId> Mood::findIds(ISession& session, const FindParameters& params)
+    {
+        checkReadTransaction(session);
         auto query{ createQuery<MoodId>(session, params) };
         return utils::execRangeQuery<MoodId>(query, params.range);
     }
 
-    std::vector<Mood::pointer> Mood::find(Session& session, const FindParameters& params)
+    std::vector<Mood::pointer> Mood::find(ISession& session, const FindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<Mood>>(session, params) };
         return utils::execRangeQuery<Mood::pointer>(query, params.range);
     }
 
-    void Mood::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    void Mood::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<Mood>>(session, params) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
-    Mood::pointer Mood::find(Session& session, MoodId id)
+    Mood::pointer Mood::find(ISession& session, MoodId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Mood>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<Mood>().where("id = ?").bind(id));
     }
 
-    Mood::pointer Mood::find(Session& session, std::string_view name)
+    Mood::pointer Mood::find(ISession& session, std::string_view name)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Mood>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<Mood>().where("name = ?").bind(name));
     }
 
-    std::vector<MoodId> Mood::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<MoodId> Mood::findOrphanIds(ISession& session, std::optional<Range> range)
     {
-        session.checkReadTransaction();
-        auto query{ session.getDboSession()->query<MoodId>("SELECT m.id FROM mood m WHERE NOT EXISTS (SELECT 1 FROM track_mood t_m WHERE t_m.mood_id = m.id)") };
+        checkReadTransaction(session);
+        auto query{ getDboSession(session)->query<MoodId>("SELECT m.id FROM mood m WHERE NOT EXISTS (SELECT 1 FROM track_mood t_m WHERE t_m.mood_id = m.id)") };
         return utils::execRangeQuery<MoodId>(query, range);
     }
 

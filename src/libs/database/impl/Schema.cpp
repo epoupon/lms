@@ -24,9 +24,9 @@
 
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "database/Session.hpp"
 
 #include "Schema.hpp"
+#include "Session.hpp"
 #include "Utils.hpp"
 
 namespace lms::db::Schema
@@ -189,7 +189,7 @@ namespace lms::db::Schema
         };
     } // namespace
 
-    void createTablesIfNeeded(Session& session)
+    void createTablesIfNeeded(ISession& session)
     {
         LMS_LOG(DB, INFO, "Preparing tables...");
 
@@ -197,7 +197,7 @@ namespace lms::db::Schema
         try
         {
             auto transaction{ session.createWriteTransaction() };
-            session.getDboSession()->createTables();
+            getDboSession(session)->createTables();
             LMS_LOG(DB, INFO, "Tables created");
         }
         catch (Wt::Dbo::Exception& e)
@@ -211,7 +211,7 @@ namespace lms::db::Schema
         }
     }
 
-    void createIndexesIfNeeded(Session& session)
+    void createIndexesIfNeeded(ISession& session)
     {
         LMS_SCOPED_TRACE_OVERVIEW("Database", "IndexCreation");
         LMS_LOG(DB, INFO, "Creating indexes... This may take a while...");
@@ -219,7 +219,7 @@ namespace lms::db::Schema
         for (std::string_view sql : indexSqls)
         {
             auto transaction{ session.createWriteTransaction() };
-            utils::executeCommand(*session.getDboSession(), std::string{ sql });
+            utils::executeCommand(*getDboSession(session), std::string{ sql });
         }
 
         LMS_LOG(DB, INFO, "Indexes created!");

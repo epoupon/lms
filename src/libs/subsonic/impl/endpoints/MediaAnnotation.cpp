@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "core/Service.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseId.hpp"
@@ -62,7 +62,7 @@ namespace lms::api::subsonic
             return res;
         }
 
-        ReleaseId getReleaseIdFromDirectory(Session& session, DirectoryId directory)
+        ReleaseId getReleaseIdFromDirectory(ISession& session, DirectoryId directory)
         {
             auto transaction{ session.createReadTransaction() };
 

@@ -34,7 +34,7 @@
 #include "audio/ITranscoder.hpp"
 #include "audio/TranscodeTypes.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/PodcastEpisodeId.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackLyrics.hpp"

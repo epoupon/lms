@@ -24,7 +24,6 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
@@ -43,6 +42,7 @@
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/Work.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
@@ -54,11 +54,11 @@ namespace lms::db
     namespace
     {
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Grouping::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createQuery(ISession& session, std::string_view itemToSelect, const Grouping::FindParameters& params)
         {
-            session.checkReadTransaction();
+            checkReadTransaction(session);
 
-            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM grouping g") };
+            auto query{ getDboSession(session)->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM grouping g") };
 
             if (params.artist.isValid() || params.track.isValid() || params.release.isValid()
                 || params.sortMethod == GroupingSortMethod::TrackCountDesc)
@@ -99,7 +99,7 @@ namespace lms::db
         }
 
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, const Grouping::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createQuery(ISession& session, const Grouping::FindParameters& params)
         {
             std::string_view itemToSelect;
 
@@ -120,57 +120,62 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Grouping name too long, truncated to '" << _name << "'");
     }
 
-    Grouping::pointer Grouping::create(Session& session, std::string_view name)
+    Grouping::pointer Grouping::create(ISession& session, std::string_view name)
     {
-        return session.getDboSession()->add(std::unique_ptr<Grouping>{ new Grouping{ name } });
+        return utils::addObject(session, std::unique_ptr<Grouping>{ new Grouping{ name } });
     }
 
-    std::size_t Grouping::getCount(Session& session)
+    void Grouping::destroy(ISession& session, std::span<const GroupingId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM grouping"));
+        utils::destroyObjects<Grouping>(session, ids);
     }
 
-    std::vector<GroupingId> Grouping::findIds(Session& session, const FindParameters& params)
+    std::size_t Grouping::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM grouping"));
+    }
+
+    std::vector<GroupingId> Grouping::findIds(ISession& session, const FindParameters& params)
+    {
+        checkReadTransaction(session);
         auto query{ createQuery<GroupingId>(session, params) };
         return utils::execRangeQuery<GroupingId>(query, params.range);
     }
 
-    std::vector<Grouping::pointer> Grouping::find(Session& session, const FindParameters& params)
+    std::vector<Grouping::pointer> Grouping::find(ISession& session, const FindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<Grouping>>(session, params) };
         return utils::execRangeQuery<Grouping::pointer>(query, params.range);
     }
 
-    void Grouping::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    void Grouping::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<Grouping>>(session, params) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
-    Grouping::pointer Grouping::find(Session& session, GroupingId id)
+    Grouping::pointer Grouping::find(ISession& session, GroupingId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Grouping>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<Grouping>().where("id = ?").bind(id));
     }
 
-    Grouping::pointer Grouping::find(Session& session, std::string_view name)
+    Grouping::pointer Grouping::find(ISession& session, std::string_view name)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Grouping>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<Grouping>().where("name = ?").bind(name));
     }
 
-    std::vector<GroupingId> Grouping::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<GroupingId> Grouping::findOrphanIds(ISession& session, std::optional<Range> range)
     {
-        session.checkReadTransaction();
-        auto query{ session.getDboSession()->query<GroupingId>("SELECT g.id FROM grouping g WHERE NOT EXISTS (SELECT 1 FROM track_grouping t_gr WHERE t_gr.grouping_id = g.id)") };
+        checkReadTransaction(session);
+        auto query{ getDboSession(session)->query<GroupingId>("SELECT g.id FROM grouping g WHERE NOT EXISTS (SELECT 1 FROM track_grouping t_gr WHERE t_gr.grouping_id = g.id)") };
         return utils::execRangeQuery<GroupingId>(query, range);
     }
 

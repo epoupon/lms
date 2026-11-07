@@ -40,7 +40,7 @@
 #include "core/String.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Release.hpp"
@@ -194,7 +194,7 @@ namespace lms::ui
         return _db;
     }
 
-    db::Session& LmsApplication::getDbSession()
+    db::ISession& LmsApplication::getDbSession()
     {
         return _db.getTLSSession();
     }

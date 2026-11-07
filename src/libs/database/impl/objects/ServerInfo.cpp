@@ -22,8 +22,7 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
-
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/UUIDTraits.hpp"
 
@@ -36,21 +35,21 @@ namespace lms::db
     {
     }
 
-    ServerInfo::pointer ServerInfo::getOrCreate(Session& session)
+    ServerInfo::pointer ServerInfo::getOrCreate(ISession& session)
     {
-        session.checkWriteTransaction();
+        checkWriteTransaction(session);
 
-        pointer serverInfo{ utils::fetchQuerySingleResult(session.getDboSession()->find<ServerInfo>()) };
+        pointer serverInfo{ utils::fetchQuerySingleResult(getDboSession(session)->find<ServerInfo>()) };
         if (!serverInfo)
-            return session.getDboSession()->add(std::unique_ptr<ServerInfo>{ new ServerInfo{ core::UUID::generate() } });
+            return getDboSession(session)->add(std::unique_ptr<ServerInfo>{ new ServerInfo{ core::UUID::generate() } });
 
         return serverInfo;
     }
 
-    ServerInfo::pointer ServerInfo::get(Session& session)
+    ServerInfo::pointer ServerInfo::get(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ServerInfo>());
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<ServerInfo>());
     }
 } // namespace lms::db

@@ -32,7 +32,7 @@
 #include <Wt/WSignal.h>
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "services/scanner/IScannerService.hpp"
 
 #include "FileScanners.hpp"

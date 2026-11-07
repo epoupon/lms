@@ -24,7 +24,7 @@
 #include <gtest/gtest.h>
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
@@ -53,12 +53,12 @@ namespace lms::db::tests
         using IdType = typename T::IdType;
 
         template<typename... Args>
-        ScopedEntity(db::Session& session, Args&&... args)
+        ScopedEntity(db::ISession& session, Args&&... args)
             : _session{ session }
         {
             auto transaction{ _session.createWriteTransaction() };
 
-            auto entity{ _session.create<T>(std::forward<Args>(args)...) };
+            auto entity{ T::create(_session, std::forward<Args>(args)...) };
             EXPECT_TRUE(entity);
             _id = entity->getId();
         }
@@ -86,8 +86,6 @@ namespace lms::db::tests
 
         typename T::pointer get()
         {
-            _session.checkReadTransaction();
-
             auto entity{ T::find(_session, _id) };
             EXPECT_TRUE(entity);
             return entity;
@@ -101,7 +99,7 @@ namespace lms::db::tests
         IdType getId() const { return _id; }
 
     private:
-        db::Session& _session;
+        db::ISession& _session;
         IdType _id{};
     };
 
@@ -127,10 +125,12 @@ namespace lms::db::tests
 
         static inline std::unique_ptr<TmpDatabase> _tmpDb{};
 
+        const std::unique_ptr<ISession> _session{ _tmpDb->getDb().createSession() };
+
     protected:
         static IDb& getDb() { return _tmpDb->getDb(); }
 
     public:
-        db::Session session{ _tmpDb->getDb() };
+        db::ISession& session{ *_session };
     };
 } // namespace lms::db::tests

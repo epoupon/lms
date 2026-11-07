@@ -26,7 +26,7 @@
 namespace lms::db
 {
     class IDb;
-    class Session;
+    class ISession;
 } // namespace lms::db
 
 namespace lms::auth
@@ -42,7 +42,7 @@ namespace lms::auth
         db::UserId getOrCreateUser(std::string_view loginName);
         void onUserAuthenticated(db::UserId userId);
 
-        db::Session& getDbSession();
+        db::ISession& getDbSession();
 
     private:
         db::IDb& _db;

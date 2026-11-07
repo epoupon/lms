@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -37,7 +38,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
     class Track;
 
     class Work final : public Object<Work, WorkId>
@@ -47,14 +48,17 @@ namespace lms::db
 
         Work() = default;
 
-        static pointer find(Session& session, WorkId id);
+        static pointer create(ISession& session, std::string_view name, const std::optional<core::UUID>& mbid);
+        static void destroy(ISession& session, std::span<const WorkId> ids);
+
+        static pointer find(ISession& session, WorkId id);
         // Global lookup: MusicBrainz Work Id is a strong, unambiguous identity shared across the whole library
-        static pointer find(Session& session, const core::UUID& mbid);
+        static pointer find(ISession& session, const core::UUID& mbid);
         // Name-only lookup, scoped to works already linked to a track of the given release: work titles are
         // often generic (e.g. "Symphony No. 5") and collide across unrelated works, so without an mbid we only
         // ever match within the same release instead of matching globally by name
-        static pointer find(Session& session, ReleaseId releaseId, std::string_view name);
-        static std::vector<WorkId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static pointer find(ISession& session, ReleaseId releaseId, std::string_view name);
+        static std::vector<WorkId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         void setName(std::string_view name);
 
@@ -70,9 +74,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         Work(std::string_view name, const std::optional<core::UUID>& mbid);
-        static pointer create(Session& session, std::string_view name, const std::optional<core::UUID>& mbid);
 
         std::string _name;
         std::optional<core::UUID> _mbid;

@@ -38,8 +38,8 @@
 namespace lms::db
 {
     class Artist;
+    class ISession;
     class Release;
-    class Session;
     class Track;
     class User;
 
@@ -47,6 +47,8 @@ namespace lms::db
     {
     public:
         Listen() = default;
+
+        static pointer create(ISession& session, ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime);
 
         struct FindParameters
         {
@@ -66,10 +68,10 @@ namespace lms::db
         };
 
         // Accessors
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ListenId id);
-        static pointer find(Session& session, UserId userId, TrackId trackId, const Wt::WDateTime& dateTime);
-        static std::vector<ListenId> find(Session& session, const FindParameters& parameters);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, ListenId id);
+        static pointer find(ISession& session, UserId userId, TrackId trackId, const Wt::WDateTime& dateTime);
+        static std::vector<ListenId> find(ISession& session, const FindParameters& parameters);
 
         // Stats
         struct StatsFindParameters
@@ -126,25 +128,25 @@ namespace lms::db
             }
         };
 
-        static std::vector<ArtistId> getTopArtists(Session& session, const ArtistStatsFindParameters& params);
-        static std::vector<ReleaseId> getTopReleases(Session& session, const StatsFindParameters& params);
-        static std::vector<TrackId> getTopTracks(Session& session, const StatsFindParameters& params);
-        static std::vector<ArtistId> getRecentArtists(Session& session, const ArtistStatsFindParameters& params);
-        static std::vector<ReleaseId> getRecentReleases(Session& session, const StatsFindParameters& params);
-        static std::vector<TrackId> getRecentTracks(Session& session, const StatsFindParameters& params);
+        static std::vector<ArtistId> getTopArtists(ISession& session, const ArtistStatsFindParameters& params);
+        static std::vector<ReleaseId> getTopReleases(ISession& session, const StatsFindParameters& params);
+        static std::vector<TrackId> getTopTracks(ISession& session, const StatsFindParameters& params);
+        static std::vector<ArtistId> getRecentArtists(ISession& session, const ArtistStatsFindParameters& params);
+        static std::vector<ReleaseId> getRecentReleases(ISession& session, const StatsFindParameters& params);
+        static std::vector<TrackId> getRecentTracks(ISession& session, const StatsFindParameters& params);
 
-        static void getTopArtists(Session& session, const ArtistStatsFindParameters& params, const std::function<void(const ObjectPtr<Artist>&)>& func);
-        static void getTopReleases(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Release>&)>& func);
-        static void getTopTracks(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Track>&)>& func);
-        static void getRecentArtists(Session& session, const ArtistStatsFindParameters& params, const std::function<void(const ObjectPtr<Artist>&)>& func);
-        static void getRecentReleases(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Release>&)>& func);
-        static void getRecentTracks(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Track>&)>& func);
+        static void getTopArtists(ISession& session, const ArtistStatsFindParameters& params, const std::function<void(const ObjectPtr<Artist>&)>& func);
+        static void getTopReleases(ISession& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Release>&)>& func);
+        static void getTopTracks(ISession& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Track>&)>& func);
+        static void getRecentArtists(ISession& session, const ArtistStatsFindParameters& params, const std::function<void(const ObjectPtr<Artist>&)>& func);
+        static void getRecentReleases(ISession& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Release>&)>& func);
+        static void getRecentTracks(ISession& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Track>&)>& func);
 
-        static std::size_t getCount(Session& session, UserId userId, TrackId trackId);
-        static std::size_t getCount(Session& session, UserId userId, ReleaseId trackId);
+        static std::size_t getCount(ISession& session, UserId userId, TrackId trackId);
+        static std::size_t getCount(ISession& session, UserId userId, ReleaseId trackId);
 
-        static pointer getMostRecentListen(Session& session, UserId userId, ReleaseId releaseId);
-        static pointer getMostRecentListen(Session& session, UserId userId, TrackId trackId);
+        static pointer getMostRecentListen(ISession& session, UserId userId, ReleaseId releaseId);
+        static pointer getMostRecentListen(ISession& session, UserId userId, TrackId trackId);
 
         ObjectPtr<User> getUser() const { return _user; }
         ObjectPtr<Track> getTrack() const { return _track; }
@@ -160,9 +162,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         Listen(ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime);
-        static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime);
 
         Wt::WDateTime _dateTime;
 

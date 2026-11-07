@@ -60,7 +60,7 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<db::TrackEmbeddedImageLink>(track.get(), image.get());
+            db::TrackEmbeddedImageLink::create(session, track.get(), image.get());
             track.get().modify()->setAbsoluteFilePath("/tmp/foo");
         }
         ScopedArtwork artwork{ session, image.lockAndGet() };

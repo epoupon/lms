@@ -202,7 +202,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            Work::pointer work{ session.create<Work>(longName, std::optional<core::UUID>{}) };
+            Work::pointer work{ Work::create(session, longName, std::optional<core::UUID>{}) };
             ASSERT_TRUE(work);
             EXPECT_EQ(work->getName().size(), Work::maxNameLength);
             EXPECT_EQ(work->getName(), expectedName);

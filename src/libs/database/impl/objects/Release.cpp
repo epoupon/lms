@@ -25,7 +25,6 @@
 #include "core/PartialDateTime.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
@@ -48,6 +47,7 @@
 #include "database/objects/Work.hpp"
 
 #include "JoinSet.hpp"
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "detail/Types.hpp"
 #include "objects/FilterExprCompiler.hpp"
@@ -242,12 +242,12 @@ namespace lms::db
         }
 
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createListQuery(Session& session, std::string_view selectedItem, const Release::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createListQuery(ISession& session, std::string_view selectedItem, const Release::FindParameters& params)
         {
             JoinSet joins;
             const SqlFragment where{ createParamsConditions(params, joins) };
 
-            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ selectedItem } + " from release r") };
+            auto query{ getDboSession(session)->query<ResultType>("SELECT " + std::string{ selectedItem } + " from release r") };
             joins.apply(query);
             applyWhereFragment(query, where);
             applySortMethod(query, params);
@@ -259,13 +259,13 @@ namespace lms::db
             return query;
         }
 
-        Wt::Dbo::Query<int> createCountQuery(Session& session, const Release::FindParameters& params)
+        Wt::Dbo::Query<int> createCountQuery(ISession& session, const Release::FindParameters& params)
         {
             JoinSet joins;
             const SqlFragment where{ createParamsConditions(params, joins) };
 
             // Joins can duplicate releases
-            auto query{ session.getDboSession()->query<int>(joins.empty() ? "SELECT COUNT(*) from release r" : "SELECT COUNT(DISTINCT r.id) from release r") };
+            auto query{ getDboSession(session)->query<int>(joins.empty() ? "SELECT COUNT(*) from release r" : "SELECT COUNT(DISTINCT r.id) from release r") };
             joins.apply(query);
             applyWhereFragment(query, where);
 
@@ -298,39 +298,46 @@ namespace lms::db
             throw Exception{ "Country name is too long: '" + std::string{ name } + "'" };
     }
 
-    Country::pointer Country::create(Session& session, std::string_view name)
+    Country::pointer Country::create(ISession& session, std::string_view name)
     {
-        return session.getDboSession()->add(std::unique_ptr<Country>{ new Country{ name } });
+        return utils::addObject(session, std::unique_ptr<Country>{ new Country{ name } });
     }
 
-    std::size_t Country::getCount(Session& session)
+    void Country::destroy(ISession& session, std::span<const CountryId> ids)
     {
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM country"));
+        utils::destroyObjects<Country>(session, ids);
     }
 
-    Country::pointer Country::find(Session& session, CountryId id)
+    std::size_t Country::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Country>>("SELECT c from country c").where("c.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM country"));
     }
 
-    Country::pointer Country::find(Session& session, std::string_view name)
+    Country::pointer Country::find(ISession& session, CountryId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Country>>("SELECT c from country c").where("c.id = ?").bind(id));
+    }
+
+    Country::pointer Country::find(ISession& session, std::string_view name)
+    {
+        checkReadTransaction(session);
 
         if (name.size() > _maxNameLength)
             throw Exception{ "Country name is too long: '" + std::string{ name } + "'" };
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Country>>("SELECT c from country c").where("c.name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Country>>("SELECT c from country c").where("c.name = ?").bind(name));
     }
 
-    std::vector<CountryId> Country::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<CountryId> Country::findOrphanIds(ISession& session, std::optional<Range> range)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         // select the labels that have no releases
-        auto query{ session.getDboSession()->query<CountryId>("select c.id from country c LEFT OUTER JOIN release_country r_c ON c.id = r_c.country_id WHERE r_c.release_id IS NULL") };
+        auto query{ getDboSession(session)->query<CountryId>("select c.id from country c LEFT OUTER JOIN release_country r_c ON c.id = r_c.country_id WHERE r_c.release_id IS NULL") };
         return utils::execRangeQuery<CountryId>(query, range);
     }
 
@@ -342,38 +349,45 @@ namespace lms::db
             throw Exception{ "Label name is too long: '" + std::string{ name } + "'" };
     }
 
-    Label::pointer Label::create(Session& session, std::string_view name)
+    Label::pointer Label::create(ISession& session, std::string_view name)
     {
-        return session.getDboSession()->add(std::unique_ptr<Label>{ new Label{ name } });
+        return utils::addObject(session, std::unique_ptr<Label>{ new Label{ name } });
     }
 
-    std::size_t Label::getCount(Session& session)
+    void Label::destroy(ISession& session, std::span<const LabelId> ids)
     {
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM label"));
+        utils::destroyObjects<Label>(session, ids);
     }
 
-    Label::pointer Label::find(Session& session, LabelId id)
+    std::size_t Label::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Label>>("SELECT l from label l").where("l.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM label"));
     }
 
-    Label::pointer Label::find(Session& session, std::string_view name)
+    Label::pointer Label::find(ISession& session, LabelId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Label>>("SELECT l from label l").where("l.id = ?").bind(id));
+    }
+
+    Label::pointer Label::find(ISession& session, std::string_view name)
+    {
+        checkReadTransaction(session);
 
         if (name.size() > _maxNameLength)
             throw Exception{ "Label name is too long: '" + std::string{ name } + "'" };
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Label>>("SELECT l from label l").where("l.name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Label>>("SELECT l from label l").where("l.name = ?").bind(name));
     }
 
-    void Label::find(Session& session, LabelSortMethod sortMethod, std::function<void(const Label::pointer& label)> func)
+    void Label::find(ISession& session, LabelSortMethod sortMethod, std::function<void(const Label::pointer& label)> func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->find<Label>() };
+        auto query{ getDboSession(session)->find<Label>() };
         switch (sortMethod)
         {
         case LabelSortMethod::None:
@@ -387,12 +401,12 @@ namespace lms::db
         });
     }
 
-    std::vector<LabelId> Label::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<LabelId> Label::findOrphanIds(ISession& session, std::optional<Range> range)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         // select the labels that have no releases
-        auto query{ session.getDboSession()->query<LabelId>("select l.id from label l LEFT OUTER JOIN release_label r_l ON l.id = r_l.label_id WHERE r_l.release_id IS NULL") };
+        auto query{ getDboSession(session)->query<LabelId>("select l.id from label l LEFT OUTER JOIN release_label r_l ON l.id = r_l.label_id WHERE r_l.release_id IS NULL") };
         return utils::execRangeQuery<LabelId>(query, range);
     }
 
@@ -404,38 +418,45 @@ namespace lms::db
             throw Exception{ "ReleaseType is too long: '" + std::string{ name } + "'" };
     }
 
-    ReleaseType::pointer ReleaseType::create(Session& session, std::string_view name)
+    ReleaseType::pointer ReleaseType::create(ISession& session, std::string_view name)
     {
-        return session.getDboSession()->add(std::unique_ptr<ReleaseType>{ new ReleaseType{ name } });
+        return utils::addObject(session, std::unique_ptr<ReleaseType>{ new ReleaseType{ name } });
     }
 
-    std::size_t ReleaseType::getCount(Session& session)
+    void ReleaseType::destroy(ISession& session, std::span<const ReleaseTypeId> ids)
     {
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM release_type"));
+        utils::destroyObjects<ReleaseType>(session, ids);
     }
 
-    ReleaseType::pointer ReleaseType::find(Session& session, ReleaseTypeId id)
+    std::size_t ReleaseType::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ReleaseType>>("SELECT r_t from release_type r_t").where("r_t.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM release_type"));
     }
 
-    ReleaseType::pointer ReleaseType::find(Session& session, std::string_view name)
+    ReleaseType::pointer ReleaseType::find(ISession& session, ReleaseTypeId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<ReleaseType>>("SELECT r_t from release_type r_t").where("r_t.id = ?").bind(id));
+    }
+
+    ReleaseType::pointer ReleaseType::find(ISession& session, std::string_view name)
+    {
+        checkReadTransaction(session);
 
         if (name.size() > _maxNameLength)
             throw Exception{ "ReleaseType is too long: '" + std::string{ name } + "'" };
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ReleaseType>>("SELECT r_t from release_type r_t").where("r_t.name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<ReleaseType>>("SELECT r_t from release_type r_t").where("r_t.name = ?").bind(name));
     }
 
-    void ReleaseType::find(Session& session, ReleaseTypeSortMethod sortMethod, std::function<void(const ReleaseType::pointer& releaseType)> func)
+    void ReleaseType::find(ISession& session, ReleaseTypeSortMethod sortMethod, std::function<void(const ReleaseType::pointer& releaseType)> func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->find<ReleaseType>() };
+        auto query{ getDboSession(session)->find<ReleaseType>() };
         switch (sortMethod)
         {
         case ReleaseTypeSortMethod::None:
@@ -449,12 +470,12 @@ namespace lms::db
         });
     }
 
-    std::vector<ReleaseTypeId> ReleaseType::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<ReleaseTypeId> ReleaseType::findOrphanIds(ISession& session, std::optional<Range> range)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         // select the release types that have no releases
-        auto query{ session.getDboSession()->query<ReleaseTypeId>("select r_t.id from release_type r_t LEFT OUTER JOIN release_release_type r_r_t ON r_t.id = r_r_t.release_type_id WHERE r_r_t.release_id IS NULL") };
+        auto query{ getDboSession(session)->query<ReleaseTypeId>("select r_t.id from release_type r_t LEFT OUTER JOIN release_release_type r_r_t ON r_t.id = r_r_t.release_type_id WHERE r_r_t.release_id IS NULL") };
         return utils::execRangeQuery<ReleaseTypeId>(query, range);
     }
 
@@ -464,51 +485,56 @@ namespace lms::db
     {
     }
 
-    Release::pointer Release::create(Session& session, const std::string& name, const std::optional<core::UUID>& MBID)
+    Release::pointer Release::create(ISession& session, const std::string& name, const std::optional<core::UUID>& MBID)
     {
-        return session.getDboSession()->add(std::unique_ptr<Release>{ new Release{ name, MBID } });
+        return utils::addObject(session, std::unique_ptr<Release>{ new Release{ name, MBID } });
     }
 
-    Release::pointer Release::find(Session& session, const core::UUID& mbid)
+    void Release::destroy(ISession& session, std::span<const ReleaseId> ids)
     {
-        session.checkReadTransaction();
-
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Release>>("SELECT r from release r").where("r.mbid = ?").bind(mbid));
+        utils::destroyObjects<Release>(session, ids);
     }
 
-    Release::pointer Release::find(Session& session, ReleaseId id)
+    Release::pointer Release::find(ISession& session, const core::UUID& mbid)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Release>>("SELECT r from release r").where("r.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Release>>("SELECT r from release r").where("r.mbid = ?").bind(mbid));
     }
 
-    bool Release::exists(Session& session, ReleaseId id)
+    Release::pointer Release::find(ISession& session, ReleaseId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT 1 FROM release").where("id = ?").bind(id)) == 1;
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Release>>("SELECT r from release r").where("r.id = ?").bind(id));
     }
 
-    std::size_t Release::getCount(Session& session)
+    bool Release::exists(ISession& session, ReleaseId id)
     {
-        session.checkReadTransaction();
-
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM release"));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT 1 FROM release").where("id = ?").bind(id)) == 1;
     }
 
-    std::vector<ReleaseId> Release::findOrphanIds(Session& session, std::optional<Range> range)
+    std::size_t Release::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<ReleaseId>("select r.id from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL") };
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM release"));
+    }
+
+    std::vector<ReleaseId> Release::findOrphanIds(ISession& session, std::optional<Range> range)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<ReleaseId>("select r.id from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL") };
         return utils::execRangeQuery<ReleaseId>(query, range);
     }
 
-    void Release::find(Session& session, ReleaseId& lastRetrievedRelease, std::size_t count, const std::function<void(const Release::pointer&)>& func, MediaLibraryId library)
+    void Release::find(ISession& session, ReleaseId& lastRetrievedRelease, std::size_t count, const std::function<void(const Release::pointer&)>& func, MediaLibraryId library)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Release>>("SELECT r FROM release r").orderBy("r.id").where("r.id > ?").bind(lastRetrievedRelease).limit(static_cast<int>(count)) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<Release>>("SELECT r FROM release r").orderBy("r.id").where("r.id > ?").bind(lastRetrievedRelease).limit(static_cast<int>(count)) };
 
         if (library.isValid())
         {
@@ -522,20 +548,24 @@ namespace lms::db
         });
     }
 
-    void Release::find(Session& session, const IdRange<ReleaseId>& idRange, const std::function<void(const Release::pointer&)>& func)
+    void Release::find(ISession& session, const IdRange<ReleaseId>& idRange, const std::function<void(const Release::pointer&)>& func)
     {
+        checkReadTransaction(session);
+
         assert(idRange.isValid());
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Release>>("SELECT r from release r").orderBy("r.id").where("r.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<Release>>("SELECT r from release r").orderBy("r.id").where("r.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
 
         utils::forEachQueryResult(query, [&](const Release::pointer& release) {
             func(release);
         });
     }
 
-    IdRange<ReleaseId> Release::findNextIdRange(Session& session, ReleaseId lastRetrievedId, std::size_t count)
+    IdRange<ReleaseId> Release::findNextIdRange(ISession& session, ReleaseId lastRetrievedId, std::size_t count)
     {
-        auto query{ session.getDboSession()->query<std::tuple<ReleaseId, ReleaseId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT r.id FROM release r WHERE r.id > ? ORDER BY r.id LIMIT ?) sub") };
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<std::tuple<ReleaseId, ReleaseId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT r.id FROM release r WHERE r.id > ? ORDER BY r.id LIMIT ?) sub") };
         query.bind(lastRetrievedId);
         query.bind(static_cast<int>(count));
 
@@ -543,43 +573,43 @@ namespace lms::db
         return IdRange<ReleaseId>{ .first = std::get<0>(res), .last = std::get<1>(res) };
     }
 
-    std::vector<Release::pointer> Release::find(Session& session, const FindParameters& params)
+    std::vector<Release::pointer> Release::find(ISession& session, const FindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         auto query{ createListQuery<Wt::Dbo::ptr<Release>>(session, "r", params) };
         return utils::execRangeQuery<pointer>(query, params.range);
     }
 
-    void Release::find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
+    void Release::find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         auto query{ createListQuery<Wt::Dbo::ptr<Release>>(session, "r", params) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
-    std::vector<ReleaseId> Release::findIds(Session& session, const FindParameters& params)
+    std::vector<ReleaseId> Release::findIds(ISession& session, const FindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         auto query{ createListQuery<ReleaseId>(session, "r.id", params) };
         return utils::execRangeQuery<ReleaseId>(query, params.range);
     }
 
-    void Release::updatePreferredArtwork(Session& session, ReleaseId releaseId, ArtworkId artworkId)
+    void Release::updatePreferredArtwork(ISession& session, ReleaseId releaseId, ArtworkId artworkId)
     {
-        session.checkWriteTransaction();
+        checkWriteTransaction(session);
 
         if (artworkId.isValid())
-            utils::executeCommand(*session.getDboSession(), "UPDATE release SET preferred_artwork_id = ? WHERE id = ?", artworkId, releaseId);
+            utils::executeCommand(*getDboSession(session), "UPDATE release SET preferred_artwork_id = ? WHERE id = ?", artworkId, releaseId);
         else
-            utils::executeCommand(*session.getDboSession(), "UPDATE release SET preferred_artwork_id = NULL WHERE id = ?", releaseId);
+            utils::executeCommand(*getDboSession(session), "UPDATE release SET preferred_artwork_id = NULL WHERE id = ?", releaseId);
     }
 
-    std::size_t Release::getCount(Session& session, const FindParameters& params)
+    std::size_t Release::getCount(ISession& session, const FindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         return utils::fetchQuerySingleResult(createCountQuery(session, params));
     }

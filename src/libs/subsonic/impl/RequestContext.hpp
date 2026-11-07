@@ -33,7 +33,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
     class User;
 } // namespace lms::db
 
@@ -42,7 +42,7 @@ namespace lms::api::subsonic
     class RequestContext
     {
     public:
-        RequestContext(const Wt::Http::Request& request, db::Session& dbSession, const SubsonicResourceConfig& config);
+        RequestContext(const Wt::Http::Request& request, db::ISession& dbSession, const SubsonicResourceConfig& config);
         ~RequestContext();
         RequestContext(const RequestContext&) = delete;
         RequestContext& operator=(const RequestContext&) = delete;
@@ -52,7 +52,7 @@ namespace lms::api::subsonic
         const ParameterMap& getParameters() const;
         std::istream& getBody() const;
 
-        db::Session& getDbSession();
+        db::ISession& getDbSession();
 
         void setUser(const db::ObjectPtr<db::User>& user);
         db::ObjectPtr<db::User> getUser() const;
@@ -65,7 +65,7 @@ namespace lms::api::subsonic
 
     private:
         const Wt::Http::Request& _request;
-        db::Session& _dbSession;
+        db::ISession& _dbSession;
         db::ObjectPtr<db::User> _user;
         const SubsonicResourceConfig& _config;
 

@@ -28,12 +28,12 @@
 namespace lms::db
 {
     class Artwork;
-    class Session;
+    class ISession;
 } // namespace lms::db
 
 namespace lms::podcast::utils
 {
-    db::ObjectPtr<db::Artwork> createArtworkFromImage(db::Session& session, const std::filesystem::path& filePath, const image::ImageProperties& probedImage);
+    db::ObjectPtr<db::Artwork> createArtworkFromImage(db::ISession& session, const std::filesystem::path& filePath, const image::ImageProperties& probedImage);
     std::string generateRandomFileName();
     void removeFile(const std::filesystem::path& filePath);
 } // namespace lms::podcast::utils

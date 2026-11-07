@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/Session.hpp"
+#include "Session.hpp"
 
 #include <Wt/Dbo/WtSqlTraits.h>
 
@@ -69,8 +69,6 @@
 #include "ConnectionPool.hpp"
 #include "Db.hpp"
 #include "Migration.hpp"
-#include "TransactionChecker.hpp"
-#include "Utils.hpp"
 #include "traits/EnumSetTraits.hpp"
 #include "traits/ImageHashTypeTraits.hpp"
 #include "traits/PartialDateTimeTraits.hpp"
@@ -79,8 +77,8 @@
 
 namespace lms::db
 {
-    Session::Session(IDb& db)
-        : _db{ static_cast<Db&>(db) }
+    Session::Session(Db& db)
+        : _db{ db }
     {
         _session.setConnectionPool(_db.getConnectionPool());
 
@@ -145,23 +143,4 @@ namespace lms::db
     {
         return ReadTransaction{ _session };
     }
-
-    void Session::checkWriteTransaction() const
-    {
-#if LMS_CHECK_TRANSACTION_ACCESSES
-        TransactionChecker::checkWriteTransaction(_session);
-#endif
-    }
-    void Session::checkReadTransaction() const
-    {
-#if LMS_CHECK_TRANSACTION_ACCESSES
-        TransactionChecker::checkReadTransaction(_session);
-#endif
-    }
-
-    void Session::executeWithId(std::string_view query, long long id)
-    {
-        utils::executeCommand(_session, query, id);
-    }
-
 } // namespace lms::db

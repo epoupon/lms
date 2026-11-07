@@ -35,7 +35,7 @@ LMS_DECLARE_IDTYPE(PlayQueueId)
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
     class Track;
     class User;
 
@@ -45,9 +45,11 @@ namespace lms::db
     public:
         PlayQueue() = default;
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, PlayQueueId playQueueId);
-        static pointer find(Session& session, UserId userId, std::string_view name);
+        static pointer create(ISession& session, const ObjectPtr<User>& user, std::string_view name);
+
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, PlayQueueId playQueueId);
+        static pointer find(ISession& session, UserId userId, std::string_view name);
 
         // Accessors
         std::string_view getName() const { return _name; }
@@ -82,9 +84,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         PlayQueue(const ObjectPtr<User>& user, std::string_view name);
-        static pointer create(Session& session, const ObjectPtr<User>& user, std::string_view name);
 
         std::string _name;
         int _currentIndex{};

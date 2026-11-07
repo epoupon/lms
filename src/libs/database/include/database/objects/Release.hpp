@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -54,10 +55,10 @@ namespace lms::db
     class Artwork;
     class Cluster;
     class ClusterType;
+    class ISession;
     class Medium;
     class Release;
     class ReleaseArtistLink;
-    class Session;
     class Track;
     class TrackArtistLink;
     class User;
@@ -67,10 +68,13 @@ namespace lms::db
     public:
         Country() = default;
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, CountryId id);
-        static pointer find(Session& session, std::string_view name);
-        static std::vector<CountryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static pointer create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const CountryId> ids);
+
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, CountryId id);
+        static pointer find(ISession& session, std::string_view name);
+        static std::vector<CountryId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
         std::string_view getName() const { return _name; }
@@ -85,9 +89,7 @@ namespace lms::db
     private:
         static constexpr std::size_t _maxNameLength{ 1024 };
 
-        friend class Session;
         Country(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
 
         std::string _name;
         Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this country
@@ -98,11 +100,14 @@ namespace lms::db
     public:
         Label() = default;
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, LabelId id);
-        static pointer find(Session& session, std::string_view name);
-        static void find(Session& session, LabelSortMethod sortMethod, std::function<void(const Label::pointer& label)> func);
-        static std::vector<LabelId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static pointer create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const LabelId> ids);
+
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, LabelId id);
+        static pointer find(ISession& session, std::string_view name);
+        static void find(ISession& session, LabelSortMethod sortMethod, std::function<void(const Label::pointer& label)> func);
+        static std::vector<LabelId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
         std::string_view getName() const { return _name; }
@@ -117,9 +122,7 @@ namespace lms::db
     private:
         static constexpr std::size_t _maxNameLength{ 1024 };
 
-        friend class Session;
         Label(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
 
         std::string _name;
         Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this label
@@ -130,11 +133,14 @@ namespace lms::db
     public:
         ReleaseType() = default;
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ReleaseTypeId id);
-        static pointer find(Session& session, std::string_view name);
-        static void find(Session& session, ReleaseTypeSortMethod sortMethod, std::function<void(const ReleaseType::pointer& releaseType)> func);
-        static std::vector<ReleaseTypeId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static pointer create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const ReleaseTypeId> ids);
+
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, ReleaseTypeId id);
+        static pointer find(ISession& session, std::string_view name);
+        static void find(ISession& session, ReleaseTypeSortMethod sortMethod, std::function<void(const ReleaseType::pointer& releaseType)> func);
+        static std::vector<ReleaseTypeId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
         std::string_view getName() const { return _name; }
@@ -149,9 +155,7 @@ namespace lms::db
     private:
         static constexpr std::size_t _maxNameLength{ 1024 };
 
-        friend class Session;
         ReleaseType(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
 
         std::string _name;
         Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this type
@@ -249,22 +253,25 @@ namespace lms::db
 
         Release() = default;
 
+        static pointer create(ISession& session, const std::string& name, const std::optional<core::UUID>& MBID = {});
+        static void destroy(ISession& session, std::span<const ReleaseId> ids);
+
         // Accessors
-        static std::size_t getCount(Session& session);
-        static bool exists(Session& session, ReleaseId id);
-        static pointer find(Session& session, const core::UUID& MBID);
-        static pointer find(Session& session, ReleaseId id);
-        static void find(Session& session, ReleaseId& lastRetrievedRelease, std::size_t count, const std::function<void(const Release::pointer&)>& func, MediaLibraryId library = {});
-        static void find(Session& session, const IdRange<ReleaseId>& idRange, const std::function<void(const Release::pointer&)>& func);
-        static IdRange<ReleaseId> findNextIdRange(Session& session, ReleaseId lastRetrievedId, std::size_t count);
-        static std::vector<pointer> find(Session& session, const FindParameters& parameters);
-        static void find(Session& session, const FindParameters& parameters, const std::function<void(const pointer&)>& func);
-        static std::vector<ReleaseId> findIds(Session& session, const FindParameters& parameters);
-        static std::size_t getCount(Session& session, const FindParameters& parameters);
-        static std::vector<ReleaseId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // not track related
+        static std::size_t getCount(ISession& session);
+        static bool exists(ISession& session, ReleaseId id);
+        static pointer find(ISession& session, const core::UUID& MBID);
+        static pointer find(ISession& session, ReleaseId id);
+        static void find(ISession& session, ReleaseId& lastRetrievedRelease, std::size_t count, const std::function<void(const Release::pointer&)>& func, MediaLibraryId library = {});
+        static void find(ISession& session, const IdRange<ReleaseId>& idRange, const std::function<void(const Release::pointer&)>& func);
+        static IdRange<ReleaseId> findNextIdRange(ISession& session, ReleaseId lastRetrievedId, std::size_t count);
+        static std::vector<pointer> find(ISession& session, const FindParameters& parameters);
+        static void find(ISession& session, const FindParameters& parameters, const std::function<void(const pointer&)>& func);
+        static std::vector<ReleaseId> findIds(ISession& session, const FindParameters& parameters);
+        static std::size_t getCount(ISession& session, const FindParameters& parameters);
+        static std::vector<ReleaseId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt); // not track related
 
         // Updates
-        static void updatePreferredArtwork(Session& session, ReleaseId id, ArtworkId artworkId);
+        static void updatePreferredArtwork(ISession& session, ReleaseId id, ArtworkId artworkId);
 
         std::vector<ObjectPtr<Cluster>> getClusters(ClusterTypeId clusterTypeId, std::size_t maxCount) const;
 
@@ -355,9 +362,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         Release(const std::string& name, const std::optional<core::UUID>& MBID = {});
-        static pointer create(Session& session, const std::string& name, const std::optional<core::UUID>& MBID = {});
 
         core::PartialDateTime getDate(bool original) const;
         std::optional<int> getYear(bool original) const;

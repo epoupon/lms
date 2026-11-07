@@ -38,7 +38,7 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
 
             track.get().modify()->setRelease(release.get());
-            session.create<ReleaseArtistLink>(release.get(), artist.get(), false);
+            ReleaseArtistLink::create(session, release.get(), artist.get(), false);
         }
 
         {

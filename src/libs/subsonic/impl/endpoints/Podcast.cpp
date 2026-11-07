@@ -19,7 +19,7 @@
 
 #include "Podcast.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Podcast.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 #include "services/podcast/IPodcastService.hpp"

@@ -29,7 +29,7 @@
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Image.hpp"
@@ -56,7 +56,7 @@ namespace lms::scanner
             const std::vector<std::string>& releaseImageFileNames;
         };
 
-        db::Artwork::pointer findImageInDirectory(db::Session& session, const SearchReleaseArtworkParams& searchParams, const std::filesystem::path& directoryPath)
+        db::Artwork::pointer findImageInDirectory(db::ISession& session, const SearchReleaseArtworkParams& searchParams, const std::filesystem::path& directoryPath)
         {
             db::Artwork::pointer artwork;
 
@@ -82,7 +82,7 @@ namespace lms::scanner
             return artwork;
         }
 
-        db::Artwork::pointer computePreferredReleaseImage(db::Session& session, const SearchReleaseArtworkParams& searchParams, const db::Release::pointer& release)
+        db::Artwork::pointer computePreferredReleaseImage(db::ISession& session, const SearchReleaseArtworkParams& searchParams, const db::Release::pointer& release)
         {
             db::Artwork::pointer artwork;
 
@@ -130,7 +130,7 @@ namespace lms::scanner
             return artwork;
         }
 
-        db::Artwork::pointer computePreferredReleaseArtwork(db::Session& session, const SearchReleaseArtworkParams& searchParams, const db::Release::pointer& release)
+        db::Artwork::pointer computePreferredReleaseArtwork(db::ISession& session, const SearchReleaseArtworkParams& searchParams, const db::Release::pointer& release)
         {
             db::Artwork::pointer artwork{ computePreferredReleaseImage(session, searchParams, release) };
             if (artwork)
@@ -178,12 +178,12 @@ namespace lms::scanner
             return artwork;
         }
 
-        void updateReleasePreferredArtwork(db::Session& session, const ReleaseArtworkAssociation& releaseArtworkAssociation)
+        void updateReleasePreferredArtwork(db::ISession& session, const ReleaseArtworkAssociation& releaseArtworkAssociation)
         {
             db::Release::updatePreferredArtwork(session, releaseArtworkAssociation.releaseId, releaseArtworkAssociation.preferredArtworkId);
         }
 
-        void updateReleasePreferredArtworks(db::Session& session, ReleaseArtworkAssociationContainer& imageAssociations, bool forceFullBatch)
+        void updateReleasePreferredArtworks(db::ISession& session, ReleaseArtworkAssociationContainer& imageAssociations, bool forceFullBatch)
         {
             constexpr std::size_t writeBatchSize{ 50 };
 
@@ -212,7 +212,7 @@ namespace lms::scanner
             return res;
         }
 
-        bool fetchNextReleaseIdRange(db::Session& session, db::ReleaseId& lastRetrievedId, db::IdRange<db::ReleaseId>& idRange)
+        bool fetchNextReleaseIdRange(db::ISession& session, db::ReleaseId& lastRetrievedId, db::IdRange<db::ReleaseId>& idRange)
         {
             constexpr std::size_t readBatchSize{ 100 };
 

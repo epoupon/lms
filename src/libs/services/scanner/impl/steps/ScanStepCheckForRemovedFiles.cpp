@@ -29,7 +29,7 @@
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/PlayListFile.hpp"
@@ -142,7 +142,7 @@ namespace lms::scanner
         };
 
         template<typename Object>
-        std::size_t removeObjects(db::Session& session, std::deque<typename Object::IdType>& objectIdsToRemove, bool forceFullBatch)
+        std::size_t removeObjects(db::ISession& session, std::deque<typename Object::IdType>& objectIdsToRemove, bool forceFullBatch)
         {
             std::size_t removedObjectCount{};
             constexpr std::size_t writeBatchSize{ 50 };
@@ -158,7 +158,7 @@ namespace lms::scanner
 
                 {
                     auto transaction{ session.createWriteTransaction() };
-                    session.destroy<Object>(ids);
+                    Object::destroy(session, ids);
                 }
 
                 removedObjectCount += ids.size();
@@ -169,7 +169,7 @@ namespace lms::scanner
         }
 
         template<typename Object>
-        bool fetchNextFilesToCheck(db::Session& session, typename Object::IdType& lastCheckedId, const std::filesystem::path& cachepath, std::vector<FileToCheck<typename Object::IdType>>& filesToCheck)
+        bool fetchNextFilesToCheck(db::ISession& session, typename Object::IdType& lastCheckedId, const std::filesystem::path& cachepath, std::vector<FileToCheck<typename Object::IdType>>& filesToCheck)
         {
             constexpr std::size_t batchSize{ 200 };
 
@@ -212,7 +212,7 @@ namespace lms::scanner
 
     void ScanStepCheckForRemovedFiles::process(ScanContext& context)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -235,7 +235,7 @@ namespace lms::scanner
         if (_abortScan)
             return;
 
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
 
         std::deque<ObjectIdType> objectIdsToRemove;
 

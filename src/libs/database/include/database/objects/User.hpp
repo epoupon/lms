@@ -36,7 +36,7 @@
 namespace lms::db
 {
     class AuthToken;
-    class Session;
+    class ISession;
     class UIState;
 
     class User final : public Object<User, UserId>
@@ -71,12 +71,14 @@ namespace lms::db
 
         User() = default;
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, UserId id);
-        static pointer find(Session& session, std::string_view loginName);
-        static std::vector<UserId> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
-        static pointer findDemoUser(Session& session);
+        static pointer create(ISession& session, std::string_view loginName);
+
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, UserId id);
+        static pointer find(ISession& session, std::string_view loginName);
+        static std::vector<UserId> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static pointer findDemoUser(ISession& session);
 
         // accessors
         const std::string& getLoginName() const { return _loginName; }
@@ -156,9 +158,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         User(std::string_view loginName);
-        static pointer create(Session& session, std::string_view loginName);
 
         std::string _loginName;
         int _bcryptRoundCount{};

@@ -34,14 +34,16 @@
 
 namespace lms::db
 {
+    class ISession;
     class Track;
-    class Session;
     class User;
 
     class TrackFeedback final : public Object<TrackFeedback, TrackFeedbackId>
     {
     public:
         TrackFeedback() = default;
+
+        static pointer create(ISession& session, ObjectPtr<Track> track, ObjectPtr<User> user);
 
         struct FindParameters
         {
@@ -73,10 +75,10 @@ namespace lms::db
         };
 
         // Search utility
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackFeedbackId id);
-        static pointer find(Session& session, TrackId trackId, UserId userId);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, TrackFeedbackId id);
+        static pointer find(ISession& session, TrackId trackId, UserId userId);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
 
         // Accessors
         ObjectPtr<Track> getTrack() const { return _track; }
@@ -99,9 +101,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         TrackFeedback(ObjectPtr<Track> track, ObjectPtr<User> user);
-        static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user);
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };

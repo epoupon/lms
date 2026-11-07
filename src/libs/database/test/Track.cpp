@@ -602,8 +602,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Composer);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Composer);
         }
 
         {

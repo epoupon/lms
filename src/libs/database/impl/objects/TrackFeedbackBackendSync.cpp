@@ -22,9 +22,9 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
 #include "database/objects/TrackFeedback.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -38,35 +38,34 @@ namespace lms::db
     {
     }
 
-    TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::create(Session& session, ObjectPtr<TrackFeedback> trackFeedback, FeedbackBackend backend)
+    TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::create(ISession& session, ObjectPtr<TrackFeedback> trackFeedback, FeedbackBackend backend)
     {
-        session.checkWriteTransaction();
-        return session.getDboSession()->add(std::unique_ptr<TrackFeedbackBackendSync>{ new TrackFeedbackBackendSync{ trackFeedback, backend } });
+        return utils::addObject(session, std::unique_ptr<TrackFeedbackBackendSync>{ new TrackFeedbackBackendSync{ trackFeedback, backend } });
     }
 
-    std::size_t TrackFeedbackBackendSync::getCount(Session& session)
+    std::size_t TrackFeedbackBackendSync::getCount(ISession& session)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_feedback_backend_sync"));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_feedback_backend_sync"));
     }
 
-    TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::find(Session& session, TrackFeedbackBackendSyncId id)
+    TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::find(ISession& session, TrackFeedbackBackendSyncId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackFeedbackBackendSync>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<TrackFeedbackBackendSync>().where("id = ?").bind(id));
     }
 
-    TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::find(Session& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend)
+    TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::find(ISession& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackFeedbackBackendSync>().where("track_feedback_id = ?").bind(trackFeedbackId).where("backend = ?").bind(backend));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<TrackFeedbackBackendSync>().where("track_feedback_id = ?").bind(trackFeedbackId).where("backend = ?").bind(backend));
     }
 
-    std::vector<TrackFeedbackBackendSyncId> TrackFeedbackBackendSync::find(Session& session, const FindParameters& params)
+    std::vector<TrackFeedbackBackendSyncId> TrackFeedbackBackendSync::find(ISession& session, const FindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<TrackFeedbackBackendSyncId>("SELECT id FROM track_feedback_backend_sync") };
+        auto query{ getDboSession(session)->query<TrackFeedbackBackendSyncId>("SELECT id FROM track_feedback_backend_sync") };
 
         if (params.backend)
             query.where("backend = ?").bind(*params.backend);
@@ -77,11 +76,11 @@ namespace lms::db
         return utils::execRangeQuery<TrackFeedbackBackendSyncId>(query, params.range);
     }
 
-    void TrackFeedbackBackendSync::find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
+    void TrackFeedbackBackendSync::find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->find<TrackFeedbackBackendSync>() };
+        auto query{ getDboSession(session)->find<TrackFeedbackBackendSync>() };
 
         if (params.backend)
             query.where("backend = ?").bind(*params.backend);

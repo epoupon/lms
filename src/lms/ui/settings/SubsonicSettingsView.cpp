@@ -30,7 +30,7 @@
 #include "core/Service.hpp"
 #include "core/UUID.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 #include "services/auth/IAuthTokenService.hpp"
 

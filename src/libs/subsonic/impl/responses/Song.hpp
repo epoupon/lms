@@ -25,9 +25,9 @@
 
 namespace lms::db
 {
+    class ISession;
     class Track;
     class User;
-    class Session;
 } // namespace lms::db
 
 namespace lms::api::subsonic

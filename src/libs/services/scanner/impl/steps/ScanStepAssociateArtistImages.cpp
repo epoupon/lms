@@ -31,7 +31,7 @@
 #include "core/Path.hpp"
 #include "core/String.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/Artwork.hpp"
@@ -63,7 +63,7 @@ namespace lms::scanner
             const ScannerSettings& settings;
         };
 
-        db::Image::pointer findImageInDirectory(db::Session& session, const std::filesystem::path& directoryPath, std::span<const std::string> fileStemsToSearch)
+        db::Image::pointer findImageInDirectory(db::ISession& session, const std::filesystem::path& directoryPath, std::span<const std::string> fileStemsToSearch)
         {
             db::Image::pointer image;
 
@@ -89,7 +89,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer getImageFromMbid(db::Session& session, const core::UUID& mbid)
+        db::Image::pointer getImageFromMbid(db::ISession& session, const core::UUID& mbid)
         {
             db::Image::pointer image;
 
@@ -102,7 +102,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer searchImageInArtistInfoDirectory(db::Session& session, const SearchArtistArtworkParams& searchParams, db::ArtistId artistId)
+        db::Image::pointer searchImageInArtistInfoDirectory(db::ISession& session, const SearchArtistArtworkParams& searchParams, db::ArtistId artistId)
         {
             db::Image::pointer image;
 
@@ -120,7 +120,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer searchImageInDirectories(db::Session& session, const SearchArtistArtworkParams& searchParams, db::ArtistId artistId)
+        db::Image::pointer searchImageInDirectories(db::ISession& session, const SearchArtistArtworkParams& searchParams, db::ArtistId artistId)
         {
             db::Image::pointer image;
 
@@ -171,7 +171,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Artwork::pointer getFirstReleaseArtwork(db::Session& session, const db::Artist::pointer& artist)
+        db::Artwork::pointer getFirstReleaseArtwork(db::ISession& session, const db::Artist::pointer& artist)
         {
             db::Artwork::pointer artwork;
 
@@ -189,7 +189,7 @@ namespace lms::scanner
             return artwork;
         }
 
-        db::Artwork::pointer computePreferredArtistArtwork(db::Session& session, const SearchArtistArtworkParams& searchParams, const db::Artist::pointer& artist)
+        db::Artwork::pointer computePreferredArtistArtwork(db::ISession& session, const SearchArtistArtworkParams& searchParams, const db::Artist::pointer& artist)
         {
             if (const auto mbid{ artist->getMBID() })
             {
@@ -220,12 +220,12 @@ namespace lms::scanner
             return db::Artwork::pointer{};
         }
 
-        void updateArtistPreferredArtwork(db::Session& session, const ArtistArtworkAssociation& artistArtworkAssociation)
+        void updateArtistPreferredArtwork(db::ISession& session, const ArtistArtworkAssociation& artistArtworkAssociation)
         {
             db::Artist::updatePreferredArtwork(session, artistArtworkAssociation.artistId, artistArtworkAssociation.preferredArtworkId);
         }
 
-        void updateArtistPreferredArtworks(db::Session& session, ArtistArtworkAssociationContainer& imageAssociations, bool forceFullBatch)
+        void updateArtistPreferredArtworks(db::ISession& session, ArtistArtworkAssociationContainer& imageAssociations, bool forceFullBatch)
         {
             constexpr std::size_t writeBatchSize{ 50 };
 
@@ -267,7 +267,7 @@ namespace lms::scanner
             return res;
         }
 
-        bool fetchNextArtistIdRange(db::Session& session, db::ArtistId& lastRetrievedId, db::IdRange<db::ArtistId>& idRange)
+        bool fetchNextArtistIdRange(db::ISession& session, db::ArtistId& lastRetrievedId, db::IdRange<db::ArtistId>& idRange)
         {
             constexpr std::size_t readBatchSize{ 100 };
 

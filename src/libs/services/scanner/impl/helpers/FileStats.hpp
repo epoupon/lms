@@ -23,7 +23,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 }
 
 namespace lms::scanner::helpers
@@ -40,5 +40,5 @@ namespace lms::scanner::helpers
     };
 
     // The caller must hold a read transaction
-    FileStats getFileStats(db::Session& session);
+    FileStats getFileStats(db::ISession& session);
 } // namespace lms::scanner::helpers

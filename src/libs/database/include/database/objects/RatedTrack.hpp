@@ -33,14 +33,16 @@
 
 namespace lms::db
 {
+    class ISession;
     class Track;
-    class Session;
     class User;
 
     class RatedTrack final : public Object<RatedTrack, RatedTrackId>
     {
     public:
         RatedTrack() = default;
+
+        static pointer create(ISession& session, ObjectPtr<Track> track, ObjectPtr<User> user);
 
         struct FindParameters
         {
@@ -60,10 +62,10 @@ namespace lms::db
         };
 
         // Search utility
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, RatedTrackId id);
-        static pointer find(Session& session, TrackId trackId, UserId userId);
-        static void find(Session& session, const FindParameters& findParams, std::function<void(const pointer&)> func);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, RatedTrackId id);
+        static pointer find(ISession& session, TrackId trackId, UserId userId);
+        static void find(ISession& session, const FindParameters& findParams, std::function<void(const pointer&)> func);
 
         // Accessors
         ObjectPtr<Track> getTrack() const { return _track; }
@@ -86,9 +88,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         RatedTrack(ObjectPtr<Track> track, ObjectPtr<User> user);
-        static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user);
 
         Rating _rating{};
         Wt::WDateTime _lastUpdated; // when it was rated for the last time

@@ -26,7 +26,7 @@
 #include "core/ILogger.hpp"
 #include "core/Service.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 

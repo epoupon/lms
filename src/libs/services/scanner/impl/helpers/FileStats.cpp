@@ -19,7 +19,7 @@
 
 #include "FileStats.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/PlayListFile.hpp"
@@ -28,7 +28,7 @@
 
 namespace lms::scanner::helpers
 {
-    FileStats getFileStats(db::Session& session)
+    FileStats getFileStats(db::ISession& session)
     {
         FileStats stats{};
 

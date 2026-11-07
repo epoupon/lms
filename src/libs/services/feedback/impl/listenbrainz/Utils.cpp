@@ -22,13 +22,13 @@
 #include <Wt/Json/Object.h>
 #include <Wt/Json/Parser.h>
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 
 namespace lms::feedback::listenBrainz::utils
 {
-    std::string getListenBrainzToken(db::Session& session, db::UserId userId)
+    std::string getListenBrainzToken(db::ISession& session, db::UserId userId)
     {
         std::string res;
 
@@ -94,7 +94,7 @@ namespace lms::feedback::listenBrainz::utils
         }
     }
 
-    bool canBeFeedbacked(db::Session& session, db::TrackId trackId)
+    bool canBeFeedbacked(db::ISession& session, db::TrackId trackId)
     {
         auto transaction{ session.createReadTransaction() };
 

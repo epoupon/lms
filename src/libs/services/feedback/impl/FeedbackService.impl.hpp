@@ -22,7 +22,7 @@
 #include "FeedbackService.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 
 namespace lms::feedback
@@ -33,7 +33,7 @@ namespace lms::feedback
         typename FeedbackObjType::IdType feedbackObjId;
         core::EnumSet<db::FeedbackBackend> backends;
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
             const db::User::pointer user{ db::User::find(session, userId) };
@@ -51,7 +51,7 @@ namespace lms::feedback
                 if (!obj)
                     return;
 
-                feedbackObj = session.create<FeedbackObjType>(obj, user);
+                feedbackObj = FeedbackObjType::create(session, obj, user);
             }
 
             feedbackObj.modify()->setValue(value);
@@ -74,7 +74,7 @@ namespace lms::feedback
     template<typename ObjType, typename ObjIdType, typename FeedbackObjType>
     db::FeedbackValue FeedbackService::getFeedback(db::UserId userId, ObjIdType id)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         typename FeedbackObjType::pointer feedbackObj{ FeedbackObjType::find(session, id, userId) };
@@ -84,7 +84,7 @@ namespace lms::feedback
     template<typename ObjType, typename ObjIdType, typename FeedbackObjType>
     Wt::WDateTime FeedbackService::getFeedbackDateTime(db::UserId userId, ObjIdType id)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         typename FeedbackObjType::pointer feedbackObj{ FeedbackObjType::find(session, id, userId) };
@@ -97,7 +97,7 @@ namespace lms::feedback
     template<typename ObjType, typename ObjIdType, typename RatedObjType>
     void FeedbackService::setRating(db::UserId userId, ObjIdType objectId, std::optional<db::Rating> rating)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
         typename RatedObjType::pointer ratedObject{ RatedObjType::find(session, objectId, userId) };
@@ -111,7 +111,7 @@ namespace lms::feedback
                 if (!obj || !user)
                     return;
 
-                ratedObject = session.create<RatedObjType>(obj, user);
+                ratedObject = RatedObjType::create(session, obj, user);
             }
 
             ratedObject.modify()->setRating(*rating);
@@ -127,7 +127,7 @@ namespace lms::feedback
     template<typename ObjType, typename ObjIdType, typename RatedObjType>
     std::optional<db::Rating> FeedbackService::getRating(db::UserId userId, ObjIdType objectId)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         const typename RatedObjType::pointer ratedObj{ RatedObjType::find(session, objectId, userId) };

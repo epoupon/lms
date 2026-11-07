@@ -23,9 +23,9 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/String.hpp"
-#include "database/Session.hpp"
 #include "database/objects/MediaLibrary.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
@@ -39,23 +39,23 @@ namespace lms::db
     {
     }
 
-    ScanSettings::pointer ScanSettings::create(Session& session, std::string_view name)
+    ScanSettings::pointer ScanSettings::create(ISession& session, std::string_view name)
     {
-        return session.getDboSession()->add(std::unique_ptr<ScanSettings>(new ScanSettings{ name }));
+        return utils::addObject(session, std::unique_ptr<ScanSettings>(new ScanSettings{ name }));
     }
 
-    ScanSettings::pointer ScanSettings::find(Session& session, ScanSettingsId id)
+    ScanSettings::pointer ScanSettings::find(ISession& session, ScanSettingsId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ScanSettings>>("SELECT s_s from scan_settings s_s").where("s_s.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<ScanSettings>>("SELECT s_s from scan_settings s_s").where("s_s.id = ?").bind(id));
     }
 
-    ScanSettings::pointer ScanSettings::find(Session& session, std::string_view name)
+    ScanSettings::pointer ScanSettings::find(ISession& session, std::string_view name)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ScanSettings>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<ScanSettings>().where("name = ?").bind(name));
     }
 
     std::vector<std::string_view> ScanSettings::getExtraTagsToScan() const

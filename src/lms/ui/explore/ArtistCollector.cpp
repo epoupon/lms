@@ -21,7 +21,7 @@
 
 #include "core/Utils.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Listen.hpp"
 #include "database/objects/TrackList.hpp"

@@ -31,8 +31,8 @@
 
 namespace lms::db
 {
+    class ISession;
     class Image;
-    class Session;
     class TrackEmbeddedImage;
 
     class Artwork final : public Object<Artwork, ArtworkId>
@@ -40,11 +40,14 @@ namespace lms::db
     public:
         Artwork() = default;
 
+        static pointer create(ISession& session, ObjectPtr<TrackEmbeddedImage> trackEmbeddedImage);
+        static pointer create(ISession& session, ObjectPtr<Image> image);
+
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ArtworkId id);
-        static pointer find(Session& session, TrackEmbeddedImageId id);
-        static pointer find(Session& session, ImageId id);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, ArtworkId id);
+        static pointer find(ISession& session, TrackEmbeddedImageId id);
+        static pointer find(ISession& session, ImageId id);
 
         // getters
         using UnderlyingId = std::variant<std::monostate, TrackEmbeddedImageId, ImageId>;
@@ -61,11 +64,8 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         Artwork(ObjectPtr<TrackEmbeddedImage> trackEmbeddedImage);
         Artwork(ObjectPtr<Image> image);
-        static pointer create(Session& session, ObjectPtr<TrackEmbeddedImage> trackEmbeddedImage);
-        static pointer create(Session& session, ObjectPtr<Image> image);
         Wt::Dbo::ptr<TrackEmbeddedImage> _trackEmbeddedImage;
         Wt::Dbo::ptr<Image> _image;
     };

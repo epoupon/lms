@@ -39,8 +39,8 @@ LMS_DECLARE_IDTYPE(PlayListFileId)
 namespace lms::db
 {
     class Artwork;
-    class Session;
     class Directory;
+    class ISession;
     class MediaLibrary;
     class TrackList;
 
@@ -49,14 +49,17 @@ namespace lms::db
     public:
         PlayListFile() = default;
 
+        static pointer create(ISession& session, const std::filesystem::path& file);
+        static void destroy(ISession& session, std::span<const PlayListFileId> ids);
+
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, PlayListFileId id);
-        static pointer find(Session& session, const std::filesystem::path& path);
-        static void find(Session& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func);
-        static void findAbsoluteFilePath(Session& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(PlayListFileId playListFileId, const std::filesystem::path& absoluteFilePath)>& func);
-        static void find(Session& session, const IdRange<PlayListFileId>& idRange, const std::function<void(const PlayListFile::pointer&)>& func);
-        static IdRange<PlayListFileId> findNextIdRange(Session& session, PlayListFileId lastRetrievedId, std::size_t count);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, PlayListFileId id);
+        static pointer find(ISession& session, const std::filesystem::path& path);
+        static void find(ISession& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func);
+        static void findAbsoluteFilePath(ISession& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(PlayListFileId playListFileId, const std::filesystem::path& absoluteFilePath)>& func);
+        static void find(ISession& session, const IdRange<PlayListFileId>& idRange, const std::function<void(const PlayListFile::pointer&)>& func);
+        static IdRange<PlayListFileId> findNextIdRange(ISession& session, PlayListFileId lastRetrievedId, std::size_t count);
 
         // getters
         const std::filesystem::path& getAbsoluteFilePath() const { return _absoluteFilePath; }
@@ -81,7 +84,7 @@ namespace lms::db
         void setName(std::string_view name);
         void setFiles(std::span<const std::filesystem::path> files);
 
-        static void updatePreferredArtwork(Session& session, PlayListFileId id, ArtworkId artworkId);
+        static void updatePreferredArtwork(ISession& session, PlayListFileId id, ArtworkId artworkId);
 
         template<class Action>
         void persist(Action& a)
@@ -101,9 +104,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         PlayListFile(const std::filesystem::path& file);
-        static pointer create(Session& session, const std::filesystem::path& file);
 
         static constexpr std::size_t _maxNameLength{ 512 };
 

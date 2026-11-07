@@ -39,7 +39,7 @@
 #include "audio/IMusicNNEmbeddingExtractor.hpp"
 #include "audio/Init.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/ServerInfo.hpp"
 #include "database/profiling/IQueryProfiler.hpp"
 #include "image/Image.hpp"
@@ -113,7 +113,7 @@ namespace lms
             throw core::LmsException{ "Invalid config value for 'jukebox-audio-backend'" };
         }
 
-        core::UUID getServerInstanceId(db::Session& session)
+        core::UUID getServerInstanceId(db::ISession& session)
         {
             auto transaction{ session.createReadTransaction() };
             return db::ServerInfo::get(session)->getInstanceId();
@@ -453,8 +453,8 @@ namespace lms
 
             core::UUID serverInstanceId;
             {
-                db::Session session{ *database };
-                serverInstanceId = getServerInstanceId(session);
+                const auto session{ database->createSession() };
+                serverInstanceId = getServerInstanceId(*session);
             }
 
             ui::LmsApplicationManager appManager;

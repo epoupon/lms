@@ -44,6 +44,47 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Genre_destroy)
+    {
+        GenreId rock;
+        GenreId jazz;
+        GenreId pop;
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            rock = Genre::create(session, "Rock")->getId();
+            jazz = Genre::create(session, "Jazz")->getId();
+            pop = Genre::create(session, "Pop")->getId();
+        }
+
+        EXPECT_TRUE(rock.isValid());
+        EXPECT_NE(rock, jazz);
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            const std::vector<GenreId> ids{ rock, jazz };
+            Genre::destroy(session, ids);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            EXPECT_FALSE(Genre::find(session, rock));
+            EXPECT_FALSE(Genre::find(session, jazz));
+            EXPECT_TRUE(Genre::find(session, pop));
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            const std::vector<GenreId> ids{ pop };
+            Genre::destroy(session, ids);
+            EXPECT_EQ(Genre::getCount(session), 0);
+        }
+    }
+
     TEST_F(DatabaseFixture, Genre_findByName)
     {
         ScopedGenre genre{ session, "Jazz" };
@@ -183,7 +224,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            Genre::pointer genre{ session.create<Genre>(longName) };
+            Genre::pointer genre{ Genre::create(session, longName) };
             ASSERT_TRUE(genre);
             EXPECT_EQ(genre->getName().size(), Genre::maxNameLength);
             EXPECT_EQ(genre->getName(), expectedName);

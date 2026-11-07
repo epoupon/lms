@@ -38,7 +38,7 @@
 #include "core/Service.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistFeedback.hpp"
 #include "database/objects/Cluster.hpp"
@@ -124,9 +124,9 @@ namespace lms::db::benchs
         }
 
         template<typename FeedbackType, typename ObjectType>
-        void star(Session& session, const ObjectType& object, const User::pointer& user, core::random::PseudoRandomGenerator& rng)
+        void star(ISession& session, const ObjectType& object, const User::pointer& user, core::random::PseudoRandomGenerator& rng)
         {
-            auto feedback{ session.create<FeedbackType>(object, user) };
+            auto feedback{ FeedbackType::create(session, object, user) };
             feedback.modify()->setValue(FeedbackValue::Loved);
             feedback.modify()->setDateTime(randomDateTime(rng));
         }
@@ -135,7 +135,8 @@ namespace lms::db::benchs
         {
             Library library;
             library.tmpDb->createTablesAndIndexes();
-            Session session{ library.tmpDb->getDb() };
+            const std::unique_ptr<ISession> ownedSession{ library.tmpDb->getDb().createSession() };
+            ISession& session{ *ownedSession };
 
             core::random::PseudoRandomGenerator rng{ 42 };
             std::uniform_int_distribution<int> yearDist{ 1960, 2020 };
@@ -156,22 +157,22 @@ namespace lms::db::benchs
                 auto transaction{ session.createWriteTransaction() };
 
                 for (std::size_t i{}; i < mediaLibraryCount; ++i)
-                    mediaLibraries.push_back(session.create<MediaLibrary>("Library" + std::to_string(i), "/root" + std::to_string(i)));
+                    mediaLibraries.push_back(MediaLibrary::create(session, "Library" + std::to_string(i), "/root" + std::to_string(i)));
                 for (std::size_t i{}; i < genreCount; ++i)
-                    genres.push_back(session.create<Genre>("Genre" + std::to_string(i)));
+                    genres.push_back(Genre::create(session, "Genre" + std::to_string(i)));
                 for (std::size_t i{}; i < moodCount; ++i)
-                    moods.push_back(session.create<Mood>("Mood" + std::to_string(i)));
+                    moods.push_back(Mood::create(session, "Mood" + std::to_string(i)));
                 for (std::size_t i{}; i < labelCount; ++i)
-                    labels.push_back(session.create<Label>("Label" + std::to_string(i)));
+                    labels.push_back(Label::create(session, "Label" + std::to_string(i)));
                 for (std::size_t i{}; i < countryCount; ++i)
-                    countries.push_back(session.create<Country>("Country" + std::to_string(i)));
-                user = session.create<User>("MyUser");
+                    countries.push_back(Country::create(session, "Country" + std::to_string(i)));
+                user = User::create(session, "MyUser");
                 for (std::size_t typeIndex{}; typeIndex < clusterTypeCount; ++typeIndex)
                 {
-                    const ClusterType::pointer clusterType{ session.create<ClusterType>("ClusterType" + std::to_string(typeIndex)) };
+                    const ClusterType::pointer clusterType{ ClusterType::create(session, "ClusterType" + std::to_string(typeIndex)) };
                     library.clusterTypes.push_back(clusterType->getId());
                     for (std::size_t i{}; i < clusterCountPerType; ++i)
-                        clusters.push_back(session.create<Cluster>(clusterType, "Cluster" + std::to_string(typeIndex) + "-" + std::to_string(i)));
+                        clusters.push_back(Cluster::create(session, clusterType, "Cluster" + std::to_string(typeIndex) + "-" + std::to_string(i)));
                 }
 
                 for (const auto& mediaLibrary : mediaLibraries)
@@ -190,22 +191,22 @@ namespace lms::db::benchs
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                const Artist::pointer prolificArtist{ session.create<Artist>("Prolific") };
+                const Artist::pointer prolificArtist{ Artist::create(session, "Prolific") };
                 library.prolificArtist = prolificArtist->getId();
-                const TrackList::pointer bigTrackList{ session.create<TrackList>("BigTrackList", TrackListType::PlayList) };
+                const TrackList::pointer bigTrackList{ TrackList::create(session, "BigTrackList", TrackListType::PlayList) };
                 library.bigTrackList = bigTrackList->getId();
 
                 for (std::size_t releaseIndex{}; releaseIndex < releaseCount; ++releaseIndex)
                 {
-                    Release::pointer release{ session.create<Release>("Release" + std::to_string(releaseIndex)) };
+                    Release::pointer release{ Release::create(session, "Release" + std::to_string(releaseIndex)) };
                     if (releaseIndex % sampleReleaseModulo == 0)
                         library.sampleReleases.push_back(release->getId());
-                    const Medium::pointer medium{ session.create<Medium>(release) };
+                    const Medium::pointer medium{ Medium::create(session, release) };
                     const MediaLibrary::pointer mediaLibrary{ mediaLibraries[releaseIndex % mediaLibraries.size()] };
                     const bool compilation{ isCompilation(rng) };
                     const std::string releaseArtistName{ compilation ? "Various Artists " + std::to_string(releaseIndex) : "Artist" + std::to_string(releaseIndex) };
-                    const Artist::pointer releaseArtist{ session.create<Artist>(releaseArtistName) };
-                    session.create<ReleaseArtistLink>(release, releaseArtist, false).modify()->setArtistName(releaseArtistName);
+                    const Artist::pointer releaseArtist{ Artist::create(session, releaseArtistName) };
+                    ReleaseArtistLink::create(session, release, releaseArtist, false).modify()->setArtistName(releaseArtistName);
                     release.modify()->setCompilation(compilation);
                     // Not drawn from rng, to keep the same random data as before
                     release.modify()->addLabel(labels[releaseIndex % labels.size()]);
@@ -221,7 +222,7 @@ namespace lms::db::benchs
 
                     for (std::size_t trackIndex{}; trackIndex < trackCountPerRelease; ++trackIndex)
                     {
-                        Track::pointer track{ session.create<Track>() };
+                        Track::pointer track{ Track::create(session) };
                         track.modify()->setName("Track" + std::to_string(releaseIndex) + "-" + std::to_string(trackIndex));
                         track.modify()->setRelease(release);
                         track.modify()->setMedium(medium);
@@ -235,8 +236,8 @@ namespace lms::db::benchs
                         track.modify()->setMoods(pickDistinct(moods, moodCountPerTrack, rng));
 
                         const std::string trackArtistName{ compilation ? "Artist" + std::to_string(releaseIndex) + "-" + std::to_string(trackIndex) : releaseArtistName };
-                        const Artist::pointer trackArtist{ compilation ? session.create<Artist>(trackArtistName) : releaseArtist };
-                        session.create<TrackArtistLink>(track, trackArtist, TrackArtistLinkType::Artist).modify()->setArtistName(trackArtistName);
+                        const Artist::pointer trackArtist{ compilation ? Artist::create(session, trackArtistName) : releaseArtist };
+                        TrackArtistLink::create(session, track, trackArtist, TrackArtistLinkType::Artist).modify()->setArtistName(trackArtistName);
 
                         if (isStarred(rng))
                             star<TrackFeedback>(session, track, user, rng);
@@ -248,11 +249,11 @@ namespace lms::db::benchs
                             trackClusters.push_back(clusters[(trackNumber * 7 + i * 13) % clusters.size()]);
                         track.modify()->setClusters(trackClusters);
                         if (trackNumber % composerTrackModulo == 0)
-                            session.create<TrackArtistLink>(track, trackArtist, TrackArtistLinkType::Composer).modify()->setArtistName(trackArtistName);
+                            TrackArtistLink::create(session, track, trackArtist, TrackArtistLinkType::Composer).modify()->setArtistName(trackArtistName);
                         if (trackNumber % prolificTrackModulo == 0)
-                            session.create<TrackArtistLink>(track, prolificArtist, TrackArtistLinkType::Artist).modify()->setArtistName("Prolific");
+                            TrackArtistLink::create(session, track, prolificArtist, TrackArtistLinkType::Artist).modify()->setArtistName("Prolific");
                         if (trackNumber % bigTrackListModulo == 0)
-                            session.create<TrackListEntry>(track, bigTrackList);
+                            TrackListEntry::create(session, track, bigTrackList);
                         if (trackIndex == 0 && releaseIndex % sampleReleaseModulo == 0)
                         {
                             library.sampleTracks.push_back(track->getId());
@@ -260,13 +261,13 @@ namespace lms::db::benchs
                         }
 
                         if (trackNumber % ratedTrackModulo == 0)
-                            session.create<RatedTrack>(track, user).modify()->setRating(static_cast<Rating>(1 + static_cast<int>(trackNumber / ratedTrackModulo) % ratingCount));
+                            RatedTrack::create(session, track, user).modify()->setRating(static_cast<Rating>(1 + static_cast<int>(trackNumber / ratedTrackModulo) % ratingCount));
 
                         if (isListened(rng))
                         {
                             const int listenCount{ listenCountDist(rng) };
                             for (int i{}; i < listenCount; ++i)
-                                session.create<Listen>(user, track, randomDateTime(rng));
+                                Listen::create(session, user, track, randomDateTime(rng));
                         }
                     }
                 }
@@ -416,7 +417,7 @@ namespace lms::db::benchs
 
         // Random views fetch ids, then load the entities of the page
         template<typename Object, typename Id>
-        std::size_t loadFirstPage(Session& session, const std::vector<Id>& ids)
+        std::size_t loadFirstPage(ISession& session, const std::vector<Id>& ids)
         {
             std::size_t count{};
             for (const Id id : std::span{ ids }.first(std::min(ids.size(), firstPage.size)))
@@ -428,21 +429,21 @@ namespace lms::db::benchs
         }
 
         // Filter cost only: no sort, no range, all the matching entities are counted
-        std::size_t countTracks(Session& session, const Filter& filter, UserId user)
+        std::size_t countTracks(ISession& session, const Filter& filter, UserId user)
         {
             Track::FindParameters params;
             setFilter(params, filter, user);
             return Track::getCount(session, params);
         }
 
-        std::size_t countReleases(Session& session, const Filter& filter, UserId user)
+        std::size_t countReleases(ISession& session, const Filter& filter, UserId user)
         {
             Release::FindParameters params;
             setFilter(params, filter, user);
             return Release::getCount(session, params);
         }
 
-        std::size_t countArtists(Session& session, const Filter& filter, UserId user)
+        std::size_t countArtists(ISession& session, const Filter& filter, UserId user)
         {
             Artist::FindParameters params;
             setFilter(params, filter, user);
@@ -450,7 +451,7 @@ namespace lms::db::benchs
         }
 
         // Queries issued by the UI views (see TrackCollector, ReleaseCollector and ArtistCollector)
-        std::size_t viewTracks(Session& session, ViewMode viewMode, const Filter& filter, UserId user)
+        std::size_t viewTracks(ISession& session, ViewMode viewMode, const Filter& filter, UserId user)
         {
             if (viewMode == ViewMode::RecentlyPlayed || viewMode == ViewMode::MostPlayed)
             {
@@ -497,7 +498,7 @@ namespace lms::db::benchs
             return count;
         }
 
-        std::size_t viewReleases(Session& session, ViewMode viewMode, const Filter& filter, UserId user)
+        std::size_t viewReleases(ISession& session, ViewMode viewMode, const Filter& filter, UserId user)
         {
             if (viewMode == ViewMode::RecentlyPlayed || viewMode == ViewMode::MostPlayed)
             {
@@ -546,7 +547,7 @@ namespace lms::db::benchs
             return count;
         }
 
-        std::size_t viewArtists(Session& session, ViewMode viewMode, const Filter& filter, UserId user)
+        std::size_t viewArtists(ISession& session, ViewMode viewMode, const Filter& filter, UserId user)
         {
             if (viewMode == ViewMode::RecentlyPlayed || viewMode == ViewMode::MostPlayed)
             {
@@ -596,14 +597,14 @@ namespace lms::db::benchs
         }
 
         // Queries filtered by a link type or a cluster type, which hint the query planner (see the "+" in Artist.cpp, Release.cpp and Cluster.cpp)
-        std::size_t countArtistsByLinkType(Session& session, TrackArtistLinkType linkType)
+        std::size_t countArtistsByLinkType(ISession& session, TrackArtistLinkType linkType)
         {
             Artist::FindParameters params;
             params.setTrackArtistLinkType(linkType);
             return Artist::getCount(session, params);
         }
 
-        std::size_t pageArtistsByLinkType(Session& session, TrackArtistLinkType linkType)
+        std::size_t pageArtistsByLinkType(ISession& session, TrackArtistLinkType linkType)
         {
             Artist::FindParameters params;
             params.setTrackArtistLinkType(linkType).setSortMethod(ArtistSortMethod::SortName).setRange(firstPage);
@@ -613,7 +614,7 @@ namespace lms::db::benchs
             return count;
         }
 
-        std::size_t releaseTrackArtists(Session& session, const Library& library, TrackArtistLinkType linkType)
+        std::size_t releaseTrackArtists(ISession& session, const Library& library, TrackArtistLinkType linkType)
         {
             std::size_t count{};
             for (const ReleaseId releaseId : library.sampleReleases)
@@ -621,7 +622,7 @@ namespace lms::db::benchs
             return count;
         }
 
-        std::size_t clustersOfReleases(Session& session, const Library& library)
+        std::size_t clustersOfReleases(ISession& session, const Library& library)
         {
             std::size_t count{};
             for (const ReleaseId releaseId : library.sampleReleases)
@@ -632,7 +633,7 @@ namespace lms::db::benchs
             return count;
         }
 
-        std::size_t clustersOfTypes(Session& session, const Library& library)
+        std::size_t clustersOfTypes(ISession& session, const Library& library)
         {
             std::size_t count{};
             for (const ClusterTypeId clusterTypeId : library.clusterTypes)
@@ -641,7 +642,7 @@ namespace lms::db::benchs
         }
 
         // The tag clouds of the pages of a track, a release, an artist and a track list: the most frequent clusters of each type
-        std::size_t countTagCloud(Session& session, const Library& library, const Cluster::FindParameters& scope, ClusterSortMethod sortMethod)
+        std::size_t countTagCloud(ISession& session, const Library& library, const Cluster::FindParameters& scope, ClusterSortMethod sortMethod)
         {
             std::size_t count{};
             for (const ClusterTypeId clusterTypeId : library.clusterTypes)
@@ -649,7 +650,7 @@ namespace lms::db::benchs
             return count;
         }
 
-        std::size_t tagCloudOfTracks(Session& session, const Library& library)
+        std::size_t tagCloudOfTracks(ISession& session, const Library& library)
         {
             std::size_t count{};
             for (const TrackId trackId : library.sampleTracks)
@@ -657,7 +658,7 @@ namespace lms::db::benchs
             return count;
         }
 
-        std::size_t tagCloudOfReleases(Session& session, const Library& library)
+        std::size_t tagCloudOfReleases(ISession& session, const Library& library)
         {
             std::size_t count{};
             for (const ReleaseId releaseId : library.sampleReleases)
@@ -665,7 +666,7 @@ namespace lms::db::benchs
             return count;
         }
 
-        std::size_t tagCloudOfArtists(Session& session, const Library& library)
+        std::size_t tagCloudOfArtists(ISession& session, const Library& library)
         {
             std::size_t count{};
             for (const ArtistId artistId : library.sampleArtists)
@@ -673,12 +674,12 @@ namespace lms::db::benchs
             return count;
         }
 
-        std::size_t tagCloudOfProlificArtist(Session& session, const Library& library)
+        std::size_t tagCloudOfProlificArtist(ISession& session, const Library& library)
         {
             return countTagCloud(session, library, Cluster::FindParameters{}.setArtist(library.prolificArtist), ClusterSortMethod::TrackCountDesc);
         }
 
-        std::size_t tagCloudOfBigTrackList(Session& session, const Library& library)
+        std::size_t tagCloudOfBigTrackList(ISession& session, const Library& library)
         {
             return countTagCloud(session, library, Cluster::FindParameters{}.setTrackList(library.bigTrackList), ClusterSortMethod::TrackCountDesc);
         }
@@ -686,7 +687,8 @@ namespace lms::db::benchs
         template<typename QueryFunc>
         void runQuery(benchmark::State& state, const Library& library, QueryFunc queryFunc)
         {
-            Session session{ library.tmpDb->getDb() };
+            const std::unique_ptr<ISession> ownedSession{ library.tmpDb->getDb().createSession() };
+            ISession& session{ *ownedSession };
 
             std::size_t resultCount{};
             for (auto _ : state)
@@ -698,8 +700,8 @@ namespace lms::db::benchs
             state.counters["results"] = static_cast<double>(resultCount);
         }
 
-        using CountFunc = std::size_t (*)(Session&, const Filter&, UserId);
-        using ViewFunc = std::size_t (*)(Session&, ViewMode, const Filter&, UserId);
+        using CountFunc = std::size_t (*)(ISession&, const Filter&, UserId);
+        using ViewFunc = std::size_t (*)(ISession&, ViewMode, const Filter&, UserId);
 
         void registerBenchmarks(const Library& library)
         {
@@ -720,7 +722,7 @@ namespace lms::db::benchs
                 {
                     benchmark::RegisterBenchmark("Filter/" + std::string{ entityName.str() } + "/" + std::string{ filterName.str() }, [&library, countFunc, filterCase](benchmark::State& state) {
                         const Filter filter{ createFilter(filterCase, library) };
-                        runQuery(state, library, [&](Session& session) { return countFunc(session, filter, library.user); });
+                        runQuery(state, library, [&](ISession& session) { return countFunc(session, filter, library.user); });
                     })->Unit(benchmark::kMicrosecond);
                 }
             }
@@ -730,23 +732,23 @@ namespace lms::db::benchs
                 const std::string linkTypeName{ linkType == TrackArtistLinkType::Artist ? "Artist" : "Composer" };
 
                 benchmark::RegisterBenchmark("LinkType/Artists/Count/" + linkTypeName, [&library, linkType](benchmark::State& state) {
-                    runQuery(state, library, [&](Session& session) { return countArtistsByLinkType(session, linkType); });
+                    runQuery(state, library, [&](ISession& session) { return countArtistsByLinkType(session, linkType); });
                 })->Unit(benchmark::kMicrosecond);
                 benchmark::RegisterBenchmark("LinkType/Artists/Page/" + linkTypeName, [&library, linkType](benchmark::State& state) {
-                    runQuery(state, library, [&](Session& session) { return pageArtistsByLinkType(session, linkType); });
+                    runQuery(state, library, [&](ISession& session) { return pageArtistsByLinkType(session, linkType); });
                 })->Unit(benchmark::kMicrosecond);
                 benchmark::RegisterBenchmark("LinkType/Release/TrackArtists/" + linkTypeName, [&library, linkType](benchmark::State& state) {
-                    runQuery(state, library, [&](Session& session) { return releaseTrackArtists(session, library, linkType); });
+                    runQuery(state, library, [&](ISession& session) { return releaseTrackArtists(session, library, linkType); });
                 })->Unit(benchmark::kMicrosecond);
             }
             benchmark::RegisterBenchmark("LinkType/Cluster/OfReleases", [&library](benchmark::State& state) {
-                runQuery(state, library, [&](Session& session) { return clustersOfReleases(session, library); });
+                runQuery(state, library, [&](ISession& session) { return clustersOfReleases(session, library); });
             })->Unit(benchmark::kMicrosecond);
             benchmark::RegisterBenchmark("LinkType/Cluster/OfTypes", [&library](benchmark::State& state) {
-                runQuery(state, library, [&](Session& session) { return clustersOfTypes(session, library); });
+                runQuery(state, library, [&](ISession& session) { return clustersOfTypes(session, library); });
             })->Unit(benchmark::kMicrosecond);
 
-            using TagCloudFunc = std::size_t (*)(Session&, const Library&);
+            using TagCloudFunc = std::size_t (*)(ISession&, const Library&);
             for (const auto& [name, tagCloudFunc] : { std::pair<core::LiteralString, TagCloudFunc>{ "Track", tagCloudOfTracks },
                                                       std::pair<core::LiteralString, TagCloudFunc>{ "Release", tagCloudOfReleases },
                                                       std::pair<core::LiteralString, TagCloudFunc>{ "Artist", tagCloudOfArtists },
@@ -754,7 +756,7 @@ namespace lms::db::benchs
                                                       std::pair<core::LiteralString, TagCloudFunc>{ "TrackList", tagCloudOfBigTrackList } })
             {
                 benchmark::RegisterBenchmark("TagCloud/" + std::string{ name.str() }, [&library, tagCloudFunc](benchmark::State& state) {
-                    runQuery(state, library, [&](Session& session) { return tagCloudFunc(session, library); });
+                    runQuery(state, library, [&](ISession& session) { return tagCloudFunc(session, library); });
                 })->Unit(benchmark::kMicrosecond);
             }
 
@@ -777,7 +779,7 @@ namespace lms::db::benchs
                     {
                         benchmark::RegisterBenchmark("ViewListen/" + std::string{ entityName.str() } + "/" + std::string{ modeName.str() } + "/" + std::string{ filterName.str() }, [&library, viewFunc, viewMode, filterCase](benchmark::State& state) {
                             const Filter filter{ createFilter(filterCase, library) };
-                            runQuery(state, library, [&](Session& session) { return viewFunc(session, viewMode, filter, library.user); });
+                            runQuery(state, library, [&](ISession& session) { return viewFunc(session, viewMode, filter, library.user); });
                         })->Unit(benchmark::kMicrosecond);
                     }
                 }
@@ -792,7 +794,7 @@ namespace lms::db::benchs
                     {
                         benchmark::RegisterBenchmark(std::string{ groupName.str() } + "/" + std::string{ entityName.str() } + "/" + std::string{ modeName.str() }, [&library, viewFunc, viewMode, filterCase](benchmark::State& state) {
                             const Filter filter{ createFilter(filterCase, library) };
-                            runQuery(state, library, [&](Session& session) { return viewFunc(session, viewMode, filter, library.user); });
+                            runQuery(state, library, [&](ISession& session) { return viewFunc(session, viewMode, filter, library.user); });
                         })->Unit(benchmark::kMicrosecond);
                     }
                 }

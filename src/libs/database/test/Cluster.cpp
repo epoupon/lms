@@ -121,7 +121,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto createdCluster{ session.create<Cluster>(clusterType.get(), "Foo") };
+            auto createdCluster{ Cluster::create(session, clusterType.get(), "Foo") };
             auto foundCluster{ clusterType->getCluster("Foo") };
             EXPECT_EQ(createdCluster, foundCluster);
         }
@@ -129,7 +129,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto createdCluster{ session.create<Cluster>(clusterType.get(), "") };
+            auto createdCluster{ Cluster::create(session, clusterType.get(), "") };
             auto foundCluster{ clusterType->getCluster("") };
             EXPECT_EQ(createdCluster, foundCluster);
         }
@@ -142,7 +142,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto createdCluster{ session.create<Cluster>(clusterType.get(), "Alternative Rock; Art Pop; Art Rock; Britpop; Chamber Pop; Electronic Rock; Electronica; Experimental Rock; Neo-Progressive Rock; Foo") };
+            auto createdCluster{ Cluster::create(session, clusterType.get(), "Alternative Rock; Art Pop; Art Rock; Britpop; Chamber Pop; Electronic Rock; Electronica; Experimental Rock; Neo-Progressive Rock; Foo") };
             auto foundCluster{ clusterType->getCluster("Alternative Rock; Art Pop; Art Rock; Britpop; Chamber Pop; Electronic Rock; Electronica; Experimental Rock; Neo-Progressive Rock; Foo") };
             EXPECT_EQ(createdCluster, foundCluster);
         }
@@ -445,7 +445,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto trackArtistLink{ session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist) };
+            auto trackArtistLink{ TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist) };
             cluster1.get().modify()->addTrack(track.get());
         }
 
@@ -505,8 +505,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Mixer);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Mixer);
             cluster.get().modify()->addTrack(track.get());
         }
 
@@ -544,7 +544,7 @@ namespace lms::db::tests
             tracks.emplace_back(session);
 
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(tracks.back().get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, tracks.back().get(), artist.get(), TrackArtistLinkType::Artist);
 
             for (auto& cluster : clusters)
                 cluster.get().modify()->addTrack(tracks.back().get());
@@ -579,7 +579,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
             track.get().modify()->setRelease(release.get());
             cluster.get().modify()->addTrack(track.get());
         }
@@ -622,7 +622,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto trackArtistLink{ session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist) };
+            auto trackArtistLink{ TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist) };
             track.get().modify()->setRelease(release.get());
             cluster1.get().modify()->addTrack(track.get());
             cluster2.get().modify()->addTrack(track.get());
@@ -655,7 +655,7 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
 
             if (i < 5)
-                session.create<TrackListEntry>(tracks.back().get(), trackList.get());
+                TrackListEntry::create(session, tracks.back().get(), trackList.get());
 
             if (i < 10)
                 cluster.get().modify()->addTrack(tracks.back().get());
@@ -687,7 +687,7 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
 
             if (i < 5)
-                session.create<TrackListEntry>(tracks.back().get(), trackList.get());
+                TrackListEntry::create(session, tracks.back().get(), trackList.get());
 
             if (i < 10)
             {
@@ -759,7 +759,7 @@ namespace lms::db::tests
 
     namespace
     {
-        std::vector<ClusterId> findClusterIds(Session& session, const Cluster::FindParameters& params)
+        std::vector<ClusterId> findClusterIds(ISession& session, const Cluster::FindParameters& params)
         {
             auto transaction{ session.createReadTransaction() };
             return Cluster::findIds(session, params);
@@ -862,12 +862,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
             // linked three times to the same track: it still is a single track, counted per link it would come first
-            session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Composer);
-            session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Lyricist);
-            session.create<TrackArtistLink>(track2.get(), artist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track3.get(), artist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(otherTrack.get(), otherArtist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.get(), artist.get(), TrackArtistLinkType::Composer);
+            TrackArtistLink::create(session, track1.get(), artist.get(), TrackArtistLinkType::Lyricist);
+            TrackArtistLink::create(session, track2.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track3.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, otherTrack.get(), otherArtist.get(), TrackArtistLinkType::Artist);
 
             oneTrack.get().modify()->addTrack(track1.get());
             twoTracks.get().modify()->addTrack(track2.get());
@@ -902,10 +902,10 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
             // a track listed three times is still a single track, counted per entry it would come first
             for (int i{}; i < 3; ++i)
-                session.create<TrackListEntry>(track1.get(), trackList.get());
-            session.create<TrackListEntry>(track2.get(), trackList.get());
-            session.create<TrackListEntry>(track3.get(), trackList.get());
-            session.create<TrackListEntry>(otherTrack.get(), otherTrackList.get());
+                TrackListEntry::create(session, track1.get(), trackList.get());
+            TrackListEntry::create(session, track2.get(), trackList.get());
+            TrackListEntry::create(session, track3.get(), trackList.get());
+            TrackListEntry::create(session, otherTrack.get(), otherTrackList.get());
 
             onTwoTracks.get().modify()->addTrack(track2.get());
             onTwoTracks.get().modify()->addTrack(track3.get());

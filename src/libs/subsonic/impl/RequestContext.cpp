@@ -43,7 +43,7 @@ namespace lms::api::subsonic
         }
     } // namespace
 
-    RequestContext::RequestContext(const Wt::Http::Request& request, db::Session& dbSession, const SubsonicResourceConfig& config)
+    RequestContext::RequestContext(const Wt::Http::Request& request, db::ISession& dbSession, const SubsonicResourceConfig& config)
         : _request{ request }
         , _dbSession{ dbSession }
         , _config{ config }
@@ -67,7 +67,7 @@ namespace lms::api::subsonic
         return _request.in();
     }
 
-    db::Session& RequestContext::getDbSession()
+    db::ISession& RequestContext::getDbSession()
     {
         return _dbSession;
     }

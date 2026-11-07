@@ -21,11 +21,11 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 
     namespace Schema
     {
-        void createTablesIfNeeded(Session& session);
-        void createIndexesIfNeeded(Session& session);
+        void createTablesIfNeeded(ISession& session);
+        void createIndexesIfNeeded(ISession& session);
     } // namespace Schema
 } // namespace lms::db

@@ -23,7 +23,7 @@
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 
@@ -65,7 +65,7 @@ namespace lms::scrobbling::listenBrainz
 
     bool ListenBrainzBackend::canBeScrobbled(TrackId trackId, std::optional<std::chrono::seconds> duration) const
     {
-        Session& session{ _db.getTLSSession() };
+        ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         const Track::pointer track{ Track::find(session, trackId) };

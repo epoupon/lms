@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -36,7 +37,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
     class Track;
 
     class Language final : public Object<Language, LanguageId>
@@ -81,13 +82,16 @@ namespace lms::db
 
         Language() = default;
 
-        static std::size_t getCount(Session& session);
-        static std::vector<LanguageId> findIds(Session& session, const FindParameters& params);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
-        static pointer find(Session& session, LanguageId id);
-        static pointer find(Session& session, std::string_view name);
-        static std::vector<LanguageId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static pointer create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const LanguageId> ids);
+
+        static std::size_t getCount(ISession& session);
+        static std::vector<LanguageId> findIds(ISession& session, const FindParameters& params);
+        static std::vector<pointer> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func);
+        static pointer find(ISession& session, LanguageId id);
+        static pointer find(ISession& session, std::string_view name);
+        static std::vector<LanguageId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         std::string_view getName() const { return _name; }
 
@@ -99,9 +103,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         Language(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
 
         std::string _name;
         Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;

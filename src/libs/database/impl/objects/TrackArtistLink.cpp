@@ -24,7 +24,6 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
@@ -32,6 +31,7 @@
 #include "database/objects/Mood.hpp"
 #include "database/objects/Track.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -48,49 +48,47 @@ namespace lms::db
     {
     }
 
-    TrackArtistLink::pointer TrackArtistLink::create(Session& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched)
+    TrackArtistLink::pointer TrackArtistLink::create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched)
     {
-        session.checkWriteTransaction();
-
-        return session.getDboSession()->add(std::make_unique<TrackArtistLink>(track, artist, type, subType, artistMBIDMatched));
+        return utils::addObject(session, std::make_unique<TrackArtistLink>(track, artist, type, subType, artistMBIDMatched));
     }
 
-    TrackArtistLink::pointer TrackArtistLink::create(Session& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, bool artistMBIDMatched)
+    TrackArtistLink::pointer TrackArtistLink::create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, bool artistMBIDMatched)
     {
         return create(session, track, artist, type, std::string_view{}, artistMBIDMatched);
     }
 
-    std::size_t TrackArtistLink::getCount(Session& session)
+    std::size_t TrackArtistLink::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_artist_link"));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_artist_link"));
     }
 
-    TrackArtistLink::pointer TrackArtistLink::find(Session& session, TrackArtistLinkId id)
+    TrackArtistLink::pointer TrackArtistLink::find(ISession& session, TrackArtistLinkId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l from track_artist_link t_a_l").where("t_a_l.id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l from track_artist_link t_a_l").where("t_a_l.id = ?").bind(id));
     }
 
-    void TrackArtistLink::find(Session& session, TrackId trackId, const std::function<void(const TrackArtistLink::pointer& link, const ObjectPtr<Artist>& artist)>& func)
+    void TrackArtistLink::find(ISession& session, TrackId trackId, const std::function<void(const TrackArtistLink::pointer& link, const ObjectPtr<Artist>& artist)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         using ResultType = std::tuple<Wt::Dbo::ptr<TrackArtistLink>, Wt::Dbo::ptr<Artist>>;
 
-        const auto query{ session.getDboSession()->query<ResultType>("SELECT t_a_l, a FROM track_artist_link t_a_l").join("artist a ON t_a_l.artist_id = a.id").where("t_a_l.track_id = ?").bind(trackId) };
+        const auto query{ getDboSession(session)->query<ResultType>("SELECT t_a_l, a FROM track_artist_link t_a_l").join("artist a ON t_a_l.artist_id = a.id").where("t_a_l.track_id = ?").bind(trackId) };
 
         utils::forEachQueryResult(query, [&](const ResultType& result) {
             func(std::get<Wt::Dbo::ptr<TrackArtistLink>>(result), std::get<Wt::Dbo::ptr<Artist>>(result));
         });
     }
 
-    core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session, ArtistId artistId)
+    core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(ISession& session, ArtistId artistId)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        const auto query{ session.getDboSession()->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link").where("artist_id = ?").bind(artistId) };
+        const auto query{ getDboSession(session)->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link").where("artist_id = ?").bind(artistId) };
 
         core::EnumSet<TrackArtistLinkType> res;
         utils::forEachQueryResult(query, [&](TrackArtistLinkType linkType) {
@@ -99,11 +97,11 @@ namespace lms::db
         return res;
     }
 
-    void TrackArtistLink::findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const TrackArtistLink::pointer&)>& func)
+    void TrackArtistLink::findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const TrackArtistLink::pointer&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
         query.join("artist a ON t_a_l.artist_id = a.id");
         query.where("t_a_l.artist_mbid_matched = FALSE");
         query.where("t_a_l.artist_name <> a.name");
@@ -114,11 +112,11 @@ namespace lms::db
         });
     }
 
-    void TrackArtistLink::findWithArtistNameAmbiguity(Session& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const TrackArtistLink::pointer&)>& func)
+    void TrackArtistLink::findWithArtistNameAmbiguity(ISession& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const TrackArtistLink::pointer&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
         query.join("artist a ON t_a_l.artist_id = a.id");
         query.where("t_a_l.artist_mbid_matched = FALSE");
         if (!allowArtistMBIDFallback)

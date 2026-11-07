@@ -22,7 +22,6 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
 #include "database/objects/Language.hpp"
@@ -30,6 +29,7 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "detail/Types.hpp"
 #include "traits/IdTypeTraits.hpp"
@@ -45,28 +45,30 @@ namespace lms::db
     {
     }
 
-    TrackEmbeddedImageLink::pointer TrackEmbeddedImageLink::create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackEmbeddedImage> image)
+    TrackEmbeddedImageLink::pointer TrackEmbeddedImageLink::create(ISession& session, ObjectPtr<Track> track, ObjectPtr<TrackEmbeddedImage> image)
     {
-        return session.getDboSession()->add(std::unique_ptr<TrackEmbeddedImageLink>{ new TrackEmbeddedImageLink{ track, image } });
+        return utils::addObject(session, std::unique_ptr<TrackEmbeddedImageLink>{ new TrackEmbeddedImageLink{ track, image } });
     }
 
-    std::size_t TrackEmbeddedImageLink::getCount(Session& session)
+    std::size_t TrackEmbeddedImageLink::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_embedded_image_link"));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_embedded_image_link"));
     }
 
-    TrackEmbeddedImageLink::pointer TrackEmbeddedImageLink::find(Session& session, TrackEmbeddedImageLinkId id)
+    TrackEmbeddedImageLink::pointer TrackEmbeddedImageLink::find(ISession& session, TrackEmbeddedImageLinkId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackEmbeddedImageLink>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<TrackEmbeddedImageLink>().where("id = ?").bind(id));
     }
 
-    void TrackEmbeddedImageLink::find(Session& session, TrackEmbeddedImageId trackEmbeddedImageId, std::function<void(const pointer&)> visitor)
+    void TrackEmbeddedImageLink::find(ISession& session, TrackEmbeddedImageId trackEmbeddedImageId, std::function<void(const pointer&)> visitor)
     {
-        auto query{ session.getDboSession()->find<TrackEmbeddedImageLink>() };
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->find<TrackEmbeddedImageLink>() };
         query.where("track_embedded_image_id = ?").bind(trackEmbeddedImageId);
 
         return utils::forEachQueryResult(query, visitor);

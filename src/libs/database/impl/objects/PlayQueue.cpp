@@ -22,7 +22,6 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
@@ -43,6 +42,7 @@
 #include "database/objects/User.hpp"
 #include "database/objects/Work.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
@@ -57,30 +57,30 @@ namespace lms::db
     {
     }
 
-    PlayQueue::pointer PlayQueue::create(Session& session, const ObjectPtr<User>& user, std::string_view name)
+    PlayQueue::pointer PlayQueue::create(ISession& session, const ObjectPtr<User>& user, std::string_view name)
     {
-        return session.getDboSession()->add(std::unique_ptr<PlayQueue>{ new PlayQueue{ user, name } });
+        return utils::addObject(session, std::unique_ptr<PlayQueue>{ new PlayQueue{ user, name } });
     }
 
-    std::size_t PlayQueue::getCount(Session& session)
+    std::size_t PlayQueue::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM playqueue"));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM playqueue"));
     }
 
-    PlayQueue::pointer PlayQueue::find(Session& session, PlayQueueId id)
+    PlayQueue::pointer PlayQueue::find(ISession& session, PlayQueueId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<PlayQueue>>("SELECT p from playqueue p").where("p.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<PlayQueue>>("SELECT p from playqueue p").where("p.id = ?").bind(id));
     }
 
-    PlayQueue::pointer PlayQueue::find(Session& session, UserId userId, std::string_view name)
+    PlayQueue::pointer PlayQueue::find(ISession& session, UserId userId, std::string_view name)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<PlayQueue>>("SELECT p from playqueue p") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<PlayQueue>>("SELECT p from playqueue p") };
         query.where("p.user_id = ?").bind(userId);
         query.where("p.name = ?").bind(name);
 

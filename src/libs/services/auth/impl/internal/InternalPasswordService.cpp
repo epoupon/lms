@@ -23,7 +23,7 @@
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 #include "services/auth/Types.hpp"
 
@@ -51,7 +51,7 @@ namespace lms::auth
 
         db::User::PasswordHash passwordHash;
         {
-            db::Session& session{ getDbSession() };
+            db::ISession& session{ getDbSession() };
             auto transaction{ session.createReadTransaction() };
 
             const db::User::pointer user{ db::User::find(session, loginName) };
@@ -81,7 +81,7 @@ namespace lms::auth
             const db::User::PasswordHash updatedPasswordHash{ hashPassword(password) };
 
             {
-                db::Session& session{ getDbSession() };
+                db::ISession& session{ getDbSession() };
                 auto transaction{ session.createWriteTransaction() };
 
                 if (db::User::pointer user{ db::User::find(session, loginName) })
@@ -116,7 +116,7 @@ namespace lms::auth
         const db::User::PasswordHash passwordHash{ hashPassword(newPassword) };
 
         {
-            db::Session& session{ getDbSession() };
+            db::ISession& session{ getDbSession() };
             auto transaction{ session.createWriteTransaction() };
 
             db::User::pointer user{ db::User::find(session, userId) };

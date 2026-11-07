@@ -24,7 +24,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/Podcast.hpp"
@@ -86,8 +86,8 @@ namespace lms::podcast
             auto& session{ getDb().getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            session.destroy<db::Podcast>(podcastsToRemove); // will propagate to episodes
-            session.destroy<db::Image>(imagesToRemove);     // will propagate to artworks
+            db::Podcast::destroy(session, podcastsToRemove); // will propagate to episodes
+            db::Image::destroy(session, imagesToRemove);     // will propagate to artworks
         }
 
         onDone();

@@ -34,7 +34,7 @@ LMS_DECLARE_IDTYPE(TrackBookmarkId)
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
     class Track;
     class User;
 
@@ -43,11 +43,13 @@ namespace lms::db
     public:
         TrackBookmark() = default;
 
+        static pointer create(ISession& session, ObjectPtr<User> user, ObjectPtr<Track> track);
+
         // Find utility functions
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackBookmarkId id);
-        static std::vector<TrackBookmarkId> find(Session& session, UserId userId, std::optional<Range> range = std::nullopt);
-        static pointer find(Session& session, UserId userId, TrackId trackId);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, TrackBookmarkId id);
+        static std::vector<TrackBookmarkId> find(ISession& session, UserId userId, std::optional<Range> range = std::nullopt);
+        static pointer find(ISession& session, UserId userId, TrackId trackId);
 
         // Setters
         void setOffset(std::chrono::milliseconds offset) { _offset = offset; }
@@ -69,9 +71,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         TrackBookmark(ObjectPtr<User> user, ObjectPtr<Track> track);
-        static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track);
 
         static const std::size_t _maxCommentLength = 128;
 

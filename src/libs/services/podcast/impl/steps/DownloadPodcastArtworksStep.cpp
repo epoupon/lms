@@ -27,7 +27,7 @@
 #include "core/ILogger.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Podcast.hpp"
 #include "image/Exception.hpp"
@@ -40,7 +40,7 @@ namespace lms::podcast
 {
     namespace
     {
-        void createPodcastArtwork(db::Session& session, db::PodcastId podcastId, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
+        void createPodcastArtwork(db::ISession& session, db::PodcastId podcastId, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
         {
             auto transaction{ session.createWriteTransaction() };
 

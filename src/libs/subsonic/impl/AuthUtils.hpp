@@ -30,7 +30,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 }
 
 namespace lms::api::subsonic::utils
@@ -62,8 +62,8 @@ namespace lms::api::subsonic::utils
     bool checkAuthToken(std::string_view apiKey, std::string_view salt, std::string_view token);
 
     // Throws UserNotAuthorizedError if no such user exists
-    db::User::pointer getUserFromUserId(db::Session& session, db::UserId userId);
+    db::User::pointer getUserFromUserId(db::ISession& session, db::UserId userId);
 
     // Throws on error
-    db::UserId authenticateUser(const Wt::Http::Request& request, db::Session& session);
+    db::UserId authenticateUser(const Wt::Http::Request& request, db::ISession& session);
 } // namespace lms::api::subsonic::utils

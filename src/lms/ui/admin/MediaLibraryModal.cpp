@@ -26,7 +26,7 @@
 
 #include "core/Path.hpp"
 #include "core/String.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/MediaLibrary.hpp"
 
 #include "LmsApplication.hpp"
@@ -164,7 +164,7 @@ namespace lms::ui
                 }
                 else
                 {
-                    library = session.create<db::MediaLibrary>(name, path);
+                    library = db::MediaLibrary::create(session, name, path);
                 }
 
                 return library->getId();

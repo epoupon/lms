@@ -33,7 +33,7 @@
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackFeedback.hpp"
 #include "database/objects/TrackFeedbackBackendSync.hpp"
@@ -57,7 +57,7 @@ namespace lms::feedback::listenBrainz
 
         // Drops the sync row for a feedback that can never be delivered (no recording MBID),
         // so it stops being retried on every flush. Assumes an already-open transaction on `session`.
-        void dropFeedbackBackendSync(db::Session& session, db::TrackFeedbackId id)
+        void dropFeedbackBackendSync(db::ISession& session, db::TrackFeedbackId id)
         {
             if (db::TrackFeedbackBackendSync::pointer sync{ db::TrackFeedbackBackendSync::find(session, id, db::FeedbackBackend::ListenBrainz) })
                 sync.remove();
@@ -98,7 +98,7 @@ namespace lms::feedback::listenBrainz
         db::FeedbackValue value{};
         std::string listenBrainzToken;
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
             db::TrackFeedback::pointer trackFeedback{ db::TrackFeedback::find(session, id) };
@@ -119,7 +119,7 @@ namespace lms::feedback::listenBrainz
 
             db::TrackFeedbackBackendSync::pointer sync{ db::TrackFeedbackBackendSync::find(session, id, db::FeedbackBackend::ListenBrainz) };
             if (!sync)
-                sync = session.create<db::TrackFeedbackBackendSync>(trackFeedback, db::FeedbackBackend::ListenBrainz);
+                sync = db::TrackFeedbackBackendSync::create(session, trackFeedback, db::FeedbackBackend::ListenBrainz);
             else if (sync->getSyncState() != db::SyncState::PendingAdd)
                 sync.modify()->setSyncState(db::SyncState::PendingAdd);
         }
@@ -129,7 +129,7 @@ namespace lms::feedback::listenBrainz
 
     void FeedbacksSynchronizer::skipFeedback(db::TrackFeedbackId id)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
         dropFeedbackBackendSync(session, id);
     }
@@ -155,7 +155,7 @@ namespace lms::feedback::listenBrainz
     {
         assert(_strand.running_in_this_thread());
 
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
         db::TrackFeedback::pointer trackFeedback{ db::TrackFeedback::find(session, id) };
@@ -186,7 +186,7 @@ namespace lms::feedback::listenBrainz
         std::vector<TrackFeedbackId> toSkip;
 
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             TrackFeedbackBackendSync::FindParameters params;
@@ -429,7 +429,7 @@ namespace lms::feedback::listenBrainz
     {
         using namespace db;
 
-        Session& session{ _db.getTLSSession() };
+        ISession& session{ _db.getTLSSession() };
 
         bool needImport{};
         TrackId trackId;
@@ -476,14 +476,14 @@ namespace lms::feedback::listenBrainz
 
             TrackFeedback::pointer trackFeedback{ TrackFeedback::find(session, trackId, context.userId) };
             if (!trackFeedback)
-                trackFeedback = session.create<TrackFeedback>(track, user);
+                trackFeedback = TrackFeedback::create(session, track, user);
 
             trackFeedback.modify()->setValue(feedback.score);
             trackFeedback.modify()->setDateTime(feedback.created);
 
             TrackFeedbackBackendSync::pointer sync{ TrackFeedbackBackendSync::find(session, trackFeedback->getId(), FeedbackBackend::ListenBrainz) };
             if (!sync)
-                sync = session.create<TrackFeedbackBackendSync>(trackFeedback, FeedbackBackend::ListenBrainz);
+                sync = TrackFeedbackBackendSync::create(session, trackFeedback, FeedbackBackend::ListenBrainz);
             sync.modify()->setSyncState(SyncState::Synchronized);
 
             context.import.importedFeedbackCount++;

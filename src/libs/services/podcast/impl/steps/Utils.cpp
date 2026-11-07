@@ -24,7 +24,7 @@
 
 #include "core/ILogger.hpp"
 #include "core/UUID.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/Podcast.hpp"
@@ -37,7 +37,7 @@ namespace lms::podcast::utils
         return podcast->getId().toString();
     }
 
-    db::Artwork::pointer createArtworkFromImage(db::Session& session, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
+    db::Artwork::pointer createArtworkFromImage(db::ISession& session, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
     {
         std::error_code ec;
         const auto fileSize{ std::filesystem::file_size(filePath, ec) };
@@ -47,7 +47,7 @@ namespace lms::podcast::utils
             return db::Artwork::pointer{};
         }
 
-        db::Image::pointer image{ session.create<db::Image>(filePath) };
+        db::Image::pointer image{ db::Image::create(session, filePath) };
         image.modify()->setFileSize(static_cast<std::size_t>(fileSize));
         if (probedImage.dimensions)
         {
@@ -57,7 +57,7 @@ namespace lms::podcast::utils
         image.modify()->setLastWriteTime(Wt::WDateTime::currentDateTime());
         image.modify()->setFormat(probedImage.format);
 
-        return session.create<db::Artwork>(image);
+        return db::Artwork::create(session, image);
     }
 
     std::string generateRandomFileName()

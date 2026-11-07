@@ -22,7 +22,6 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Genre.hpp"
@@ -32,6 +31,7 @@
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
@@ -42,9 +42,9 @@ namespace lms::db
 {
     namespace
     {
-        Wt::Dbo::Query<Wt::Dbo::ptr<TrackLyrics>> createQuery(Session& session, const TrackLyrics::FindParameters& params)
+        Wt::Dbo::Query<Wt::Dbo::ptr<TrackLyrics>> createQuery(ISession& session, const TrackLyrics::FindParameters& params)
         {
-            auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc") };
+            auto query{ getDboSession(session)->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc") };
 
             if (params.track.isValid())
                 query.where("t_lrc.track_id = ?").bind(params.track);
@@ -68,52 +68,57 @@ namespace lms::db
         }
     } // namespace
 
-    TrackLyrics::pointer TrackLyrics::create(Session& session)
+    TrackLyrics::pointer TrackLyrics::create(ISession& session)
     {
-        return session.getDboSession()->add(std::unique_ptr<TrackLyrics>{ new TrackLyrics{} });
+        return utils::addObject(session, std::unique_ptr<TrackLyrics>{ new TrackLyrics{} });
     }
 
-    std::size_t TrackLyrics::getCount(Session& session)
+    void TrackLyrics::destroy(ISession& session, std::span<const TrackLyricsId> ids)
     {
-        session.checkReadTransaction();
-
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_lyrics"));
+        utils::destroyObjects<TrackLyrics>(session, ids);
     }
 
-    std::size_t TrackLyrics::getExternalLyricsCount(Session& session)
+    std::size_t TrackLyrics::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(t_lrc.id) FROM track_lyrics t_lrc").where("t_lrc.absolute_file_path <> ''"));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_lyrics"));
     }
 
-    TrackLyrics::pointer TrackLyrics::find(Session& session, TrackLyricsId id)
+    std::size_t TrackLyrics::getExternalLyricsCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(t_lrc.id) FROM track_lyrics t_lrc").where("t_lrc.absolute_file_path <> ''"));
     }
 
-    TrackLyrics::pointer TrackLyrics::find(Session& session, const std::filesystem::path& path)
+    TrackLyrics::pointer TrackLyrics::find(ISession& session, TrackLyricsId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.absolute_file_path = ?").bind(path));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.id = ?").bind(id));
     }
 
-    void TrackLyrics::find(Session& session, const FindParameters& params, const std::function<void(const TrackLyrics::pointer&)>& func)
+    TrackLyrics::pointer TrackLyrics::find(ISession& session, const std::filesystem::path& path)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.absolute_file_path = ?").bind(path));
+    }
+
+    void TrackLyrics::find(ISession& session, const FindParameters& params, const std::function<void(const TrackLyrics::pointer&)>& func)
+    {
+        checkReadTransaction(session);
 
         auto query{ createQuery(session, params) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
-    void TrackLyrics::find(Session& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(const TrackLyrics::pointer&)>& func)
+    void TrackLyrics::find(ISession& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(const TrackLyrics::pointer&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").orderBy("t_lrc.id").where("t_lrc.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").orderBy("t_lrc.id").where("t_lrc.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
         utils::forEachQueryResult(query, [&](const TrackLyrics::pointer& lyrics) {
             func(lyrics);
@@ -121,22 +126,22 @@ namespace lms::db
         });
     }
 
-    std::vector<TrackLyricsId> TrackLyrics::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<TrackLyricsId> TrackLyrics::findOrphanIds(ISession& session, std::optional<Range> range)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<TrackLyricsId>("select t_lrc.id from track_lyrics t_lrc") };
+        auto query{ getDboSession(session)->query<TrackLyricsId>("select t_lrc.id from track_lyrics t_lrc") };
         query.leftJoin("track t ON t_lrc.track_id = t.id");
         query.where("t.id IS NULL");
 
         return utils::execRangeQuery<TrackLyricsId>(query, range);
     }
 
-    void TrackLyrics::findAbsoluteFilePath(Session& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(TrackLyricsId trackLyricsId, const std::filesystem::path& absoluteFilePath)>& func)
+    void TrackLyrics::findAbsoluteFilePath(ISession& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(TrackLyricsId trackLyricsId, const std::filesystem::path& absoluteFilePath)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<std::tuple<TrackLyricsId, std::filesystem::path>>("SELECT t_lrc.id,t_lrc.absolute_file_path from track_lyrics t_lrc").orderBy("t_lrc.id").where("t_lrc.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+        auto query{ getDboSession(session)->query<std::tuple<TrackLyricsId, std::filesystem::path>>("SELECT t_lrc.id,t_lrc.absolute_file_path from track_lyrics t_lrc").orderBy("t_lrc.id").where("t_lrc.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
         utils::forEachQueryResult(query, [&](const auto& res) {
             func(std::get<0>(res), std::get<1>(res));

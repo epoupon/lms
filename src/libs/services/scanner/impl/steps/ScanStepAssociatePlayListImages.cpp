@@ -25,7 +25,7 @@
 #include "core/IJob.hpp"
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Image.hpp"
@@ -45,7 +45,7 @@ namespace lms::scanner
         };
         using PlayListArtworkAssociationContainer = std::deque<PlayListArtworkAssociation>;
 
-        db::Artwork::pointer computePreferredArtwork(db::Session& session, const db::PlayListFile::pointer& playListFile)
+        db::Artwork::pointer computePreferredArtwork(db::ISession& session, const db::PlayListFile::pointer& playListFile)
         {
             // Priority 1: explicit #EXTIMG: hint stored in the playlist file
             const std::filesystem::path& coverImageFile{ playListFile->getCoverImageFile() };
@@ -72,7 +72,7 @@ namespace lms::scanner
             return artwork;
         }
 
-        void updatePlayListPreferredArtworks(db::Session& session, PlayListArtworkAssociationContainer& associations, bool forceFullBatch)
+        void updatePlayListPreferredArtworks(db::ISession& session, PlayListArtworkAssociationContainer& associations, bool forceFullBatch)
         {
             constexpr std::size_t writeBatchSize{ 50 };
 
@@ -89,7 +89,7 @@ namespace lms::scanner
             }
         }
 
-        bool fetchNextPlayListIdRange(db::Session& session, db::PlayListFileId& lastRetrievedId, db::IdRange<db::PlayListFileId>& idRange)
+        bool fetchNextPlayListIdRange(db::ISession& session, db::PlayListFileId& lastRetrievedId, db::IdRange<db::PlayListFileId>& idRange)
         {
             constexpr std::size_t readBatchSize{ 100 };
 

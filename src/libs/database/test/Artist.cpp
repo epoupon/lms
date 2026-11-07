@@ -100,10 +100,10 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
             track2a.get().modify()->setMediaLibrary(library.get());
             track2b.get().modify()->setMediaLibrary(library.get());
-            session.create<TrackArtistLink>(track1.get(), artist1.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track2a.get(), artist2.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track2b.get(), artist2.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track3.get(), artist3.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2a.get(), artist2.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2b.get(), artist2.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track3.get(), artist3.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -230,7 +230,7 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
 
             track.get().modify()->setName("MyTrackName");
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -334,7 +334,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<ReleaseArtistLink>(release.get(), artist.get(), false);
+            ReleaseArtistLink::create(session, release.get(), artist.get(), false);
         }
 
         {
@@ -354,7 +354,7 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
 
             track.get().modify()->setName("MyTrackName");
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
             track.get().modify()->setMediaLibrary(library.get());
         }
         {
@@ -390,12 +390,12 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
 
             track1.get().modify()->setName("Track1");
-            session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.get(), artist.get(), TrackArtistLinkType::Artist);
             track1.get().modify()->setMediaLibrary(library1.get());
 
             track2.get().modify()->setName("Track2");
             track2.get().modify()->setRelease(release2.get());
-            session.create<ReleaseArtistLink>(release2.get(), artist.get(), false);
+            ReleaseArtistLink::create(session, release2.get(), artist.get(), false);
             track2.get().modify()->setMediaLibrary(library2.get());
         }
 
@@ -439,8 +439,8 @@ namespace lms::db::tests
             track.get().modify()->setRelease(release.get());
             track.get().modify()->setMediaLibrary(library.get());
 
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
-            session.create<ReleaseArtistLink>(release.get(), artist.get(), false);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            ReleaseArtistLink::create(session, release.get(), artist.get(), false);
         }
 
         {
@@ -500,9 +500,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Producer);
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Writer);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Producer);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Writer);
         }
 
         {
@@ -589,8 +589,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track.get(), artist2.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist2.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -676,7 +676,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<ReleaseArtistLink>(release.get(), artist.get(), false);
+            ReleaseArtistLink::create(session, release.get(), artist.get(), false);
         }
 
         {
@@ -694,8 +694,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track1.get(), artist1.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track2.get(), artist2.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2.get(), artist2.get(), TrackArtistLinkType::Artist);
 
             track1.get().modify()->setCodec(core::media::Codec::MP3);
             track2.get().modify()->setCodec(core::media::Codec::FLAC);
@@ -721,7 +721,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
             artist.get().modify()->setSortName("ZZZ");
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -981,8 +981,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track2.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2.get(), artist.get(), TrackArtistLinkType::Artist);
 
             track1.get().modify()->setRelease(release.get());
         }
@@ -1043,11 +1043,11 @@ namespace lms::db::tests
             trackD1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 3 } });
             trackA2.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 4 } });
 
-            session.create<TrackArtistLink>(trackA1.get(), artistA.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackA2.get(), artistA.get(), TrackArtistLinkType::Producer);
-            session.create<TrackArtistLink>(trackB1.get(), artistB.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackC1.get(), artistC.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackD1.get(), artistD.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackA1.get(), artistA.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackA2.get(), artistA.get(), TrackArtistLinkType::Producer);
+            TrackArtistLink::create(session, trackB1.get(), artistB.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackC1.get(), artistC.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackD1.get(), artistD.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -1078,8 +1078,8 @@ namespace lms::db::tests
             trackZulu.get().modify()->setAddedTime(addedTime);
             trackAlpha.get().modify()->setAddedTime(addedTime);
 
-            session.create<TrackArtistLink>(trackZulu.get(), artistZulu.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackAlpha.get(), artistAlpha.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackZulu.get(), artistZulu.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackAlpha.get(), artistAlpha.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -1114,11 +1114,11 @@ namespace lms::db::tests
             trackD1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 3 } });
             trackA2.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 4 } });
 
-            session.create<TrackArtistLink>(trackA1.get(), artistA.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackA2.get(), artistA.get(), TrackArtistLinkType::Producer);
-            session.create<TrackArtistLink>(trackB1.get(), artistB.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackC1.get(), artistC.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackD1.get(), artistD.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackA1.get(), artistA.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackA2.get(), artistA.get(), TrackArtistLinkType::Producer);
+            TrackArtistLink::create(session, trackB1.get(), artistB.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackC1.get(), artistC.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackD1.get(), artistD.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -1149,8 +1149,8 @@ namespace lms::db::tests
             trackZulu.get().modify()->setLastWriteTime(lastWriteTime);
             trackAlpha.get().modify()->setLastWriteTime(lastWriteTime);
 
-            session.create<TrackArtistLink>(trackZulu.get(), artistZulu.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackAlpha.get(), artistAlpha.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackZulu.get(), artistZulu.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackAlpha.get(), artistAlpha.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -1189,10 +1189,10 @@ namespace lms::db::tests
             trackOfRelease1.get().modify()->setRelease(release1.get());
             trackOfRelease2.get().modify()->setRelease(release2.get());
 
-            session.create<TrackArtistLink>(trackOfTrackArtist.get(), trackArtist.get(), TrackArtistLinkType::Artist);
-            session.create<ReleaseArtistLink>(release1.get(), releaseArtist.get(), false);
-            session.create<TrackArtistLink>(oldTrackOfBothArtist.get(), trackAndReleaseArtist.get(), TrackArtistLinkType::Artist);
-            session.create<ReleaseArtistLink>(release2.get(), trackAndReleaseArtist.get(), false);
+            TrackArtistLink::create(session, trackOfTrackArtist.get(), trackArtist.get(), TrackArtistLinkType::Artist);
+            ReleaseArtistLink::create(session, release1.get(), releaseArtist.get(), false);
+            TrackArtistLink::create(session, oldTrackOfBothArtist.get(), trackAndReleaseArtist.get(), TrackArtistLinkType::Artist);
+            ReleaseArtistLink::create(session, release2.get(), trackAndReleaseArtist.get(), false);
         }
 
         {
@@ -1232,10 +1232,10 @@ namespace lms::db::tests
             trackOfRelease1.get().modify()->setRelease(release1.get());
             trackOfRelease2.get().modify()->setRelease(release2.get());
 
-            session.create<TrackArtistLink>(trackOfTrackArtist.get(), trackArtist.get(), TrackArtistLinkType::Artist);
-            session.create<ReleaseArtistLink>(release1.get(), releaseArtist.get(), false);
-            session.create<TrackArtistLink>(oldTrackOfBothArtist.get(), trackAndReleaseArtist.get(), TrackArtistLinkType::Artist);
-            session.create<ReleaseArtistLink>(release2.get(), trackAndReleaseArtist.get(), false);
+            TrackArtistLink::create(session, trackOfTrackArtist.get(), trackArtist.get(), TrackArtistLinkType::Artist);
+            ReleaseArtistLink::create(session, release1.get(), releaseArtist.get(), false);
+            TrackArtistLink::create(session, oldTrackOfBothArtist.get(), trackAndReleaseArtist.get(), TrackArtistLinkType::Artist);
+            ReleaseArtistLink::create(session, release2.get(), trackAndReleaseArtist.get(), false);
         }
 
         {
@@ -1271,8 +1271,8 @@ namespace lms::db::tests
             trackOfRelease.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 5 } });
             trackOfRelease.get().modify()->setRelease(release.get());
 
-            session.create<TrackArtistLink>(trackOfTrackArtist.get(), trackArtist.get(), TrackArtistLinkType::Artist);
-            session.create<ReleaseArtistLink>(release.get(), releaseArtist.get(), false);
+            TrackArtistLink::create(session, trackOfTrackArtist.get(), trackArtist.get(), TrackArtistLinkType::Artist);
+            ReleaseArtistLink::create(session, release.get(), releaseArtist.get(), false);
         }
 
         for (const ArtistSortMethod sortMethod : { ArtistSortMethod::AddedDesc, ArtistSortMethod::LastWrittenDesc })
@@ -1330,7 +1330,7 @@ namespace lms::db::tests
             std::string sortName;
         };
 
-        std::vector<NameUpdate> findNameUpdates(Session& session)
+        std::vector<NameUpdate> findNameUpdates(ISession& session)
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -1341,25 +1341,25 @@ namespace lms::db::tests
             return updates;
         }
 
-        void createArtistInfo(Session& session, const Artist::pointer& artist, bool mbidMatched, std::string_view name, std::string_view sortName)
+        void createArtistInfo(ISession& session, const Artist::pointer& artist, bool mbidMatched, std::string_view name, std::string_view sortName)
         {
-            ArtistInfo::pointer artistInfo{ session.create<ArtistInfo>() };
+            ArtistInfo::pointer artistInfo{ ArtistInfo::create(session) };
             artistInfo.modify()->setArtist(artist);
             artistInfo.modify()->setMBIDMatched(mbidMatched);
             artistInfo.modify()->setName(name);
             artistInfo.modify()->setSortName(sortName);
         }
 
-        void createReleaseArtistLink(Session& session, const Release::pointer& release, const Artist::pointer& artist, bool mbidMatched, std::string_view name, std::string_view sortName)
+        void createReleaseArtistLink(ISession& session, const Release::pointer& release, const Artist::pointer& artist, bool mbidMatched, std::string_view name, std::string_view sortName)
         {
-            ReleaseArtistLink::pointer link{ session.create<ReleaseArtistLink>(release, artist, mbidMatched) };
+            ReleaseArtistLink::pointer link{ ReleaseArtistLink::create(session, release, artist, mbidMatched) };
             link.modify()->setArtistName(name);
             link.modify()->setArtistSortName(sortName);
         }
 
-        void createTrackArtistLink(Session& session, const Track::pointer& track, const Artist::pointer& artist, bool mbidMatched, std::string_view name, std::string_view sortName)
+        void createTrackArtistLink(ISession& session, const Track::pointer& track, const Artist::pointer& artist, bool mbidMatched, std::string_view name, std::string_view sortName)
         {
-            TrackArtistLink::pointer link{ session.create<TrackArtistLink>(track, artist, TrackArtistLinkType::Artist, mbidMatched) };
+            TrackArtistLink::pointer link{ TrackArtistLink::create(session, track, artist, TrackArtistLinkType::Artist, mbidMatched) };
             link.modify()->setArtistName(name);
             link.modify()->setArtistSortName(sortName);
         }

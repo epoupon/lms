@@ -32,14 +32,16 @@
 
 namespace lms::db
 {
+    class ISession;
     class TrackFeedback;
-    class Session;
 
     // Tracks the delivery of a single TrackFeedback to a given external feedback backend.
     class TrackFeedbackBackendSync final : public Object<TrackFeedbackBackendSync, TrackFeedbackBackendSyncId>
     {
     public:
         TrackFeedbackBackendSync() = default;
+
+        static pointer create(ISession& session, ObjectPtr<TrackFeedback> trackFeedback, FeedbackBackend backend);
 
         struct FindParameters
         {
@@ -64,11 +66,11 @@ namespace lms::db
             }
         };
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackFeedbackBackendSyncId id);
-        static pointer find(Session& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend);
-        static std::vector<TrackFeedbackBackendSyncId> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, TrackFeedbackBackendSyncId id);
+        static pointer find(ISession& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend);
+        static std::vector<TrackFeedbackBackendSyncId> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
 
         ObjectPtr<TrackFeedback> getTrackFeedback() const { return _trackFeedback; }
         FeedbackBackend getBackend() const { return _backend; }
@@ -86,9 +88,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         TrackFeedbackBackendSync(ObjectPtr<TrackFeedback> trackFeedback, FeedbackBackend backend);
-        static pointer create(Session& session, ObjectPtr<TrackFeedback> trackFeedback, FeedbackBackend backend);
 
         FeedbackBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };

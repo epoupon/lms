@@ -56,7 +56,7 @@ namespace lms::db::tests
 {
     namespace
     {
-        void executeStatements(db::Session& session, std::string_view statements)
+        void executeStatements(db::ISession& session, std::string_view statements)
         {
             for (std::string_view statement : core::stringUtils::splitString(statements, ';'))
             {
@@ -367,7 +367,8 @@ VALUES
 (1, 0, '2024-05-08T12:00:00', 1, 1),
 (1, 1, '2024-05-08T12:00:00', 1, 1);)" };
 
-        Session session{ db };
+        const std::unique_ptr<ISession> ownedSession{ db.createSession() };
+        ISession& session{ *ownedSession };
 
         {
             auto transaction{ session.createWriteTransaction() };

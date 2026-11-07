@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -31,6 +33,7 @@
 #include "core/ITraceLogger.hpp"
 #include "database/Types.hpp"
 
+#include "Session.hpp"
 #include "profiling/ScopedQueryProfiler.hpp"
 
 namespace lms::db::utils
@@ -153,5 +156,28 @@ namespace lms::db::utils
             LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "ExecuteCommand", "Command", command);
             call.run();
         }
+    }
+
+    template<typename Object>
+    typename Object::pointer addObject(ISession& session, std::unique_ptr<Object> object)
+    {
+        checkWriteTransaction(session);
+
+        Wt::Dbo::Session& dboSession{ *getDboSession(session) };
+        typename Object::pointer res{ dboSession.add(std::move(object)) };
+        dboSession.flush();
+
+        return res;
+    }
+
+    template<typename Object>
+    void destroyObjects(ISession& session, std::span<const typename Object::IdType> ids)
+    {
+        checkWriteTransaction(session);
+
+        Wt::Dbo::Session& dboSession{ *getDboSession(session) };
+        const std::string query{ std::string{ "DELETE FROM " } + dboSession.tableName<Object>() + " WHERE id = ?" };
+        for (typename Object::IdType id : ids)
+            executeCommand(dboSession, query, id.getValue());
     }
 } // namespace lms::db::utils

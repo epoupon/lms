@@ -17,14 +17,16 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <memory>
+
 #include <gtest/gtest.h>
 
 #include <Wt/Dbo/SqlConnection.h>
 #include <Wt/Dbo/Transaction.h>
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
 
+#include "Session.hpp"
 #include "TmpDatabase.hpp"
 
 namespace lms::db::tests
@@ -34,42 +36,58 @@ namespace lms::db::tests
         class ConnectionPoolTest : public ::testing::Test
         {
         protected:
-            static Wt::Dbo::SqlConnection* getConnectionUsedBy(Session& usedSession)
+            static Wt::Dbo::SqlConnection* getConnectionUsedBy(ISession& usedSession)
             {
-                const Wt::Dbo::Transaction transaction{ *usedSession.getDboSession() };
+                const Wt::Dbo::Transaction transaction{ *getDboSession(usedSession) };
                 return transaction.connection();
             }
 
             TmpDatabase tmpDb;
-            Session session{ tmpDb.getDb() };
-            Session otherSession{ tmpDb.getDb() };
+            const std::unique_ptr<ISession> session{ tmpDb.getDb().createSession() };
+            const std::unique_ptr<ISession> otherSession{ tmpDb.getDb().createSession() };
         };
     } // namespace
 
     TEST_F(ConnectionPoolTest, freeConnectionIsReused)
     {
-        Wt::Dbo::SqlConnection* connection{ getConnectionUsedBy(session) };
+        Wt::Dbo::SqlConnection* connection{ getConnectionUsedBy(*session) };
 
-        EXPECT_EQ(getConnectionUsedBy(session), connection);
-        EXPECT_EQ(getConnectionUsedBy(otherSession), connection);
+        EXPECT_EQ(getConnectionUsedBy(*session), connection);
+        EXPECT_EQ(getConnectionUsedBy(*otherSession), connection);
     }
 
     TEST_F(ConnectionPoolTest, newConnectionIsOpenedWhenNoneIsFree)
     {
-        const Wt::Dbo::Transaction transaction{ *session.getDboSession() };
-        const Wt::Dbo::Transaction otherTransaction{ *otherSession.getDboSession() };
+        const Wt::Dbo::Transaction transaction{ *getDboSession(*session) };
+        const Wt::Dbo::Transaction otherTransaction{ *getDboSession(*otherSession) };
 
         EXPECT_NE(transaction.connection(), otherTransaction.connection());
     }
 
     TEST_F(ConnectionPoolTest, connectionIsReplacedAfterAnalyze)
     {
-        Wt::Dbo::SqlConnection* connection{ getConnectionUsedBy(session) };
+        Wt::Dbo::SqlConnection* connection{ getConnectionUsedBy(*session) };
 
         tmpDb.getDb().analyze();
 
-        Wt::Dbo::SqlConnection* newConnection{ getConnectionUsedBy(session) };
+        Wt::Dbo::SqlConnection* newConnection{ getConnectionUsedBy(*session) };
         EXPECT_NE(newConnection, connection);
-        EXPECT_EQ(getConnectionUsedBy(session), newConnection);
+        EXPECT_EQ(getConnectionUsedBy(*session), newConnection);
+    }
+
+    TEST_F(ConnectionPoolTest, connectionIsReplacedAfterAbortedAnalyze)
+    {
+        tmpDb.createTablesAndIndexes();
+
+        Wt::Dbo::SqlConnection* connection{ getConnectionUsedBy(*session) };
+
+        bool abortRequested{};
+        tmpDb.getDb().analyze({}, [&] {
+            abortRequested = true;
+            return true;
+        });
+
+        EXPECT_TRUE(abortRequested);
+        EXPECT_NE(getConnectionUsedBy(*session), connection);
     }
 } // namespace lms::db::tests

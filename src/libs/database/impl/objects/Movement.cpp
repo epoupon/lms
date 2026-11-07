@@ -24,7 +24,7 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
@@ -42,6 +42,7 @@
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 #include "database/objects/TrackLyrics.hpp"
 
+#include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
 DBO_INSTANTIATE_TEMPLATES(lms::db::Movement)
@@ -57,9 +58,9 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Movement name too long, truncated to '" << _name << "'");
     }
 
-    Movement::pointer Movement::create(Session& session, std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<Track>& track)
+    Movement::pointer Movement::create(ISession& session, std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<Track>& track)
     {
-        return session.getDboSession()->add(std::unique_ptr<Movement>{ new Movement{ name, number, count, track } });
+        return utils::addObject(session, std::unique_ptr<Movement>{ new Movement{ name, number, count, track } });
     }
 
 } // namespace lms::db

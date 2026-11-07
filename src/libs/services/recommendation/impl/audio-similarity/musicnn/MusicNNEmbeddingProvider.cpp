@@ -20,7 +20,7 @@
 #include "MusicNNEmbeddingProvider.hpp"
 
 #include "audio/MusicNNEmbeddings.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/TrackMusicNNEmbeddings.hpp"
 
 namespace lms::recommendation
@@ -43,10 +43,8 @@ namespace lms::recommendation
         }
     } // namespace
 
-    bool MusicNNEmbeddingProvider::getVector(db::Session& session, db::TrackId trackId, Vector& vec)
+    bool MusicNNEmbeddingProvider::getVector(db::ISession& session, db::TrackId trackId, Vector& vec)
     {
-        session.checkReadTransaction();
-
         const db::TrackMusicNNEmbeddings::pointer embeddings{ db::TrackMusicNNEmbeddings::find(session, trackId) };
         if (embeddings && !embeddings->getData().empty())
             readEmbeddings(embeddings, vec);
@@ -54,10 +52,8 @@ namespace lms::recommendation
         return embeddings && !embeddings->getData().empty();
     }
 
-    void MusicNNEmbeddingProvider::visitVectors(db::Session& session, const std::function<void(db::TrackId, Vector&)>& visitor)
+    void MusicNNEmbeddingProvider::visitVectors(db::ISession& session, const std::function<void(db::TrackId, Vector&)>& visitor)
     {
-        session.checkReadTransaction();
-
         Vector vec;
         db::TrackMusicNNEmbeddings::find(session, [&](const db::TrackMusicNNEmbeddings::pointer& embeddings) {
             if (embeddings->getData().empty())

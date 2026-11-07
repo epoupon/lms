@@ -28,7 +28,7 @@
 #include "core/http/IClient.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/PodcastEpisode.hpp"
@@ -42,7 +42,7 @@ namespace lms::podcast
 {
     namespace
     {
-        void createEpisodeArtwork(db::Session& session, db::PodcastEpisodeId episodeId, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
+        void createEpisodeArtwork(db::ISession& session, db::PodcastEpisodeId episodeId, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
         {
             auto transaction{ session.createWriteTransaction() };
 

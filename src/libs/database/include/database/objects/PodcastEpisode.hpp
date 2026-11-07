@@ -43,8 +43,8 @@
 namespace lms::db
 {
     class Artwork;
+    class ISession;
     class Podcast;
-    class Session;
 
     class PodcastEpisode final : public Object<PodcastEpisode, PodcastEpisodeId>
     {
@@ -86,10 +86,12 @@ namespace lms::db
         };
 
         PodcastEpisode() = default;
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, PodcastEpisodeId id);
-        static pointer findNewtestEpisode(Session& session, PodcastId id);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
+
+        static pointer create(ISession& session, ObjectPtr<Podcast> podcast);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, PodcastEpisodeId id);
+        static pointer findNewtestEpisode(ISession& session, PodcastId id);
+        static void find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func);
 
         // getters
         ManualDownloadState getManualDownloadState() const { return _manualDownloadState; }
@@ -184,9 +186,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         PodcastEpisode(ObjectPtr<Podcast> podcast);
-        static pointer create(Session& session, ObjectPtr<Podcast> podcast);
 
         ManualDownloadState _manualDownloadState{ ManualDownloadState::None };
         std::filesystem::path _audioRelativeFilePath; // relative to cache dir, only set if downloaded

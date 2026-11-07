@@ -22,10 +22,10 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/User.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -39,27 +39,27 @@ namespace lms::db
     {
     }
 
-    ArtistFeedback::pointer ArtistFeedback::create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user)
+    ArtistFeedback::pointer ArtistFeedback::create(ISession& session, ObjectPtr<Artist> artist, ObjectPtr<User> user)
     {
-        return session.getDboSession()->add(std::unique_ptr<ArtistFeedback>{ new ArtistFeedback{ artist, user } });
+        return utils::addObject(session, std::unique_ptr<ArtistFeedback>{ new ArtistFeedback{ artist, user } });
     }
 
-    std::size_t ArtistFeedback::getCount(Session& session)
+    std::size_t ArtistFeedback::getCount(ISession& session)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM artist_feedback"));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM artist_feedback"));
     }
 
-    ArtistFeedback::pointer ArtistFeedback::find(Session& session, ArtistFeedbackId id)
+    ArtistFeedback::pointer ArtistFeedback::find(ISession& session, ArtistFeedbackId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ArtistFeedback>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<ArtistFeedback>().where("id = ?").bind(id));
     }
 
-    ArtistFeedback::pointer ArtistFeedback::find(Session& session, ArtistId artistId, UserId userId)
+    ArtistFeedback::pointer ArtistFeedback::find(ISession& session, ArtistId artistId, UserId userId)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ArtistFeedback>().where("artist_id = ?").bind(artistId).where("user_id = ?").bind(userId));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<ArtistFeedback>().where("artist_id = ?").bind(artistId).where("user_id = ?").bind(userId));
     }
 
     void ArtistFeedback::setDateTime(const Wt::WDateTime& dateTime)

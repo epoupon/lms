@@ -22,10 +22,10 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/User.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -39,27 +39,27 @@ namespace lms::db
     {
     }
 
-    ReleaseFeedback::pointer ReleaseFeedback::create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user)
+    ReleaseFeedback::pointer ReleaseFeedback::create(ISession& session, ObjectPtr<Release> release, ObjectPtr<User> user)
     {
-        return session.getDboSession()->add(std::unique_ptr<ReleaseFeedback>{ new ReleaseFeedback{ release, user } });
+        return utils::addObject(session, std::unique_ptr<ReleaseFeedback>{ new ReleaseFeedback{ release, user } });
     }
 
-    std::size_t ReleaseFeedback::getCount(Session& session)
+    std::size_t ReleaseFeedback::getCount(ISession& session)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM release_feedback"));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM release_feedback"));
     }
 
-    ReleaseFeedback::pointer ReleaseFeedback::find(Session& session, ReleaseFeedbackId id)
+    ReleaseFeedback::pointer ReleaseFeedback::find(ISession& session, ReleaseFeedbackId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ReleaseFeedback>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<ReleaseFeedback>().where("id = ?").bind(id));
     }
 
-    ReleaseFeedback::pointer ReleaseFeedback::find(Session& session, ReleaseId releaseId, UserId userId)
+    ReleaseFeedback::pointer ReleaseFeedback::find(ISession& session, ReleaseId releaseId, UserId userId)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ReleaseFeedback>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<ReleaseFeedback>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
     }
 
     void ReleaseFeedback::setDateTime(const Wt::WDateTime& dateTime)

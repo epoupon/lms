@@ -22,7 +22,7 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Release.hpp"
 
 #include "LmsApplication.hpp"

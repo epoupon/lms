@@ -30,17 +30,19 @@
 
 namespace lms::db
 {
+    class ISession;
     class User;
-    class Session;
 
     class UIState final : public Object<UIState, UIStateId>
     {
     public:
         UIState() = default;
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, UIStateId settingId);
-        static pointer find(Session& session, std::string_view item, UserId userId);
+        static pointer create(ISession& session, std::string_view item, ObjectPtr<User> user);
+
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, UIStateId settingId);
+        static pointer find(ISession& session, std::string_view item, UserId userId);
 
         // Getters
         std::string_view getValue() const { return _value; };
@@ -58,9 +60,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         UIState(std::string_view item, ObjectPtr<User> user);
-        static pointer create(Session& session, std::string_view item, ObjectPtr<User> user);
 
         std::string _item;
         std::string _value;

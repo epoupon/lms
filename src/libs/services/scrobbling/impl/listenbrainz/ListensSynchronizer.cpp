@@ -33,7 +33,7 @@
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Listen.hpp"
 #include "database/objects/ListenBackendSync.hpp"
@@ -74,7 +74,7 @@ namespace lms::scrobbling::listenBrainz
             return artists;
         }
 
-        std::optional<Wt::Json::Object> listenToJsonPayload(db::Session& session, const scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
+        std::optional<Wt::Json::Object> listenToJsonPayload(db::ISession& session, const scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -136,7 +136,7 @@ namespace lms::scrobbling::listenBrainz
             return payload;
         }
 
-        std::string listenToJsonString(db::Session& session, const scrobbling::Listen& listen, const Wt::WDateTime& timePoint, std::string_view listenType)
+        std::string listenToJsonString(db::ISession& session, const scrobbling::Listen& listen, const Wt::WDateTime& timePoint, std::string_view listenType)
         {
             std::string res;
 
@@ -159,7 +159,7 @@ namespace lms::scrobbling::listenBrainz
             std::vector<TimedListen> skippedListens;
         };
 
-        BatchPayload buildImportPayload(db::Session& session, std::span<const TimedListen> listens)
+        BatchPayload buildImportPayload(db::ISession& session, std::span<const TimedListen> listens)
         {
             Wt::Json::Array payloadArray;
             std::vector<TimedListen> validListens;
@@ -205,7 +205,7 @@ namespace lms::scrobbling::listenBrainz
             }
         }
 
-        db::TrackId tryGetMatchingTrack(db::Session& session, const Listen& listen)
+        db::TrackId tryGetMatchingTrack(db::ISession& session, const Listen& listen)
         {
             using namespace db;
 
@@ -373,7 +373,7 @@ namespace lms::scrobbling::listenBrainz
 
     bool ListensSynchronizer::saveListen(const TimedListen& listen, db::SyncState scrobblingState)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() }; // TODO: unique only if needed
 
         db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
@@ -387,14 +387,14 @@ namespace lms::scrobbling::listenBrainz
             if (!track)
                 return false;
 
-            dbListen = session.create<db::Listen>(user, track, listen.listenedAt);
+            dbListen = db::Listen::create(session, user, track, listen.listenedAt);
             LMS_LOG_LISTENBRAINZ(DEBUG, "Listen created for user " << user->getLoginName() << ", track '" << track->getName() << "' at " << listen.listenedAt.toString());
         }
 
         db::ListenBackendSync::pointer sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::ListenBrainz) };
         if (!sync)
         {
-            sync = session.create<db::ListenBackendSync>(dbListen, db::ScrobblingBackend::ListenBrainz);
+            sync = db::ListenBackendSync::create(session, dbListen, db::ScrobblingBackend::ListenBrainz);
             sync.modify()->setSyncState(scrobblingState);
             return true;
         }
@@ -408,7 +408,7 @@ namespace lms::scrobbling::listenBrainz
 
     void ListensSynchronizer::skipListen(const TimedListen& listen)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
         db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
@@ -427,7 +427,7 @@ namespace lms::scrobbling::listenBrainz
         std::unordered_map<db::UserId, std::vector<TimedListen>> pendingByUser;
 
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             db::ListenBackendSync::FindParameters params;
@@ -674,7 +674,7 @@ namespace lms::scrobbling::listenBrainz
 
     void ListensSynchronizer::processGetListensResponse(std::string_view msgBody, UserContext& context)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
 
         context.import.maxDateTime = {}; // invalidate to break in case no more listens are fetched
         ListensParser::Result result{ ListensParser::parse(msgBody) };

@@ -23,7 +23,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/Podcast.hpp"
@@ -104,7 +104,7 @@ namespace lms::podcast
             auto& session{ getDb().getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            session.destroy<db::Image>(missingImages); // will propagate to artworks and podcasts/episodes
+            db::Image::destroy(session, missingImages); // will propagate to artworks and podcasts/episodes
         }
     }
 

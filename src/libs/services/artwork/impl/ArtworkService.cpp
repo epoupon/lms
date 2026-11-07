@@ -30,7 +30,7 @@
 #include "audio/IAudioFileInfoParser.hpp"
 #include "audio/IImageReader.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
@@ -158,7 +158,7 @@ namespace lms::artwork
         db::ArtworkId artworkId;
 
         // Iterate over all tracks and stop when we find an artwork
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         db::TrackList::pointer trackList{ db::TrackList::find(session, trackListId) };
@@ -202,7 +202,7 @@ namespace lms::artwork
         db::Artwork::UnderlyingId underlyingArtworkId;
 
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             db::Artwork::pointer artwork{ db::Artwork::find(session, artworkId) };
@@ -228,7 +228,7 @@ namespace lms::artwork
         std::filesystem::path imageFile;
         std::optional<core::media::ImageFormat> format;
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             const db::Image::pointer image{ db::Image::find(session, imageId) };
@@ -253,7 +253,7 @@ namespace lms::artwork
         std::shared_ptr<image::IEncodedImage> image;
 
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             const db::TrackEmbeddedImage::pointer trackEmbeddedImage{ db::TrackEmbeddedImage::find(session, trackEmbeddedImageId) };

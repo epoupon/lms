@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 
 #include <Wt/Dbo/Field.h>
 #include <Wt/Dbo/collection.h>
@@ -39,14 +40,17 @@
 
 namespace lms::db
 {
+    class ISession;
     class TrackEmbeddedImageLink;
-    class Session;
     class Track;
 
     class TrackEmbeddedImage final : public Object<TrackEmbeddedImage, TrackEmbeddedImageId>
     {
     public:
         TrackEmbeddedImage() = default;
+
+        static pointer create(ISession& session);
+        static void destroy(ISession& session, std::span<const TrackEmbeddedImageId> ids);
 
         struct FindParameters
         {
@@ -96,11 +100,11 @@ namespace lms::db
         };
 
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackEmbeddedImageId id);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
-        static pointer find(Session& session, std::size_t size, ImageHashType hash);
-        static std::vector<TrackEmbeddedImageId> findOrphanIds(Session& session, std::optional<Range> range);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, TrackEmbeddedImageId id);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static pointer find(ISession& session, std::size_t size, ImageHashType hash);
+        static std::vector<TrackEmbeddedImageId> findOrphanIds(ISession& session, std::optional<Range> range);
 
         // getters
         ImageHashType getHash() const { return _hash; }
@@ -129,10 +133,6 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
-
-        static pointer create(Session& session);
-
         ImageHashType _hash;
         int _size{};
         int _width{};

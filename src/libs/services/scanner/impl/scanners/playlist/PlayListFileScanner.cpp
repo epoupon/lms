@@ -24,7 +24,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/PlayListFile.hpp"
 
@@ -70,7 +70,7 @@ namespace lms::scanner
 
         PlayListFileScanOperation::OperationResult PlayListFileScanOperation::processResult()
         {
-            db::Session& dbSession{ getDb().getTLSSession() };
+            db::ISession& dbSession{ getDb().getTLSSession() };
             db::PlayListFile::pointer playList{ db::PlayListFile::find(dbSession, getFilePath()) };
 
             if (!_parsedPlayList)
@@ -88,7 +88,7 @@ namespace lms::scanner
 
             const bool added{ !playList };
             if (!playList)
-                playList = dbSession.create<db::PlayListFile>(getFilePath());
+                playList = db::PlayListFile::create(dbSession, getFilePath());
 
             playList.modify()->setLastWriteTime(getLastWriteTime());
             playList.modify()->setFileSize(getFileSize());
@@ -136,7 +136,7 @@ namespace lms::scanner
 
     bool PlayListFileScanner::needsScan(const FileToScan& file) const
     {
-        db::Session& dbSession{ _db.getTLSSession() };
+        db::ISession& dbSession{ _db.getTLSSession() };
         auto transaction{ _db.getTLSSession().createReadTransaction() };
 
         const db::PlayListFile::pointer playList{ db::PlayListFile::find(dbSession, file.filePath) };

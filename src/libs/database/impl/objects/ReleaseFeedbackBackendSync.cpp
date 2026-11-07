@@ -22,9 +22,9 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
 #include "database/objects/ReleaseFeedback.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -38,35 +38,34 @@ namespace lms::db
     {
     }
 
-    ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::create(Session& session, ObjectPtr<ReleaseFeedback> releaseFeedback, FeedbackBackend backend)
+    ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::create(ISession& session, ObjectPtr<ReleaseFeedback> releaseFeedback, FeedbackBackend backend)
     {
-        session.checkWriteTransaction();
-        return session.getDboSession()->add(std::unique_ptr<ReleaseFeedbackBackendSync>{ new ReleaseFeedbackBackendSync{ releaseFeedback, backend } });
+        return utils::addObject(session, std::unique_ptr<ReleaseFeedbackBackendSync>{ new ReleaseFeedbackBackendSync{ releaseFeedback, backend } });
     }
 
-    std::size_t ReleaseFeedbackBackendSync::getCount(Session& session)
+    std::size_t ReleaseFeedbackBackendSync::getCount(ISession& session)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM release_feedback_backend_sync"));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM release_feedback_backend_sync"));
     }
 
-    ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::find(Session& session, ReleaseFeedbackBackendSyncId id)
+    ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::find(ISession& session, ReleaseFeedbackBackendSyncId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ReleaseFeedbackBackendSync>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<ReleaseFeedbackBackendSync>().where("id = ?").bind(id));
     }
 
-    ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::find(Session& session, ReleaseFeedbackId releaseFeedbackId, FeedbackBackend backend)
+    ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::find(ISession& session, ReleaseFeedbackId releaseFeedbackId, FeedbackBackend backend)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ReleaseFeedbackBackendSync>().where("release_feedback_id = ?").bind(releaseFeedbackId).where("backend = ?").bind(backend));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<ReleaseFeedbackBackendSync>().where("release_feedback_id = ?").bind(releaseFeedbackId).where("backend = ?").bind(backend));
     }
 
-    std::vector<ReleaseFeedbackBackendSyncId> ReleaseFeedbackBackendSync::find(Session& session, const FindParameters& params)
+    std::vector<ReleaseFeedbackBackendSyncId> ReleaseFeedbackBackendSync::find(ISession& session, const FindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<ReleaseFeedbackBackendSyncId>("SELECT id FROM release_feedback_backend_sync") };
+        auto query{ getDboSession(session)->query<ReleaseFeedbackBackendSyncId>("SELECT id FROM release_feedback_backend_sync") };
 
         if (params.backend)
             query.where("backend = ?").bind(*params.backend);
@@ -77,11 +76,11 @@ namespace lms::db
         return utils::execRangeQuery<ReleaseFeedbackBackendSyncId>(query, params.range);
     }
 
-    void ReleaseFeedbackBackendSync::find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
+    void ReleaseFeedbackBackendSync::find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->find<ReleaseFeedbackBackendSync>() };
+        auto query{ getDboSession(session)->find<ReleaseFeedbackBackendSync>() };
 
         if (params.backend)
             query.where("backend = ?").bind(*params.backend);

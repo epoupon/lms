@@ -31,7 +31,7 @@
 #include "audio/IAudioFileInfo.hpp"
 #include "audio/IAudioFileInfoParser.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Podcast.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 
@@ -42,7 +42,7 @@ namespace lms::podcast
 {
     namespace
     {
-        void updateEpisode(db::Session& session, db::PodcastEpisodeId episodeId, const std::filesystem::path& relativeFilePath, const audio::AudioProperties& audioProperties)
+        void updateEpisode(db::ISession& session, db::PodcastEpisodeId episodeId, const std::filesystem::path& relativeFilePath, const audio::AudioProperties& audioProperties)
         {
             auto transaction{ session.createWriteTransaction() };
 

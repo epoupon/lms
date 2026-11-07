@@ -25,7 +25,7 @@
 #include "core/ILogger.hpp"
 #include "core/Random.hpp"
 #include "core/Service.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/Cluster.hpp"
@@ -55,7 +55,7 @@ namespace lms::api::subsonic
 
     namespace
     {
-        std::vector<Directory::pointer> getRootDirectories(Session& session, MediaLibraryId libraryId)
+        std::vector<Directory::pointer> getRootDirectories(ISession& session, MediaLibraryId libraryId)
         {
             std::vector<Directory::pointer> res;
 
@@ -225,7 +225,7 @@ namespace lms::api::subsonic
             return response;
         }
 
-        Release::pointer getReleaseFromDirectory(Session& session, DirectoryId directoryId)
+        Release::pointer getReleaseFromDirectory(ISession& session, DirectoryId directoryId)
         {
             auto transaction{ session.createReadTransaction() };
 

@@ -23,7 +23,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackLyrics.hpp"
@@ -43,12 +43,12 @@ namespace lms::scanner
 
         struct SearchTrackLyricsContext
         {
-            db::Session& session;
+            db::ISession& session;
             db::TrackLyricsId lastRetrievedTrackLyricsId;
             std::size_t processedLyricsCount{};
         };
 
-        db::Track::pointer getMatchingTrack(db::Session& session, const db::TrackLyrics::pointer& lyrics)
+        db::Track::pointer getMatchingTrack(db::ISession& session, const db::TrackLyrics::pointer& lyrics)
         {
             db::Track::pointer matchingTrack;
 
@@ -114,7 +114,7 @@ namespace lms::scanner
             return trackLyricsId != searchContext.lastRetrievedTrackLyricsId;
         }
 
-        void updateTrackLyrics(db::Session& session, const TrackLyricsAssociation& trackLyricsAssociation)
+        void updateTrackLyrics(db::ISession& session, const TrackLyricsAssociation& trackLyricsAssociation)
         {
             db::TrackLyrics::pointer lyrics{ db::TrackLyrics::find(session, trackLyricsAssociation.trackLyricsId) };
             assert(lyrics);
@@ -126,7 +126,7 @@ namespace lms::scanner
             lyrics.modify()->setTrack(track);
         }
 
-        void updateTrackLyrics(db::Session& session, TrackLyricsAssociationContainer& lyricsAssociations)
+        void updateTrackLyrics(db::ISession& session, TrackLyricsAssociationContainer& lyricsAssociations)
         {
             constexpr std::size_t writeBatchSize{ 20 };
 

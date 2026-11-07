@@ -23,6 +23,7 @@
 #include <filesystem>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -68,6 +69,7 @@ namespace lms::db
     class Directory;
     class Genre;
     class Grouping;
+    class ISession;
     class Language;
     class Medium;
     class Movement;
@@ -75,7 +77,6 @@ namespace lms::db
     class TrackEmbeddedImageLink;
     class MediaLibrary;
     class Release;
-    class Session;
     class TrackArtistLink;
     class TrackLyrics;
     class TrackStats;
@@ -205,31 +206,34 @@ namespace lms::db
 
         Track() = default;
 
+        static pointer create(ISession& session);
+        static void destroy(ISession& session, std::span<const TrackId> ids);
+
         // Find utility functions
-        static std::size_t getCount(Session& session);
-        static pointer findByPath(Session& session, const std::filesystem::path& p);
-        static std::optional<FileInfo> findFileInfo(Session& session, const std::filesystem::path& p);
-        static pointer find(Session& session, TrackId id);
-        static void find(Session& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(const Track::pointer&)>& func, MediaLibraryId library = {});
-        static void find(Session& session, const IdRange<TrackId>& idRange, const std::function<void(const Track::pointer&)>& func);
-        static IdRange<TrackId> findNextIdRange(Session& session, TrackId lastRetrievedId, std::size_t count);
+        static std::size_t getCount(ISession& session);
+        static pointer findByPath(ISession& session, const std::filesystem::path& p);
+        static std::optional<FileInfo> findFileInfo(ISession& session, const std::filesystem::path& p);
+        static pointer find(ISession& session, TrackId id);
+        static void find(ISession& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(const Track::pointer&)>& func, MediaLibraryId library = {});
+        static void find(ISession& session, const IdRange<TrackId>& idRange, const std::function<void(const Track::pointer&)>& func);
+        static IdRange<TrackId> findNextIdRange(ISession& session, TrackId lastRetrievedId, std::size_t count);
 
         using TrackLocationVisitor = std::function<void(TrackId trackId, const std::filesystem::path& absoluteFilePath)>;
-        static void findAbsoluteFilePath(Session& session, TrackId& lastRetrievedId, std::size_t count, const TrackLocationVisitor& func);
-        static void findAbsoluteFilePath(Session& session, const FindParameters& params, const TrackLocationVisitor& func);
+        static void findAbsoluteFilePath(ISession& session, TrackId& lastRetrievedId, std::size_t count, const TrackLocationVisitor& func);
+        static void findAbsoluteFilePath(ISession& session, const FindParameters& params, const TrackLocationVisitor& func);
 
-        static bool exists(Session& session, TrackId id);
-        static std::vector<pointer> findByRecordingMBID(Session& session, const core::UUID& MBID);
-        static std::vector<pointer> findByMBID(Session& session, const core::UUID& MBID);
-        static std::vector<TrackId> findIds(Session& session, const FindParameters& params);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const Track::pointer&)>& func);
-        static std::size_t getCount(Session& session, const FindParameters& params);
-        static std::vector<TrackId> findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range = std::nullopt);
+        static bool exists(ISession& session, TrackId id);
+        static std::vector<pointer> findByRecordingMBID(ISession& session, const core::UUID& MBID);
+        static std::vector<pointer> findByMBID(ISession& session, const core::UUID& MBID);
+        static std::vector<TrackId> findIds(ISession& session, const FindParameters& params);
+        static std::vector<pointer> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Track::pointer&)>& func);
+        static std::size_t getCount(ISession& session, const FindParameters& params);
+        static std::vector<TrackId> findIdsTrackMBIDDuplicates(ISession& session, std::optional<Range> range = std::nullopt);
 
         // Update utility functions
-        static void updatePreferredArtwork(Session& session, TrackId trackId, ArtworkId artworkId);
-        static void updatePreferredMediaArtwork(Session& session, TrackId trackId, ArtworkId artworkId);
+        static void updatePreferredArtwork(ISession& session, TrackId trackId, ArtworkId artworkId);
+        static void updatePreferredMediaArtwork(ISession& session, TrackId trackId, ArtworkId artworkId);
 
         // Setters
         void setScanVersion(std::size_t version) { _scanVersion = version; }
@@ -402,9 +406,6 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
-        static pointer create(Session& session);
-
         static constexpr std::size_t _maxNameLength{ 512 };
         static constexpr std::size_t _maxCopyrightLength{ 512 };
         static constexpr std::size_t _maxCopyrightURLLength{ 512 };
@@ -461,7 +462,7 @@ namespace lms::db
     {
         struct TrackInfo
         {
-            Session& session;
+            ISession& session;
             TrackId trackId;
         };
         std::ostream& operator<<(std::ostream& os, const TrackInfo& trackInfo);

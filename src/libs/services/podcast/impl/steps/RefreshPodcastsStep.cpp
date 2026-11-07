@@ -22,7 +22,7 @@
 #include "core/ILogger.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/Podcast.hpp"
@@ -50,11 +50,11 @@ namespace lms::podcast
             image.remove();
         }
 
-        void addEpisode(db::Session& session, const db::Podcast::pointer& dbPodcast, const PodcastEpisode& episode)
+        void addEpisode(db::ISession& session, const db::Podcast::pointer& dbPodcast, const PodcastEpisode& episode)
         {
             LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode.title << "' to podcast '" << dbPodcast->getTitle() << "'");
 
-            auto dbEpisode{ session.create<db::PodcastEpisode>(dbPodcast) };
+            auto dbEpisode{ db::PodcastEpisode::create(session, dbPodcast) };
 
             dbEpisode.modify()->setAuthor(episode.author);
             dbEpisode.modify()->setCategory(episode.category);
@@ -84,7 +84,7 @@ namespace lms::podcast
             dbEpisode.modify()->setDuration(episode.duration);
         }
 
-        void updatePodcast(db::Session& session, db::PodcastId podcastId, const Podcast& podcast)
+        void updatePodcast(db::ISession& session, db::PodcastId podcastId, const Podcast& podcast)
         {
             auto transaction{ session.createWriteTransaction() };
 

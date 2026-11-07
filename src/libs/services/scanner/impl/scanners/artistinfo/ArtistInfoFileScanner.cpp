@@ -26,7 +26,7 @@
 #include "core/String.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/MediaLibrary.hpp"
@@ -90,7 +90,7 @@ namespace lms::scanner
 
         ArtistInfoFileScanOperation::OperationResult ArtistInfoFileScanOperation::processResult()
         {
-            db::Session& dbSession{ getDb().getTLSSession() };
+            db::ISession& dbSession{ getDb().getTLSSession() };
             db::ArtistInfo::pointer artistInfo{ db::ArtistInfo::find(dbSession, getFilePath()) };
             if (!_parsedArtistInfo)
             {
@@ -108,7 +108,7 @@ namespace lms::scanner
             const bool added{ !artistInfo };
             if (!artistInfo)
             {
-                artistInfo = dbSession.create<db::ArtistInfo>();
+                artistInfo = db::ArtistInfo::create(dbSession);
                 artistInfo.modify()->setAbsoluteFilePath(getFilePath());
             }
 
@@ -169,7 +169,7 @@ namespace lms::scanner
         if (!core::stringUtils::stringCaseInsensitiveEqual(file.filePath.stem().string(), "artist"))
             return false;
 
-        db::Session& dbSession{ _db.getTLSSession() };
+        db::ISession& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
         db::ArtistInfo::pointer artistInfo{ db::ArtistInfo::find(dbSession, file.filePath) };
 

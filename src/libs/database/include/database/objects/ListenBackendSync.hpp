@@ -32,8 +32,8 @@
 
 namespace lms::db
 {
+    class ISession;
     class Listen;
-    class Session;
 
     // Tracks the delivery of a single Listen to a given external scrobbling backend.
     // Never created for local/internal recording: recording a Listen row is itself that behavior.
@@ -41,6 +41,8 @@ namespace lms::db
     {
     public:
         ListenBackendSync() = default;
+
+        static pointer create(ISession& session, ObjectPtr<Listen> listen, ScrobblingBackend backend);
 
         struct FindParameters
         {
@@ -65,11 +67,11 @@ namespace lms::db
             }
         };
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ListenBackendSyncId id);
-        static pointer find(Session& session, ListenId listenId, ScrobblingBackend backend);
-        static std::vector<ListenBackendSyncId> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, ListenBackendSyncId id);
+        static pointer find(ISession& session, ListenId listenId, ScrobblingBackend backend);
+        static std::vector<ListenBackendSyncId> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
 
         ObjectPtr<Listen> getListen() const { return _listen; }
         ScrobblingBackend getBackend() const { return _backend; }
@@ -87,9 +89,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         ListenBackendSync(ObjectPtr<Listen> listen, ScrobblingBackend backend);
-        static pointer create(Session& session, ObjectPtr<Listen> listen, ScrobblingBackend backend);
 
         ScrobblingBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };

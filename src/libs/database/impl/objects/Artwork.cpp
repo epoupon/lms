@@ -21,10 +21,10 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "database/Session.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
@@ -43,40 +43,38 @@ namespace lms::db
     {
     }
 
-    Artwork::pointer Artwork::create(Session& session, ObjectPtr<TrackEmbeddedImage> trackEmbeddedImage)
+    Artwork::pointer Artwork::create(ISession& session, ObjectPtr<TrackEmbeddedImage> trackEmbeddedImage)
     {
-        session.checkWriteTransaction();
-        return session.getDboSession()->add(std::unique_ptr<Artwork>{ new Artwork{ trackEmbeddedImage } });
+        return utils::addObject(session, std::unique_ptr<Artwork>{ new Artwork{ trackEmbeddedImage } });
     }
 
-    Artwork::pointer Artwork::create(Session& session, ObjectPtr<Image> image)
+    Artwork::pointer Artwork::create(ISession& session, ObjectPtr<Image> image)
     {
-        session.checkWriteTransaction();
-        return session.getDboSession()->add(std::unique_ptr<Artwork>{ new Artwork{ image } });
+        return utils::addObject(session, std::unique_ptr<Artwork>{ new Artwork{ image } });
     }
 
-    std::size_t Artwork::getCount(Session& session)
+    std::size_t Artwork::getCount(ISession& session)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<long>("SELECT COUNT(*) FROM artwork"));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<long>("SELECT COUNT(*) FROM artwork"));
     }
 
-    Artwork::pointer Artwork::find(Session& session, ArtworkId id)
+    Artwork::pointer Artwork::find(ISession& session, ArtworkId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.id = ?").bind(id));
     }
 
-    Artwork::pointer Artwork::find(Session& session, TrackEmbeddedImageId id)
+    Artwork::pointer Artwork::find(ISession& session, TrackEmbeddedImageId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.track_embedded_image_id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.track_embedded_image_id = ?").bind(id));
     }
 
-    Artwork::pointer Artwork::find(Session& session, ImageId id)
+    Artwork::pointer Artwork::find(ISession& session, ImageId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.image_id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.image_id = ?").bind(id));
     }
 
     Artwork::UnderlyingId Artwork::getUnderlyingId() const

@@ -28,7 +28,7 @@
 #include "core/String.hpp"
 #include "core/Utils.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "services/auth/IAuthTokenService.hpp"
 
 #include "ParameterParsing.hpp"
@@ -52,7 +52,7 @@ namespace lms::api::subsonic::utils
         }
 
         // Returns null if no such user exists
-        db::User::pointer getUserFromLoginName(db::Session& session, std::string_view loginName)
+        db::User::pointer getUserFromLoginName(db::ISession& session, std::string_view loginName)
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -114,7 +114,7 @@ namespace lms::api::subsonic::utils
         return core::stringUtils::stringCaseInsensitiveEqual(core::stringUtils::bufferToHexString(core::md5(payload)), token);
     }
 
-    db::User::pointer getUserFromUserId(db::Session& session, db::UserId userId)
+    db::User::pointer getUserFromUserId(db::ISession& session, db::UserId userId)
     {
         auto transaction{ session.createReadTransaction() };
 
@@ -124,7 +124,7 @@ namespace lms::api::subsonic::utils
         throw UserNotAuthorizedError{};
     }
 
-    db::UserId authenticateUser(const Wt::Http::Request& request, db::Session& session)
+    db::UserId authenticateUser(const Wt::Http::Request& request, db::ISession& session)
     {
         const AuthenticationRequest authRequest{ parseAndValidateAuthenticationRequest(request.getParameterMap()) };
 

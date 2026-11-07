@@ -27,7 +27,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 }
 
 namespace lms::api::subsonic
@@ -38,5 +38,5 @@ namespace lms::api::subsonic
         audio::AudioProperties audioProperties;
     };
 
-    AudioFileInfo getAudioFileInfo(db::Session& session, AudioFileId audioFileId); // throw RequestedDataNotFoundError on failure
+    AudioFileInfo getAudioFileInfo(db::ISession& session, AudioFileId audioFileId); // throw RequestedDataNotFoundError on failure
 } // namespace lms::api::subsonic

@@ -24,7 +24,6 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
@@ -43,6 +42,7 @@
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/Work.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
@@ -54,11 +54,11 @@ namespace lms::db
     namespace
     {
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Genre::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createQuery(ISession& session, std::string_view itemToSelect, const Genre::FindParameters& params)
         {
-            session.checkReadTransaction();
+            checkReadTransaction(session);
 
-            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM genre g") };
+            auto query{ getDboSession(session)->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM genre g") };
 
             if (params.artist.isValid() || params.track.isValid() || params.release.isValid()
                 || params.sortMethod == GenreSortMethod::TrackCountDesc)
@@ -99,7 +99,7 @@ namespace lms::db
         }
 
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, const Genre::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createQuery(ISession& session, const Genre::FindParameters& params)
         {
             std::string_view itemToSelect;
 
@@ -120,70 +120,75 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Genre name too long, truncated to '" << _name << "'");
     }
 
-    Genre::pointer Genre::create(Session& session, std::string_view name)
+    Genre::pointer Genre::create(ISession& session, std::string_view name)
     {
-        return session.getDboSession()->add(std::unique_ptr<Genre>{ new Genre{ name } });
+        return utils::addObject(session, std::unique_ptr<Genre>{ new Genre{ name } });
     }
 
-    std::size_t Genre::getCount(Session& session)
+    void Genre::destroy(ISession& session, std::span<const GenreId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM genre"));
+        utils::destroyObjects<Genre>(session, ids);
     }
 
-    std::vector<GenreId> Genre::findIds(Session& session, const FindParameters& params)
+    std::size_t Genre::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM genre"));
+    }
+
+    std::vector<GenreId> Genre::findIds(ISession& session, const FindParameters& params)
+    {
+        checkReadTransaction(session);
         auto query{ createQuery<GenreId>(session, params) };
         return utils::execRangeQuery<GenreId>(query, params.range);
     }
 
-    std::vector<Genre::pointer> Genre::find(Session& session, const FindParameters& params)
+    std::vector<Genre::pointer> Genre::find(ISession& session, const FindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<Genre>>(session, params) };
         return utils::execRangeQuery<Genre::pointer>(query, params.range);
     }
 
-    void Genre::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    void Genre::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<Genre>>(session, params) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
-    Genre::pointer Genre::find(Session& session, GenreId id)
+    Genre::pointer Genre::find(ISession& session, GenreId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Genre>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<Genre>().where("id = ?").bind(id));
     }
 
-    Genre::pointer Genre::find(Session& session, std::string_view name)
+    Genre::pointer Genre::find(ISession& session, std::string_view name)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Genre>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<Genre>().where("name = ?").bind(name));
     }
 
-    std::vector<GenreId> Genre::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<GenreId> Genre::findOrphanIds(ISession& session, std::optional<Range> range)
     {
-        session.checkReadTransaction();
-        auto query{ session.getDboSession()->query<GenreId>("SELECT g.id FROM genre g WHERE NOT EXISTS (SELECT 1 FROM track_genre t_g WHERE t_g.genre_id = g.id)") };
+        checkReadTransaction(session);
+        auto query{ getDboSession(session)->query<GenreId>("SELECT g.id FROM genre g WHERE NOT EXISTS (SELECT 1 FROM track_genre t_g WHERE t_g.genre_id = g.id)") };
         return utils::execRangeQuery<GenreId>(query, range);
     }
 
-    std::size_t Genre::computeTrackCount(Session& session, GenreId id)
+    std::size_t Genre::computeTrackCount(ISession& session, GenreId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(t.id) FROM track t INNER JOIN track_genre t_g ON t_g.track_id = t.id").where("t_g.genre_id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(t.id) FROM track t INNER JOIN track_genre t_g ON t_g.track_id = t.id").where("t_g.genre_id = ?").bind(id));
     }
 
-    std::size_t Genre::computeReleaseCount(Session& session, GenreId id)
+    std::size_t Genre::computeReleaseCount(ISession& session, GenreId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(DISTINCT t.release_id) FROM track t INNER JOIN track_genre t_g ON t_g.track_id = t.id").where("t_g.genre_id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(DISTINCT t.release_id) FROM track t INNER JOIN track_genre t_g ON t_g.track_id = t.id").where("t_g.genre_id = ?").bind(id));
     }
 
 } // namespace lms::db

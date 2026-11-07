@@ -159,7 +159,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackArtistLink>(track2.get(), artist1.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2.get(), artist1.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -211,8 +211,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track1.get(), artist1.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track2.get(), artist2.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2.get(), artist2.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -275,7 +275,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -329,7 +329,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
             track.get().modify()->setMediaLibrary(library.get());
         }
 
@@ -612,7 +612,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -769,8 +769,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
-            session.create<ReleaseArtistLink>(release.get(), artist.get(), false);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            ReleaseArtistLink::create(session, release.get(), artist.get(), false);
         }
 
         {
@@ -808,7 +808,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -884,8 +884,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track1.get(), artist1.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track2.get(), artist2.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2.get(), artist2.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -947,7 +947,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -987,7 +987,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
             track.get().modify()->setMediaLibrary(library.get());
         }
 
@@ -1547,7 +1547,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -1622,7 +1622,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
         }
 
         {

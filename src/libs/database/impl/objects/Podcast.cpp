@@ -22,10 +22,10 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
@@ -39,34 +39,39 @@ namespace lms::db
     {
     }
 
-    Podcast::pointer Podcast::create(Session& session, std::string_view url)
+    Podcast::pointer Podcast::create(ISession& session, std::string_view url)
     {
-        return session.getDboSession()->add(std::unique_ptr<Podcast>{ new Podcast{ url } });
+        return utils::addObject(session, std::unique_ptr<Podcast>{ new Podcast{ url } });
     }
 
-    std::size_t Podcast::getCount(Session& session)
+    void Podcast::destroy(ISession& session, std::span<const PodcastId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM podcast"));
+        utils::destroyObjects<Podcast>(session, ids);
     }
 
-    Podcast::pointer Podcast::find(Session& session, PodcastId id)
+    std::size_t Podcast::getCount(ISession& session)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Podcast>>("SELECT p from podcast p").where("p.id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM podcast"));
     }
 
-    Podcast::pointer Podcast::find(Session& session, std::string_view url)
+    Podcast::pointer Podcast::find(ISession& session, PodcastId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Podcast>>("SELECT p from podcast p").where("p.url = ?").bind(url));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Podcast>>("SELECT p from podcast p").where("p.id = ?").bind(id));
     }
 
-    void Podcast::find(Session& session, std::function<void(const pointer&)> func)
+    Podcast::pointer Podcast::find(ISession& session, std::string_view url)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Podcast>>("SELECT p from podcast p").where("p.url = ?").bind(url));
+    }
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Podcast>>("SELECT p from podcast p") };
+    void Podcast::find(ISession& session, std::function<void(const pointer&)> func)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<Podcast>>("SELECT p from podcast p") };
         utils::forEachQueryResult(query, func);
     }
 

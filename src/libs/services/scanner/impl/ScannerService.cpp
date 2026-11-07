@@ -28,7 +28,7 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/ScanSettings.hpp"
 
@@ -89,7 +89,7 @@ namespace lms::scanner
             return current;
         }
 
-        std::optional<ScannerSettings> readScannerSettings(db::Session& session, std::string_view name)
+        std::optional<ScannerSettings> readScannerSettings(db::ISession& session, std::string_view name)
         {
             std::optional<ScannerSettings> settings;
 
@@ -138,13 +138,13 @@ namespace lms::scanner
             return settings;
         }
 
-        void writeScannerSettings(db::Session& session, std::string_view name, const ScannerSettings& settings)
+        void writeScannerSettings(db::ISession& session, std::string_view name, const ScannerSettings& settings)
         {
             auto transaction{ session.createWriteTransaction() };
 
             ScanSettings::pointer scanSettings{ ScanSettings::find(session, name) };
             if (!scanSettings)
-                scanSettings = session.create<ScanSettings>(name);
+                scanSettings = ScanSettings::create(session, name);
 
             scanSettings.modify()->setAllowMBIDArtistMerge(settings.allowArtistMBIDFallback);
             scanSettings.modify()->setSkipSingleReleasePlayLists(settings.skipSingleReleasePlayLists);

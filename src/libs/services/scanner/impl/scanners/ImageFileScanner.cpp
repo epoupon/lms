@@ -24,7 +24,7 @@
 #include "core/ILogger.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/MediaLibrary.hpp"
@@ -73,7 +73,7 @@ namespace lms::scanner
 
         ImageFileScanOperation::OperationResult ImageFileScanOperation::processResult()
         {
-            db::Session& dbSession{ getDb().getTLSSession() };
+            db::ISession& dbSession{ getDb().getTLSSession() };
             db::Image::pointer image{ db::Image::find(dbSession, getFilePath()) };
 
             if (!_parsedImage)
@@ -92,15 +92,15 @@ namespace lms::scanner
             const bool added{ !image };
             if (added)
             {
-                image = dbSession.create<db::Image>(getFilePath());
-                dbSession.create<db::Artwork>(image);
+                image = db::Image::create(dbSession, getFilePath());
+                db::Artwork::create(dbSession, image);
             }
             else if (image->getLastWriteTime() != getLastWriteTime()
                      || image->getFileSize() != getFileSize())
             {
                 if (auto artwork{ db::Artwork::find(dbSession, image->getId()) })
                     artwork.remove();
-                dbSession.create<db::Artwork>(image);
+                db::Artwork::create(dbSession, image);
             }
 
             const image::ImageDimensions dimensions{ _parsedImage->dimensions.value_or(image::ImageDimensions{}) };
@@ -146,7 +146,7 @@ namespace lms::scanner
 
     bool ImageFileScanner::needsScan(const FileToScan& file) const
     {
-        db::Session& dbSession{ _db.getTLSSession() };
+        db::ISession& dbSession{ _db.getTLSSession() };
         auto transaction{ _db.getTLSSession().createReadTransaction() };
 
         const db::Image::pointer image{ db::Image::find(dbSession, file.filePath) };

@@ -31,6 +31,7 @@
 namespace lms::db
 {
     class ConnectionPool;
+    class Session;
 
     class Db : public IDb
     {
@@ -46,7 +47,8 @@ namespace lms::db
 
         friend class Session;
 
-        Session& getTLSSession() override;
+        ISession& getTLSSession() override;
+        std::unique_ptr<ISession> createSession() override;
         void prepare(RecommendationEngineType defaultRecommendationEngineType) override;
         void analyze(const ProgressCallback& onProgress, const ShouldAbortCallback& shouldAbort) override;
         void vacuum() override;

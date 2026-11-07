@@ -22,7 +22,6 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
 #include "database/objects/Language.hpp"
@@ -30,6 +29,7 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -43,34 +43,34 @@ namespace lms::db
     {
     }
 
-    RatedTrack::pointer RatedTrack::create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user)
+    RatedTrack::pointer RatedTrack::create(ISession& session, ObjectPtr<Track> track, ObjectPtr<User> user)
     {
-        return session.getDboSession()->add(std::unique_ptr<RatedTrack>{ new RatedTrack{ track, user } });
+        return utils::addObject(session, std::unique_ptr<RatedTrack>{ new RatedTrack{ track, user } });
     }
 
-    std::size_t RatedTrack::getCount(Session& session)
+    std::size_t RatedTrack::getCount(ISession& session)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM rated_track"));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM rated_track"));
     }
 
-    RatedTrack::pointer RatedTrack::find(Session& session, RatedTrackId id)
+    RatedTrack::pointer RatedTrack::find(ISession& session, RatedTrackId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<RatedTrack>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<RatedTrack>().where("id = ?").bind(id));
     }
 
-    RatedTrack::pointer RatedTrack::find(Session& session, TrackId trackId, UserId userId)
+    RatedTrack::pointer RatedTrack::find(ISession& session, TrackId trackId, UserId userId)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<RatedTrack>().where("track_id = ?").bind(trackId).where("user_id = ?").bind(userId));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<RatedTrack>().where("track_id = ?").bind(trackId).where("user_id = ?").bind(userId));
     }
 
-    void RatedTrack::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    void RatedTrack::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<RatedTrack>>("SELECT r_t FROM rated_track r_t") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<RatedTrack>>("SELECT r_t FROM rated_track r_t") };
 
         if (params.user.isValid())
             query.where("r_t.user_id = ?").bind(params.user);

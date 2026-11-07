@@ -26,9 +26,9 @@
 namespace lms::db
 {
     class Directory;
+    class ISession;
     class Release;
     class User;
-    class Session;
 } // namespace lms::db
 
 namespace lms::api::subsonic

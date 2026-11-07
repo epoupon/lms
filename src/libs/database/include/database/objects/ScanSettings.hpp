@@ -35,7 +35,7 @@ LMS_DECLARE_IDTYPE(ScanSettingsId)
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 
     class ScanSettings final : public Object<ScanSettings, ScanSettingsId>
     {
@@ -52,8 +52,10 @@ namespace lms::db
 
         ScanSettings() = default;
 
-        static pointer find(Session& session, std::string_view name = "");
-        static pointer find(Session& session, ScanSettingsId id);
+        static pointer create(ISession& session, std::string_view name = "");
+
+        static pointer find(ISession& session, std::string_view name = "");
+        static pointer find(ISession& session, ScanSettingsId id);
 
         // Getters
         std::size_t getAudioScanVersion() const { return _audioScanVersion; }
@@ -102,10 +104,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
-
         ScanSettings(std::string_view name);
-        static pointer create(Session& session, std::string_view name = "");
 
         void incAudioScanVersion();
 

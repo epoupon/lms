@@ -33,7 +33,7 @@
 #include "core/media/Container.hpp"
 
 #include "audio/ITranscoder.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Genre.hpp"
@@ -274,7 +274,7 @@ namespace lms::ui::utils
 
         std::unique_ptr<Wt::WContainerWidget> clusterContainer{ std::make_unique<Wt::WContainerWidget>() };
 
-        Session& session{ LmsApp->getDbSession() };
+        ISession& session{ LmsApp->getDbSession() };
         for (const ClusterTypeId clusterTypeId : ClusterType::findIds(session))
         {
             Cluster::find(session, Cluster::FindParameters{}.setTrack(track->getId()).setClusterType(clusterTypeId).setSortMethod(ClusterSortMethod::Name).setRange(Range{ 0, 3 }), [&](const Cluster::pointer& cluster) {

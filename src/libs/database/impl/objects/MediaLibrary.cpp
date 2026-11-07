@@ -23,13 +23,13 @@
 
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
 #include "database/objects/Language.hpp"
 #include "database/objects/Mood.hpp"
 #include "database/objects/Track.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
@@ -45,44 +45,44 @@ namespace lms::db
         setPath(p);
     }
 
-    MediaLibrary::pointer MediaLibrary::create(Session& session, std::string_view name, const std::filesystem::path& p)
+    MediaLibrary::pointer MediaLibrary::create(ISession& session, std::string_view name, const std::filesystem::path& p)
     {
-        return session.getDboSession()->add(std::unique_ptr<MediaLibrary>{ new MediaLibrary{ name, p } });
+        return utils::addObject(session, std::unique_ptr<MediaLibrary>{ new MediaLibrary{ name, p } });
     }
 
-    std::size_t MediaLibrary::getCount(Session& session)
+    std::size_t MediaLibrary::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM media_library"));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM media_library"));
     }
 
-    MediaLibrary::pointer MediaLibrary::find(Session& session, MediaLibraryId id)
+    MediaLibrary::pointer MediaLibrary::find(ISession& session, MediaLibraryId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<MediaLibrary>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<MediaLibrary>().where("id = ?").bind(id));
     }
 
-    MediaLibrary::pointer MediaLibrary::find(Session& session, std::string_view name)
+    MediaLibrary::pointer MediaLibrary::find(ISession& session, std::string_view name)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<MediaLibrary>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<MediaLibrary>().where("name = ?").bind(name));
     }
 
-    MediaLibrary::pointer MediaLibrary::find(Session& session, const std::filesystem::path& p)
+    MediaLibrary::pointer MediaLibrary::find(ISession& session, const std::filesystem::path& p)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<MediaLibrary>().where("path = ?").bind(p));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<MediaLibrary>().where("path = ?").bind(p));
     }
 
-    void MediaLibrary::find(Session& session, std::function<void(const MediaLibrary::pointer&)> func)
+    void MediaLibrary::find(ISession& session, std::function<void(const MediaLibrary::pointer&)> func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        utils::forEachQueryResult(session.getDboSession()->find<MediaLibrary>(), [&](const MediaLibrary::pointer& mediaLibrary) {
+        utils::forEachQueryResult(getDboSession(session)->find<MediaLibrary>(), [&](const MediaLibrary::pointer& mediaLibrary) {
             func(mediaLibrary);
         });
     }

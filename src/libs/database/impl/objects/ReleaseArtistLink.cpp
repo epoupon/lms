@@ -24,7 +24,6 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
@@ -33,6 +32,7 @@
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -47,30 +47,29 @@ namespace lms::db
     {
     }
 
-    ReleaseArtistLink::pointer ReleaseArtistLink::create(Session& session, const ObjectPtr<Release>& release, const ObjectPtr<Artist>& artist, bool artistMBIDMatched)
+    ReleaseArtistLink::pointer ReleaseArtistLink::create(ISession& session, const ObjectPtr<Release>& release, const ObjectPtr<Artist>& artist, bool artistMBIDMatched)
     {
-        session.checkWriteTransaction();
-        return session.getDboSession()->add(std::make_unique<ReleaseArtistLink>(release, artist, artistMBIDMatched));
+        return utils::addObject(session, std::make_unique<ReleaseArtistLink>(release, artist, artistMBIDMatched));
     }
 
-    std::size_t ReleaseArtistLink::getCount(Session& session)
+    std::size_t ReleaseArtistLink::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_artist_link"));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_artist_link"));
     }
 
-    ReleaseArtistLink::pointer ReleaseArtistLink::find(Session& session, ReleaseArtistLinkId id)
+    ReleaseArtistLink::pointer ReleaseArtistLink::find(ISession& session, ReleaseArtistLinkId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l").where("r_a_l.id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l").where("r_a_l.id = ?").bind(id));
     }
 
-    void ReleaseArtistLink::findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const ReleaseArtistLink::pointer&)>& func)
+    void ReleaseArtistLink::findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const ReleaseArtistLink::pointer&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l") };
         query.join("artist a ON r_a_l.artist_id = a.id");
         query.where("r_a_l.artist_mbid_matched = FALSE");
         query.where("r_a_l.artist_name <> a.name");
@@ -81,11 +80,11 @@ namespace lms::db
         });
     }
 
-    void ReleaseArtistLink::findWithArtistNameAmbiguity(Session& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const ReleaseArtistLink::pointer&)>& func)
+    void ReleaseArtistLink::findWithArtistNameAmbiguity(ISession& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const ReleaseArtistLink::pointer&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l") };
         query.join("artist a ON r_a_l.artist_id = a.id");
         query.where("r_a_l.artist_mbid_matched = FALSE");
         if (!allowArtistMBIDFallback)

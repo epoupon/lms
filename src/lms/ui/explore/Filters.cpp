@@ -37,7 +37,7 @@
 #include "core/Utils.hpp"
 
 #include "core/media/Codec.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Genre.hpp"
@@ -123,7 +123,7 @@ namespace lms::ui
 
         std::unique_ptr<ValueModel> createValueModel(TypeVariant type)
         {
-            db::Session& session{ LmsApp->getDbSession() };
+            db::ISession& session{ LmsApp->getDbSession() };
 
             auto valueModel{ std::make_unique<ValueModel>() };
 
@@ -204,7 +204,7 @@ namespace lms::ui
         };
 
         template<typename Object, typename Id>
-        std::optional<StoredValue> findStoredValue(db::Session& session, std::string_view type, Id id)
+        std::optional<StoredValue> findStoredValue(db::ISession& session, std::string_view type, Id id)
         {
             const typename Object::pointer object{ Object::find(session, id) };
             if (!object)
@@ -214,7 +214,7 @@ namespace lms::ui
         }
 
         // nullopt if the value no longer exists
-        std::optional<StoredValue> toStoredValue(db::Session& session, const Filters::Value& value)
+        std::optional<StoredValue> toStoredValue(db::ISession& session, const Filters::Value& value)
         {
             return std::visit(core::utils::overloads{
                                   [&](db::ClusterId id) -> std::optional<StoredValue> {
@@ -239,7 +239,7 @@ namespace lms::ui
         }
 
         // A filter is stored as a whole: nullopt if one of its values no longer exists
-        std::optional<Wt::Json::Object> toStoredFilter(db::Session& session, std::span<const Filters::Value> values, Filters::Match match)
+        std::optional<Wt::Json::Object> toStoredFilter(db::ISession& session, std::span<const Filters::Value> values, Filters::Match match)
         {
             Wt::Json::Object storedFilter;
             Wt::Json::Array names;
@@ -262,7 +262,7 @@ namespace lms::ui
         }
 
         template<typename Object>
-        std::optional<Filters::Value> findValue(db::Session& session, std::string_view name)
+        std::optional<Filters::Value> findValue(db::ISession& session, std::string_view name)
         {
             const typename Object::pointer object{ Object::find(session, name) };
             if (!object)
@@ -272,7 +272,7 @@ namespace lms::ui
         }
 
         // nullopt if the value no longer exists
-        std::optional<Filters::Value> fromStoredValue(db::Session& session, const StoredValue& storedValue)
+        std::optional<Filters::Value> fromStoredValue(db::ISession& session, const StoredValue& storedValue)
         {
             if (storedValue.type == "cluster")
             {
@@ -307,7 +307,7 @@ namespace lms::ui
         }
 
         // A filter is restored as a whole: nullopt if one of its values cannot be
-        std::optional<std::vector<Filters::Value>> fromStoredFilter(db::Session& session, const Wt::Json::Object& filter)
+        std::optional<std::vector<Filters::Value>> fromStoredFilter(db::ISession& session, const Wt::Json::Object& filter)
         {
             StoredValue storedValue{ .type = filter.get("type").toString().orIfNull(""), .clusterType = filter.get("clusterType").toString().orIfNull(""), .name = {} };
 
@@ -409,7 +409,7 @@ namespace lms::ui
 
         bool added{};
         {
-            db::Session& session{ LmsApp->getDbSession() };
+            db::ISession& session{ LmsApp->getDbSession() };
             auto transaction{ session.createReadTransaction() };
 
             for (const Wt::Json::Value& filterValue : filters)
@@ -452,7 +452,7 @@ namespace lms::ui
 
         Wt::Json::Array storedFilters;
         {
-            db::Session& session{ LmsApp->getDbSession() };
+            db::ISession& session{ LmsApp->getDbSession() };
             auto transaction{ session.createReadTransaction() };
 
             for (const Filter& filter : _filters)

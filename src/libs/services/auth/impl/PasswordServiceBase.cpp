@@ -28,7 +28,7 @@
 #endif // LMS_SUPPORT_PAM
 
 #include "core/ILogger.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "services/auth/Types.hpp"
 
 namespace lms::auth

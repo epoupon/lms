@@ -27,11 +27,11 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 }
 
 namespace lms::scrobbling::listenBrainz::utils
 {
-    std::string getListenBrainzToken(db::Session& session, db::UserId userId);
+    std::string getListenBrainzToken(db::ISession& session, db::UserId userId);
     std::string parseValidateToken(std::string_view msgBody);
 } // namespace lms::scrobbling::listenBrainz::utils

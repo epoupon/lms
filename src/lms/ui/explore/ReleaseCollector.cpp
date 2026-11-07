@@ -19,7 +19,7 @@
 
 #include "ReleaseCollector.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Listen.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/User.hpp"

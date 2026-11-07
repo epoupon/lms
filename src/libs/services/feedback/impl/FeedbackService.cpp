@@ -21,7 +21,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistFeedback.hpp"
 #include "database/objects/RatedArtist.hpp"
@@ -62,7 +62,7 @@ namespace lms::feedback
     {
         core::EnumSet<db::FeedbackBackend> backends;
 
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
         if (const db::User::pointer user{ db::User::find(session, userId) })
             backends = user->getFeedbackBackends();
@@ -98,7 +98,7 @@ namespace lms::feedback
             std::vector<db::TrackFeedbackId> ids;
             std::size_t rawCount{};
             {
-                db::Session& session{ _db.getTLSSession() };
+                db::ISession& session{ _db.getTLSSession() };
                 auto transaction{ session.createReadTransaction() };
 
                 db::TrackFeedback::FindParameters params;
@@ -118,7 +118,7 @@ namespace lms::feedback
                 break;
 
             {
-                db::Session& session{ _db.getTLSSession() };
+                db::ISession& session{ _db.getTLSSession() };
                 auto transaction{ session.createWriteTransaction() };
 
                 for (const db::TrackFeedbackId id : ids)
@@ -130,7 +130,7 @@ namespace lms::feedback
                     if (!trackFeedback || !backendImpl.canBeFeedbacked(trackFeedback->getTrack()->getId()))
                         continue;
 
-                    session.create<db::TrackFeedbackBackendSync>(trackFeedback, backend);
+                    db::TrackFeedbackBackendSync::create(session, trackFeedback, backend);
                 }
             }
 

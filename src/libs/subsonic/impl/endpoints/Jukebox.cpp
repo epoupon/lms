@@ -24,7 +24,7 @@
 
 #include "core/Service.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 

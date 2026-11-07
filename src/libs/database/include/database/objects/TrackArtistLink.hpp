@@ -39,21 +39,24 @@ LMS_DECLARE_IDTYPE(TrackArtistLinkId)
 namespace lms::db
 {
     class Artist;
-    class Session;
+    class ISession;
     class Track;
 
     class TrackArtistLink final : public Object<TrackArtistLink, TrackArtistLinkId>
     {
     public:
         TrackArtistLink() = default;
+
+        static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched = false);
+        static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, bool artistMBIDMatched = false);
         TrackArtistLink(const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched);
 
-        static void find(Session& session, TrackId trackId, const std::function<void(const pointer&, const ObjectPtr<Artist>&)>& func);
-        static pointer find(Session& session, TrackArtistLinkId linkId);
-        static std::size_t getCount(Session& session);
-        static core::EnumSet<TrackArtistLinkType> findUsedTypes(Session& session, ArtistId _artist);
-        static void findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const pointer&)>& func);
-        static void findWithArtistNameAmbiguity(Session& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func);
+        static void find(ISession& session, TrackId trackId, const std::function<void(const pointer&, const ObjectPtr<Artist>&)>& func);
+        static pointer find(ISession& session, TrackArtistLinkId linkId);
+        static std::size_t getCount(ISession& session);
+        static core::EnumSet<TrackArtistLinkType> findUsedTypes(ISession& session, ArtistId _artist);
+        static void findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const pointer&)>& func);
+        static void findWithArtistNameAmbiguity(ISession& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func);
 
         // accessors
         ObjectPtr<Track> getTrack() const { return _track; }
@@ -84,10 +87,6 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
-        static pointer create(Session& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched = false);
-        static pointer create(Session& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, bool artistMBIDMatched = false);
-
         TrackArtistLinkType _type{ TrackArtistLinkType::Artist };
         std::string _subType;
         std::string _artistName;     // as it was in the tags

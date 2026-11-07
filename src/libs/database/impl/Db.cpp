@@ -33,7 +33,6 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
-#include "database/Session.hpp"
 #include "database/objects/ScanSettings.hpp"
 #include "database/objects/ServerInfo.hpp"
 
@@ -41,6 +40,7 @@
 #include "Db.hpp"
 #include "Migration.hpp"
 #include "Schema.hpp"
+#include "Session.hpp"
 #include "Utils.hpp"
 
 namespace lms::db
@@ -175,7 +175,7 @@ namespace lms::db
             auto transaction{ session.createWriteTransaction() };
 
             if (!ScanSettings::find(session))
-                session.create<ScanSettings>().modify()->setRecommendationEngineType(defaultRecommendationEngineType);
+                ScanSettings::create(session).modify()->setRecommendationEngineType(defaultRecommendationEngineType);
         }
 
         void createServerInfoIfNeeded(Session& session)
@@ -304,7 +304,7 @@ namespace lms::db
         // Also on abort: the entries analyzed so far are committed
         _connectionPool->requestConnectionsReload();
 
-        LMS_LOG(DB, INFO, "Analyze complete!");
+        LMS_LOG(DB, INFO, "Analyze " << (processedEntries == entries.size() ? "complete" : "aborted") << "!");
     }
 
     void Db::vacuum()
@@ -327,7 +327,12 @@ namespace lms::db
         connection->executeSql(sql);
     }
 
-    Session& Db::getTLSSession()
+    std::unique_ptr<ISession> Db::createSession()
+    {
+        return std::make_unique<Session>(*this);
+    }
+
+    ISession& Db::getTLSSession()
     {
         static thread_local Session* tlsSession{};
 

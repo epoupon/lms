@@ -21,7 +21,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Listen.hpp"
 #include "database/objects/ListenBackendSync.hpp"
 #include "database/objects/Track.hpp"
@@ -97,7 +97,7 @@ namespace lms::scrobbling
 
     std::optional<TimedListen> ScrobblingService::recordListen(const Listen& listen, const Wt::WDateTime& listenedAt, std::optional<std::chrono::seconds> duration)
     {
-        Session& session{ _db.getTLSSession() };
+        ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
         const Track::pointer track{ Track::find(session, listen.trackId) };
@@ -115,7 +115,7 @@ namespace lms::scrobbling
             if (!user)
                 return std::nullopt;
 
-            session.create<db::Listen>(user, track, listenedAt);
+            db::Listen::create(session, user, track, listenedAt);
         }
 
         return TimedListen{ listen, listenedAt };
@@ -165,7 +165,7 @@ namespace lms::scrobbling
     {
         core::EnumSet<ScrobblingBackend> backends;
 
-        Session& session{ _db.getTLSSession() };
+        ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
         if (const User::pointer user{ User::find(session, userId) })
             backends = user->getScrobblingBackends();
@@ -199,7 +199,7 @@ namespace lms::scrobbling
         {
             std::vector<db::ListenId> ids;
             {
-                Session& session{ _db.getTLSSession() };
+                ISession& session{ _db.getTLSSession() };
                 auto transaction{ session.createReadTransaction() };
 
                 db::Listen::FindParameters params;
@@ -211,7 +211,7 @@ namespace lms::scrobbling
                 break;
 
             {
-                Session& session{ _db.getTLSSession() };
+                ISession& session{ _db.getTLSSession() };
                 auto transaction{ session.createWriteTransaction() };
 
                 for (const db::ListenId id : ids)
@@ -223,7 +223,7 @@ namespace lms::scrobbling
                     if (!listen || !backendImpl.canBeScrobbled(listen->getTrack()->getId(), std::nullopt))
                         continue;
 
-                    session.create<db::ListenBackendSync>(listen, backend);
+                    db::ListenBackendSync::create(session, listen, backend);
                 }
             }
 
@@ -234,7 +234,7 @@ namespace lms::scrobbling
 
     void ScrobblingService::insertNowPlayingEntry(const Listen& listen)
     {
-        Session& session{ _db.getTLSSession() };
+        ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         if (const db::Track::pointer track{ db::Track::find(session, listen.trackId) })

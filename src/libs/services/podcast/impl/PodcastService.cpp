@@ -28,7 +28,7 @@
 #include "core/http/IClient.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Podcast.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 
@@ -97,12 +97,12 @@ namespace lms::podcast
 
         db::PodcastId podcastId;
         {
-            db::Session& session{ _refreshContext.db.getTLSSession() };
+            db::ISession& session{ _refreshContext.db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
             db::Podcast::pointer podcast{ db::Podcast::find(session, url) };
             if (!podcast)
-                podcast = session.create<db::Podcast>(url);
+                podcast = db::Podcast::create(session, url);
 
             podcastId = podcast->getId();
         }
@@ -121,7 +121,7 @@ namespace lms::podcast
         abortCurrentRefresh(lock);
 
         {
-            db::Session& session{ _refreshContext.db.getTLSSession() };
+            db::ISession& session{ _refreshContext.db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
             db::Podcast::pointer podcast{ db::Podcast::find(session, podcastId) };
@@ -155,7 +155,7 @@ namespace lms::podcast
         abortCurrentRefresh(lock);
 
         {
-            db::Session& session{ _refreshContext.db.getTLSSession() };
+            db::ISession& session{ _refreshContext.db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
             db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, episodeId) };
@@ -180,7 +180,7 @@ namespace lms::podcast
         abortCurrentRefresh(lock);
 
         {
-            db::Session& session{ _refreshContext.db.getTLSSession() };
+            db::ISession& session{ _refreshContext.db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
             db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, episodeId) };
@@ -199,7 +199,7 @@ namespace lms::podcast
 
     bool PodcastService::hasPodcasts() const
     {
-        db::Session& session{ _refreshContext.db.getTLSSession() };
+        db::ISession& session{ _refreshContext.db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         return db::Podcast::getCount(session) > 0;

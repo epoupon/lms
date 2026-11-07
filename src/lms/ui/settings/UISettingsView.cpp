@@ -27,7 +27,7 @@
 
 #include "core/EnumSet.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 
 #include "LmsApplication.hpp"

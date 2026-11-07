@@ -444,8 +444,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackListEntry>(track2.get(), trackList.get());
-            session.create<TrackListEntry>(track1.get(), trackList.get());
+            TrackListEntry::create(session, track2.get(), trackList.get());
+            TrackListEntry::create(session, track1.get(), trackList.get());
         }
 
         {

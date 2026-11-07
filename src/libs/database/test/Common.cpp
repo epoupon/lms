@@ -19,7 +19,7 @@
 
 #include "Common.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Release.hpp"
 
@@ -56,6 +56,38 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, analyze)
     {
         getDb().analyze();
+    }
+
+    TEST_F(DatabaseFixture, analyze_progress)
+    {
+        std::size_t expectedProcessedEntries{};
+        std::size_t total{};
+
+        getDb().analyze([&](std::size_t processedEntries, std::size_t totalEntries) {
+            EXPECT_EQ(processedEntries, expectedProcessedEntries);
+            expectedProcessedEntries++;
+            total = totalEntries;
+        });
+
+        EXPECT_GT(total, std::size_t{ 0 });
+        EXPECT_EQ(expectedProcessedEntries, total + 1);
+    }
+
+    TEST_F(DatabaseFixture, analyze_abort)
+    {
+        std::size_t lastProcessedEntries{};
+        std::size_t total{};
+        std::size_t abortCheckCount{};
+
+        getDb().analyze(
+            [&](std::size_t processedEntries, std::size_t totalEntries) {
+                lastProcessedEntries = processedEntries;
+                total = totalEntries;
+            },
+            [&] { return ++abortCheckCount > 2; });
+
+        EXPECT_EQ(lastProcessedEntries, std::size_t{ 2 });
+        EXPECT_GT(total, std::size_t{ 2 });
     }
 
     TEST_F(DatabaseFixture, Common_subRangeForeach)

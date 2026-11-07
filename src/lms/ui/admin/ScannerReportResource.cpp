@@ -23,7 +23,7 @@
 #include <Wt/Utils.h>
 
 #include "core/String.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 
 #include "LmsApplication.hpp"

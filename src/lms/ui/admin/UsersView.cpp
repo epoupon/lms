@@ -23,7 +23,7 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 
 #include "LmsApplication.hpp"

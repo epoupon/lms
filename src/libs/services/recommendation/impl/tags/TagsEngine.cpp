@@ -26,7 +26,7 @@
 #include <unordered_set>
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
@@ -130,7 +130,7 @@ namespace lms::recommendation
         _releaseTags.clear();
         _artistTags.clear();
 
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         buildTrackTags(session);
@@ -141,7 +141,7 @@ namespace lms::recommendation
         LOG(INFO, "loaded " << _trackTags.size() << " tracks, " << _releaseTags.size() << " releases, " << _artistTags.size() << " artists");
     }
 
-    void TagsEngine::buildTrackMetadata(db::Session& session)
+    void TagsEngine::buildTrackMetadata(db::ISession& session)
     {
         LOG(DEBUG, "building track metadata...");
 
@@ -186,7 +186,7 @@ namespace lms::recommendation
             std::sort(metadata.artistIds.begin(), metadata.artistIds.end());
     }
 
-    void TagsEngine::buildTrackTags(db::Session& session)
+    void TagsEngine::buildTrackTags(db::ISession& session)
     {
         LOG(DEBUG, "building track tags...");
 
@@ -373,7 +373,7 @@ namespace lms::recommendation
 
         std::vector<db::TrackId> trackIds;
         {
-            db::Session& dbSession{ _db.getTLSSession() };
+            db::ISession& dbSession{ _db.getTLSSession() };
             auto transaction{ dbSession.createReadTransaction() };
 
             const db::TrackList::pointer trackList{ db::TrackList::find(dbSession, tracklistId) };
@@ -427,7 +427,7 @@ namespace lms::recommendation
         if (startTrackId == endTrackId)
             return { RecommendationResult<db::TrackId>{ .id = startTrackId, .distanceToFirst = {}, .distanceToPrevious = {} } };
 
-        db::Session& dbSession{ _db.getTLSSession() };
+        db::ISession& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
 
         const auto startTrack{ db::Track::find(dbSession, startTrackId) };

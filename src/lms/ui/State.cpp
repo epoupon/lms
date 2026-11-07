@@ -19,7 +19,7 @@
 
 #include "State.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/UIState.hpp"
 #include "database/objects/User.hpp"
 
@@ -40,7 +40,7 @@ namespace lms::ui::state::detail
             if (!state)
             {
                 if (db::User::pointer user{ LmsApp->getUser() })
-                    state = LmsApp->getDbSession().create<db::UIState>(item, user);
+                    state = db::UIState::create(LmsApp->getDbSession(), item, user);
             }
 
             if (state)

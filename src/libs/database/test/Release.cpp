@@ -849,8 +849,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Producer);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Producer);
         }
 
         {
@@ -941,8 +941,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            auto link1{ session.create<ReleaseArtistLink>(release.get(), artist1.get(), false) };
-            auto link2{ session.create<ReleaseArtistLink>(release.get(), artist2.get(), true) };
+            auto link1{ ReleaseArtistLink::create(session, release.get(), artist1.get(), false) };
+            auto link2{ ReleaseArtistLink::create(session, release.get(), artist2.get(), true) };
             link2.modify()->setArtistName("MyArtistAlternateName");
             link2.modify()->setArtistSortName("MyArtistAlternateSortName");
         }

@@ -22,6 +22,7 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
+#include <span>
 
 #include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
@@ -38,12 +39,15 @@
 namespace lms::db
 {
     class Directory;
-    class Session;
+    class ISession;
 
     class Image final : public Object<Image, ImageId>
     {
     public:
         Image() = default;
+
+        static pointer create(ISession& session, const std::filesystem::path& p);
+        static void destroy(ISession& session, std::span<const ImageId> ids);
 
         struct FindParameters
         {
@@ -73,13 +77,13 @@ namespace lms::db
         };
 
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ImageId id);
-        static pointer find(Session& session, const std::filesystem::path& file);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& parameters, const std::function<void(const Image::pointer&)>& func);
-        static void find(Session& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(const Image::pointer&)>& func);
-        static void findAbsoluteFilePath(Session& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(ImageId imageId, const std::filesystem::path& absoluteFilePath)>& func);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, ImageId id);
+        static pointer find(ISession& session, const std::filesystem::path& file);
+        static std::vector<pointer> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& parameters, const std::function<void(const Image::pointer&)>& func);
+        static void find(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(const Image::pointer&)>& func);
+        static void findAbsoluteFilePath(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(ImageId imageId, const std::filesystem::path& absoluteFilePath)>& func);
 
         // getters
         const std::filesystem::path& getAbsoluteFilePath() const { return _fileAbsolutePath; }
@@ -115,9 +119,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         Image(const std::filesystem::path& p);
-        static pointer create(Session& session, const std::filesystem::path& p);
 
         std::filesystem::path _fileAbsolutePath;
         std::string _fileStem;

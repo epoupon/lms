@@ -27,7 +27,7 @@
 #include "core/ILogger.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/Track.hpp"
@@ -43,7 +43,7 @@ namespace lms::scanner
 {
     namespace
     {
-        void recomputeArtist(db::Session& session, db::TrackArtistLink::pointer link, bool allowArtistMBIDFallback)
+        void recomputeArtist(db::ISession& session, db::TrackArtistLink::pointer link, bool allowArtistMBIDFallback)
         {
             assert(!link->isArtistMBIDMatched());
 
@@ -56,7 +56,7 @@ namespace lms::scanner
             link.modify()->setArtist(newArtist);
         }
 
-        void recomputeArtist(db::Session& session, db::ArtistInfo::pointer artistInfo, bool allowArtistMBIDFallback)
+        void recomputeArtist(db::ISession& session, db::ArtistInfo::pointer artistInfo, bool allowArtistMBIDFallback)
         {
             assert(!artistInfo->isMBIDMatched());
 
@@ -102,7 +102,7 @@ namespace lms::scanner
     {
         static constexpr std::size_t batchSize{ 50 };
 
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
 
         // The file scan only sets artist names/sort names on creation: this is the single place where they follow their sources
         struct ArtistToUpdate
@@ -142,7 +142,7 @@ namespace lms::scanner
         static constexpr std::size_t batchSize{ 50 };
 
         const bool allowArtistMBIDFallback{ _settings.allowArtistMBIDFallback };
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
 
         std::vector<db::ArtistInfo::pointer> artistInfo;
         while (!_abortScan)
@@ -176,7 +176,7 @@ namespace lms::scanner
         static constexpr std::size_t batchSize{ 50 };
 
         const bool allowArtistMBIDFallback{ _settings.allowArtistMBIDFallback };
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
 
         std::vector<db::ArtistInfo::pointer> artistInfo;
         while (!_abortScan)
@@ -209,7 +209,7 @@ namespace lms::scanner
         static constexpr std::size_t batchSize{ 50 };
 
         const bool allowArtistMBIDFallback{ _settings.allowArtistMBIDFallback };
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
 
         std::vector<db::TrackArtistLink::pointer> links;
         while (!_abortScan)
@@ -243,7 +243,7 @@ namespace lms::scanner
         static constexpr std::size_t batchSize{ 50 };
 
         const bool allowArtistMBIDFallback{ _settings.allowArtistMBIDFallback };
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
 
         std::vector<db::TrackArtistLink::pointer> links;
         while (!_abortScan)

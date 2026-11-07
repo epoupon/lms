@@ -28,10 +28,10 @@
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
 #include "database/objects/ScanSettings.hpp"
 
 #include "Db.hpp"
+#include "Session.hpp"
 #include "Utils.hpp"
 
 namespace lms::db
@@ -48,7 +48,7 @@ namespace lms::db
 
     VersionInfo::pointer VersionInfo::getOrCreate(Session& session)
     {
-        session.checkWriteTransaction();
+        checkWriteTransaction(session);
 
         pointer versionInfo{ utils::fetchQuerySingleResult(session.getDboSession()->find<VersionInfo>()) };
         if (!versionInfo)
@@ -59,7 +59,7 @@ namespace lms::db
 
     VersionInfo::pointer VersionInfo::get(Session& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         return utils::fetchQuerySingleResult(session.getDboSession()->find<VersionInfo>());
     }

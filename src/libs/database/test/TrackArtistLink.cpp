@@ -31,7 +31,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            auto link{ session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist, false) };
+            auto link{ TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist, false) };
             link.modify()->setArtistName("MyArtist");
         }
 
@@ -68,7 +68,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            auto link{ session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Artist, false) };
+            auto link{ TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist, false) };
             link.modify()->setArtistName("MyArtist");
         }
 
@@ -120,7 +120,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            auto link{ session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Artist, false) };
+            auto link{ TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist, false) };
             link.modify()->setArtistName("MyArtist");
         }
 
@@ -192,9 +192,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Artist, false);
-            session.create<TrackArtistLink>(track.get(), artist2.get(), TrackArtistLinkType::Artist, false);
-            session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Mixer, false);
+            TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist, false);
+            TrackArtistLink::create(session, track.get(), artist2.get(), TrackArtistLinkType::Artist, false);
+            TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Mixer, false);
         }
 
         {
@@ -222,9 +222,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Artist, false);
-            session.create<TrackArtistLink>(track.get(), artist2.get(), TrackArtistLinkType::Artist, false);
-            session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Mixer, false);
+            TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist, false);
+            TrackArtistLink::create(session, track.get(), artist2.get(), TrackArtistLinkType::Artist, false);
+            TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Mixer, false);
         }
 
         {
@@ -254,9 +254,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            auto link1{ session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Artist, false) };
+            auto link1{ TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist, false) };
             link1Id = link1->getId();
-            session.create<TrackArtistLink>(track.get(), artist2.get(), TrackArtistLinkType::Artist, false);
+            TrackArtistLink::create(session, track.get(), artist2.get(), TrackArtistLinkType::Artist, false);
         }
 
         {
@@ -279,7 +279,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackArtistLink>(track.get(), artist1.get(), TrackArtistLinkType::Artist, false);
+            TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist, false);
         }
 
         // artist2's link has lower id, artist1's re-created link has higher id.

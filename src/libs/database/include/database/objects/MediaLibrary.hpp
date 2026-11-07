@@ -31,7 +31,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 
     class MediaLibrary final : public Object<MediaLibrary, MediaLibraryId>
     {
@@ -40,13 +40,15 @@ namespace lms::db
 
         MediaLibrary() = default;
 
+        static pointer create(ISession& session, std::string_view name, const std::filesystem::path& p);
+
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, MediaLibraryId id);
-        static pointer find(Session& session, std::string_view name);
-        static pointer find(Session& session, const std::filesystem::path& path);
-        static void find(Session& session, std::function<void(const pointer&)> func);
-        static std::vector<pointer> find(Session& session);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, MediaLibraryId id);
+        static pointer find(ISession& session, std::string_view name);
+        static pointer find(ISession& session, const std::filesystem::path& path);
+        static void find(ISession& session, std::function<void(const pointer&)> func);
+        static std::vector<pointer> find(ISession& session);
 
         // getters
         std::string_view getName() const { return _name; }
@@ -65,9 +67,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         MediaLibrary(std::string_view name, const std::filesystem::path& p);
-        static pointer create(Session& session, std::string_view name, const std::filesystem::path& p);
 
         std::filesystem::path _path;
         std::string _name;

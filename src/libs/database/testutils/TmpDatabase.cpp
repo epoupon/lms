@@ -24,9 +24,9 @@
 #include <vector>
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
 
 #include "Schema.hpp"
+#include "Session.hpp"
 #include "Utils.hpp"
 
 namespace lms::db::tests
@@ -41,23 +41,23 @@ namespace lms::db::tests
 
     void TmpDatabase::createTablesAndIndexes()
     {
-        Session session{ *_db };
-        Schema::createTablesIfNeeded(session);
-        Schema::createIndexesIfNeeded(session);
+        const std::unique_ptr<ISession> session{ _db->createSession() };
+        Schema::createTablesIfNeeded(*session);
+        Schema::createIndexesIfNeeded(*session);
     }
 
-    void executeStatement(Session& session, std::string_view statement)
+    void executeStatement(ISession& session, std::string_view statement)
     {
-        session.checkWriteTransaction();
+        checkWriteTransaction(session);
 
-        utils::executeCommand(*session.getDboSession(), std::string{ statement });
+        utils::executeCommand(*getDboSession(session), std::string{ statement });
     }
 
-    bool areAllTablesEmpty(Session& session)
+    bool areAllTablesEmpty(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        Wt::Dbo::Session& dboSession{ *session.getDboSession() };
+        Wt::Dbo::Session& dboSession{ *getDboSession(session) };
         const std::vector<std::string> entryList{ utils::fetchQueryResults(dboSession.query<std::string>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")) };
 
         return std::all_of(entryList.cbegin(), entryList.cend(), [&](const std::string& entry) {

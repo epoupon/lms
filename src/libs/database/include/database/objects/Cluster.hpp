@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -39,9 +40,9 @@
 
 namespace lms::db
 {
+    class ISession;
     class Track;
     class ClusterType;
-    class Session;
 
     class Cluster final : public Object<Cluster, ClusterId>
     {
@@ -103,17 +104,20 @@ namespace lms::db
 
         Cluster() = default;
 
+        static pointer create(ISession& session, ObjectPtr<ClusterType> type, std::string_view name);
+        static void destroy(ISession& session, std::span<const ClusterId> ids);
+
         // Find utility
-        static std::size_t getCount(Session& session);
-        static std::vector<ClusterId> findIds(Session& session, const FindParameters& params);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer& cluster)> _func);
-        static pointer find(Session& session, ClusterId id);
-        static std::vector<ClusterId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(ISession& session);
+        static std::vector<ClusterId> findIds(ISession& session, const FindParameters& params);
+        static std::vector<pointer> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, std::function<void(const pointer& cluster)> _func);
+        static pointer find(ISession& session, ClusterId id);
+        static std::vector<ClusterId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         // May be very slow
-        static std::size_t computeTrackCount(Session& session, ClusterId id);
-        static std::size_t computeReleaseCount(Session& session, ClusterId id);
+        static std::size_t computeTrackCount(ISession& session, ClusterId id);
+        static std::size_t computeReleaseCount(ISession& session, ClusterId id);
 
         // Accessors
         std::string_view getName() const { return _name; }
@@ -131,9 +135,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         Cluster(ObjectPtr<ClusterType> type, std::string_view name);
-        static pointer create(Session& session, ObjectPtr<ClusterType> type, std::string_view name);
 
         std::string _name;
 
@@ -146,18 +148,21 @@ namespace lms::db
     public:
         ClusterType() = default;
 
+        static pointer create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const ClusterTypeId> ids);
+
         static constexpr std::size_t maxNameLength{ 512 };
 
         // Getters
-        static std::size_t getCount(Session& session);
-        static std::vector<ClusterTypeId> findIds(Session& session, std::optional<Range> range = std::nullopt);
-        static void find(Session& session, const std::function<void(const pointer&)>& func);
-        static pointer find(Session& session, std::string_view name);
-        static pointer find(Session& session, ClusterTypeId id);
-        static std::vector<ClusterTypeId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
-        static std::vector<ClusterTypeId> findUsed(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(ISession& session);
+        static std::vector<ClusterTypeId> findIds(ISession& session, std::optional<Range> range = std::nullopt);
+        static void find(ISession& session, const std::function<void(const pointer&)>& func);
+        static pointer find(ISession& session, std::string_view name);
+        static pointer find(ISession& session, ClusterTypeId id);
+        static std::vector<ClusterTypeId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
+        static std::vector<ClusterTypeId> findUsed(ISession& session, std::optional<Range> range = std::nullopt);
 
-        static void remove(Session& session, const std::string& name);
+        static void remove(ISession& session, const std::string& name);
 
         // Accessors
         std::string_view getName() const { return _name; }
@@ -172,9 +177,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         ClusterType(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
 
         std::string _name;
         Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;

@@ -28,7 +28,7 @@
 #include "core/PartialDateTime.hpp"
 #include "core/ScopedTmpDirectory.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Track.hpp"
@@ -85,7 +85,7 @@ namespace lms::scanner::tests
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                db::Artist::pointer artist{ session.create<db::Artist>(std::string{ name }, mbid) };
+                db::Artist::pointer artist{ db::Artist::create(session, std::string{ name }, mbid) };
                 artist.modify()->setSortName(sortName);
                 return artist->getId();
             }
@@ -94,10 +94,10 @@ namespace lms::scanner::tests
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                db::Track::pointer track{ session.create<db::Track>() };
+                db::Track::pointer track{ db::Track::create(session) };
                 track.modify()->setDate(core::PartialDateTime{ year });
 
-                db::TrackArtistLink::pointer link{ session.create<db::TrackArtistLink>(track, db::Artist::find(session, artistId), db::TrackArtistLinkType::Artist, mbidMatched) };
+                db::TrackArtistLink::pointer link{ db::TrackArtistLink::create(session, track, db::Artist::find(session, artistId), db::TrackArtistLinkType::Artist, mbidMatched) };
                 link.modify()->setArtistName(name);
                 link.modify()->setArtistSortName(sortName);
             }
@@ -129,7 +129,7 @@ namespace lms::scanner::tests
 
                     db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(session, _rootDirectory.getPath()) };
                     if (!mediaLibrary)
-                        mediaLibrary = session.create<db::MediaLibrary>("Test", _rootDirectory.getPath());
+                        mediaLibrary = db::MediaLibrary::create(session, "Test", _rootDirectory.getPath());
                     mediaLibraryId = mediaLibrary->getId();
                 }
 
@@ -172,7 +172,7 @@ namespace lms::scanner::tests
             const core::ScopedTmpDirectory _rootDirectory{ "lms-scanner-test-" };
 
         protected:
-            db::Session& session{ _tmpDb->getDb().getTLSSession() };
+            db::ISession& session{ _tmpDb->getDb().getTLSSession() };
         };
     } // namespace
 

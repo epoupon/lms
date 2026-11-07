@@ -22,7 +22,7 @@
 #include <Wt/WPushButton.h>
 
 #include "core/Service.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "services/scanner/IScannerService.hpp"
 

@@ -30,7 +30,7 @@
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfo.hpp"
@@ -62,7 +62,7 @@ namespace lms::scanner
             std::span<const std::string_view> mediumFileNames;
         };
 
-        db::Image::pointer findImageInDirectory(db::Session& session, const db::Directory::pointer& directory, std::span<const std::string_view> fileStemsToSearch, db::Image::FindParameters::ProcessWildcards processWildcards)
+        db::Image::pointer findImageInDirectory(db::ISession& session, const db::Directory::pointer& directory, std::span<const std::string_view> fileStemsToSearch, db::Image::FindParameters::ProcessWildcards processWildcards)
         {
             db::Image::pointer image;
 
@@ -83,7 +83,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer searchImageInDirectories(db::Session& session, const SearchMediumArtworkParams& searchParams, const db::Medium::pointer& medium)
+        db::Image::pointer searchImageInDirectories(db::ISession& session, const SearchMediumArtworkParams& searchParams, const db::Medium::pointer& medium)
         {
             db::Image::pointer image;
 
@@ -119,7 +119,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::TrackEmbeddedImage::pointer getArtworkFromTracks(db::Session& session, const db::Medium::pointer& medium)
+        db::TrackEmbeddedImage::pointer getArtworkFromTracks(db::ISession& session, const db::Medium::pointer& medium)
         {
             db::TrackEmbeddedImage::pointer image;
 
@@ -138,7 +138,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Artwork::pointer computePreferredMediumArtwork(db::Session& session, const SearchMediumArtworkParams& searchParams, const db::Medium::pointer& medium)
+        db::Artwork::pointer computePreferredMediumArtwork(db::ISession& session, const SearchMediumArtworkParams& searchParams, const db::Medium::pointer& medium)
         {
             if (const db::Image::pointer image{ searchImageInDirectories(session, searchParams, medium) })
                 return db::Artwork::find(session, image->getId());
@@ -149,12 +149,12 @@ namespace lms::scanner
             return db::Artwork::pointer{};
         }
 
-        void updateMediumPreferredArtwork(db::Session& session, const MediumArtworkAssociation& mediumArtworkAssociation)
+        void updateMediumPreferredArtwork(db::ISession& session, const MediumArtworkAssociation& mediumArtworkAssociation)
         {
             db::Medium::updatePreferredArtwork(session, mediumArtworkAssociation.mediumId, mediumArtworkAssociation.preferredArtworkId);
         }
 
-        void updateMediumPreferredArtworks(db::Session& session, MediumArtworkAssociationContainer& imageAssociations, bool forceFullBatch)
+        void updateMediumPreferredArtworks(db::ISession& session, MediumArtworkAssociationContainer& imageAssociations, bool forceFullBatch)
         {
             constexpr std::size_t writeBatchSize{ 50 };
 
@@ -183,7 +183,7 @@ namespace lms::scanner
             return res;
         }
 
-        bool fetchNextMediumIdRange(db::Session& session, db::MediumId& lastRetrievedId, db::IdRange<db::MediumId>& idRange)
+        bool fetchNextMediumIdRange(db::ISession& session, db::MediumId& lastRetrievedId, db::IdRange<db::MediumId>& idRange)
         {
             constexpr std::size_t readBatchSize{ 100 };
 

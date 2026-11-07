@@ -24,7 +24,7 @@
 #include "audio/IAudioFileInfo.hpp"
 #include "audio/IAudioFileInfoParser.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 #include "database/objects/Track.hpp"
 
@@ -62,7 +62,7 @@ namespace lms::api::subsonic
 
     } // namespace
 
-    AudioFileInfo getAudioFileInfo(db::Session& session, AudioFileId audioFileId)
+    AudioFileInfo getAudioFileInfo(db::ISession& session, AudioFileId audioFileId)
     {
         AudioFileInfo res;
 

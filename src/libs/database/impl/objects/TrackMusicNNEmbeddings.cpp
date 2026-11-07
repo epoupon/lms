@@ -21,13 +21,13 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "database/Session.hpp"
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
 #include "database/objects/Language.hpp"
 #include "database/objects/Mood.hpp"
 #include "database/objects/Track.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -40,54 +40,56 @@ namespace lms::db
     {
     }
 
-    TrackMusicNNEmbeddings::pointer TrackMusicNNEmbeddings::create(Session& session, ObjectPtr<Track> track)
+    TrackMusicNNEmbeddings::pointer TrackMusicNNEmbeddings::create(ISession& session, ObjectPtr<Track> track)
     {
-        return session.getDboSession()->add(std::unique_ptr<TrackMusicNNEmbeddings>{ new TrackMusicNNEmbeddings{ track } });
+        return utils::addObject(session, std::unique_ptr<TrackMusicNNEmbeddings>{ new TrackMusicNNEmbeddings{ track } });
     }
 
-    std::size_t TrackMusicNNEmbeddings::getCount(Session& session)
+    std::size_t TrackMusicNNEmbeddings::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_musicnn_embeddings"));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_musicnn_embeddings"));
     }
 
-    TrackMusicNNEmbeddings::pointer TrackMusicNNEmbeddings::find(Session& session, TrackMusicNNEmbeddingsId id)
+    TrackMusicNNEmbeddings::pointer TrackMusicNNEmbeddings::find(ISession& session, TrackMusicNNEmbeddingsId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackMusicNNEmbeddings>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<TrackMusicNNEmbeddings>().where("id = ?").bind(id));
     }
 
-    TrackMusicNNEmbeddings::pointer TrackMusicNNEmbeddings::find(Session& session, TrackId trackId)
+    TrackMusicNNEmbeddings::pointer TrackMusicNNEmbeddings::find(ISession& session, TrackId trackId)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackMusicNNEmbeddings>().where("track_id = ?").bind(trackId));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<TrackMusicNNEmbeddings>().where("track_id = ?").bind(trackId));
     }
 
-    std::vector<TrackMusicNNEmbeddingsId> TrackMusicNNEmbeddings::find(Session& session, std::optional<Range> range)
+    std::vector<TrackMusicNNEmbeddingsId> TrackMusicNNEmbeddings::find(ISession& session, std::optional<Range> range)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<TrackMusicNNEmbeddingsId>("SELECT id from track_musicnn_embeddings") };
+        auto query{ getDboSession(session)->query<TrackMusicNNEmbeddingsId>("SELECT id from track_musicnn_embeddings") };
 
         return utils::execRangeQuery<TrackMusicNNEmbeddingsId>(query, range);
     }
 
-    void TrackMusicNNEmbeddings::find(Session& session, std::function<void(const pointer&)> func)
+    void TrackMusicNNEmbeddings::find(ISession& session, std::function<void(const pointer&)> func)
     {
-        auto query{ session.getDboSession()->find<TrackMusicNNEmbeddings>() };
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->find<TrackMusicNNEmbeddings>() };
 
         utils::forEachQueryResult(query, [&](const TrackMusicNNEmbeddings::pointer& embeddings) {
             func(embeddings);
         });
     }
 
-    void TrackMusicNNEmbeddings::removeAll(Session& session)
+    void TrackMusicNNEmbeddings::removeAll(ISession& session)
     {
-        session.checkWriteTransaction();
-        utils::executeCommand(*session.getDboSession(), "DELETE FROM track_musicnn_embeddings");
+        checkWriteTransaction(session);
+        utils::executeCommand(*getDboSession(session), "DELETE FROM track_musicnn_embeddings");
     }
 
     std::span<const std::byte> TrackMusicNNEmbeddings::getData() const

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -36,7 +37,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
     class Track;
 
     class Genre final : public Object<Genre, GenreId>
@@ -81,16 +82,19 @@ namespace lms::db
 
         Genre() = default;
 
-        static std::size_t getCount(Session& session);
-        static std::vector<GenreId> findIds(Session& session, const FindParameters& params);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
-        static pointer find(Session& session, GenreId id);
-        static pointer find(Session& session, std::string_view name);
-        static std::vector<GenreId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static pointer create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const GenreId> ids);
 
-        static std::size_t computeTrackCount(Session& session, GenreId id);
-        static std::size_t computeReleaseCount(Session& session, GenreId id);
+        static std::size_t getCount(ISession& session);
+        static std::vector<GenreId> findIds(ISession& session, const FindParameters& params);
+        static std::vector<pointer> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func);
+        static pointer find(ISession& session, GenreId id);
+        static pointer find(ISession& session, std::string_view name);
+        static std::vector<GenreId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
+
+        static std::size_t computeTrackCount(ISession& session, GenreId id);
+        static std::size_t computeReleaseCount(ISession& session, GenreId id);
 
         std::string_view getName() const { return _name; }
         std::size_t getTrackCount() const { return _trackCount; }
@@ -109,9 +113,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         Genre(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
 
         std::string _name;
         int _trackCount{};

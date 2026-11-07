@@ -19,7 +19,7 @@
 
 #include "UserManagement.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 
 #include "ParameterParsing.hpp"

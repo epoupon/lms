@@ -34,8 +34,8 @@
 
 namespace lms::db
 {
+    class ISession;
     class TrackEmbeddedImage;
-    class Session;
     class Track;
 
     class TrackEmbeddedImageLink final : public Object<TrackEmbeddedImageLink, TrackEmbeddedImageLinkId>
@@ -43,10 +43,12 @@ namespace lms::db
     public:
         TrackEmbeddedImageLink() = default;
 
+        static pointer create(ISession& session, ObjectPtr<Track> track, ObjectPtr<TrackEmbeddedImage> image);
+
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackEmbeddedImageLinkId id);
-        static void find(Session& session, TrackEmbeddedImageId trackEmbeddedImageId, std::function<void(const pointer&)> visitor);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, TrackEmbeddedImageLinkId id);
+        static void find(ISession& session, TrackEmbeddedImageId trackEmbeddedImageId, std::function<void(const pointer&)> visitor);
 
         // getters
         ObjectPtr<Track> getTrack() const;
@@ -73,9 +75,6 @@ namespace lms::db
 
     private:
         TrackEmbeddedImageLink(ObjectPtr<Track> track, ObjectPtr<TrackEmbeddedImage> image);
-
-        friend class Session;
-        static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackEmbeddedImage> image);
 
         int _index{}; // index within the track
         detail::ImageType _type{ detail::ImageType::Unknown };

@@ -31,7 +31,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
     class Track;
 
     class Movement final : public Object<Movement, MovementId>
@@ -41,7 +41,7 @@ namespace lms::db
 
         Movement() = default;
 
-        static pointer create(Session& session, std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<Track>& track);
+        static pointer create(ISession& session, std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<Track>& track);
 
         std::string_view getName() const { return _name; }
         std::optional<std::size_t> getNumber() const { return _number; }
@@ -57,7 +57,6 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         Movement(std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<Track>& track);
 
         std::string _name;

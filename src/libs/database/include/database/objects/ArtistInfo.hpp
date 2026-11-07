@@ -21,6 +21,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -37,23 +38,26 @@ namespace lms::db
 {
     class Artist;
     class Directory;
-    class Session;
+    class ISession;
 
     class ArtistInfo final : public Object<ArtistInfo, ArtistInfoId>
     {
     public:
         ArtistInfo() = default;
 
+        static pointer create(ISession& session);
+        static void destroy(ISession& session, std::span<const ArtistInfoId> ids);
+
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ArtistInfoId id);
-        static void find(Session& session, ArtistId id, std::optional<Range> range, const std::function<void(const pointer&)>& func);
-        static void find(Session& session, ArtistId id, const std::function<void(const pointer&)>& func);
-        static pointer find(Session& session, const std::filesystem::path& path);
-        static void find(Session& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func);
-        static void findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const pointer&)>& func);
-        static void findWithArtistNameAmbiguity(Session& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func);
-        static void findAbsoluteFilePath(Session& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(ArtistInfoId artistInfoId, const std::filesystem::path& absoluteFilePath)>& func);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, ArtistInfoId id);
+        static void find(ISession& session, ArtistId id, std::optional<Range> range, const std::function<void(const pointer&)>& func);
+        static void find(ISession& session, ArtistId id, const std::function<void(const pointer&)>& func);
+        static pointer find(ISession& session, const std::filesystem::path& path);
+        static void find(ISession& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func);
+        static void findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const pointer&)>& func);
+        static void findWithArtistNameAmbiguity(ISession& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func);
+        static void findAbsoluteFilePath(ISession& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(ArtistInfoId artistInfoId, const std::filesystem::path& absoluteFilePath)>& func);
 
         // getters
         std::size_t getScanVersion() const { return _scanVersion; }
@@ -105,9 +109,6 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
-        static pointer create(Session& session);
-
         int _scanVersion{};
 
         // Set when coming from artist info file

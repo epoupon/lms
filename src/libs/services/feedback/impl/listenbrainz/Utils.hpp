@@ -31,12 +31,12 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 }
 
 namespace lms::feedback::listenBrainz::utils
 {
-    std::string getListenBrainzToken(db::Session& session, db::UserId userId);
+    std::string getListenBrainzToken(db::ISession& session, db::UserId userId);
     std::string parseValidateToken(std::string_view msgBody);
 
     // See https://listenbrainz.readthedocs.io/en/latest/users/api/recordings.html
@@ -44,5 +44,5 @@ namespace lms::feedback::listenBrainz::utils
     std::optional<db::FeedbackValue> fromLBScore(int score);
 
     // ListenBrainz's recording-feedback endpoint only supports recordings that have a recording MBID
-    bool canBeFeedbacked(db::Session& session, db::TrackId trackId);
+    bool canBeFeedbacked(db::ISession& session, db::TrackId trackId);
 } // namespace lms::feedback::listenBrainz::utils

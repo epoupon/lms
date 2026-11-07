@@ -26,7 +26,7 @@
 #include <Wt/WStackedWidget.h>
 
 #include "core/String.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/ArtworkId.hpp"

@@ -21,7 +21,7 @@
 
 #include <ostream>
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 
 #include "types/TrackMetadata.hpp"
 
@@ -41,9 +41,9 @@ namespace lms::scanner::helpers
 {
     namespace
     {
-        db::Artist::pointer createArtist(db::Session& session, const Artist& artistInfo)
+        db::Artist::pointer createArtist(db::ISession& session, const Artist& artistInfo)
         {
-            db::Artist::pointer artist{ session.create<db::Artist>(artistInfo.name) };
+            db::Artist::pointer artist{ db::Artist::create(session, artistInfo.name) };
 
             if (artistInfo.mbid)
                 artist.modify()->setMBID(artistInfo.mbid);
@@ -55,7 +55,7 @@ namespace lms::scanner::helpers
         }
     } // namespace
 
-    db::Artist::pointer getOrCreateArtistByMBID(db::Session& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
+    db::Artist::pointer getOrCreateArtistByMBID(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
     {
         assert(artistInfo.mbid.has_value());
 
@@ -84,7 +84,7 @@ namespace lms::scanner::helpers
         return artist;
     }
 
-    db::Artist::pointer getOrCreateArtistByName(db::Session& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
+    db::Artist::pointer getOrCreateArtistByName(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
     {
         assert(artistInfo.mbid == std::nullopt);
 
@@ -117,7 +117,7 @@ namespace lms::scanner::helpers
         return artist;
     }
 
-    db::Artist::pointer getOrCreateArtist(db::Session& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
+    db::Artist::pointer getOrCreateArtist(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
     {
         // First try to get by MBID
         if (artistInfo.mbid)

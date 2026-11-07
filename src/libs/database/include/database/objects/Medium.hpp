@@ -21,6 +21,7 @@
 
 #include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -38,8 +39,8 @@
 namespace lms::db
 {
     class Artwork;
+    class ISession;
     class Release;
-    class Session;
     class Track;
 
     class Medium final : public Object<Medium, MediumId>
@@ -48,6 +49,9 @@ namespace lms::db
         static const std::size_t maxMediaLength{ 64 };
 
         Medium() = default;
+
+        static pointer create(ISession& session, ObjectPtr<Release> release);
+        static void destroy(ISession& session, std::span<const MediumId> ids);
 
         // find
         struct FindParameters
@@ -73,15 +77,15 @@ namespace lms::db
             }
         };
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, MediumId id);
-        static pointer find(Session& session, ReleaseId id, std::optional<std::size_t> position);
-        static void find(Session& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium::pointer&)>& func);
-        static IdRange<MediumId> findNextIdRange(Session& session, MediumId lastRetrievedId, std::size_t count);
-        static std::vector<MediumId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, MediumId id);
+        static pointer find(ISession& session, ReleaseId id, std::optional<std::size_t> position);
+        static void find(ISession& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium::pointer&)>& func);
+        static IdRange<MediumId> findNextIdRange(ISession& session, MediumId lastRetrievedId, std::size_t count);
+        static std::vector<MediumId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         // Updates
-        static void updatePreferredArtwork(Session& session, MediumId mediumId, ArtworkId artworkId);
+        static void updatePreferredArtwork(ISession& session, MediumId mediumId, ArtworkId artworkId);
 
         // getters
         std::string_view getName() const { return _name; }
@@ -116,9 +120,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         Medium(ObjectPtr<Release> release);
-        static pointer create(Session& session, ObjectPtr<Release> release);
 
         std::string _name;
         std::optional<int> _position; // position in the release

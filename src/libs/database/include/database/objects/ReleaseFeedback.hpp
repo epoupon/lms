@@ -31,8 +31,8 @@
 
 namespace lms::db
 {
+    class ISession;
     class Release;
-    class Session;
     class User;
 
     class ReleaseFeedback final : public Object<ReleaseFeedback, ReleaseFeedbackId>
@@ -40,10 +40,12 @@ namespace lms::db
     public:
         ReleaseFeedback() = default;
 
+        static pointer create(ISession& session, ObjectPtr<Release> release, ObjectPtr<User> user);
+
         // Search utility
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ReleaseFeedbackId id);
-        static pointer find(Session& session, ReleaseId releaseId, UserId userId);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, ReleaseFeedbackId id);
+        static pointer find(ISession& session, ReleaseId releaseId, UserId userId);
 
         // Accessors
         ObjectPtr<Release> getRelease() const { return _release; }
@@ -66,9 +68,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         ReleaseFeedback(ObjectPtr<Release> release, ObjectPtr<User> user);
-        static pointer create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user);
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };

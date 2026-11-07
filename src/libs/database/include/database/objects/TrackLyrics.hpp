@@ -39,13 +39,16 @@ LMS_DECLARE_IDTYPE(TrackLyricsId)
 namespace lms::db
 {
     class Directory;
-    class Session;
+    class ISession;
     class Track;
 
     class TrackLyrics final : public Object<TrackLyrics, TrackLyricsId>
     {
     public:
         TrackLyrics() = default;
+
+        static pointer create(ISession& session);
+        static void destroy(ISession& session, std::span<const TrackLyricsId> ids);
 
         struct FindParameters
         {
@@ -77,14 +80,14 @@ namespace lms::db
         };
 
         // Find utilities
-        static std::size_t getCount(Session& session);
-        static std::size_t getExternalLyricsCount(Session& session);
-        static pointer find(Session& session, TrackLyricsId id);
-        static pointer find(Session& session, const std::filesystem::path& file);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const TrackLyrics::pointer&)>& func);
-        static void find(Session& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(const TrackLyrics::pointer&)>& func);
-        static std::vector<TrackLyricsId> findOrphanIds(Session& session, std::optional<Range> range);
-        static void findAbsoluteFilePath(Session& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(TrackLyricsId trackLyricsId, const std::filesystem::path& absoluteFilePath)>& func);
+        static std::size_t getCount(ISession& session);
+        static std::size_t getExternalLyricsCount(ISession& session);
+        static pointer find(ISession& session, TrackLyricsId id);
+        static pointer find(ISession& session, const std::filesystem::path& file);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackLyrics::pointer&)>& func);
+        static void find(ISession& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(const TrackLyrics::pointer&)>& func);
+        static std::vector<TrackLyricsId> findOrphanIds(ISession& session, std::optional<Range> range);
+        static void findAbsoluteFilePath(ISession& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(TrackLyricsId trackLyricsId, const std::filesystem::path& absoluteFilePath)>& func);
 
         using SynchronizedLines = std::map<std::chrono::milliseconds, std::string>;
 
@@ -134,9 +137,6 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
-        static pointer create(Session& session);
-
         std::filesystem::path _fileAbsolutePath; // optional (if embedded in media file)
         std::string _fileStem;                   // optional (if embedded in media file)
         Wt::WDateTime _fileLastWrite;            // optional (if embedded in media file)

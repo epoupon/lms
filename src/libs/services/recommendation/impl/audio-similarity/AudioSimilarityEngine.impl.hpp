@@ -33,7 +33,7 @@
 #include "core/ITraceLogger.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
@@ -150,7 +150,7 @@ namespace lms::recommendation
 
         std::vector<db::TrackId> trackIds;
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             const db::TrackList::pointer trackList{ db::TrackList::find(session, tracklistId) };
@@ -484,7 +484,7 @@ namespace lms::recommendation
         std::array<math::StatsAccumulator<FloatType>, SourceDimCount> statsAccumulators;
 
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             Provider::visitVectors(session, [&]([[maybe_unused]] db::TrackId trackId, const SourceVector& sourceVector) {
@@ -504,7 +504,7 @@ namespace lms::recommendation
         {
             const auto calculator{ std::make_unique<math::CovarianceMatrixCalculator<SourceDimCount, FloatType>>() };
 
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             Provider::visitVectors(session, [&](db::TrackId, SourceVector& sourceVector) {
@@ -573,7 +573,7 @@ namespace lms::recommendation
 
         LOG(INFO, "computing reduced vectors... Reducing from " << SourceDimCount << " to " << ReducedDimCount << " dimensions");
 
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         _trackVectors.clear();

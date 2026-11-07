@@ -19,7 +19,7 @@
 
 #include "Playlists.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackList.hpp"
 #include "database/objects/User.hpp"
@@ -142,7 +142,7 @@ namespace lms::api::subsonic
         }
         else
         {
-            trackList = context.getDbSession().create<TrackList>(*name, TrackListType::PlayList);
+            trackList = TrackList::create(context.getDbSession(), *name, TrackListType::PlayList);
             trackList.modify()->setUser(context.getUser());
             trackList.modify()->setVisibility(TrackList::Visibility::Private);
         }
@@ -153,7 +153,7 @@ namespace lms::api::subsonic
             if (!track)
                 continue;
 
-            context.getDbSession().create<TrackListEntry>(track, trackList);
+            TrackListEntry::create(context.getDbSession(), track, trackList);
         }
 
         Response response{ Response::createOkResponse() };
@@ -211,7 +211,7 @@ namespace lms::api::subsonic
             if (!track)
                 continue;
 
-            context.getDbSession().create<TrackListEntry>(track, trackList);
+            TrackListEntry::create(context.getDbSession(), track, trackList);
         }
 
         return Response::createOkResponse();

@@ -33,7 +33,7 @@
 #include "core/String.hpp"
 #include "core/UUID.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 #include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
@@ -100,7 +100,7 @@ namespace lms::ui
                     throw UserNotAllowedException{};
 
                 // Create user
-                user = LmsApp->getDbSession().create<db::User>(valueText(LoginField).toUTF8());
+                user = db::User::create(LmsApp->getDbSession(), valueText(LoginField).toUTF8());
 
                 if (Wt::asNumber(value(DemoField)))
                 {

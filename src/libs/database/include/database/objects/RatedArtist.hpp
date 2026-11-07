@@ -34,13 +34,15 @@
 namespace lms::db
 {
     class Artist;
-    class Session;
+    class ISession;
     class User;
 
     class RatedArtist final : public Object<RatedArtist, RatedArtistId>
     {
     public:
         RatedArtist() = default;
+
+        static pointer create(ISession& session, ObjectPtr<Artist> artist, ObjectPtr<User> user);
 
         struct FindParameters
         {
@@ -60,10 +62,10 @@ namespace lms::db
         };
 
         // Search utility
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, RatedArtistId id);
-        static pointer find(Session& session, ArtistId artistId, UserId userId);
-        static void find(Session& session, const FindParameters& findParams, std::function<void(const pointer&)> func);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, RatedArtistId id);
+        static pointer find(ISession& session, ArtistId artistId, UserId userId);
+        static void find(ISession& session, const FindParameters& findParams, std::function<void(const pointer&)> func);
 
         // Accessors
         ObjectPtr<Artist> getArtist() const { return _artist; }
@@ -86,9 +88,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         RatedArtist(ObjectPtr<Artist> artist, ObjectPtr<User> user);
-        static pointer create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user);
 
         Rating _rating{};
         Wt::WDateTime _lastUpdated; // when it was rated for the last time

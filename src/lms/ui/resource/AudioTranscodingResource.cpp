@@ -33,7 +33,7 @@
 #include "audio/Exception.hpp"
 #include "audio/IAudioFileInfo.hpp"
 #include "audio/IAudioFileInfoParser.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 #include "services/transcoding/ITranscodeService.hpp"
@@ -167,7 +167,7 @@ namespace lms::ui
             std::size_t offset{ readParameterAs<std::size_t>(request, "offset").value_or(0) };
 
             {
-                db::Session& session{ LmsApp->getDbSession() };
+                db::ISession& session{ LmsApp->getDbSession() };
 
                 const auto transaction{ session.createReadTransaction() };
 

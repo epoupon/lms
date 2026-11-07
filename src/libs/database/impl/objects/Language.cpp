@@ -24,7 +24,6 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
@@ -43,6 +42,7 @@
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/Work.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
@@ -54,11 +54,11 @@ namespace lms::db
     namespace
     {
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Language::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createQuery(ISession& session, std::string_view itemToSelect, const Language::FindParameters& params)
         {
-            session.checkReadTransaction();
+            checkReadTransaction(session);
 
-            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM language l") };
+            auto query{ getDboSession(session)->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM language l") };
 
             if (params.artist.isValid() || params.track.isValid() || params.release.isValid()
                 || params.sortMethod == LanguageSortMethod::TrackCountDesc)
@@ -99,7 +99,7 @@ namespace lms::db
         }
 
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, const Language::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createQuery(ISession& session, const Language::FindParameters& params)
         {
             std::string_view itemToSelect;
 
@@ -120,57 +120,62 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Language name too long, truncated to '" << _name << "'");
     }
 
-    Language::pointer Language::create(Session& session, std::string_view name)
+    Language::pointer Language::create(ISession& session, std::string_view name)
     {
-        return session.getDboSession()->add(std::unique_ptr<Language>{ new Language{ name } });
+        return utils::addObject(session, std::unique_ptr<Language>{ new Language{ name } });
     }
 
-    std::size_t Language::getCount(Session& session)
+    void Language::destroy(ISession& session, std::span<const LanguageId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM language"));
+        utils::destroyObjects<Language>(session, ids);
     }
 
-    std::vector<LanguageId> Language::findIds(Session& session, const FindParameters& params)
+    std::size_t Language::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM language"));
+    }
+
+    std::vector<LanguageId> Language::findIds(ISession& session, const FindParameters& params)
+    {
+        checkReadTransaction(session);
         auto query{ createQuery<LanguageId>(session, params) };
         return utils::execRangeQuery<LanguageId>(query, params.range);
     }
 
-    std::vector<Language::pointer> Language::find(Session& session, const FindParameters& params)
+    std::vector<Language::pointer> Language::find(ISession& session, const FindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<Language>>(session, params) };
         return utils::execRangeQuery<Language::pointer>(query, params.range);
     }
 
-    void Language::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    void Language::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<Language>>(session, params) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
-    Language::pointer Language::find(Session& session, LanguageId id)
+    Language::pointer Language::find(ISession& session, LanguageId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Language>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<Language>().where("id = ?").bind(id));
     }
 
-    Language::pointer Language::find(Session& session, std::string_view name)
+    Language::pointer Language::find(ISession& session, std::string_view name)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Language>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<Language>().where("name = ?").bind(name));
     }
 
-    std::vector<LanguageId> Language::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<LanguageId> Language::findOrphanIds(ISession& session, std::optional<Range> range)
     {
-        session.checkReadTransaction();
-        auto query{ session.getDboSession()->query<LanguageId>("SELECT l.id FROM language l WHERE NOT EXISTS (SELECT 1 FROM track_language t_l WHERE t_l.language_id = l.id)") };
+        checkReadTransaction(session);
+        auto query{ getDboSession(session)->query<LanguageId>("SELECT l.id FROM language l WHERE NOT EXISTS (SELECT 1 FROM track_language t_l WHERE t_l.language_id = l.id)") };
         return utils::execRangeQuery<LanguageId>(query, range);
     }
 

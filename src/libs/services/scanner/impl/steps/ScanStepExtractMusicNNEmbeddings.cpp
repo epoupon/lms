@@ -30,7 +30,7 @@
 #include "audio/IMusicNNEmbeddingExtractor.hpp"
 #include "audio/MusicNNEmbeddings.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/ScanSettings.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackMusicNNEmbeddings.hpp"
@@ -63,7 +63,7 @@ namespace lms::scanner
             return params;
         }
 
-        bool fetchNextTrackWithoutEmbeddings(db::Session& session, db::TrackId& lastRetrievedTrackId, TrackLocation& trackLocation)
+        bool fetchNextTrackWithoutEmbeddings(db::ISession& session, db::TrackId& lastRetrievedTrackId, TrackLocation& trackLocation)
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -124,12 +124,12 @@ namespace lms::scanner
             std::string _errorMessage;
         };
 
-        void writeEmbedding(db::Session& session, const TrackEmbeddingAssociation& assoc)
+        void writeEmbedding(db::ISession& session, const TrackEmbeddingAssociation& assoc)
         {
             db::Track::pointer track{ db::Track::find(session, assoc.trackId) };
             assert(track);
 
-            db::TrackMusicNNEmbeddings::pointer entry{ session.create<db::TrackMusicNNEmbeddings>(track) };
+            db::TrackMusicNNEmbeddings::pointer entry{ db::TrackMusicNNEmbeddings::create(session, track) };
             if (assoc.embeddings)
             {
                 std::vector<std::byte> blob(sizeof(audio::TrackMusicNNEmbeddings));
@@ -138,7 +138,7 @@ namespace lms::scanner
             }
         }
 
-        void writeEmbeddings(ScanContext& context, db::Session& session, TrackEmbeddingAssociationContainer& pendingAssocs, bool forceFullBatch)
+        void writeEmbeddings(ScanContext& context, db::ISession& session, TrackEmbeddingAssociationContainer& pendingAssocs, bool forceFullBatch)
         {
             constexpr std::size_t writeBatchSize{ 10 };
 
@@ -171,7 +171,7 @@ namespace lms::scanner
 
     void ScanStepExtractMusicNNEmbeddings::process(ScanContext& context)
     {
-        db::Session& dbSession{ _db.getTLSSession() };
+        db::ISession& dbSession{ _db.getTLSSession() };
 
         {
             const std::string fileIdentifier{ audio::getMusicNNModelIdentifier(_settings.musicnnModelPath) };

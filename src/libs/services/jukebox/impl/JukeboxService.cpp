@@ -34,7 +34,7 @@
 #include "audio/Exception.hpp"
 #include "audio/IAudioOutput.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 
 namespace lms::jukebox

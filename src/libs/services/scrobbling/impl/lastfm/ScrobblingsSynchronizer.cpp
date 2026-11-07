@@ -26,7 +26,7 @@
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Listen.hpp"
 #include "database/objects/ListenBackendSync.hpp"
@@ -52,7 +52,7 @@ namespace lms::scrobbling::lastFm
             std::optional<std::chrono::seconds> duration;
         };
 
-        std::optional<TrackInfo> getTrackInfo(db::Session& session, const scrobbling::Listen& listen)
+        std::optional<TrackInfo> getTrackInfo(db::ISession& session, const scrobbling::Listen& listen)
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -203,7 +203,7 @@ namespace lms::scrobbling::lastFm
 
     bool ScrobblingsSynchronizer::saveListen(const TimedListen& listen, db::SyncState syncState)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
         db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
@@ -217,13 +217,13 @@ namespace lms::scrobbling::lastFm
             if (!track)
                 return false;
 
-            dbListen = session.create<db::Listen>(user, track, listen.listenedAt);
+            dbListen = db::Listen::create(session, user, track, listen.listenedAt);
         }
 
         db::ListenBackendSync::pointer sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::LastFm) };
         if (!sync)
         {
-            sync = session.create<db::ListenBackendSync>(dbListen, db::ScrobblingBackend::LastFm);
+            sync = db::ListenBackendSync::create(session, dbListen, db::ScrobblingBackend::LastFm);
             sync.modify()->setSyncState(syncState);
             return true;
         }
@@ -262,7 +262,7 @@ namespace lms::scrobbling::lastFm
 
     void ScrobblingsSynchronizer::skipListen(const TimedListen& listen)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
         db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
@@ -281,7 +281,7 @@ namespace lms::scrobbling::lastFm
         std::map<db::UserId, std::vector<TimedListen>> pendingByUser;
 
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             db::ListenBackendSync::FindParameters params;
@@ -324,7 +324,7 @@ namespace lms::scrobbling::lastFm
         params["method"] = "track.scrobble";
 
         std::vector<TimedListen> validListens;
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
 
         for (const TimedListen& listen : listens)
         {

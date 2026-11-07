@@ -30,7 +30,7 @@
 #include "audio/IAudioFileInfoParser.hpp"
 #include "audio/IImageReader.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
@@ -68,63 +68,63 @@ namespace lms::scanner
 {
     namespace
     {
-        void createTrackArtistLinks(db::Session& session, const db::Track::pointer& track, db::TrackArtistLinkType linkType, std::string_view role, std::span<const Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
+        void createTrackArtistLinks(db::ISession& session, const db::Track::pointer& track, db::TrackArtistLinkType linkType, std::string_view role, std::span<const Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
         {
             for (const Artist& artist : artists)
             {
                 db::Artist::pointer dbArtist{ helpers::getOrCreateArtist(session, artist, allowArtistMBIDFallback) };
 
                 const bool matchedUsingMbid{ artist.mbid.has_value() && dbArtist->getMBID() == artist.mbid };
-                db::TrackArtistLink::pointer link{ session.create<db::TrackArtistLink>(track, dbArtist, linkType, role, matchedUsingMbid) };
+                db::TrackArtistLink::pointer link{ db::TrackArtistLink::create(session, track, dbArtist, linkType, role, matchedUsingMbid) };
                 link.modify()->setArtistName(artist.name);
                 if (artist.sortName)
                     link.modify()->setArtistSortName(*artist.sortName);
             }
         }
 
-        void createTrackArtistLinks(db::Session& session, const db::Track::pointer& track, db::TrackArtistLinkType linkType, std::span<const Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
+        void createTrackArtistLinks(db::ISession& session, const db::Track::pointer& track, db::TrackArtistLinkType linkType, std::span<const Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
         {
             constexpr std::string_view noRole{};
             createTrackArtistLinks(session, track, linkType, noRole, artists, allowArtistMBIDFallback);
         }
 
-        void createReleaseArtistLinks(db::Session& session, const db::Release::pointer& dbRelease, std::span<const Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
+        void createReleaseArtistLinks(db::ISession& session, const db::Release::pointer& dbRelease, std::span<const Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
         {
             for (const Artist& artist : artists)
             {
                 db::Artist::pointer dbArtist{ helpers::getOrCreateArtist(session, artist, allowArtistMBIDFallback) };
 
                 const bool matchedUsingMbid{ artist.mbid.has_value() && dbArtist->getMBID() == artist.mbid };
-                db::ReleaseArtistLink::pointer link{ session.create<db::ReleaseArtistLink>(dbRelease, dbArtist, matchedUsingMbid) };
+                db::ReleaseArtistLink::pointer link{ db::ReleaseArtistLink::create(session, dbRelease, dbArtist, matchedUsingMbid) };
                 link.modify()->setArtistName(artist.name);
                 if (artist.sortName)
                     link.modify()->setArtistSortName(*artist.sortName);
             }
         }
 
-        db::ReleaseType::pointer getOrCreateReleaseType(db::Session& session, std::string_view name)
+        db::ReleaseType::pointer getOrCreateReleaseType(db::ISession& session, std::string_view name)
         {
             db::ReleaseType::pointer releaseType{ db::ReleaseType::find(session, name) };
             if (!releaseType)
-                releaseType = session.create<db::ReleaseType>(name);
+                releaseType = db::ReleaseType::create(session, name);
 
             return releaseType;
         }
 
-        db::Country::pointer getOrCreateCountry(db::Session& session, std::string_view name)
+        db::Country::pointer getOrCreateCountry(db::ISession& session, std::string_view name)
         {
             db::Country::pointer country{ db::Country::find(session, name) };
             if (!country)
-                country = session.create<db::Country>(name);
+                country = db::Country::create(session, name);
 
             return country;
         }
 
-        db::Label::pointer getOrCreateLabel(db::Session& session, std::string_view name)
+        db::Label::pointer getOrCreateLabel(db::ISession& session, std::string_view name)
         {
             db::Label::pointer label{ db::Label::find(session, name) };
             if (!label)
-                label = session.create<db::Label>(name);
+                label = db::Label::create(session, name);
 
             return label;
         }
@@ -169,7 +169,7 @@ namespace lms::scanner
             return false;
         }
 
-        void updateReleaseIfNeeded(db::Session& session, db::Release::pointer dbRelease, const Release& release, helpers::AllowFallbackOnMBIDEntry allowFallback)
+        void updateReleaseIfNeeded(db::ISession& session, db::Release::pointer dbRelease, const Release& release, helpers::AllowFallbackOnMBIDEntry allowFallback)
         {
             if (dbRelease->getName() != release.name)
                 dbRelease.modify()->setName(release.name);
@@ -223,7 +223,7 @@ namespace lms::scanner
                 && dbCandidateRelease->getBarcode() == release.barcode;
         }
 
-        db::Release::pointer getOrCreateRelease(db::Session& session, const Release& release, const db::Directory::pointer& currentDirectory, helpers::AllowFallbackOnMBIDEntry allowFallback)
+        db::Release::pointer getOrCreateRelease(db::ISession& session, const Release& release, const db::Directory::pointer& currentDirectory, helpers::AllowFallbackOnMBIDEntry allowFallback)
         {
             db::Release::pointer dbRelease;
 
@@ -232,7 +232,7 @@ namespace lms::scanner
             {
                 dbRelease = db::Release::find(session, *release.mbid);
                 if (!dbRelease)
-                    dbRelease = session.create<db::Release>(release.name, release.mbid);
+                    dbRelease = db::Release::create(session, release.name, release.mbid);
             }
             else if (release.name.empty())
             {
@@ -288,17 +288,17 @@ namespace lms::scanner
             }
 
             if (!dbRelease)
-                dbRelease = session.create<db::Release>(release.name);
+                dbRelease = db::Release::create(session, release.name);
 
             updateReleaseIfNeeded(session, dbRelease, release, allowFallback);
             return dbRelease;
         }
 
-        db::Medium::pointer getOrCreateMedium(db::Session& session, const Medium& medium, const db::Release::pointer& release)
+        db::Medium::pointer getOrCreateMedium(db::ISession& session, const Medium& medium, const db::Release::pointer& release)
         {
             db::Medium::pointer dbMedium{ db::Medium::find(session, release->getId(), medium.position) };
             if (!dbMedium)
-                dbMedium = session.create<db::Medium>(release);
+                dbMedium = db::Medium::create(session, release);
 
             if (dbMedium->getPosition() != medium.position)
                 dbMedium.modify()->setPosition(medium.position);
@@ -314,7 +314,7 @@ namespace lms::scanner
             return dbMedium;
         }
 
-        std::vector<db::Genre::pointer> getOrCreateGenres(db::Session& session, std::span<const std::string> names)
+        std::vector<db::Genre::pointer> getOrCreateGenres(db::ISession& session, std::span<const std::string> names)
         {
             std::vector<db::Genre::pointer> genres;
             genres.reserve(names.size());
@@ -322,13 +322,13 @@ namespace lms::scanner
             {
                 db::Genre::pointer genre{ db::Genre::find(session, name) };
                 if (!genre)
-                    genre = session.create<db::Genre>(name);
+                    genre = db::Genre::create(session, name);
                 genres.push_back(genre);
             }
             return genres;
         }
 
-        std::vector<db::Grouping::pointer> getOrCreateGroupings(db::Session& session, std::span<const std::string> names)
+        std::vector<db::Grouping::pointer> getOrCreateGroupings(db::ISession& session, std::span<const std::string> names)
         {
             std::vector<db::Grouping::pointer> groupings;
             groupings.reserve(names.size());
@@ -336,13 +336,13 @@ namespace lms::scanner
             {
                 db::Grouping::pointer grouping{ db::Grouping::find(session, name) };
                 if (!grouping)
-                    grouping = session.create<db::Grouping>(name);
+                    grouping = db::Grouping::create(session, name);
                 groupings.push_back(grouping);
             }
             return groupings;
         }
 
-        std::vector<db::Language::pointer> getOrCreateLanguages(db::Session& session, std::span<const std::string> names)
+        std::vector<db::Language::pointer> getOrCreateLanguages(db::ISession& session, std::span<const std::string> names)
         {
             std::vector<db::Language::pointer> languages;
             languages.reserve(names.size());
@@ -350,13 +350,13 @@ namespace lms::scanner
             {
                 db::Language::pointer language{ db::Language::find(session, name) };
                 if (!language)
-                    language = session.create<db::Language>(name);
+                    language = db::Language::create(session, name);
                 languages.push_back(language);
             }
             return languages;
         }
 
-        std::vector<db::Mood::pointer> getOrCreateMoods(db::Session& session, std::span<const std::string> names)
+        std::vector<db::Mood::pointer> getOrCreateMoods(db::ISession& session, std::span<const std::string> names)
         {
             std::vector<db::Mood::pointer> moods;
             moods.reserve(names.size());
@@ -364,13 +364,13 @@ namespace lms::scanner
             {
                 db::Mood::pointer mood{ db::Mood::find(session, name) };
                 if (!mood)
-                    mood = session.create<db::Mood>(name);
+                    mood = db::Mood::create(session, name);
                 moods.push_back(mood);
             }
             return moods;
         }
 
-        std::vector<db::Work::pointer> getOrCreateWorks(db::Session& session, db::ReleaseId releaseId, std::span<const Work> works)
+        std::vector<db::Work::pointer> getOrCreateWorks(db::ISession& session, db::ReleaseId releaseId, std::span<const Work> works)
         {
             std::vector<db::Work::pointer> dbWorks;
             dbWorks.reserve(works.size());
@@ -380,7 +380,7 @@ namespace lms::scanner
                 // without an mbid we only ever match a work already used on the same release, not globally by name
                 db::Work::pointer dbWork{ work.mbid ? db::Work::find(session, *work.mbid) : (releaseId.isValid() ? db::Work::find(session, releaseId, work.name) : db::Work::pointer{}) };
                 if (!dbWork)
-                    dbWork = session.create<db::Work>(work.name, work.mbid);
+                    dbWork = db::Work::create(session, work.name, work.mbid);
                 else if (dbWork->getName() != work.name)
                     dbWork.modify()->setName(work.name);
                 dbWorks.push_back(dbWork);
@@ -388,20 +388,20 @@ namespace lms::scanner
             return dbWorks;
         }
 
-        std::vector<db::Cluster::pointer> getOrCreateClusters(db::Session& session, const Track& track)
+        std::vector<db::Cluster::pointer> getOrCreateClusters(db::ISession& session, const Track& track)
         {
             std::vector<db::Cluster::pointer> clusters;
 
             auto getOrCreateClusters{ [&](std::string_view tag, std::span<const std::string> values) {
                 auto clusterType = db::ClusterType::find(session, tag);
                 if (!clusterType)
-                    clusterType = session.create<db::ClusterType>(tag);
+                    clusterType = db::ClusterType::create(session, tag);
 
                 for (const auto& value : values)
                 {
                     auto cluster{ clusterType->getCluster(value) };
                     if (!cluster)
-                        cluster = session.create<db::Cluster>(clusterType, value);
+                        cluster = db::Cluster::create(session, clusterType, value);
 
                     clusters.push_back(cluster);
                 }
@@ -413,9 +413,9 @@ namespace lms::scanner
             return clusters;
         }
 
-        db::TrackLyrics::pointer createLyrics(db::Session& session, const Lyrics& lyrics)
+        db::TrackLyrics::pointer createLyrics(db::ISession& session, const Lyrics& lyrics)
         {
-            db::TrackLyrics::pointer dbLyrics{ session.create<db::TrackLyrics>() };
+            db::TrackLyrics::pointer dbLyrics{ db::TrackLyrics::create(session) };
 
             dbLyrics.modify()->setLanguage(!lyrics.language.empty() ? lyrics.language : "xxx");
             dbLyrics.modify()->setOffset(lyrics.offset);
@@ -429,28 +429,28 @@ namespace lms::scanner
             return dbLyrics;
         }
 
-        db::TrackEmbeddedImage::pointer getOrCreateTrackEmbeddedImage(db::Session& session, const ImageInfo& imageInfo)
+        db::TrackEmbeddedImage::pointer getOrCreateTrackEmbeddedImage(db::ISession& session, const ImageInfo& imageInfo)
         {
             db::TrackEmbeddedImage::pointer image{ db::TrackEmbeddedImage::find(session, imageInfo.size, db::ImageHashType{ imageInfo.hash }) };
             if (!image)
             {
-                image = session.create<db::TrackEmbeddedImage>();
+                image = db::TrackEmbeddedImage::create(session);
                 image.modify()->setSize(imageInfo.size);
                 image.modify()->setHash(db::ImageHashType{ imageInfo.hash });
                 image.modify()->setWidth(imageInfo.dimensions.width);
                 image.modify()->setHeight(imageInfo.dimensions.height);
                 image.modify()->setFormat(imageInfo.format);
 
-                session.create<db::Artwork>(image);
+                db::Artwork::create(session, image);
             }
 
             return image;
         }
 
-        db::TrackEmbeddedImageLink::pointer createTrackEmbeddedImageLink(db::Session& session, const db::Track::pointer& dbTrack, const ImageInfo& imageInfo)
+        db::TrackEmbeddedImageLink::pointer createTrackEmbeddedImageLink(db::ISession& session, const db::Track::pointer& dbTrack, const ImageInfo& imageInfo)
         {
             const db::TrackEmbeddedImage::pointer image{ getOrCreateTrackEmbeddedImage(session, imageInfo) };
-            db::TrackEmbeddedImageLink::pointer imageLink{ session.create<db::TrackEmbeddedImageLink>(dbTrack, image) };
+            db::TrackEmbeddedImageLink::pointer imageLink{ db::TrackEmbeddedImageLink::create(session, dbTrack, image) };
             imageLink.modify()->setIndex(imageInfo.index);
             imageLink.modify()->setType(imageInfo.type);
             imageLink.modify()->setDescription(imageInfo.description);
@@ -458,7 +458,7 @@ namespace lms::scanner
             return imageLink;
         }
 
-        void updateEmbeddedImages(db::Session& session, db::Track::pointer& dbTrack, std::span<const ImageInfo> images)
+        void updateEmbeddedImages(db::ISession& session, db::Track::pointer& dbTrack, std::span<const ImageInfo> images)
         {
             dbTrack.modify()->clearEmbeddedImageLinks();
             for (const ImageInfo& imageInfo : images)
@@ -486,7 +486,7 @@ namespace lms::scanner
             return db::Advisory::UnSet;
         }
 
-        db::Track::pointer findMovedTrackBySizeAndMetaData(db::Session& session, const Track& parsedTrack, const std::filesystem::path& trackPath, size_t fileSize)
+        db::Track::pointer findMovedTrackBySizeAndMetaData(db::ISession& session, const Track& parsedTrack, const std::filesystem::path& trackPath, size_t fileSize)
         {
             db::Track::FindParameters params;
             // Add as many fields as possible to limit errors
@@ -624,7 +624,7 @@ namespace lms::scanner
     {
         LMS_SCOPED_TRACE_DETAILED("Scanner", "ProcessAudioScanData");
 
-        db::Session& dbSession{ getDb().getTLSSession() };
+        db::ISession& dbSession{ getDb().getTLSSession() };
         db::Track::pointer track{ db::Track::findByPath(dbSession, getFilePath()) };
         if (!_file)
         {
@@ -731,7 +731,7 @@ namespace lms::scanner
         bool added{};
         if (!track)
         {
-            track = dbSession.create<db::Track>();
+            track = db::Track::create(dbSession);
             added = true;
 
             track.modify()->setAbsoluteFilePath(getFilePath());

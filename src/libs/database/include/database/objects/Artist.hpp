@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -44,8 +45,8 @@
 namespace lms::db
 {
     class Artwork;
+    class ISession;
     class Release;
-    class Session;
     class Track;
     class User;
 
@@ -117,24 +118,27 @@ namespace lms::db
 
         Artist() = default;
 
+        static pointer create(ISession& session, const std::string& name, const std::optional<core::UUID>& mbid = std::nullopt);
+        static void destroy(ISession& session, std::span<const ArtistId> ids);
+
         // Accessors
-        static std::size_t getCount(Session& session);
-        static std::size_t getCount(Session& session, const FindParameters& params);
-        static pointer find(Session& session, const core::UUID& MBID);
-        static pointer find(Session& session, ArtistId id);
-        static std::vector<pointer> find(Session& session, std::string_view name); // exact match on name field
-        static void find(Session& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist::pointer&)>& func, MediaLibraryId library = {});
-        static void find(Session& session, const IdRange<ArtistId>& idRange, const std::function<void(const Artist::pointer&)>& func);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
-        static IdRange<ArtistId> findNextIdRange(Session& session, ArtistId lastRetrievedId, std::size_t count);
-        static std::vector<ArtistId> findIds(Session& session, const FindParameters& params);
-        static std::vector<ArtistId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // No track related
-        static bool exists(Session& session, ArtistId id);
-        static void findNameUpdates(Session& session, const std::function<void(const pointer& artist, std::string_view newName, std::string_view newSortName)>& func);
+        static std::size_t getCount(ISession& session);
+        static std::size_t getCount(ISession& session, const FindParameters& params);
+        static pointer find(ISession& session, const core::UUID& MBID);
+        static pointer find(ISession& session, ArtistId id);
+        static std::vector<pointer> find(ISession& session, std::string_view name); // exact match on name field
+        static void find(ISession& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist::pointer&)>& func, MediaLibraryId library = {});
+        static void find(ISession& session, const IdRange<ArtistId>& idRange, const std::function<void(const Artist::pointer&)>& func);
+        static std::vector<pointer> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func);
+        static IdRange<ArtistId> findNextIdRange(ISession& session, ArtistId lastRetrievedId, std::size_t count);
+        static std::vector<ArtistId> findIds(ISession& session, const FindParameters& params);
+        static std::vector<ArtistId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt); // No track related
+        static bool exists(ISession& session, ArtistId id);
+        static void findNameUpdates(ISession& session, const std::function<void(const pointer& artist, std::string_view newName, std::string_view newSortName)>& func);
 
         // Updates
-        static void updatePreferredArtwork(Session& session, ArtistId artistId, ArtworkId artworkId);
+        static void updatePreferredArtwork(ISession& session, ArtistId artistId, ArtworkId artworkId);
 
         // Accessors
         const std::string& getName() const { return _name; }
@@ -160,10 +164,8 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         // Create
         Artist(const std::string& name, const std::optional<core::UUID>& MBID = {});
-        static pointer create(Session& session, const std::string& name, const std::optional<core::UUID>& mbid = std::nullopt);
 
         std::string _name;
         std::string _sortName;

@@ -19,7 +19,7 @@
 
 #include "explore/PlayQueueController.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 
 #include "LmsApplication.hpp"
@@ -29,7 +29,7 @@ namespace lms::ui
 {
     namespace
     {
-        std::vector<db::TrackId> getReleasesTracks(db::Session& session, std::span<const db::ReleaseId> releasesId)
+        std::vector<db::TrackId> getReleasesTracks(db::ISession& session, std::span<const db::ReleaseId> releasesId)
         {
             std::vector<db::TrackId> res;
 

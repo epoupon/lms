@@ -31,7 +31,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
     class User;
 
     class AuthToken final : public Object<AuthToken, AuthTokenId>
@@ -39,13 +39,15 @@ namespace lms::db
     public:
         AuthToken() = default;
 
+        static pointer create(ISession& session, std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, ObjectPtr<User> user);
+
         // Utility
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, AuthTokenId tokenId);
-        static pointer find(Session& session, std::string_view domain, std::string_view value);
-        static void find(Session& session, std::string_view domain, UserId userId, std::function<void(const AuthToken::pointer&)> visitor);
-        static void removeExpiredTokens(Session& session, std::string_view domain, const Wt::WDateTime& now);
-        static void clearUserTokens(Session& session, std::string_view domain, UserId user);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, AuthTokenId tokenId);
+        static pointer find(ISession& session, std::string_view domain, std::string_view value);
+        static void find(ISession& session, std::string_view domain, UserId userId, std::function<void(const AuthToken::pointer&)> visitor);
+        static void removeExpiredTokens(ISession& session, std::string_view domain, const Wt::WDateTime& now);
+        static void clearUserTokens(ISession& session, std::string_view domain, UserId user);
 
         // Accessors
         const Wt::WDateTime& getExpiry() const { return _expiry; }
@@ -72,9 +74,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         AuthToken(std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, ObjectPtr<User> user);
-        static pointer create(Session& session, std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, ObjectPtr<User> user);
 
         std::string _domain;
         std::string _value;

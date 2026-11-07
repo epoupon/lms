@@ -28,8 +28,8 @@
 #include "core/ILogger.hpp"
 #include "core/LiteralString.hpp"
 #include "database/IDb.hpp"
+#include "database/ISession.hpp"
 #include "database/IdRange.hpp"
-#include "database/Session.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Image.hpp"
@@ -54,7 +54,7 @@ namespace lms::scanner
         };
         using TrackArtworksAssociationContainer = std::deque<TrackArtworksAssociation>;
 
-        db::Artwork::pointer computePreferredTrackArtwork(db::Session& session, const db::Track::pointer& track, const db::Artwork::pointer& preferredMediaArtwork)
+        db::Artwork::pointer computePreferredTrackArtwork(db::ISession& session, const db::Track::pointer& track, const db::Artwork::pointer& preferredMediaArtwork)
         {
             db::Artwork::pointer res{ preferredMediaArtwork };
             if (res)
@@ -87,7 +87,7 @@ namespace lms::scanner
             return res;
         }
 
-        db::Artwork::pointer computePreferredTrackMediaArtwork(db::Session& session, const db::Track::pointer& track)
+        db::Artwork::pointer computePreferredTrackMediaArtwork(db::ISession& session, const db::Track::pointer& track)
         {
             db::Artwork::pointer res;
 
@@ -113,7 +113,7 @@ namespace lms::scanner
             return res;
         }
 
-        void updateTrackPreferredArtworks(db::Session& session, const TrackArtworksAssociation& trackArtworksAssociation)
+        void updateTrackPreferredArtworks(db::ISession& session, const TrackArtworksAssociation& trackArtworksAssociation)
         {
             assert(trackArtworksAssociation.preferredArtworkId || trackArtworksAssociation.preferredMediaArtworkId);
 
@@ -124,7 +124,7 @@ namespace lms::scanner
                 db::Track::updatePreferredMediaArtwork(session, trackArtworksAssociation.trackId, *trackArtworksAssociation.preferredMediaArtworkId);
         }
 
-        void updateTrackPreferredArtworks(db::Session& session, TrackArtworksAssociationContainer& imageAssociations, bool forceFullBatch)
+        void updateTrackPreferredArtworks(db::ISession& session, TrackArtworksAssociationContainer& imageAssociations, bool forceFullBatch)
         {
             constexpr std::size_t writeBatchSize{ 50 };
 
@@ -140,7 +140,7 @@ namespace lms::scanner
             }
         }
 
-        bool fetchNextTrackIdRange(db::Session& session, db::TrackId& lastRetrievedTrackId, db::IdRange<db::TrackId>& trackIdRange)
+        bool fetchNextTrackIdRange(db::ISession& session, db::TrackId& lastRetrievedTrackId, db::IdRange<db::TrackId>& trackIdRange)
         {
             constexpr std::size_t readBatchSize{ 100 };
 

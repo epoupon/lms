@@ -62,7 +62,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackListEntry>(track.get(), trackList1.get());
+            TrackListEntry::create(session, track.get(), trackList1.get());
         }
 
         {
@@ -88,10 +88,10 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackListEntry>(track3.get(), trackList.get());
-            session.create<TrackListEntry>(track1.get(), trackList.get());
-            session.create<TrackListEntry>(track3.get(), trackList.get());
-            session.create<TrackListEntry>(track2.get(), otherTrackList.get());
+            TrackListEntry::create(session, track3.get(), trackList.get());
+            TrackListEntry::create(session, track1.get(), trackList.get());
+            TrackListEntry::create(session, track3.get(), trackList.get());
+            TrackListEntry::create(session, track2.get(), otherTrackList.get());
         }
 
         {
@@ -128,9 +128,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackListEntry>(track2.get(), trackList.get());
-            session.create<TrackListEntry>(track1.get(), trackList.get());
-            session.create<TrackListEntry>(track2.get(), trackList.get());
+            TrackListEntry::create(session, track2.get(), trackList.get());
+            TrackListEntry::create(session, track1.get(), trackList.get());
+            TrackListEntry::create(session, track2.get(), trackList.get());
         }
 
         {
@@ -203,7 +203,7 @@ namespace lms::db::tests
             tracks.emplace_back(session);
 
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackListEntry>(tracks.back().get(), trackList.get());
+            TrackListEntry::create(session, tracks.back().get(), trackList.get());
         }
 
         {
@@ -230,8 +230,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackListEntry>(track1.get(), trackList1.get());
-            session.create<TrackListEntry>(track2.get(), trackList2.get());
+            TrackListEntry::create(session, track1.get(), trackList1.get());
+            TrackListEntry::create(session, track2.get(), trackList2.get());
             track2.get().modify()->setMediaLibrary(library.get());
         }
 
@@ -271,11 +271,11 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackListEntry>(track1.get(), trackList1.get());
+            TrackListEntry::create(session, track1.get(), trackList1.get());
             release1.get().modify()->addReleaseType(releaseType1.get());
             track1.get().modify()->setRelease(release1.get());
 
-            session.create<TrackListEntry>(track2.get(), trackList2.get());
+            TrackListEntry::create(session, track2.get(), trackList2.get());
             release2.get().modify()->addReleaseType(releaseType2.get());
             track2.get().modify()->setRelease(release2.get());
         }
@@ -319,7 +319,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            session.create<TrackListEntry>(track.get(), trackList1.get());
+            TrackListEntry::create(session, track.get(), trackList1.get());
             cluster.get().modify()->addTrack(track.get());
         }
 
@@ -340,7 +340,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackListEntry>(track1.get(), trackList.get());
+            TrackListEntry::create(session, track1.get(), trackList.get());
         }
 
         {
@@ -352,7 +352,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackListEntry>(track2.get(), trackList.get());
+            TrackListEntry::create(session, track2.get(), trackList.get());
         }
 
         {
@@ -379,8 +379,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            session.create<TrackListEntry>(track1.get(), trackList.get());
-            session.create<TrackListEntry>(track2.get(), trackList.get());
+            TrackListEntry::create(session, track1.get(), trackList.get());
+            TrackListEntry::create(session, track2.get(), trackList.get());
         }
 
         {

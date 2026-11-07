@@ -24,7 +24,6 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/AuthToken.hpp"
 #include "database/objects/Genre.hpp"
@@ -35,6 +34,7 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/UIState.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/EnumSetTraits.hpp"
 #include "traits/IdTypeTraits.hpp"
@@ -49,49 +49,55 @@ namespace lms::db
     {
     }
 
-    User::pointer User::create(Session& session, std::string_view loginName)
+    User::pointer User::create(ISession& session, std::string_view loginName)
     {
-        return session.getDboSession()->add(std::unique_ptr<User>{ new User{ loginName } });
+        return utils::addObject(session, std::unique_ptr<User>{ new User{ loginName } });
     }
 
-    std::size_t User::getCount(Session& session)
+    std::size_t User::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM user"));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM user"));
     }
 
-    std::vector<UserId> User::find(Session& session, const FindParameters& params)
+    std::vector<UserId> User::find(ISession& session, const FindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<UserId>("SELECT id FROM user") };
+        auto query{ getDboSession(session)->query<UserId>("SELECT id FROM user") };
 
         return utils::execRangeQuery<UserId>(query, params.range);
     }
 
-    void User::find(Session& session, const FindParameters& params, const std::function<void(const User::pointer&)>& func)
+    void User::find(ISession& session, const FindParameters& params, const std::function<void(const User::pointer&)>& func)
     {
-        auto query{ session.getDboSession()->find<User>() };
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->find<User>() };
 
         return utils::forEachQueryRangeResult(query, params.range, func);
     }
 
-    User::pointer User::findDemoUser(Session& session)
+    User::pointer User::findDemoUser(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<User>>("SELECT u from user u").where("u.type = ?").bind(UserType::DEMO));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<User>>("SELECT u from user u").where("u.type = ?").bind(UserType::DEMO));
     }
 
-    User::pointer User::find(Session& session, UserId id)
+    User::pointer User::find(ISession& session, UserId id)
     {
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<User>>("SELECT u from user u").where("u.id = ?").bind(id));
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<User>>("SELECT u from user u").where("u.id = ?").bind(id));
     }
 
-    User::pointer User::find(Session& session, std::string_view name)
+    User::pointer User::find(ISession& session, std::string_view name)
     {
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<User>>("SELECT u from user u").where("u.login_name = ?").bind(name));
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<User>>("SELECT u from user u").where("u.login_name = ?").bind(name));
     }
 
     void User::setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate)

@@ -30,10 +30,10 @@
 namespace lms::db
 {
     class Artist;
+    class ISession;
     class ReleaseArtistLink;
     class TrackArtistLink;
     class User;
-    class Session;
 } // namespace lms::db
 
 namespace lms::api::subsonic

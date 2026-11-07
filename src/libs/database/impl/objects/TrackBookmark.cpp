@@ -21,7 +21,6 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "database/Session.hpp"
 #include "database/objects/Genre.hpp"
 #include "database/objects/Grouping.hpp"
 #include "database/objects/Language.hpp"
@@ -29,6 +28,7 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -42,39 +42,39 @@ namespace lms::db
     {
     }
 
-    TrackBookmark::pointer TrackBookmark::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track)
+    TrackBookmark::pointer TrackBookmark::create(ISession& session, ObjectPtr<User> user, ObjectPtr<Track> track)
     {
-        return session.getDboSession()->add(std::unique_ptr<TrackBookmark>{ new TrackBookmark{ user, track } });
+        return utils::addObject(session, std::unique_ptr<TrackBookmark>{ new TrackBookmark{ user, track } });
     }
 
-    std::size_t TrackBookmark::getCount(Session& session)
+    std::size_t TrackBookmark::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_bookmark"));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_bookmark"));
     }
 
-    std::vector<TrackBookmarkId> TrackBookmark::find(Session& session, UserId userId, std::optional<Range> range)
+    std::vector<TrackBookmarkId> TrackBookmark::find(ISession& session, UserId userId, std::optional<Range> range)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<TrackBookmarkId>("SELECT id from track_bookmark").where("user_id = ?").bind(userId) };
+        auto query{ getDboSession(session)->query<TrackBookmarkId>("SELECT id from track_bookmark").where("user_id = ?").bind(userId) };
 
         return utils::execRangeQuery<TrackBookmarkId>(query, range);
     }
 
-    TrackBookmark::pointer TrackBookmark::find(Session& session, UserId userId, TrackId trackId)
+    TrackBookmark::pointer TrackBookmark::find(ISession& session, UserId userId, TrackId trackId)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackBookmark>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<TrackBookmark>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId));
     }
 
-    TrackBookmark::pointer TrackBookmark::find(Session& session, TrackBookmarkId id)
+    TrackBookmark::pointer TrackBookmark::find(ISession& session, TrackBookmarkId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackBookmark>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<TrackBookmark>().where("id = ?").bind(id));
     }
 
 } // namespace lms::db

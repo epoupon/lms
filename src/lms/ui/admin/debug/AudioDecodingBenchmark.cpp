@@ -36,7 +36,7 @@
 #include "core/String.hpp"
 #include "core/media/Codec.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/FilterExpr.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/Types.hpp"
@@ -69,7 +69,7 @@ namespace lms::ui
             std::size_t bitrate{};
         };
 
-        std::vector<TrackEntry> pickTracksForCodec(db::Session& session, core::media::Codec codec)
+        std::vector<TrackEntry> pickTracksForCodec(db::ISession& session, core::media::Codec codec)
         {
             auto transaction{ session.createReadTransaction() };
 

@@ -24,7 +24,7 @@
 #include <Wt/WPushButton.h>
 
 #include "core/String.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/ScanSettings.hpp"
 #include "database/objects/Track.hpp"

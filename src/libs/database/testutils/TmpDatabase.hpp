@@ -27,7 +27,7 @@
 namespace lms::db
 {
     class IDb;
-    class Session;
+    class ISession;
 } // namespace lms::db
 
 // No test framework dependency: also used by benchmarks, which are built without tests
@@ -54,8 +54,8 @@ namespace lms::db::tests
     };
 
     // The caller must hold a write transaction
-    void executeStatement(Session& session, std::string_view statement);
+    void executeStatement(ISession& session, std::string_view statement);
 
     // The caller must hold a read transaction
-    bool areAllTablesEmpty(Session& session);
+    bool areAllTablesEmpty(ISession& session);
 } // namespace lms::db::tests

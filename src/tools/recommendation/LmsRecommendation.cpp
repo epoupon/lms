@@ -33,7 +33,7 @@
 #include "core/SystemPaths.hpp"
 #include "core/UUID.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
@@ -44,7 +44,7 @@
 
 namespace lms
 {
-    void dumpTracksRecommendation(db::Session& session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxCount)
+    void dumpTracksRecommendation(db::ISession& session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxCount)
     {
         std::vector<db::TrackId> trackIds;
 
@@ -90,7 +90,7 @@ namespace lms
         }
     }
 
-    void dumpReleasesRecommendation(db::Session& session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxCount)
+    void dumpReleasesRecommendation(db::ISession& session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxCount)
     {
         std::vector<db::ReleaseId> releaseIds;
 
@@ -132,7 +132,7 @@ namespace lms
         }
     }
 
-    void dumpArtistsRecommendation(db::Session& session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxCount)
+    void dumpArtistsRecommendation(db::ISession& session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxCount)
     {
         std::vector<db::ArtistId> artistIds;
 
@@ -168,7 +168,7 @@ namespace lms
     }
 
     void dumpRandomTracksRecommendation(
-        db::Session& session,
+        db::ISession& session,
         recommendation::IRecommendationService& recommendationService,
         std::size_t randomTrackCount,
         unsigned seed,
@@ -234,7 +234,7 @@ namespace lms
     }
 
     void dumpRandomReleasesRecommendation(
-        db::Session& session,
+        db::ISession& session,
         recommendation::IRecommendationService& recommendationService,
         std::size_t randomReleaseCount,
         unsigned seed,
@@ -295,7 +295,7 @@ namespace lms
     }
 
     void dumpRandomArtistsRecommendation(
-        db::Session& session,
+        db::ISession& session,
         recommendation::IRecommendationService& recommendationService,
         std::size_t randomArtistCount,
         unsigned seed,
@@ -350,7 +350,7 @@ namespace lms
     }
 
     void dumpTrackPaths(
-        db::Session& session,
+        db::ISession& session,
         recommendation::IRecommendationService& recommendationService,
         std::string_view fromName,
         std::string_view toName,
@@ -482,7 +482,7 @@ int main(int argc, char* argv[])
         core::Service<core::IConfig> config{ core::createConfig(vm["conf"].as<std::string>()) };
 
         auto db{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db") };
-        db::Session session{ *db };
+        const auto session{ db->createSession() };
 
         const auto recommendationService{ recommendation::createRecommendationService(*db) };
 
@@ -498,25 +498,25 @@ int main(int argc, char* argv[])
         unsigned maxCount{ vm["max"].as<unsigned>() };
 
         if (vm.count("track"))
-            dumpTracksRecommendation(session, *recommendationService, vm["track"].as<std::string>(), maxCount);
+            dumpTracksRecommendation(*session, *recommendationService, vm["track"].as<std::string>(), maxCount);
 
         if (vm.count("release"))
-            dumpReleasesRecommendation(session, *recommendationService, vm["release"].as<std::string>(), maxCount);
+            dumpReleasesRecommendation(*session, *recommendationService, vm["release"].as<std::string>(), maxCount);
 
         if (vm.count("artist"))
-            dumpArtistsRecommendation(session, *recommendationService, vm["artist"].as<std::string>(), maxCount);
+            dumpArtistsRecommendation(*session, *recommendationService, vm["artist"].as<std::string>(), maxCount);
 
         if (vm.count("track-path-from") && vm.count("track-path-to"))
-            dumpTrackPaths(session, *recommendationService, vm["track-path-from"].as<std::string>(), vm["track-path-to"].as<std::string>(), maxCount);
+            dumpTrackPaths(*session, *recommendationService, vm["track-path-from"].as<std::string>(), vm["track-path-to"].as<std::string>(), maxCount);
 
         if (vm.count("random-tracks"))
-            dumpRandomTracksRecommendation(session, *recommendationService, vm["random-tracks"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
+            dumpRandomTracksRecommendation(*session, *recommendationService, vm["random-tracks"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
 
         if (vm.count("random-releases"))
-            dumpRandomReleasesRecommendation(session, *recommendationService, vm["random-releases"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
+            dumpRandomReleasesRecommendation(*session, *recommendationService, vm["random-releases"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
 
         if (vm.count("random-artists"))
-            dumpRandomArtistsRecommendation(session, *recommendationService, vm["random-artists"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
+            dumpRandomArtistsRecommendation(*session, *recommendationService, vm["random-artists"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
     }
     catch (std::exception& e)
     {

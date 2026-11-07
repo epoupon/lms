@@ -23,7 +23,7 @@
 #include <Wt/WDateTime.h>
 
 #include "core/ILogger.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Medium.hpp"
 #include "database/objects/Release.hpp"

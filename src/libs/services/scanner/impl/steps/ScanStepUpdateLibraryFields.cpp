@@ -20,7 +20,7 @@
 #include "ScanStepUpdateLibraryFields.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/MediaLibrary.hpp"
 
@@ -54,7 +54,7 @@ namespace lms::scanner
 
     void ScanStepUpdateLibraryFields::processDirectory(ScanContext& context, const MediaLibraryInfo& mediaLibrary)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
 
         constexpr std::size_t batchSize = 100;
 

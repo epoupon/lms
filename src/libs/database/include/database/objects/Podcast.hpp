@@ -20,6 +20,7 @@
 #pragma once
 
 #include <functional>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -34,8 +35,8 @@
 namespace lms::db
 {
     class Artwork;
+    class ISession;
     class PodcastEpisode;
-    class Session;
 
     class Podcast final : public Object<Podcast, PodcastId>
     {
@@ -43,10 +44,13 @@ namespace lms::db
         static const std::size_t maxMediaLength{ 64 };
 
         Podcast() = default;
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, PodcastId id);
-        static pointer find(Session& session, std::string_view url);
-        static void find(Session& session, std::function<void(const pointer&)> func);
+
+        static pointer create(ISession& session, std::string_view url);
+        static void destroy(ISession& session, std::span<const PodcastId> ids);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, PodcastId id);
+        static pointer find(ISession& session, std::string_view url);
+        static void find(ISession& session, std::function<void(const pointer&)> func);
 
         // getters
         std::string_view getUrl() const { return _url; }
@@ -116,9 +120,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         Podcast(std::string_view url);
-        static pointer create(Session& session, std::string_view url);
 
         std::string _url;
 

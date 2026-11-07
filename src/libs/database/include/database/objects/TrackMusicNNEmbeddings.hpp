@@ -33,7 +33,7 @@ LMS_DECLARE_IDTYPE(TrackMusicNNEmbeddingsId)
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
     class Track;
 
     class TrackMusicNNEmbeddings final : public Object<TrackMusicNNEmbeddings, TrackMusicNNEmbeddingsId>
@@ -41,13 +41,15 @@ namespace lms::db
     public:
         TrackMusicNNEmbeddings() = default;
 
+        static pointer create(ISession& session, ObjectPtr<Track> track);
+
         // Find utilities
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackMusicNNEmbeddingsId id);
-        static pointer find(Session& session, TrackId trackId);
-        static std::vector<TrackMusicNNEmbeddingsId> find(Session& session, std::optional<Range> range = std::nullopt);
-        static void find(Session& session, std::function<void(const pointer&)> func);
-        static void removeAll(Session& session);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, TrackMusicNNEmbeddingsId id);
+        static pointer find(ISession& session, TrackId trackId);
+        static std::vector<TrackMusicNNEmbeddingsId> find(ISession& session, std::optional<Range> range = std::nullopt);
+        static void find(ISession& session, std::function<void(const pointer&)> func);
+        static void removeAll(ISession& session);
 
         // Accessors
         std::span<const std::byte> getData() const;
@@ -64,9 +66,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         TrackMusicNNEmbeddings(ObjectPtr<Track> track);
-        static pointer create(Session& session, ObjectPtr<Track> track);
 
         std::vector<unsigned char> _data;
         Wt::Dbo::ptr<Track> _track;

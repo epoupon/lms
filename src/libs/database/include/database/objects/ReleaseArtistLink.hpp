@@ -35,20 +35,22 @@ LMS_DECLARE_IDTYPE(ReleaseArtistLinkId)
 namespace lms::db
 {
     class Artist;
-    class Session;
+    class ISession;
     class Release;
 
     class ReleaseArtistLink final : public Object<ReleaseArtistLink, ReleaseArtistLinkId>
     {
     public:
         ReleaseArtistLink() = default;
+
+        static pointer create(ISession& session, const ObjectPtr<Release>& release, const ObjectPtr<Artist>& artist, bool artistMBIDMatched);
         ReleaseArtistLink(const ObjectPtr<Release>& release, const ObjectPtr<Artist>& artist, bool artistMBIDMatched);
 
-        static pointer find(Session& session, ReleaseArtistLinkId linkId);
-        static std::size_t getCount(Session& session);
+        static pointer find(ISession& session, ReleaseArtistLinkId linkId);
+        static std::size_t getCount(ISession& session);
 
-        static void findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const pointer&)>& func);
-        static void findWithArtistNameAmbiguity(Session& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func);
+        static void findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const pointer&)>& func);
+        static void findWithArtistNameAmbiguity(ISession& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func);
 
         // accessors
         ObjectPtr<Release> getRelease() const { return _release; }
@@ -75,9 +77,6 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
-        static pointer create(Session& session, const ObjectPtr<Release>& release, const ObjectPtr<Artist>& artist, bool artistMBIDMatched);
-
         TrackArtistLinkType _type{ TrackArtistLinkType::Artist };
         std::string _subType;
         std::string _artistName;     // as it was in the tags

@@ -25,7 +25,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 
     // Singleton row holding server-level metadata (not tied to any particular schema version)
     class ServerInfo
@@ -35,8 +35,8 @@ namespace lms::db
 
         ServerInfo() = default;
 
-        static pointer getOrCreate(Session& session);
-        static pointer get(Session& session);
+        static pointer getOrCreate(ISession& session);
+        static pointer get(ISession& session);
 
         core::UUID getInstanceId() const { return _instanceId; }
 

@@ -40,19 +40,19 @@ namespace lms::db::tests
         using ScopedRatedTrack = ScopedEntity<db::RatedTrack>;
         using ScopedTrackFeedback = ScopedEntity<db::TrackFeedback>;
 
-        std::vector<TrackId> findTrackIds(Session& session, const FilterExpr& expr, UserId user = {})
+        std::vector<TrackId> findTrackIds(ISession& session, const FilterExpr& expr, UserId user = {})
         {
             auto transaction{ session.createReadTransaction() };
             return Track::findIds(session, Track::FindParameters{}.setFilter(expr, user).setSortMethod(TrackSortMethod::Id));
         }
 
-        std::vector<ReleaseId> findReleaseIds(Session& session, const FilterExpr& expr, UserId user = {})
+        std::vector<ReleaseId> findReleaseIds(ISession& session, const FilterExpr& expr, UserId user = {})
         {
             auto transaction{ session.createReadTransaction() };
             return Release::findIds(session, Release::FindParameters{}.setFilter(expr, user).setSortMethod(ReleaseSortMethod::Id));
         }
 
-        std::vector<ArtistId> findArtistIds(Session& session, const FilterExpr& expr, UserId user = {})
+        std::vector<ArtistId> findArtistIds(ISession& session, const FilterExpr& expr, UserId user = {})
         {
             auto transaction{ session.createReadTransaction() };
             return Artist::findIds(session, Artist::FindParameters{}.setFilter(expr, user).setSortMethod(ArtistSortMethod::Id));
@@ -219,10 +219,10 @@ namespace lms::db::tests
             trackMetal.get().modify()->setGenres(std::array{ metal.get() });
             trackMetal.get().modify()->setRelease(releaseMetal.get());
             trackNone.get().modify()->setRelease(releaseNone.get());
-            session.create<TrackArtistLink>(trackRock.get(), artistRock.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackRockJazz.get(), artistRock.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackJazz.get(), artistJazz.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackMetal.get(), artistMetal.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackRock.get(), artistRock.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackRockJazz.get(), artistRock.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackJazz.get(), artistJazz.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackMetal.get(), artistMetal.get(), TrackArtistLinkType::Artist);
         }
 
         const FilterExpr isRock{ FilterExpr::equal(rock.getId()) };
@@ -269,8 +269,8 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
             release.get().modify()->addLabel(label.get());
             trackWithLabel.get().modify()->setRelease(release.get());
-            session.create<TrackArtistLink>(trackWithLabel.get(), artistWithLabel.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackWithoutRelease.get(), artistWithoutRelease.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackWithLabel.get(), artistWithLabel.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackWithoutRelease.get(), artistWithoutRelease.get(), TrackArtistLinkType::Artist);
         }
 
         const FilterExpr hasLabel{ FilterExpr::equal(label.getId()) };
@@ -490,9 +490,9 @@ namespace lms::db::tests
             trackPop.get().modify()->setGenres(std::array{ pop.get() });
             otherTrackRock.get().modify()->setRelease(otherRelease.get());
             otherTrackRock.get().modify()->setGenres(std::array{ rock.get() });
-            session.create<TrackArtistLink>(trackRock.get(), rockArtist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackPop.get(), popArtist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(otherTrackRock.get(), otherArtist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackRock.get(), rockArtist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackPop.get(), popArtist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, otherTrackRock.get(), otherArtist.get(), TrackArtistLinkType::Artist);
         }
 
         const FilterExpr hasLabel{ FilterExpr::equal(label.getId()) };
@@ -562,8 +562,8 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
             track.get().modify()->setGenres(std::array{ rock.get() });
             track.get().modify()->setRelease(release.get());
-            session.create<TrackArtistLink>(track.get(), trackArtist.get(), TrackArtistLinkType::Artist);
-            session.create<ReleaseArtistLink>(release.get(), releaseArtist.get(), false);
+            TrackArtistLink::create(session, track.get(), trackArtist.get(), TrackArtistLinkType::Artist);
+            ReleaseArtistLink::create(session, release.get(), releaseArtist.get(), false);
         }
 
         auto findArtistIds{ [&](Artist::FindParameters params) {
@@ -592,9 +592,9 @@ namespace lms::db::tests
             trackInLibrary1.get().modify()->setMediaLibrary(library1.get());
             trackInLibrary2.get().modify()->setMediaLibrary(library2.get());
             trackInLibrary2.get().modify()->setRelease(release.get());
-            session.create<TrackArtistLink>(trackInLibrary1.get(), artist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(trackInLibrary2.get(), artist.get(), TrackArtistLinkType::Composer);
-            session.create<ReleaseArtistLink>(release.get(), releaseArtist.get(), false);
+            TrackArtistLink::create(session, trackInLibrary1.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackInLibrary2.get(), artist.get(), TrackArtistLinkType::Composer);
+            ReleaseArtistLink::create(session, release.get(), releaseArtist.get(), false);
         }
 
         auto findArtistIds{ [&](MediaLibraryId library, TrackArtistLinkType linkType) {
@@ -639,21 +639,21 @@ namespace lms::db::tests
 
             // artistA: linked to a 2020 track, and release artist of a 2022 release
             setUpTrack(trackA.get(), date2020);
-            session.create<TrackArtistLink>(trackA.get(), artistA.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackA.get(), artistA.get(), TrackArtistLinkType::Artist);
 
             setUpTrack(trackB.get(), date2022);
             trackB.get().modify()->setRelease(releaseB.get());
-            session.create<TrackArtistLink>(trackB.get(), artistC.get(), TrackArtistLinkType::Artist);
-            session.create<ReleaseArtistLink>(releaseB.get(), artistA.get(), false);
+            TrackArtistLink::create(session, trackB.get(), artistC.get(), TrackArtistLinkType::Artist);
+            ReleaseArtistLink::create(session, releaseB.get(), artistA.get(), false);
 
             // artistV: release artist only
             setUpTrack(trackV.get(), date2021);
             trackV.get().modify()->setRelease(releaseV.get());
-            session.create<TrackArtistLink>(trackV.get(), artistD.get(), TrackArtistLinkType::Artist);
-            session.create<ReleaseArtistLink>(releaseV.get(), artistV.get(), false);
+            TrackArtistLink::create(session, trackV.get(), artistD.get(), TrackArtistLinkType::Artist);
+            ReleaseArtistLink::create(session, releaseV.get(), artistV.get(), false);
 
             auto star{ [&](Artist::pointer artist, const Wt::WDateTime& dateTime) {
-                auto feedback{ session.create<ArtistFeedback>(artist, user.get()) };
+                auto feedback{ ArtistFeedback::create(session, artist, user.get()) };
                 feedback.modify()->setValue(FeedbackValue::Loved);
                 feedback.modify()->setDateTime(dateTime);
             } };
@@ -691,7 +691,7 @@ namespace lms::db::tests
                 track.modify()->setMediaLibrary(library);
                 track.modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ addedYear, 1, 1 } });
                 track.modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ writtenYear, 1, 1 } });
-                session.create<TrackArtistLink>(track, artist, TrackArtistLinkType::Artist);
+                TrackArtistLink::create(session, track, artist, TrackArtistLinkType::Artist);
             } };
 
             // artistX was added to library1 after artistY, but long before to library2, where it was also modified later
@@ -724,9 +724,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
             track.get().modify()->setGenres(std::array{ rock.get() });
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Artist);
-            session.create<TrackArtistLink>(track.get(), artist.get(), TrackArtistLinkType::Composer);
-            session.create<TrackArtistLink>(otherTrack.get(), otherArtist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Composer);
+            TrackArtistLink::create(session, otherTrack.get(), otherArtist.get(), TrackArtistLinkType::Artist);
         }
 
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Wt::WDateTime{ Wt::WDate{ 2020, 1, 1 } } };

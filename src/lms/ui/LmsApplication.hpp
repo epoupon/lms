@@ -39,7 +39,7 @@
 namespace lms::db
 {
     class IDb;
-    class Session;
+    class ISession;
     class User;
 } // namespace lms::db
 
@@ -66,7 +66,7 @@ namespace lms::ui
         // Session application data
         std::shared_ptr<ArtworkResource> getArtworkResource() { return _artworkResource; }
         db::IDb& getDb();
-        db::Session& getDbSession(); // always thread safe
+        db::ISession& getDbSession(); // always thread safe
 
         db::ObjectPtr<db::User> getUser();
         db::UserId getUserId() const;

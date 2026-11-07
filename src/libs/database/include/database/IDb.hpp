@@ -28,7 +28,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
     class IDb
     {
     public:
@@ -37,7 +37,8 @@ namespace lms::db
 
         virtual ~IDb() = default;
 
-        virtual Session& getTLSSession() = 0;
+        virtual ISession& getTLSSession() = 0;
+        virtual std::unique_ptr<ISession> createSession() = 0;
 
         // The methods below open their own transactions: none must be open on the calling thread
 

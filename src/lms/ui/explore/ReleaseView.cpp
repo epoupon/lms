@@ -34,7 +34,7 @@
 #include "core/String.hpp"
 #include "core/Utils.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"

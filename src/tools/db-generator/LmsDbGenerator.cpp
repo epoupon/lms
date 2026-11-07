@@ -37,7 +37,7 @@
 
 #include "audio/MusicNNEmbeddings.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Genre.hpp"
@@ -78,21 +78,21 @@ namespace lms
 
     struct GenerationContext
     {
-        db::Session& session;
+        db::ISession& session;
         std::vector<db::MediaLibrary::pointer> mediaLibraries;
         std::vector<db::Genre::pointer> genres;
         std::vector<db::Grouping::pointer> groupings;
         std::vector<db::Language::pointer> languages;
         std::vector<db::Mood::pointer> moods;
-        GenerationContext(db::Session& _session)
+        GenerationContext(db::ISession& _session)
             : session{ _session } {}
     };
 
-    db::Artist::pointer generateArtist(db::Session& session)
+    db::Artist::pointer generateArtist(db::ISession& session)
     {
         const core::UUID artistMBID{ core::UUID::generate() };
         const std::string artistName{ "Artist-" + core::UUID::generate().toString() };
-        return session.create<db::Artist>(artistName, artistMBID);
+        return db::Artist::create(session, artistName, artistMBID);
     }
 
     void generateRelease(const GeneratorParameters& params, GenerationContext& context)
@@ -101,8 +101,8 @@ namespace lms
 
         const core::UUID releaseMBID{ core::UUID::generate() };
         const std::string releaseName{ "Release-" + core::UUID::generate().toString() };
-        Release::pointer release{ context.session.create<Release>(releaseName, releaseMBID) };
-        Medium::pointer medium{ context.session.create<Medium>(release) };
+        Release::pointer release{ Release::create(context.session, releaseName, releaseMBID) };
+        Medium::pointer medium{ Medium::create(context.session, release) };
         medium.modify()->setTrackCount(params.trackCountPerRelease);
 
         Artist::pointer artist{ generateArtist(context.session) };
@@ -113,11 +113,11 @@ namespace lms
 
         std::vector<TrackEmbeddedImage::pointer> trackEmbeddedImages;
         for (std::size_t i{}; i < params.trackEmbeddedImagePerRelease; ++i)
-            trackEmbeddedImages.push_back(context.session.create<TrackEmbeddedImage>());
+            trackEmbeddedImages.push_back(TrackEmbeddedImage::create(context.session));
 
         for (std::size_t i{}; i < params.trackCountPerRelease; ++i)
         {
-            Track::pointer track{ context.session.create<Track>() };
+            Track::pointer track{ Track::create(context.session) };
 
             track.modify()->setName("Track-" + core::UUID::generate().toString());
             track.modify()->setMedium(medium);
@@ -129,11 +129,11 @@ namespace lms
             if (mediaLibrary)
                 track.modify()->setMediaLibrary(mediaLibrary);
 
-            context.session.create<TrackArtistLink>(track, artist, TrackArtistLinkType::Artist);
-            context.session.create<ReleaseArtistLink>(release, artist, false);
+            TrackArtistLink::create(context.session, track, artist, TrackArtistLinkType::Artist);
+            ReleaseArtistLink::create(context.session, release, artist, false);
 
             if (!trackEmbeddedImages.empty())
-                context.session.create<TrackEmbeddedImageLink>(track, *core::random::pickRandom(trackEmbeddedImages));
+                TrackEmbeddedImageLink::create(context.session, track, *core::random::pickRandom(trackEmbeddedImages));
 
             auto pickN = [](const auto& pool, std::size_t n) {
                 using T = typename std::decay_t<decltype(pool)>::value_type;
@@ -165,7 +165,7 @@ namespace lms
                     v = embeddingDist(core::random::getPseudoRandomGenerator());
                 std::vector<std::byte> blob(sizeof(audio::TrackMusicNNEmbeddings));
                 audio::trackMusicNNEmbeddingsToBlob(embeddings, blob);
-                TrackMusicNNEmbeddings::pointer entry{ context.session.create<TrackMusicNNEmbeddings>(track) };
+                TrackMusicNNEmbeddings::pointer entry{ TrackMusicNNEmbeddings::create(context.session, track) };
                 entry.modify()->setData(blob);
             }
         }
@@ -191,20 +191,20 @@ namespace lms
 
         // create some random media libraries
         for (std::size_t i{}; i < params.mediaLibraryCount; ++i)
-            context.mediaLibraries.push_back(context.session.create<db::MediaLibrary>("Library" + std::to_string(i), "/root" + std::to_string(i)));
+            context.mediaLibraries.push_back(db::MediaLibrary::create(context.session, "Library" + std::to_string(i), "/root" + std::to_string(i)));
 
         // create some random genres/groupings/languages/moods
         for (std::size_t i{}; i < params.genreCount; ++i)
-            context.genres.push_back(context.session.create<db::Genre>("Genre-" + core::UUID::generate().toString()));
+            context.genres.push_back(db::Genre::create(context.session, "Genre-" + core::UUID::generate().toString()));
 
         for (std::size_t i{}; i < params.groupingCount; ++i)
-            context.groupings.push_back(context.session.create<db::Grouping>("Grouping-" + core::UUID::generate().toString()));
+            context.groupings.push_back(db::Grouping::create(context.session, "Grouping-" + core::UUID::generate().toString()));
 
         for (std::size_t i{}; i < params.languageCount; ++i)
-            context.languages.push_back(context.session.create<db::Language>("Language-" + core::UUID::generate().toString()));
+            context.languages.push_back(db::Language::create(context.session, "Language-" + core::UUID::generate().toString()));
 
         for (std::size_t i{}; i < params.moodCount; ++i)
-            context.moods.push_back(context.session.create<db::Mood>("Mood-" + core::UUID::generate().toString()));
+            context.moods.push_back(db::Mood::create(context.session, "Mood-" + core::UUID::generate().toString()));
     }
 } // namespace lms
 
@@ -281,11 +281,11 @@ int main(int argc, char* argv[])
         auto db{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db") };
         db->prepare(db::RecommendationEngineType::Clusters);
 
-        db::Session session{ *db };
+        const auto session{ db->createSession() };
 
         std::cout << "Starting generation..." << std::endl;
 
-        GenerationContext genContext{ session };
+        GenerationContext genContext{ *session };
         prepareContext(genParams, genContext);
         generate(genParams, genContext);
 

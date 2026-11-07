@@ -25,11 +25,11 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfoId.hpp"
 #include "database/objects/Directory.hpp"
 
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
@@ -38,52 +38,57 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::ArtistInfo)
 
 namespace lms::db
 {
-    ArtistInfo::pointer ArtistInfo::create(Session& session)
+    ArtistInfo::pointer ArtistInfo::create(ISession& session)
     {
-        return session.getDboSession()->add(std::unique_ptr<ArtistInfo>{ new ArtistInfo{} });
+        return utils::addObject(session, std::unique_ptr<ArtistInfo>{ new ArtistInfo{} });
     }
 
-    std::size_t ArtistInfo::getCount(Session& session)
+    void ArtistInfo::destroy(ISession& session, std::span<const ArtistInfoId> ids)
     {
-        session.checkReadTransaction();
-
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM artist_info"));
+        utils::destroyObjects<ArtistInfo>(session, ids);
     }
 
-    ArtistInfo::pointer ArtistInfo::find(Session& session, const std::filesystem::path& p)
+    std::size_t ArtistInfo::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.absolute_file_path = ?").bind(p));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM artist_info"));
     }
 
-    ArtistInfo::pointer ArtistInfo::find(Session& session, ArtistInfoId id)
+    ArtistInfo::pointer ArtistInfo::find(ISession& session, const std::filesystem::path& p)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.absolute_file_path = ?").bind(p));
     }
 
-    void ArtistInfo::find(Session& session, ArtistId id, std::optional<Range> range, const std::function<void(const pointer&)>& func)
+    ArtistInfo::pointer ArtistInfo::find(ISession& session, ArtistInfoId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.artist_id = ?").bind(id) };
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.id = ?").bind(id));
+    }
+
+    void ArtistInfo::find(ISession& session, ArtistId id, std::optional<Range> range, const std::function<void(const pointer&)>& func)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.artist_id = ?").bind(id) };
         utils::forEachQueryRangeResult(query, range, [&](const ArtistInfo::pointer& entry) {
             func(entry);
         });
     }
 
-    void ArtistInfo::find(Session& session, ArtistId id, const std::function<void(const pointer&)>& func)
+    void ArtistInfo::find(ISession& session, ArtistId id, const std::function<void(const pointer&)>& func)
     {
         find(session, id, std::nullopt, func);
     }
 
-    void ArtistInfo::find(Session& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func)
+    void ArtistInfo::find(ISession& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i from artist_info a_i").orderBy("a_i.id").where("a_i.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i from artist_info a_i").orderBy("a_i.id").where("a_i.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
         utils::forEachQueryResult(query, [&](const ArtistInfo::pointer& entry) {
             func(entry);
@@ -91,11 +96,11 @@ namespace lms::db
         });
     }
 
-    void ArtistInfo::findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const pointer&)>& func)
+    void ArtistInfo::findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const pointer&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i FROM artist_info a_i") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i FROM artist_info a_i") };
         query.join("artist a ON a_i.artist_id = a.id");
         query.where("a_i.mbid_matched = FALSE");
         query.where("a_i.name <> a.name");
@@ -106,11 +111,11 @@ namespace lms::db
         });
     }
 
-    void ArtistInfo::findWithArtistNameAmbiguity(Session& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func)
+    void ArtistInfo::findWithArtistNameAmbiguity(ISession& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i FROM artist_info a_i") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i FROM artist_info a_i") };
         query.join("artist a ON a_i.artist_id = a.id");
         query.where("a_i.mbid_matched = FALSE");
         if (!allowArtistMBIDFallback)
@@ -130,11 +135,11 @@ namespace lms::db
         });
     }
 
-    void ArtistInfo::findAbsoluteFilePath(Session& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(ArtistInfoId artistInfoId, const std::filesystem::path& absoluteFilePath)>& func)
+    void ArtistInfo::findAbsoluteFilePath(ISession& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(ArtistInfoId artistInfoId, const std::filesystem::path& absoluteFilePath)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<std::tuple<ArtistInfoId, std::filesystem::path>>("SELECT a_i.id, a_i.absolute_file_path FROM artist_info a_i").orderBy("a_i.id").where("a_i.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+        auto query{ getDboSession(session)->query<std::tuple<ArtistInfoId, std::filesystem::path>>("SELECT a_i.id, a_i.absolute_file_path FROM artist_info a_i").orderBy("a_i.id").where("a_i.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
         utils::forEachQueryResult(query, [&](const auto& res) {
             func(std::get<0>(res), std::get<1>(res));

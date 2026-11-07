@@ -25,7 +25,7 @@
 
 #include "core/Random.hpp"
 #include "core/UUID.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Release.hpp"

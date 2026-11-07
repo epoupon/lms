@@ -25,7 +25,7 @@
 #include "core/ILogger.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/TrackLyrics.hpp"
 #include "services/scanner/ScanErrors.hpp"
@@ -69,7 +69,7 @@ namespace lms::scanner
 
         LyricsFileScanOperation::OperationResult LyricsFileScanOperation::processResult()
         {
-            db::Session& dbSession{ getDb().getTLSSession() };
+            db::ISession& dbSession{ getDb().getTLSSession() };
             db::TrackLyrics::pointer trackLyrics{ db::TrackLyrics::find(dbSession, getFilePath()) };
 
             if (!_parsedLyrics)
@@ -88,7 +88,7 @@ namespace lms::scanner
             const bool added{ !trackLyrics };
             if (!trackLyrics)
             {
-                trackLyrics = dbSession.create<db::TrackLyrics>();
+                trackLyrics = db::TrackLyrics::create(dbSession);
                 trackLyrics.modify()->setAbsoluteFilePath(getFilePath());
             }
 
@@ -140,7 +140,7 @@ namespace lms::scanner
 
     bool LyricsFileScanner::needsScan(const FileToScan& file) const
     {
-        db::Session& dbSession{ _db.getTLSSession() };
+        db::ISession& dbSession{ _db.getTLSSession() };
         auto transaction{ _db.getTLSSession().createReadTransaction() };
 
         const db::TrackLyrics::pointer lyrics{ db::TrackLyrics::find(dbSession, file.filePath) };

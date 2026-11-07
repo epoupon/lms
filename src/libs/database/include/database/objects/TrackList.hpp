@@ -41,9 +41,9 @@ namespace lms::db
     class Artist;
     class Cluster;
     class ClusterType;
+    class ISession;
     class PlayListFile;
     class Release;
-    class Session;
     class Track;
     class TrackListEntry;
     class User;
@@ -52,6 +52,8 @@ namespace lms::db
     {
     public:
         TrackList() = default;
+
+        static pointer create(ISession& session, std::string_view name, TrackListType type);
 
         enum class Visibility
         {
@@ -115,11 +117,11 @@ namespace lms::db
                 return *this;
             }
         };
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, std::string_view name, TrackListType type, UserId userId);
-        static pointer find(Session& session, TrackListId tracklistId);
-        static std::vector<TrackListId> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const TrackList::pointer&)>& func);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, std::string_view name, TrackListType type, UserId userId);
+        static pointer find(ISession& session, TrackListId tracklistId);
+        static std::vector<TrackListId> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackList::pointer&)>& func);
 
         // Accessors
         std::string_view getName() const { return _name; }
@@ -172,9 +174,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         TrackList(std::string_view name, TrackListType type);
-        static pointer create(Session& session, std::string_view name, TrackListType type);
 
         std::string _name;
         TrackListType _type{ TrackListType::PlayList };
@@ -191,6 +191,8 @@ namespace lms::db
     {
     public:
         TrackListEntry() = default;
+
+        static pointer create(ISession& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime = {});
 
         // find utility
         // Search utility
@@ -210,8 +212,8 @@ namespace lms::db
                 return *this;
             }
         };
-        static pointer getById(Session& session, TrackListEntryId id);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const TrackListEntry::pointer&)>& func);
+        static pointer getById(ISession& session, TrackListEntryId id);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackListEntry::pointer&)>& func);
 
         // Accessors
         TrackId getTrackId() const { return _track.id(); }
@@ -228,10 +230,8 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime);
         TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist);
-        static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime = {});
 
         Wt::WDateTime _dateTime; // optional date time
         Wt::Dbo::ptr<Track> _track;

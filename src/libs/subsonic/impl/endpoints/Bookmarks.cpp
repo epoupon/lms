@@ -19,7 +19,7 @@
 
 #include "Bookmarks.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/PlayQueue.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackBookmark.hpp"
@@ -68,7 +68,7 @@ namespace lms::api::subsonic
         // Replace any existing bookmark
         auto bookmark{ db::TrackBookmark::find(context.getDbSession(), context.getUser()->getId(), trackId) };
         if (!bookmark)
-            bookmark = context.getDbSession().create<db::TrackBookmark>(context.getUser(), track);
+            bookmark = db::TrackBookmark::create(context.getDbSession(), context.getUser(), track);
 
         bookmark.modify()->setOffset(std::chrono::milliseconds{ position });
         if (comment)
@@ -111,7 +111,7 @@ namespace lms::api::subsonic
             playQueue = db::PlayQueue::find(context.getDbSession(), context.getUser()->getId(), name);
             if (!playQueue)
             {
-                playQueue = context.getDbSession().create<db::PlayQueue>(context.getUser(), name);
+                playQueue = db::PlayQueue::create(context.getDbSession(), context.getUser(), name);
                 playQueue.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
             }
         }

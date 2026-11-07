@@ -31,7 +31,7 @@
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 #include "services/auth/IPasswordService.hpp"
 

@@ -32,7 +32,7 @@
 namespace lms::db
 {
     class Artist;
-    class Session;
+    class ISession;
     class User;
 
     class ArtistFeedback final : public Object<ArtistFeedback, ArtistFeedbackId>
@@ -40,10 +40,12 @@ namespace lms::db
     public:
         ArtistFeedback() = default;
 
+        static pointer create(ISession& session, ObjectPtr<Artist> artist, ObjectPtr<User> user);
+
         // Search utility
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ArtistFeedbackId id);
-        static pointer find(Session& session, ArtistId artistId, UserId userId);
+        static std::size_t getCount(ISession& session);
+        static pointer find(ISession& session, ArtistFeedbackId id);
+        static pointer find(ISession& session, ArtistId artistId, UserId userId);
 
         // Accessors
         ObjectPtr<Artist> getArtist() const { return _artist; }
@@ -66,9 +68,7 @@ namespace lms::db
         }
 
     private:
-        friend class Session;
         ArtistFeedback(ObjectPtr<Artist> artist, ObjectPtr<User> user);
-        static pointer create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user);
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };

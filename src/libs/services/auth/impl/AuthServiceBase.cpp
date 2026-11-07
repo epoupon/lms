@@ -21,7 +21,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 
 namespace lms::auth
@@ -35,7 +35,7 @@ namespace lms::auth
 
     UserId AuthServiceBase::getOrCreateUser(std::string_view loginName)
     {
-        Session& session{ getDbSession() };
+        ISession& session{ getDbSession() };
 
         User::pointer user;
 
@@ -55,7 +55,7 @@ namespace lms::auth
 
                 LMS_LOG(AUTH, DEBUG, "Creating user '" << loginName << "', admin = " << (type == UserType::ADMIN));
 
-                user = session.create<User>(loginName);
+                user = User::create(session, loginName);
                 user.modify()->setType(type);
             }
         }
@@ -65,7 +65,7 @@ namespace lms::auth
 
     void AuthServiceBase::onUserAuthenticated(UserId userId)
     {
-        Session& session{ getDbSession() };
+        ISession& session{ getDbSession() };
 
         // Update last login only if relevant (avoid hammering write accesses to the database)
         {
@@ -87,7 +87,7 @@ namespace lms::auth
         }
     }
 
-    Session& AuthServiceBase::getDbSession()
+    ISession& AuthServiceBase::getDbSession()
     {
         return _db.getTLSSession();
     }

@@ -23,7 +23,7 @@
 #include <Wt/WRandom.h>
 
 #include "core/ILogger.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/AuthToken.hpp"
 #include "database/objects/User.hpp"
 #include "services/auth/Types.hpp"
@@ -66,7 +66,7 @@ namespace lms::auth
     {
         const DomainParameters& params{ getDomainParameters(domain) };
 
-        db::Session& session{ getDbSession() };
+        db::ISession& session{ getDbSession() };
         const auto now{ Wt::WDateTime::currentDateTime() };
         const auto expiry{ params.tokenDuration ? now.addSecs(std::chrono::duration_cast<std::chrono::seconds>(params.tokenDuration.value()).count()) : Wt::WDateTime{} };
 
@@ -77,7 +77,7 @@ namespace lms::auth
             if (!user)
                 throw Exception{ "User deleted" };
 
-            const db::AuthToken::pointer authToken{ session.create<db::AuthToken>(domain.str(), token, expiry, params.tokenMaxUseCount, user) };
+            const db::AuthToken::pointer authToken{ db::AuthToken::create(session, domain.str(), token, expiry, params.tokenMaxUseCount, user) };
 
             LMS_LOG(UI, DEBUG, "Created auth token for user '" << user->getLoginName() << "', expiry = " << authToken->getExpiry().toString() << ", maxUseCount = " << (authToken->getMaxUseCount() ? std::to_string(*authToken->getMaxUseCount()) : "<unset>"));
 
@@ -100,7 +100,7 @@ namespace lms::auth
         if (token.empty())
             return std::nullopt;
 
-        db::Session& session{ getDbSession() };
+        db::ISession& session{ getDbSession() };
         auto transaction{ session.createWriteTransaction() };
 
         db::AuthToken::pointer authToken{ db::AuthToken::find(session, domain.str(), token) };
@@ -160,7 +160,7 @@ namespace lms::auth
 
     void AuthTokenService::visitAuthTokens(core::LiteralString domain, db::UserId userId, std::function<void(const AuthTokenInfo& info, std::string_view token)> visitor)
     {
-        db::Session& session{ getDbSession() };
+        db::ISession& session{ getDbSession() };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -174,7 +174,7 @@ namespace lms::auth
 
     void AuthTokenService::clearAuthTokens(core::LiteralString domain, db::UserId userId)
     {
-        db::Session& session{ getDbSession() };
+        db::ISession& session{ getDbSession() };
 
         {
             auto transaction{ session.createWriteTransaction() };
