@@ -25,6 +25,7 @@ add_executable(test-database
 	Movement.cpp
 	PlayListFile.cpp
 	Podcast.cpp
+	QueryProfiler.cpp
 	RatedArtist.cpp
 	RatedRelease.cpp
 	RatedTrack.cpp

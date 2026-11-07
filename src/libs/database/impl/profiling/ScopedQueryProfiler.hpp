@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <exception>
 #include <string>
 
 #include "core/Service.hpp"
@@ -57,6 +58,7 @@ namespace lms::db::utils
 
     private:
         IQueryProfiler* _recorder{};
+        const int _uncaughtExceptionCount{ std::uncaught_exceptions() };
         Wt::Dbo::Session* _session{};
         std::string _query;
         IQueryProfiler::Clock::time_point _start;

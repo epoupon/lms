@@ -18,6 +18,9 @@
  */
 
 #include <cassert>
+#include <exception>
+
+#include "core/ILogger.hpp"
 
 #include "profiling/QueryProfiler.hpp"
 #include "profiling/ScopedQueryProfiler.hpp"
@@ -26,12 +29,19 @@ namespace lms::db::utils
 {
     ScopedQueryProfiler::~ScopedQueryProfiler()
     {
-        if (_recorder)
-        {
-            if (_active)
-                _elapsed += IQueryProfiler::Clock::now() - _start;
+        if (!_recorder || std::uncaught_exceptions() != _uncaughtExceptionCount)
+            return;
 
+        if (_active)
+            _elapsed += IQueryProfiler::Clock::now() - _start;
+
+        try
+        {
             static_cast<QueryProfiler*>(_recorder)->recordQueryExecution(*_session, _query, _elapsed);
+        }
+        catch (const std::exception& e)
+        {
+            LMS_LOG(DB, ERROR, "Cannot record query execution: " << e.what());
         }
     }
 
