@@ -24,11 +24,12 @@
 
 #include "database/objects/ReleaseFeedback.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::ReleaseFeedbackBackendSync)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::ReleaseFeedbackBackendSync)
 
 namespace lms::db
 {

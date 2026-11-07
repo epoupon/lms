@@ -36,13 +36,14 @@
 #include "database/objects/TrackList.hpp"
 #include "database/objects/User.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::PlayListFile)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::PlayListFile)
 
 namespace lms::db
 {

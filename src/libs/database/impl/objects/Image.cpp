@@ -25,13 +25,14 @@
 #include "database/objects/Artist.hpp"
 #include "database/objects/Directory.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "objects/detail/Types.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Image)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Image)
 
 namespace lms::db
 {

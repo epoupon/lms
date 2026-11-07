@@ -32,12 +32,13 @@
 #include "database/objects/User.hpp"
 
 #include "JoinSet.hpp"
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "objects/FilterExprCompiler.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Listen)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Listen)
 
 namespace lms::db
 {

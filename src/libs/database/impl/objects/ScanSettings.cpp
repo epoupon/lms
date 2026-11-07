@@ -25,12 +25,13 @@
 #include "core/String.hpp"
 #include "database/objects/MediaLibrary.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::ScanSettings)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::ScanSettings)
 
 namespace lms::db
 {

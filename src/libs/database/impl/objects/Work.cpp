@@ -42,12 +42,13 @@
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 #include "database/objects/TrackLyrics.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/UUIDTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Work)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Work)
 
 namespace lms::db
 {

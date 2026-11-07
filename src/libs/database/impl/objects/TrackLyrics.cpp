@@ -31,12 +31,13 @@
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::TrackLyrics)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackLyrics)
 
 namespace lms::db
 {

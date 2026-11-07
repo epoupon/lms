@@ -19,50 +19,63 @@
 
 #pragma once
 
+#include <cstddef>
+
 #include <Wt/Dbo/ptr.h>
 
 #include "database/IdType.hpp"
 
 namespace lms::db
 {
-    class ObjectPtrBase
-    {
-    protected:
-        static void checkWriteTransaction(Wt::Dbo::Session& session);
-    };
-
+    // Members are defined in impl/ObjectPtrImpl.hpp and instantiated next to each entity
     template<typename T>
-    class ObjectPtr : public ObjectPtrBase
+    class ObjectPtr
     {
     public:
-        ObjectPtr() = default;
-        ObjectPtr(const Wt::Dbo::ptr<T>& obj)
-            : _obj{ obj } {}
-        ObjectPtr(Wt::Dbo::ptr<T>&& obj)
-            : _obj{ std::move(obj) } {}
-
-        const T* operator->() const { return _obj.get(); }
-        operator bool() const { return _obj.get(); }
-        bool operator!() const { return !_obj.get(); }
-        bool operator==(const ObjectPtr& other) const { return _obj == other._obj; }
-        bool operator!=(const ObjectPtr& other) const { return other._obj != _obj; }
-
-        auto modify()
+        class Mutator
         {
-            checkWriteTransaction(*_obj.session());
-            return _obj.modify();
-        }
+        public:
+            Mutator(const Mutator&) = delete;
+            Mutator& operator=(const Mutator&) = delete;
+            ~Mutator();
 
-        void remove()
-        {
-            checkWriteTransaction(*_obj.session());
-            _obj.remove();
-        }
+            T* operator->() const { return _obj; }
+
+        private:
+            friend class ObjectPtr;
+            explicit Mutator(const ObjectPtr& ptr);
+
+            const ObjectPtr& _ptr;
+            T* _obj;
+        };
+
+        ObjectPtr() noexcept;
+        ObjectPtr(const Wt::Dbo::ptr<T>& obj);
+        ObjectPtr(Wt::Dbo::ptr<T>&& obj) noexcept;
+        ObjectPtr(const ObjectPtr& other);
+        ObjectPtr(ObjectPtr&& other) noexcept;
+        ObjectPtr& operator=(const ObjectPtr& other);
+        ObjectPtr& operator=(ObjectPtr&& other) noexcept;
+        ~ObjectPtr();
+
+        const T* operator->() const;
+        operator bool() const;
+        bool operator!() const;
+        bool operator==(const ObjectPtr& other) const;
+        bool operator!=(const ObjectPtr& other) const;
+
+        Mutator modify();
+        void remove();
 
     private:
         template<typename, typename>
         friend class Object;
-        Wt::Dbo::ptr<T> _obj;
+
+        Wt::Dbo::ptr<T>& dboPtr();
+        const Wt::Dbo::ptr<T>& dboPtr() const;
+
+        // Holds a Wt::Dbo::ptr: an opaque buffer so that this class won't depend on the mapped class
+        alignas(void*) std::byte _storage[2 * sizeof(void*)];
     };
 
     template<typename T, typename ObjectIdType>
@@ -81,14 +94,11 @@ namespace lms::db
         typename Wt::Dbo::dbo_traits<T>::IdType id() const = delete;
 
     protected:
-        template<typename>
-        friend class ObjectPtr;
-
         // Can get raw dbo ptr only from Objects
         template<typename SomeObject>
-        static Wt::Dbo::ptr<SomeObject> getDboPtr(const ObjectPtr<SomeObject>& ptr)
+        static const Wt::Dbo::ptr<SomeObject>& getDboPtr(const ObjectPtr<SomeObject>& ptr)
         {
-            return ptr._obj;
+            return ptr.dboPtr();
         }
     };
 } // namespace lms::db

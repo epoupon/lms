@@ -42,12 +42,13 @@
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/Work.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Genre)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Genre)
 
 namespace lms::db
 {

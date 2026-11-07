@@ -47,6 +47,7 @@
 #include "database/objects/Work.hpp"
 
 #include "JoinSet.hpp"
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "detail/Types.hpp"
@@ -57,10 +58,10 @@
 #include "traits/StringViewTraits.hpp"
 #include "traits/UUIDTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Country)
-DBO_INSTANTIATE_TEMPLATES(lms::db::Label)
-DBO_INSTANTIATE_TEMPLATES(lms::db::Release)
-DBO_INSTANTIATE_TEMPLATES(lms::db::ReleaseType)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Country)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Label)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Release)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::ReleaseType)
 
 namespace lms::db
 {

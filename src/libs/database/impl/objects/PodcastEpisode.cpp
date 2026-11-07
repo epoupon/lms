@@ -25,13 +25,14 @@
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Podcast.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "detail/Types.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::PodcastEpisode)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::PodcastEpisode)
 
 namespace lms::db
 {

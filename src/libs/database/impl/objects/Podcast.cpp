@@ -25,12 +25,13 @@
 #include "database/objects/Artwork.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Podcast)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Podcast)
 
 namespace lms::db
 {

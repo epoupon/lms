@@ -34,14 +34,15 @@
 #include "database/objects/User.hpp"
 #include "database/objects/Work.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "objects/FilterExprCompiler.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::TrackList)
-DBO_INSTANTIATE_TEMPLATES(lms::db::TrackListEntry)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackList)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackListEntry)
 
 namespace lms::db
 {

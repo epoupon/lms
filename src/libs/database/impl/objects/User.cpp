@@ -34,13 +34,14 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/UIState.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/EnumSetTraits.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::User)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::User)
 
 namespace lms::db
 {

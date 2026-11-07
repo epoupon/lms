@@ -29,12 +29,13 @@
 #include "database/objects/ArtistInfoId.hpp"
 #include "database/objects/Directory.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::ArtistInfo)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::ArtistInfo)
 
 namespace lms::db
 {

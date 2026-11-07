@@ -36,6 +36,7 @@
 #include "database/objects/User.hpp"
 
 #include "JoinSet.hpp"
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "objects/FilterExprCompiler.hpp"
@@ -44,7 +45,7 @@
 #include "traits/StringViewTraits.hpp"
 #include "traits/UUIDTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Artist)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Artist)
 
 namespace lms::db
 {

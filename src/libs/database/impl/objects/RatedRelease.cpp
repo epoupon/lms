@@ -25,11 +25,12 @@
 #include "database/objects/Release.hpp"
 #include "database/objects/User.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::RatedRelease)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::RatedRelease)
 
 namespace lms::db
 {

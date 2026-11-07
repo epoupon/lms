@@ -48,6 +48,7 @@
 #include "database/objects/Work.hpp"
 
 #include "JoinSet.hpp"
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "objects/FilterExprCompiler.hpp"
@@ -58,7 +59,7 @@
 #include "traits/StringViewTraits.hpp"
 #include "traits/UUIDTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Track)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Track)
 
 namespace lms::db
 {

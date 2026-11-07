@@ -29,13 +29,14 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "detail/Types.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/ImageHashTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::TrackEmbeddedImageLink)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackEmbeddedImageLink)
 
 namespace lms::db
 {

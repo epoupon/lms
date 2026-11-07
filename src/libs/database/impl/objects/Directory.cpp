@@ -24,12 +24,13 @@
 #include "database/Types.hpp"
 #include "database/objects/MediaLibrary.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Directory)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Directory)
 
 namespace lms::db
 {

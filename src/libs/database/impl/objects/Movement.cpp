@@ -42,10 +42,11 @@
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 #include "database/objects/TrackLyrics.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Movement)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Movement)
 
 namespace lms::db
 {

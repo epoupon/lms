@@ -32,11 +32,12 @@
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::ReleaseArtistLink)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::ReleaseArtistLink)
 
 namespace lms::db
 {

@@ -24,12 +24,13 @@
 
 #include "database/objects/User.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::AuthToken)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::AuthToken)
 
 namespace lms::db
 {

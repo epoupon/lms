@@ -39,11 +39,12 @@
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/Work.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Medium);
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Medium)
 
 namespace lms::db
 {

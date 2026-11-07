@@ -29,13 +29,14 @@
 #include "database/objects/Mood.hpp"
 #include "database/objects/Track.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::MediaLibrary)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::MediaLibrary)
 
 namespace lms::db
 {

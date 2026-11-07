@@ -65,11 +65,16 @@ namespace lms::db
         return static_cast<Session&>(session).getDboSession();
     }
 
-    inline void checkWriteTransaction([[maybe_unused]] ISession& session)
+    inline void checkWriteTransaction([[maybe_unused]] const Wt::Dbo::Session& session)
     {
 #if LMS_CHECK_TRANSACTION_ACCESSES
-        TransactionChecker::checkWriteTransaction(*getDboSession(session));
+        TransactionChecker::checkWriteTransaction(session);
 #endif
+    }
+
+    inline void checkWriteTransaction(ISession& session)
+    {
+        checkWriteTransaction(*getDboSession(session));
     }
 
     inline void checkReadTransaction([[maybe_unused]] ISession& session)

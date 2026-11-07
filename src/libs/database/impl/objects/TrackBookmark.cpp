@@ -28,11 +28,12 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::TrackBookmark)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackBookmark)
 
 namespace lms::db
 {

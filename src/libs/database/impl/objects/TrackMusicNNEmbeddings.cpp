@@ -27,11 +27,12 @@
 #include "database/objects/Mood.hpp"
 #include "database/objects/Track.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::TrackMusicNNEmbeddings)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackMusicNNEmbeddings)
 
 namespace lms::db
 {

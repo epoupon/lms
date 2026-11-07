@@ -24,11 +24,12 @@
 
 #include "database/objects/TrackFeedback.hpp"
 
+#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::TrackFeedbackBackendSync)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackFeedbackBackendSync)
 
 namespace lms::db
 {
