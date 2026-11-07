@@ -178,7 +178,7 @@ namespace lms::scanner
         _ioService.setThreadCount(1);
 
         LMS_LOG(DBUPDATER, INFO, "Using " << _jobScheduler->getThreadCount() << " thread(s) for jobs");
-        _jobScheduler->setShouldAbortCallback([this]() { return _abortScan; });
+        _jobScheduler->setShouldAbortCallback([this]() { return _abortScan.load(); });
 
         std::size_t totalFileCount{};
         {

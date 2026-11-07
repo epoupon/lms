@@ -49,6 +49,6 @@ namespace lms::scanner
                 context.currentStepStats.totalElems = totalEntries;
                 _progressCallback(context.currentStepStats);
             },
-            [this] { return _abortScan; });
+            [this] { return _abortScan.load(); });
     }
 } // namespace lms::scanner

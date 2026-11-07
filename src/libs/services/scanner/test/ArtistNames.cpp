@@ -17,6 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <atomic>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -146,7 +147,7 @@ namespace lms::scanner::tests
             void reconcileArtists()
             {
                 const ScannerSettings settings;
-                bool abortScan{};
+                std::atomic<bool> abortScan{};
                 const FileScanners fileScanners;
                 const std::filesystem::path cachePath;
                 const std::unique_ptr<core::IJobScheduler> jobScheduler{ core::createJobScheduler("Scanner", 1) };

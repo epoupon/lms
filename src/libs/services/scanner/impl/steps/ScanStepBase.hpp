@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <functional>
 
 #include "IScanStep.hpp"
@@ -52,7 +53,7 @@ namespace lms::scanner
             const ScannerSettings& settings;
             const ScannerSettings* lastScanSettings{};
             ProgressCallback progressCallback;
-            bool& abortScan;
+            std::atomic<bool>& abortScan;
             db::IDb& db;
             const FileScanners& fileScanners;
             const std::filesystem::path& cachePath;
@@ -79,7 +80,7 @@ namespace lms::scanner
 
         const ScannerSettings& _settings;
         ProgressCallback _progressCallback;
-        bool& _abortScan;
+        std::atomic<bool>& _abortScan;
         db::IDb& _db;
 
     private:
