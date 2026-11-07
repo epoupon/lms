@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string_view>
-
 #include <Wt/Dbo/Exception.h>
 #include <Wt/Dbo/Impl.h>
 
@@ -63,6 +61,10 @@ namespace lms::db::tests
             genreId = Genre::create(session, "Rock")->getId();
         }
 
+        std::size_t recordedQueryCount{};
+        profiler->visitQueries([&](const IQueryProfiler::QueryStats&) { recordedQueryCount++; });
+        EXPECT_EQ(recordedQueryCount, std::size_t{ 0 });
+
         // The caller caught the error: its transaction must not have been rolled back
         {
             auto transaction{ session.createReadTransaction() };
@@ -76,9 +78,5 @@ namespace lms::db::tests
             const std::vector<GenreId> ids{ genreId };
             Genre::destroy(session, ids);
         }
-
-        profiler->visitQueries([&](const IQueryProfiler::QueryStats& stats) {
-            EXPECT_EQ(stats.query.find("not_a_table"), std::string_view::npos);
-        });
     }
 } // namespace lms::db::tests
