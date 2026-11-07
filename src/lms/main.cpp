@@ -462,7 +462,7 @@ namespace lms
             const std::size_t loginThrottlerMaxEntries{ config->getULong("login-throttler-max-entries", 10'000) };
             // Service initialization order is important (reverse-order for deinit)
             const ui::AuthenticationBackend uiAuthenticationBackend{ getUIAuthenticationBackend() };
-            core::Service<auth::IAuthTokenService> authTokenService{ auth::createAuthTokenService(*database, config->getULong("login-throttler-max-entriees", 10'000)) };
+            core::Service<auth::IAuthTokenService> authTokenService{ auth::createAuthTokenService(*database, loginThrottlerMaxEntries) };
             core::Service<auth::IPasswordService> authPasswordService;
             core::Service<auth::IEnvService> authEnvService;
 
