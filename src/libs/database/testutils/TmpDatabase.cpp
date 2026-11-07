@@ -19,7 +19,15 @@
 
 #include "TmpDatabase.hpp"
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
 #include "database/IDb.hpp"
+#include "database/Session.hpp"
+
+#include "Schema.hpp"
+#include "Utils.hpp"
 
 namespace lms::db::tests
 {
@@ -30,4 +38,31 @@ namespace lms::db::tests
     }
 
     TmpDatabase::~TmpDatabase() = default;
+
+    void TmpDatabase::createTablesAndIndexes()
+    {
+        Session session{ *_db };
+        Schema::createTablesIfNeeded(session);
+        Schema::createIndexesIfNeeded(session);
+    }
+
+    void executeStatement(Session& session, std::string_view statement)
+    {
+        session.checkWriteTransaction();
+
+        utils::executeCommand(*session.getDboSession(), std::string{ statement });
+    }
+
+    bool areAllTablesEmpty(Session& session)
+    {
+        session.checkReadTransaction();
+
+        Wt::Dbo::Session& dboSession{ *session.getDboSession() };
+        const std::vector<std::string> entryList{ utils::fetchQueryResults(dboSession.query<std::string>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")) };
+
+        return std::all_of(entryList.cbegin(), entryList.cend(), [&](const std::string& entry) {
+            const auto count{ utils::fetchQuerySingleResult(dboSession.query<long>("SELECT COUNT(*) FROM " + entry)) };
+            return count == 0;
+        });
+    }
 } // namespace lms::db::tests

@@ -41,6 +41,7 @@
 #include "JobQueue.hpp"
 #include "ScanContext.hpp"
 #include "ScannerSettings.hpp"
+#include "helpers/FileStats.hpp"
 #include "services/scanner/ScannerStats.hpp"
 
 namespace lms::scanner
@@ -215,7 +216,7 @@ namespace lms::scanner
 
         {
             auto transaction{ session.createReadTransaction() };
-            context.currentStepStats.totalElems = session.getFileStats().getTotalFileCount();
+            context.currentStepStats.totalElems = helpers::getFileStats(session).getTotalFileCount();
         }
         LMS_LOG(DBUPDATER, DEBUG, context.currentStepStats.totalElems << " files to be checked...");
 

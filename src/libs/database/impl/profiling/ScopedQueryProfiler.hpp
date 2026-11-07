@@ -19,66 +19,46 @@
 
 #pragma once
 
-#include <cassert>
 #include <string>
 
 #include "core/Service.hpp"
+
 #include "database/profiling/IQueryProfiler.hpp"
 
-#include "profiling/QueryProfiler.hpp"
+namespace Wt::Dbo
+{
+    class Session;
+}
 
 namespace lms::db::utils
 {
-    template<typename Query>
     class ScopedQueryProfiler
     {
     public:
+        template<typename Query>
         explicit ScopedQueryProfiler(const Query& query)
-            : _recorder{ static_cast<QueryProfiler*>(core::Service<IQueryProfiler>::get()) }
+            : _recorder{ core::Service<IQueryProfiler>::get() }
         {
             if (_recorder)
             {
-                _query = &query;
+                _session = &query.session();
+                _query = query.asString();
                 _start = IQueryProfiler::Clock::now();
             }
         }
 
-        ~ScopedQueryProfiler()
-        {
-            if (_recorder)
-            {
-                if (_active)
-                    _elapsed += IQueryProfiler::Clock::now() - _start;
-                _recorder->recordQueryExecution(_query->session(), _query->asString(), _elapsed);
-            }
-        }
+        ~ScopedQueryProfiler();
 
         ScopedQueryProfiler(const ScopedQueryProfiler&) = delete;
         ScopedQueryProfiler& operator=(const ScopedQueryProfiler&) = delete;
 
-        void suspend()
-        {
-            if (_recorder)
-            {
-                assert(_active);
-                _elapsed += IQueryProfiler::Clock::now() - _start;
-                _active = false;
-            }
-        }
-
-        void resume()
-        {
-            if (_recorder)
-            {
-                assert(!_active);
-                _start = IQueryProfiler::Clock::now();
-                _active = true;
-            }
-        }
+        void suspend();
+        void resume();
 
     private:
-        QueryProfiler* _recorder{};
-        const Query* _query{};
+        IQueryProfiler* _recorder{};
+        Wt::Dbo::Session* _session{};
+        std::string _query;
         IQueryProfiler::Clock::time_point _start;
         IQueryProfiler::Clock::duration _elapsed{};
         bool _active{ true };

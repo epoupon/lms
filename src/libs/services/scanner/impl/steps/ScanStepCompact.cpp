@@ -20,7 +20,6 @@
 #include "ScanStepCompact.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
 
 #include "ScanContext.hpp"
 
@@ -34,6 +33,6 @@ namespace lms::scanner
 
     void ScanStepCompact::process([[maybe_unused]] ScanContext& context)
     {
-        _db.getTLSSession().vacuum();
+        _db.vacuum();
     }
 } // namespace lms::scanner

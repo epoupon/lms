@@ -24,11 +24,8 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include "database/Transaction.hpp"
-#include "database/Types.hpp"
-#include "database/objects/Types.hpp"
 
 namespace lms::db
 {
@@ -37,7 +34,7 @@ namespace lms::db
     class Session
     {
     public:
-        Session(IDb& db);
+        explicit Session(IDb& db);
         ~Session() = default;
         Session(const Session&) = delete;
         Session& operator=(const Session&) = delete;
@@ -47,27 +44,6 @@ namespace lms::db
 
         void checkWriteTransaction() const;
         void checkReadTransaction() const;
-
-        void execute(std::string_view statement);
-
-        // All these methods will acquire transactions
-        void fullAnalyze(); // helper for retrieveEntriesToAnalyze + analyzeEntry + requestConnectionsReload
-        void retrieveEntriesToAnalyze(std::vector<std::string>& entryList);
-        void analyzeEntry(const std::string& entry);
-
-        // To be called after the last analyzeEntry
-        void requestConnectionsReload();
-
-        bool areAllTablesEmpty(); // need to acquire a read transaction
-        FileStats getFileStats(); // need to acquire a read transaction
-
-        void prepareTablesIfNeeded(); // need to run only once at startup
-        bool migrateSchemaIfNeeded(); // returns true if migration was performed
-        void createScanSettingsIfNeeded(RecommendationEngineType defaultRecommendationEngineType = RecommendationEngineType::Clusters);
-        void createServerInfoIfNeeded();
-        void createIndexesIfNeeded();
-        void vacuumIfNeeded();
-        void vacuum();
 
         // returning a ptr here to ease further wrapping using operator->
         Wt::Dbo::Session* getDboSession() { return &_session; }

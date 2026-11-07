@@ -127,6 +127,9 @@ namespace lms::db::tests
 
         static inline std::unique_ptr<TmpDatabase> _tmpDb{};
 
+    protected:
+        static IDb& getDb() { return _tmpDb->getDb(); }
+
     public:
         db::Session session{ _tmpDb->getDb() };
     };

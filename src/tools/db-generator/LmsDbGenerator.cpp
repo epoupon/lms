@@ -279,11 +279,9 @@ int main(int argc, char* argv[])
 
         core::Service<core::IConfig> config{ core::createConfig(vm["conf"].as<std::string>()) };
         auto db{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db") };
+        db->prepare(db::RecommendationEngineType::Clusters);
+
         db::Session session{ *db };
-        session.prepareTablesIfNeeded();
-        session.migrateSchemaIfNeeded();
-        session.createScanSettingsIfNeeded();
-        session.createIndexesIfNeeded();
 
         std::cout << "Starting generation..." << std::endl;
 

@@ -56,10 +56,7 @@ namespace lms::scanner::tests
             static void SetUpTestSuite()
             {
                 _tmpDb = std::make_unique<db::tests::TmpDatabase>();
-
-                db::Session& session{ _tmpDb->getDb().getTLSSession() };
-                session.prepareTablesIfNeeded();
-                session.createIndexesIfNeeded();
+                _tmpDb->createTablesAndIndexes();
             }
 
             static void TearDownTestSuite()
@@ -72,16 +69,16 @@ namespace lms::scanner::tests
             {
                 {
                     auto transaction{ session.createWriteTransaction() };
-                    session.execute("DELETE FROM track_artist_link");
-                    session.execute("DELETE FROM track");
-                    session.execute("DELETE FROM artist_info");
-                    session.execute("DELETE FROM directory");
-                    session.execute("DELETE FROM media_library");
-                    session.execute("DELETE FROM artist");
+                    db::tests::executeStatement(session, "DELETE FROM track_artist_link");
+                    db::tests::executeStatement(session, "DELETE FROM track");
+                    db::tests::executeStatement(session, "DELETE FROM artist_info");
+                    db::tests::executeStatement(session, "DELETE FROM directory");
+                    db::tests::executeStatement(session, "DELETE FROM media_library");
+                    db::tests::executeStatement(session, "DELETE FROM artist");
                 }
 
                 auto transaction{ session.createReadTransaction() };
-                EXPECT_TRUE(session.areAllTablesEmpty());
+                EXPECT_TRUE(db::tests::areAllTablesEmpty(session));
             }
 
             db::ArtistId createArtist(std::string_view name, const std::optional<core::UUID>& mbid, std::string_view sortName)

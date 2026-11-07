@@ -22,6 +22,7 @@
 #include <Wt/Dbo/SqlConnection.h>
 #include <Wt/Dbo/Transaction.h>
 
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 
 #include "TmpDatabase.hpp"
@@ -61,11 +62,11 @@ namespace lms::db::tests
         EXPECT_NE(transaction.connection(), otherTransaction.connection());
     }
 
-    TEST_F(ConnectionPoolTest, connectionIsReplacedOnceReloadIsRequested)
+    TEST_F(ConnectionPoolTest, connectionIsReplacedAfterAnalyze)
     {
         Wt::Dbo::SqlConnection* connection{ getConnectionUsedBy(session) };
 
-        session.requestConnectionsReload();
+        tmpDb.getDb().analyze();
 
         Wt::Dbo::SqlConnection* newConnection{ getConnectionUsedBy(session) };
         EXPECT_NE(newConnection, connection);

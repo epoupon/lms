@@ -19,9 +19,7 @@
 
 #include "ScanStepOptimize.hpp"
 
-#include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
 
 #include "ScanContext.hpp"
 
@@ -45,27 +43,12 @@ namespace lms::scanner
 
     void ScanStepOptimize::process(ScanContext& context)
     {
-        LMS_LOG(DBUPDATER, INFO, "Database analyze started");
-
-        auto& session{ _db.getTLSSession() };
-
-        std::vector<std::string> entries;
-        session.retrieveEntriesToAnalyze(entries);
-        context.currentStepStats.totalElems = entries.size();
-        _progressCallback(context.currentStepStats);
-
-        for (const std::string& entry : entries)
-        {
-            if (_abortScan)
-                break;
-
-            _db.getTLSSession().analyzeEntry(entry);
-            context.currentStepStats.processedElems++;
-            _progressCallback(context.currentStepStats);
-        }
-
-        session.requestConnectionsReload();
-
-        LMS_LOG(DBUPDATER, INFO, "Database analyze complete");
+        _db.analyze(
+            [&](std::size_t processedEntries, std::size_t totalEntries) {
+                context.currentStepStats.processedElems = processedEntries;
+                context.currentStepStats.totalElems = totalEntries;
+                _progressCallback(context.currentStepStats);
+            },
+            [this] { return _abortScan; });
     }
 } // namespace lms::scanner

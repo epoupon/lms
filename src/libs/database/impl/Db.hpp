@@ -47,6 +47,9 @@ namespace lms::db
         friend class Session;
 
         Session& getTLSSession() override;
+        void prepare(RecommendationEngineType defaultRecommendationEngineType) override;
+        void analyze(const ProgressCallback& onProgress, const ShouldAbortCallback& shouldAbort) override;
+        void vacuum() override;
 
         core::RecursiveSharedMutex& getMutex() { return _sharedMutex; }
         ConnectionPool& getConnectionPool() { return *_connectionPool; }

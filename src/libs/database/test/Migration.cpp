@@ -62,7 +62,7 @@ namespace lms::db::tests
             {
                 statement = core::stringUtils::stringTrim(statement, " \t\r\n");
                 if (!statement.empty())
-                    session.execute(statement);
+                    executeStatement(session, statement);
             }
         }
     } // namespace
@@ -373,16 +373,14 @@ VALUES
             auto transaction{ session.createWriteTransaction() };
 
             executeStatements(session, schemaV33);
-            session.execute("INSERT INTO version_info (version, db_version) VALUES (1, 33)");
+            executeStatement(session, "INSERT INTO version_info (version, db_version) VALUES (1, 33)");
 
             // Insert some base data
             executeStatements(session, createDummyData);
         }
 
         // Now perform full migration
-        db.getTLSSession().migrateSchemaIfNeeded();
-        db.getTLSSession().createScanSettingsIfNeeded();
-        db.getTLSSession().createServerInfoIfNeeded();
+        db.prepare(RecommendationEngineType::Clusters);
 
         // Now perform some dummy finds to ensure all fields are correctly mapped
         {

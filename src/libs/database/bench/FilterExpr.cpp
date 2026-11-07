@@ -37,6 +37,7 @@
 #include "core/Random.hpp"
 #include "core/Service.hpp"
 
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistFeedback.hpp"
@@ -133,9 +134,8 @@ namespace lms::db::benchs
         Library generateLibrary()
         {
             Library library;
+            library.tmpDb->createTablesAndIndexes();
             Session session{ library.tmpDb->getDb() };
-            session.prepareTablesIfNeeded();
-            session.createIndexesIfNeeded();
 
             core::random::PseudoRandomGenerator rng{ 42 };
             std::uniform_int_distribution<int> yearDist{ 1960, 2020 };
@@ -273,7 +273,7 @@ namespace lms::db::benchs
             }
 
             // as done periodically in production: without it, the query planner makes poor choices
-            session.fullAnalyze();
+            library.tmpDb->getDb().analyze();
 
             return library;
         }

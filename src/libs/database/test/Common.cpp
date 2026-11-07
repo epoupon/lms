@@ -33,11 +33,7 @@ namespace lms::db::tests
     void DatabaseFixture::SetUpTestCase()
     {
         _tmpDb = std::make_unique<TmpDatabase>();
-        {
-            db::Session s{ _tmpDb->getDb() };
-            s.prepareTablesIfNeeded();
-            s.createIndexesIfNeeded();
-        }
+        _tmpDb->createTablesAndIndexes();
     }
 
     void DatabaseFixture::TearDownTestCase()
@@ -49,17 +45,17 @@ namespace lms::db::tests
     {
         auto transaction{ session.createReadTransaction() };
 
-        EXPECT_TRUE(session.areAllTablesEmpty());
+        EXPECT_TRUE(areAllTablesEmpty(session));
     }
 
     TEST_F(DatabaseFixture, vacuum)
     {
-        session.vacuum();
+        getDb().vacuum();
     }
 
     TEST_F(DatabaseFixture, analyze)
     {
-        session.fullAnalyze();
+        getDb().analyze();
     }
 
     TEST_F(DatabaseFixture, Common_subRangeForeach)

@@ -54,6 +54,8 @@ add_library(lmsdatabase STATIC
 	impl/Migration.cpp
 	impl/Object.cpp
 	impl/profiling/QueryProfiler.cpp
+	impl/profiling/ScopedQueryProfiler.cpp
+	impl/Schema.cpp
 	impl/Session.cpp
 	impl/SqlFragment.cpp
 	impl/Transaction.cpp

@@ -449,22 +449,12 @@ namespace lms
                 QueryProfiler.assign(db::createQueryProfiler());
 
             auto database{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db") };
+            database->prepare(audio::canExtractMusicNNEmbeddings() ? db::RecommendationEngineType::AudioSimilarity : db::RecommendationEngineType::Clusters);
+
             core::UUID serverInstanceId;
             {
                 db::Session session{ *database };
-                session.prepareTablesIfNeeded();
-                bool migrationPerformed{ session.migrateSchemaIfNeeded() };
-                session.createScanSettingsIfNeeded(audio::canExtractMusicNNEmbeddings() ? db::RecommendationEngineType::AudioSimilarity : db::RecommendationEngineType::Clusters);
-                session.createServerInfoIfNeeded();
-                session.createIndexesIfNeeded();
-
                 serverInstanceId = getServerInstanceId(session);
-
-                // As this may be quite long, we only do it during startup
-                if (migrationPerformed)
-                    session.vacuum();
-                else
-                    session.vacuumIfNeeded();
             }
 
             ui::LmsApplicationManager appManager;

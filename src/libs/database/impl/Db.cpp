@@ -22,6 +22,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <Wt/Dbo/Logger.h>
 #include <Wt/Dbo/SqlConnection.h>
@@ -30,11 +31,17 @@
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
 #include "database/Session.hpp"
+#include "database/objects/ScanSettings.hpp"
+#include "database/objects/ServerInfo.hpp"
 
 #include "ConnectionPool.hpp"
 #include "Db.hpp"
+#include "Migration.hpp"
+#include "Schema.hpp"
+#include "Utils.hpp"
 
 namespace lms::db
 {
@@ -162,6 +169,52 @@ namespace lms::db
 
             LMS_LOG(DB, INFO, "Foreign key constraints check passed!");
         }
+
+        void createScanSettingsIfNeeded(Session& session, RecommendationEngineType defaultRecommendationEngineType)
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            if (!ScanSettings::find(session))
+                session.create<ScanSettings>().modify()->setRecommendationEngineType(defaultRecommendationEngineType);
+        }
+
+        void createServerInfoIfNeeded(Session& session)
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            ServerInfo::getOrCreate(session);
+        }
+
+        bool isVacuumNeeded(Session& session)
+        {
+            long pageCount{};
+            long freeListCount{};
+
+            {
+                auto transaction{ session.createReadTransaction() };
+                pageCount = utils::fetchQuerySingleResult(session.getDboSession()->query<long>("SELECT page_count FROM pragma_page_count"));
+                freeListCount = utils::fetchQuerySingleResult(session.getDboSession()->query<long>("SELECT freelist_count FROM pragma_freelist_count"));
+            }
+
+            LMS_LOG(DB, INFO, "page stats: page_count = " << pageCount << ", freelist_count = " << freeListCount);
+            return freeListCount >= (pageCount / 10);
+        }
+
+        std::vector<std::string> retrieveEntriesToAnalyze(Session& session)
+        {
+            auto transaction{ session.createReadTransaction() };
+            return utils::fetchQueryResults(session.getDboSession()->query<std::string>("SELECT name FROM sqlite_master WHERE type='table' OR type ='index'"));
+        }
+
+        void analyzeEntry(Session& session, const std::string& entry)
+        {
+            LMS_LOG(DB, DEBUG, "Analyzing " << entry);
+            {
+                auto transaction{ session.createWriteTransaction() };
+                utils::executeCommand(*session.getDboSession(), "ANALYZE " + entry);
+            }
+            LMS_LOG(DB, DEBUG, "Analyzing " << entry << ": done!");
+        }
     } // namespace
 
     std::unique_ptr<IDb> createDb(const std::filesystem::path& dbPath)
@@ -206,6 +259,67 @@ namespace lms::db
     }
 
     Db::~Db() = default;
+
+    void Db::prepare(RecommendationEngineType defaultRecommendationEngineType)
+    {
+        Session session{ *this };
+
+        Schema::createTablesIfNeeded(session);
+        const bool migrationPerformed{ Migration::doDbMigration(session) };
+        createScanSettingsIfNeeded(session, defaultRecommendationEngineType);
+        createServerInfoIfNeeded(session);
+        Schema::createIndexesIfNeeded(session);
+
+        // As this may be quite long, we only do it during startup
+        if (migrationPerformed || isVacuumNeeded(session))
+            vacuum();
+    }
+
+    void Db::analyze(const ProgressCallback& onProgress, const ShouldAbortCallback& shouldAbort)
+    {
+        LMS_SCOPED_TRACE_OVERVIEW("Database", "Analyze");
+        LMS_LOG(DB, INFO, "Performing database analyze... This may take a while...");
+
+        Session session{ *this };
+
+        // first select all the tables and indexes, and then analyze one by one in order to not have a big lock
+        const std::vector<std::string> entries{ retrieveEntriesToAnalyze(session) };
+
+        std::size_t processedEntries{};
+        if (onProgress)
+            onProgress(processedEntries, entries.size());
+
+        for (const std::string& entry : entries)
+        {
+            if (shouldAbort && shouldAbort())
+                break;
+
+            analyzeEntry(session, entry);
+
+            processedEntries++;
+            if (onProgress)
+                onProgress(processedEntries, entries.size());
+        }
+
+        // Also on abort: the entries analyzed so far are committed
+        _connectionPool->requestConnectionsReload();
+
+        LMS_LOG(DB, INFO, "Analyze complete!");
+    }
+
+    void Db::vacuum()
+    {
+        LMS_SCOPED_TRACE_OVERVIEW("Database", "Vacuum");
+        LMS_LOG(DB, INFO, "Performing vacuum... This may take a while...");
+
+        // We manually take a lock here since vacuum cannot be inside a transaction.
+        {
+            std::unique_lock lock{ _sharedMutex };
+            executeOutsideTransaction("VACUUM");
+        }
+
+        LMS_LOG(DB, INFO, "Vacuum complete!");
+    }
 
     void Db::executeOutsideTransaction(const std::string& sql)
     {

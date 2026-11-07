@@ -32,6 +32,8 @@
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/ScanSettings.hpp"
 
+#include "helpers/FileStats.hpp"
+
 #include "scanners/ImageFileScanner.hpp"
 #include "scanners/artistinfo/ArtistInfoFileScanner.hpp"
 #include "scanners/audiofile/AudioFileScanner.hpp"
@@ -182,14 +184,14 @@ namespace lms::scanner
         {
             auto& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
-            totalFileCount = session.getFileStats().getTotalFileCount();
+            totalFileCount = helpers::getFileStats(session).getTotalFileCount();
         }
 
         // Force optimize in case scanner aborted during a large import, but do this only if there are enough elements in the database
         // Otherwise, indexes may be not used and queries may be slower and slower while adding more and more elements in the db
         LMS_LOG(DBUPDATER, INFO, "Scanned file count = " << totalFileCount);
         if (totalFileCount >= 1'000)
-            _db.getTLSSession().fullAnalyze();
+            _db.analyze();
 
         refreshTracingLoggerStats();
         refreshScanSettings();
@@ -404,7 +406,7 @@ namespace lms::scanner
 
         {
             auto transaction{ _db.getTLSSession().createReadTransaction() };
-            const db::FileStats stats{ _db.getTLSSession().getFileStats() };
+            const helpers::FileStats stats{ helpers::getFileStats(_db.getTLSSession()) };
             LMS_LOG(DBUPDATER, INFO, stats.getTotalFileCount() << " total files: " << stats.artistInfoCount << " artist info, " << stats.imageCount << " images, " << stats.playListCount << " playlists, " << stats.trackCount << " tracks, " << stats.trackLyricsCount << " lyrics");
         }
 
