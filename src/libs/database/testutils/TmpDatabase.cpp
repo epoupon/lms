@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 
+#include <Wt/Dbo/Impl.h>
+
 #include "database/IDb.hpp"
 
 #include "Schema.hpp"
