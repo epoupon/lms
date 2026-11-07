@@ -23,6 +23,7 @@
 #include <iostream>
 #include <random>
 #include <sstream>
+#include <thread>
 
 #include <boost/program_options.hpp>
 

@@ -19,6 +19,8 @@
 
 #include "AudioFileInfo.hpp"
 
+#include "core/Service.hpp"
+
 #include "audio/AudioProperties.hpp"
 #include "audio/Exception.hpp"
 #include "audio/IAudioFileInfo.hpp"

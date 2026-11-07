@@ -25,6 +25,7 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WStackedWidget.h>
 
+#include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"

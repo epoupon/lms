@@ -31,6 +31,7 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
+#include "core/Service.hpp"
 #include "core/String.hpp"
 #include "core/Utils.hpp"
 

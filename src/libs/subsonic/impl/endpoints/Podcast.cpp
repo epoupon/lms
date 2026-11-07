@@ -19,6 +19,8 @@
 
 #include "Podcast.hpp"
 
+#include "core/Service.hpp"
+
 #include "database/ISession.hpp"
 #include "database/objects/Podcast.hpp"
 #include "database/objects/PodcastEpisode.hpp"

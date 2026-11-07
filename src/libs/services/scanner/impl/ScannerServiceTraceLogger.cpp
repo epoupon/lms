@@ -19,6 +19,9 @@
 
 #include "ScannerService.hpp"
 
+#include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
+
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistFeedback.hpp"
 #include "database/objects/ArtistInfo.hpp"
