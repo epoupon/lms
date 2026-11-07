@@ -268,8 +268,8 @@ namespace lms::db
         void setComment(std::string_view comment) { _comment = comment; }
         void clearArtistLinks();
         void addArtistLink(const ObjectPtr<TrackArtistLink>& artistLink);
-        void setRelease(ObjectPtr<Release> release) { _release = getDboPtr(release); }
-        void setMedium(ObjectPtr<Medium> medium) { _medium = getDboPtr(medium); }
+        void setRelease(const ObjectPtr<Release>& release) { _release = getDboPtr(release); }
+        void setMedium(const ObjectPtr<Medium>& medium) { _medium = getDboPtr(medium); }
         void setClusters(const std::vector<ObjectPtr<Cluster>>& clusters);
         void setGenres(std::span<const ObjectPtr<Genre>> genres);
         void setGroupings(std::span<const ObjectPtr<Grouping>> groupings);
@@ -282,10 +282,10 @@ namespace lms::db
         void addLyrics(const ObjectPtr<TrackLyrics>& lyrics);
         void clearEmbeddedImageLinks();
         void addEmbeddedImageLink(const ObjectPtr<TrackEmbeddedImageLink>& link);
-        void setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary);
-        void setDirectory(ObjectPtr<Directory> directory);
-        void setPreferredArtwork(ObjectPtr<Artwork> artwork);
-        void setPreferredMediaArtwork(ObjectPtr<Artwork> artwork);
+        void setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary);
+        void setDirectory(const ObjectPtr<Directory>& directory);
+        void setPreferredArtwork(const ObjectPtr<Artwork>& artwork);
+        void setPreferredMediaArtwork(const ObjectPtr<Artwork>& artwork);
 
         // Getters
         std::size_t getScanVersion() const { return _scanVersion; }

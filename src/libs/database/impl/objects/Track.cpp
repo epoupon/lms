@@ -692,22 +692,22 @@ namespace lms::db
         _embeddedImageLinks.insert(getDboPtr(image));
     }
 
-    void Track::setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary)
+    void Track::setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary)
     {
         _mediaLibrary = getDboPtr(mediaLibrary);
     }
 
-    void Track::setDirectory(ObjectPtr<Directory> directory)
+    void Track::setDirectory(const ObjectPtr<Directory>& directory)
     {
         _directory = getDboPtr(directory);
     }
 
-    void Track::setPreferredArtwork(ObjectPtr<Artwork> artwork)
+    void Track::setPreferredArtwork(const ObjectPtr<Artwork>& artwork)
     {
         _preferredArtwork = getDboPtr(artwork);
     }
 
-    void Track::setPreferredMediaArtwork(ObjectPtr<Artwork> artwork)
+    void Track::setPreferredMediaArtwork(const ObjectPtr<Artwork>& artwork)
     {
         _preferredMediaArtwork = getDboPtr(artwork);
     }

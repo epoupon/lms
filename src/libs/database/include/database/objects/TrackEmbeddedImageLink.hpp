@@ -43,7 +43,7 @@ namespace lms::db
     public:
         TrackEmbeddedImageLink() = default;
 
-        static pointer create(ISession& session, ObjectPtr<Track> track, ObjectPtr<TrackEmbeddedImage> image);
+        static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<TrackEmbeddedImage>& image);
 
         // find
         static std::size_t getCount(ISession& session);
@@ -74,7 +74,7 @@ namespace lms::db
         }
 
     private:
-        TrackEmbeddedImageLink(ObjectPtr<Track> track, ObjectPtr<TrackEmbeddedImage> image);
+        TrackEmbeddedImageLink(const ObjectPtr<Track>& track, const ObjectPtr<TrackEmbeddedImage>& image);
 
         int _index{}; // index within the track
         detail::ImageType _type{ detail::ImageType::Unknown };

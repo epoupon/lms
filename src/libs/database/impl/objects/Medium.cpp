@@ -47,12 +47,12 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::Medium);
 
 namespace lms::db
 {
-    Medium::Medium(ObjectPtr<Release> release)
+    Medium::Medium(const ObjectPtr<Release>& release)
         : _release(getDboPtr(release))
     {
     }
 
-    Medium::pointer Medium::create(ISession& session, ObjectPtr<Release> release)
+    Medium::pointer Medium::create(ISession& session, const ObjectPtr<Release>& release)
     {
         return utils::addObject(session, std::unique_ptr<Medium>{ new Medium{ release } });
     }

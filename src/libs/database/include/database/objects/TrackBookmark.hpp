@@ -43,7 +43,7 @@ namespace lms::db
     public:
         TrackBookmark() = default;
 
-        static pointer create(ISession& session, ObjectPtr<User> user, ObjectPtr<Track> track);
+        static pointer create(ISession& session, const ObjectPtr<User>& user, const ObjectPtr<Track>& track);
 
         // Find utility functions
         static std::size_t getCount(ISession& session);
@@ -71,7 +71,7 @@ namespace lms::db
         }
 
     private:
-        TrackBookmark(ObjectPtr<User> user, ObjectPtr<Track> track);
+        TrackBookmark(const ObjectPtr<User>& user, const ObjectPtr<Track>& track);
 
         static const std::size_t _maxCommentLength = 128;
 

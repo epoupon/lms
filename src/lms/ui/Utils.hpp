@@ -64,12 +64,12 @@ namespace lms::ui::utils
     std::unique_ptr<Wt::WInteractWidget> createFilterValue(const Filters::Value& value);
     // nullptr if one of the values no longer exists
     std::unique_ptr<Wt::WInteractWidget> createFilter(std::span<const Filters::Value> values, Filters::Match match);
-    std::unique_ptr<Wt::WContainerWidget> createFilterClustersForTrack(db::ObjectPtr<db::Track> track, Filters& filters);
+    std::unique_ptr<Wt::WContainerWidget> createFilterClustersForTrack(const db::ObjectPtr<db::Track>& track, Filters& filters);
 
-    std::unique_ptr<Wt::WAnchor> createArtistAnchor(db::ObjectPtr<db::Artist> artist, bool setText = true);
-    Wt::WLink createReleaseLink(db::ObjectPtr<db::Release> release);
-    std::unique_ptr<Wt::WAnchor> createReleaseAnchor(db::ObjectPtr<db::Release> release, bool setText = true);
-    std::unique_ptr<Wt::WAnchor> createTrackListAnchor(db::ObjectPtr<db::TrackList> trackList, bool setText = true);
+    std::unique_ptr<Wt::WAnchor> createArtistAnchor(const db::ObjectPtr<db::Artist>& artist, bool setText = true);
+    Wt::WLink createReleaseLink(const db::ObjectPtr<db::Release>& release);
+    std::unique_ptr<Wt::WAnchor> createReleaseAnchor(const db::ObjectPtr<db::Release>& release, bool setText = true);
+    std::unique_ptr<Wt::WAnchor> createTrackListAnchor(const db::ObjectPtr<db::TrackList>& trackList, bool setText = true);
 
     std::unique_ptr<Wt::WContainerWidget> createArtistAnchorList(const std::vector<db::ObjectPtr<db::Artist>>& artists, std::string_view cssAnchorClass = "link-success");
 
@@ -83,15 +83,15 @@ namespace lms::ui::utils
         };
         std::vector<Entry> entries;
     };
-    ArtistDisplayInfo computeArtistDisplayInfo(db::ObjectPtr<db::Release> release);
-    ArtistDisplayInfo computeArtistDisplayInfo(db::ObjectPtr<db::Track> track, db::TrackArtistLinkType linkType);
+    ArtistDisplayInfo computeArtistDisplayInfo(const db::ObjectPtr<db::Release>& release);
+    ArtistDisplayInfo computeArtistDisplayInfo(const db::ObjectPtr<db::Track>& track, db::TrackArtistLinkType linkType);
 
     std::unique_ptr<Wt::WContainerWidget> createArtistsAnchors(const ArtistDisplayInfo& artistDisplayInfo, std::string_view cssAnchorClass = "link-success");
-    std::unique_ptr<Wt::WContainerWidget> createArtistsAnchors(db::ObjectPtr<db::Track> track, db::TrackArtistLinkType linkType, std::string_view cssAnchorClass = "link-success");
-    std::unique_ptr<Wt::WContainerWidget> createArtistsAnchors(db::ObjectPtr<db::Release> release, std::string_view cssAnchorClass = "link-success");
+    std::unique_ptr<Wt::WContainerWidget> createArtistsAnchors(const db::ObjectPtr<db::Track>& track, db::TrackArtistLinkType linkType, std::string_view cssAnchorClass = "link-success");
+    std::unique_ptr<Wt::WContainerWidget> createArtistsAnchors(const db::ObjectPtr<db::Release>& release, std::string_view cssAnchorClass = "link-success");
 
-    std::map<Wt::WString, std::vector<db::ObjectPtr<db::Artist>>> getArtistsByRole(db::ObjectPtr<db::Track> track, core::EnumSet<db::TrackArtistLinkType> artistLinkTypes = {});
-    std::map<Wt::WString, std::vector<db::ObjectPtr<db::Artist>>> getTrackArtistsByRole(db::ObjectPtr<db::Release> release);
+    std::map<Wt::WString, std::vector<db::ObjectPtr<db::Artist>>> getArtistsByRole(const db::ObjectPtr<db::Track>& track, core::EnumSet<db::TrackArtistLinkType> artistLinkTypes = {});
+    std::map<Wt::WString, std::vector<db::ObjectPtr<db::Artist>>> getTrackArtistsByRole(const db::ObjectPtr<db::Release>& release);
 
     std::unique_ptr<Wt::WInteractWidget> createCopyright(std::string_view copyright, std::string_view copyrightURL);
 

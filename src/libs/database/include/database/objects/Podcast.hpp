@@ -91,7 +91,7 @@ namespace lms::db
         void setOwnerName(std::string_view ownerName) { _ownerName = ownerName; }
         void setSubtitle(std::string_view subtitle) { _subtitle = subtitle; }
         void setSummary(std::string_view summary) { _summary = summary; }
-        void setArtwork(ObjectPtr<Artwork> artwork);
+        void setArtwork(const ObjectPtr<Artwork>& artwork);
 
         template<class Action>
         void persist(Action& a)

@@ -61,7 +61,7 @@ namespace lms::db
         bool isArtistMBIDMatched() const { return _artistMBIDMatched; }
 
         // setters
-        void setArtist(ObjectPtr<Artist> artist);
+        void setArtist(const ObjectPtr<Artist>& artist);
         void setArtistName(std::string_view artistName);
         void setArtistSortName(std::string_view artistSortName);
 

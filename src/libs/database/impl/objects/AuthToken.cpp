@@ -33,7 +33,7 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::AuthToken)
 
 namespace lms::db
 {
-    AuthToken::AuthToken(std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, ObjectPtr<User> user)
+    AuthToken::AuthToken(std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, const ObjectPtr<User>& user)
         : _domain{ domain }
         , _value{ value }
         , _expiry{ expiry }
@@ -42,7 +42,7 @@ namespace lms::db
     {
     }
 
-    AuthToken::pointer AuthToken::create(ISession& session, std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, ObjectPtr<User> user)
+    AuthToken::pointer AuthToken::create(ISession& session, std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, const ObjectPtr<User>& user)
     {
         return utils::addObject(session, std::unique_ptr<AuthToken>{ new AuthToken{ domain, value, expiry, maxUseCount, user } });
     }

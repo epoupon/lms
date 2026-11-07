@@ -164,12 +164,12 @@ namespace lms::db
         _fileStem = filePath.stem();
     }
 
-    void ArtistInfo::setDirectory(ObjectPtr<Directory> directory)
+    void ArtistInfo::setDirectory(const ObjectPtr<Directory>& directory)
     {
         _directory = getDboPtr(directory);
     }
 
-    void ArtistInfo::setArtist(ObjectPtr<Artist> artist)
+    void ArtistInfo::setArtist(const ObjectPtr<Artist>& artist)
     {
         _artist = getDboPtr(artist);
     }

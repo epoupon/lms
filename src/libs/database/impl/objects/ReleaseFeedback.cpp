@@ -33,13 +33,13 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::ReleaseFeedback)
 
 namespace lms::db
 {
-    ReleaseFeedback::ReleaseFeedback(ObjectPtr<Release> release, ObjectPtr<User> user)
+    ReleaseFeedback::ReleaseFeedback(const ObjectPtr<Release>& release, const ObjectPtr<User>& user)
         : _release{ getDboPtr(release) }
         , _user{ getDboPtr(user) }
     {
     }
 
-    ReleaseFeedback::pointer ReleaseFeedback::create(ISession& session, ObjectPtr<Release> release, ObjectPtr<User> user)
+    ReleaseFeedback::pointer ReleaseFeedback::create(ISession& session, const ObjectPtr<Release>& release, const ObjectPtr<User>& user)
     {
         return utils::addObject(session, std::unique_ptr<ReleaseFeedback>{ new ReleaseFeedback{ release, user } });
     }

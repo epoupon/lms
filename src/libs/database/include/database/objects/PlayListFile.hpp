@@ -78,9 +78,9 @@ namespace lms::db
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
         void setCoverImageFile(const std::filesystem::path& file);
-        void setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
-        void setDirectory(ObjectPtr<Directory> directory);
-        void setTrackList(ObjectPtr<TrackList> trackList);
+        void setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
+        void setDirectory(const ObjectPtr<Directory>& directory);
+        void setTrackList(const ObjectPtr<TrackList>& trackList);
         void setName(std::string_view name);
         void setFiles(std::span<const std::filesystem::path> files);
 

@@ -50,7 +50,7 @@ namespace lms::db
 
         Medium() = default;
 
-        static pointer create(ISession& session, ObjectPtr<Release> release);
+        static pointer create(ISession& session, const ObjectPtr<Release>& release);
         static void destroy(ISession& session, std::span<const MediumId> ids);
 
         // find
@@ -120,7 +120,7 @@ namespace lms::db
         }
 
     private:
-        Medium(ObjectPtr<Release> release);
+        Medium(const ObjectPtr<Release>& release);
 
         std::string _name;
         std::optional<int> _position; // position in the release

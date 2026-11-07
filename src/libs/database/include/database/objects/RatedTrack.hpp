@@ -42,7 +42,7 @@ namespace lms::db
     public:
         RatedTrack() = default;
 
-        static pointer create(ISession& session, ObjectPtr<Track> track, ObjectPtr<User> user);
+        static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<User>& user);
 
         struct FindParameters
         {
@@ -88,7 +88,7 @@ namespace lms::db
         }
 
     private:
-        RatedTrack(ObjectPtr<Track> track, ObjectPtr<User> user);
+        RatedTrack(const ObjectPtr<Track>& track, const ObjectPtr<User>& user);
 
         Rating _rating{};
         Wt::WDateTime _lastUpdated; // when it was rated for the last time

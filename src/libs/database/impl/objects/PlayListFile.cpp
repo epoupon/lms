@@ -170,12 +170,12 @@ namespace lms::db
         _fileStem = filePath.stem();
     }
 
-    void PlayListFile::setDirectory(ObjectPtr<Directory> directory)
+    void PlayListFile::setDirectory(const ObjectPtr<Directory>& directory)
     {
         _directory = getDboPtr(directory);
     }
 
-    void PlayListFile::setTrackList(ObjectPtr<TrackList> trackList)
+    void PlayListFile::setTrackList(const ObjectPtr<TrackList>& trackList)
     {
         _trackList = getDboPtr(trackList);
     }

@@ -652,7 +652,7 @@ namespace lms::db::tests
             TrackArtistLink::create(session, trackV.get(), artistD.get(), TrackArtistLinkType::Artist);
             ReleaseArtistLink::create(session, releaseV.get(), artistV.get(), false);
 
-            auto star{ [&](Artist::pointer artist, const Wt::WDateTime& dateTime) {
+            auto star{ [&](const Artist::pointer& artist, const Wt::WDateTime& dateTime) {
                 auto feedback{ ArtistFeedback::create(session, artist, user.get()) };
                 feedback.modify()->setValue(FeedbackValue::Loved);
                 feedback.modify()->setDateTime(dateTime);

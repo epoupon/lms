@@ -87,12 +87,12 @@ namespace lms::ui
 
     namespace
     {
-        std::string getArtistPathName(db::Artist::pointer artist)
+        std::string getArtistPathName(const db::Artist::pointer& artist)
         {
             return core::stringUtils::replaceInString(artist->getName(), "/", "_");
         }
 
-        std::string getReleaseArtistPathName(db::Release::pointer release)
+        std::string getReleaseArtistPathName(const db::Release::pointer& release)
         {
             std::string releaseArtistName;
 
@@ -112,7 +112,7 @@ namespace lms::ui
             return releaseArtistName;
         }
 
-        std::string getReleasePathName(db::Release::pointer release)
+        std::string getReleasePathName(const db::Release::pointer& release)
         {
             std::string releaseName;
 
@@ -141,7 +141,7 @@ namespace lms::ui
             return fileName.str();
         }
 
-        std::string getTrackListPathName(db::TrackList::pointer trackList)
+        std::string getTrackListPathName(const db::TrackList::pointer& trackList)
         {
             return core::stringUtils::replaceInString(trackList->getName(), "/", "_");
         }

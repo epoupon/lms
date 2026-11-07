@@ -48,7 +48,7 @@ namespace lms::db
     public:
         Listen() = default;
 
-        static pointer create(ISession& session, ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime);
+        static pointer create(ISession& session, const ObjectPtr<User>& user, const ObjectPtr<Track>& track, const Wt::WDateTime& dateTime);
 
         struct FindParameters
         {
@@ -162,7 +162,7 @@ namespace lms::db
         }
 
     private:
-        Listen(ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime);
+        Listen(const ObjectPtr<User>& user, const ObjectPtr<Track>& track, const Wt::WDateTime& dateTime);
 
         Wt::WDateTime _dateTime;
 

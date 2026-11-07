@@ -41,7 +41,7 @@ namespace lms::db
     public:
         TrackMusicNNEmbeddings() = default;
 
-        static pointer create(ISession& session, ObjectPtr<Track> track);
+        static pointer create(ISession& session, const ObjectPtr<Track>& track);
 
         // Find utilities
         static std::size_t getCount(ISession& session);
@@ -66,7 +66,7 @@ namespace lms::db
         }
 
     private:
-        TrackMusicNNEmbeddings(ObjectPtr<Track> track);
+        TrackMusicNNEmbeddings(const ObjectPtr<Track>& track);
 
         std::vector<unsigned char> _data;
         Wt::Dbo::ptr<Track> _track;

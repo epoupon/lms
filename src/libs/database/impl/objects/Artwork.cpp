@@ -33,22 +33,22 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::Artwork)
 
 namespace lms::db
 {
-    Artwork::Artwork(ObjectPtr<TrackEmbeddedImage> trackEmbeddedImage)
+    Artwork::Artwork(const ObjectPtr<TrackEmbeddedImage>& trackEmbeddedImage)
         : _trackEmbeddedImage{ getDboPtr(trackEmbeddedImage) }
     {
     }
 
-    Artwork::Artwork(ObjectPtr<Image> image)
+    Artwork::Artwork(const ObjectPtr<Image>& image)
         : _image{ getDboPtr(image) }
     {
     }
 
-    Artwork::pointer Artwork::create(ISession& session, ObjectPtr<TrackEmbeddedImage> trackEmbeddedImage)
+    Artwork::pointer Artwork::create(ISession& session, const ObjectPtr<TrackEmbeddedImage>& trackEmbeddedImage)
     {
         return utils::addObject(session, std::unique_ptr<Artwork>{ new Artwork{ trackEmbeddedImage } });
     }
 
-    Artwork::pointer Artwork::create(ISession& session, ObjectPtr<Image> image)
+    Artwork::pointer Artwork::create(ISession& session, const ObjectPtr<Image>& image)
     {
         return utils::addObject(session, std::unique_ptr<Artwork>{ new Artwork{ image } });
     }

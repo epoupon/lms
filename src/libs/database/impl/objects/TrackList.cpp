@@ -184,7 +184,7 @@ namespace lms::db
         return utils::execRangeQuery<TrackListEntry::pointer>(query, range);
     }
 
-    TrackListEntry::pointer TrackList::getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const
+    TrackListEntry::pointer TrackList::getEntryByTrackAndDateTime(const ObjectPtr<Track>& track, const Wt::WDateTime& dateTime) const
     {
         assert(session());
 
@@ -254,7 +254,7 @@ namespace lms::db
         _lastModifiedDateTime = utils::normalizeDateTime(dateTime);
     }
 
-    TrackListEntry::TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime)
+    TrackListEntry::TrackListEntry(const ObjectPtr<Track>& track, const ObjectPtr<TrackList>& tracklist, const Wt::WDateTime& dateTime)
         : _dateTime{ utils::normalizeDateTime(dateTime) }
         , _track{ getDboPtr(track) }
         , _tracklist{ getDboPtr(tracklist) }
@@ -263,7 +263,7 @@ namespace lms::db
         assert(tracklist);
     }
 
-    TrackListEntry::pointer TrackListEntry::create(ISession& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime)
+    TrackListEntry::pointer TrackListEntry::create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<TrackList>& tracklist, const Wt::WDateTime& dateTime)
     {
         return utils::addObject(session, std::unique_ptr<TrackListEntry>{ new TrackListEntry{ track, tracklist, dateTime } });
     }

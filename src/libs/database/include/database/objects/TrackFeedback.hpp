@@ -43,7 +43,7 @@ namespace lms::db
     public:
         TrackFeedback() = default;
 
-        static pointer create(ISession& session, ObjectPtr<Track> track, ObjectPtr<User> user);
+        static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<User>& user);
 
         struct FindParameters
         {
@@ -101,7 +101,7 @@ namespace lms::db
         }
 
     private:
-        TrackFeedback(ObjectPtr<Track> track, ObjectPtr<User> user);
+        TrackFeedback(const ObjectPtr<Track>& track, const ObjectPtr<User>& user);
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };

@@ -178,14 +178,14 @@ namespace lms::db
         }
     } // namespace
 
-    Listen::Listen(ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime)
+    Listen::Listen(const ObjectPtr<User>& user, const ObjectPtr<Track>& track, const Wt::WDateTime& dateTime)
         : _dateTime{ Wt::WDateTime::fromTime_t(dateTime.toTime_t()) }
         , _user{ getDboPtr(user) }
         , _track{ getDboPtr(track) }
     {
     }
 
-    Listen::pointer Listen::create(ISession& session, ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime)
+    Listen::pointer Listen::create(ISession& session, const ObjectPtr<User>& user, const ObjectPtr<Track>& track, const Wt::WDateTime& dateTime)
     {
         return utils::addObject(session, std::unique_ptr<Listen>{ new Listen{ user, track, dateTime } });
     }

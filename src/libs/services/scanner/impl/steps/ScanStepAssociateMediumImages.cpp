@@ -72,7 +72,7 @@ namespace lms::scanner
                 params.setDirectory(directory->getId());
                 params.setFileStem(fileStem, processWildcards);
 
-                db::Image::find(session, params, [&](const db::Image::pointer foundImg) {
+                db::Image::find(session, params, [&](const db::Image::pointer& foundImg) {
                     if (!image)
                         image = foundImg;
                 });

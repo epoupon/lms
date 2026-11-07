@@ -558,7 +558,7 @@ AND NOT EXISTS (
         LMS_LOG_IF(DB, WARNING, sortName.size() > maxNameLength, "Artist sort name too long, truncated to '" << _sortName << "'");
     }
 
-    void Artist::setPreferredArtwork(ObjectPtr<Artwork> artwork)
+    void Artist::setPreferredArtwork(const ObjectPtr<Artwork>& artwork)
     {
         _preferredArtwork = getDboPtr(artwork);
     }

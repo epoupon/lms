@@ -141,8 +141,8 @@ namespace lms::db
 
         // setters
         void setAbsolutePath(const std::filesystem::path& p);
-        void setParent(ObjectPtr<Directory> parent);
-        void setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
+        void setParent(const ObjectPtr<Directory>& parent);
+        void setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
 
         template<class Action>
         void persist(Action& a)

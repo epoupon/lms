@@ -104,7 +104,7 @@ namespace lms::db
         });
     }
 
-    void ReleaseArtistLink::setArtist(ObjectPtr<Artist> artist)
+    void ReleaseArtistLink::setArtist(const ObjectPtr<Artist>& artist)
     {
         _artist = getDboPtr(artist);
     }

@@ -76,7 +76,7 @@ namespace lms::scanner
                     params.setDirectory(directory->getId());
                     params.setFileStem(fileStem, db::Image::FindParameters::ProcessWildcards{ true }); // no need to sanitize here, user is responsible for providing sanitized file stems in conf file
 
-                    db::Image::find(session, params, [&](const db::Image::pointer foundImg) {
+                    db::Image::find(session, params, [&](const db::Image::pointer& foundImg) {
                         if (!image)
                             image = foundImg;
                     });
@@ -94,7 +94,7 @@ namespace lms::scanner
             db::Image::pointer image;
 
             // Find anywhere, since it is supposed to be unique!
-            db::Image::find(session, db::Image::FindParameters{}.setFileStem(mbid.toString()), [&](const db::Image::pointer foundImg) {
+            db::Image::find(session, db::Image::FindParameters{}.setFileStem(mbid.toString()), [&](const db::Image::pointer& foundImg) {
                 if (!image)
                     image = foundImg;
             });

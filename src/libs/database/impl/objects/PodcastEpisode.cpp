@@ -62,12 +62,12 @@ namespace lms::db
         }
     } // namespace
 
-    PodcastEpisode::PodcastEpisode(ObjectPtr<Podcast> podcast)
+    PodcastEpisode::PodcastEpisode(const ObjectPtr<Podcast>& podcast)
         : _podcast{ getDboPtr(podcast) }
     {
     }
 
-    PodcastEpisode::pointer PodcastEpisode::create(ISession& session, ObjectPtr<Podcast> podcast)
+    PodcastEpisode::pointer PodcastEpisode::create(ISession& session, const ObjectPtr<Podcast>& podcast)
     {
         return utils::addObject(session, std::unique_ptr<PodcastEpisode>{ new PodcastEpisode{ podcast } });
     }
@@ -129,7 +129,7 @@ namespace lms::db
         _codec = detail::getDbCodec(codec);
     }
 
-    void PodcastEpisode::setArtwork(ObjectPtr<Artwork> artwork)
+    void PodcastEpisode::setArtwork(const ObjectPtr<Artwork>& artwork)
     {
         _artwork = getDboPtr(artwork);
     }

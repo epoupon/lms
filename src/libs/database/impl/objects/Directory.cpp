@@ -248,7 +248,7 @@ namespace lms::db
         }
     }
 
-    void Directory::setParent(ObjectPtr<Directory> parent)
+    void Directory::setParent(const ObjectPtr<Directory>& parent)
     {
 #ifndef NDEBUG
         if (parent)

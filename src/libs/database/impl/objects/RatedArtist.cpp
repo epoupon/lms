@@ -33,13 +33,13 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::RatedArtist)
 
 namespace lms::db
 {
-    RatedArtist::RatedArtist(ObjectPtr<Artist> artist, ObjectPtr<User> user)
+    RatedArtist::RatedArtist(const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user)
         : _artist{ getDboPtr(artist) }
         , _user{ getDboPtr(user) }
     {
     }
 
-    RatedArtist::pointer RatedArtist::create(ISession& session, ObjectPtr<Artist> artist, ObjectPtr<User> user)
+    RatedArtist::pointer RatedArtist::create(ISession& session, const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user)
     {
         return utils::addObject(session, std::unique_ptr<RatedArtist>{ new RatedArtist{ artist, user } });
     }

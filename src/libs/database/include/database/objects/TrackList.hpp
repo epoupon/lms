@@ -134,7 +134,7 @@ namespace lms::db
         Wt::WDateTime getCreationDateTime() const { return _creationDateTime; }
 
         // Modifiers
-        void setUser(ObjectPtr<User> user) { _user = getDboPtr(user); }
+        void setUser(const ObjectPtr<User>& user) { _user = getDboPtr(user); }
         void setName(std::string_view name) { _name = name; }
         void setVisibility(Visibility visibility) { _visibility = visibility; }
         void clear() { _entries.clear(); }
@@ -144,7 +144,7 @@ namespace lms::db
         std::size_t getCount() const;
         ObjectPtr<TrackListEntry> getEntry(std::size_t pos) const;
         std::vector<ObjectPtr<TrackListEntry>> getEntries(std::optional<Range> range = {}) const;
-        ObjectPtr<TrackListEntry> getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const;
+        ObjectPtr<TrackListEntry> getEntryByTrackAndDateTime(const ObjectPtr<Track>& track, const Wt::WDateTime& dateTime) const;
 
         std::vector<TrackId> getTrackIds(std::optional<Range> range = {}) const;
         void visitTracks(const std::function<void(const ObjectPtr<Track>&)>& func) const;
@@ -192,7 +192,7 @@ namespace lms::db
     public:
         TrackListEntry() = default;
 
-        static pointer create(ISession& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime = {});
+        static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<TrackList>& tracklist, const Wt::WDateTime& dateTime = {});
 
         // find utility
         // Search utility
@@ -230,8 +230,8 @@ namespace lms::db
         }
 
     private:
-        TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime);
-        TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist);
+        TrackListEntry(const ObjectPtr<Track>& track, const ObjectPtr<TrackList>& tracklist, const Wt::WDateTime& dateTime);
+        TrackListEntry(const ObjectPtr<Track>& track, const ObjectPtr<TrackList>& tracklist);
 
         Wt::WDateTime _dateTime; // optional date time
         Wt::Dbo::ptr<Track> _track;

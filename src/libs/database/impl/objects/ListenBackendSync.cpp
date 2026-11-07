@@ -32,13 +32,13 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::ListenBackendSync)
 
 namespace lms::db
 {
-    ListenBackendSync::ListenBackendSync(ObjectPtr<Listen> listen, ScrobblingBackend backend)
+    ListenBackendSync::ListenBackendSync(const ObjectPtr<Listen>& listen, ScrobblingBackend backend)
         : _backend{ backend }
         , _listen{ getDboPtr(listen) }
     {
     }
 
-    ListenBackendSync::pointer ListenBackendSync::create(ISession& session, ObjectPtr<Listen> listen, ScrobblingBackend backend)
+    ListenBackendSync::pointer ListenBackendSync::create(ISession& session, const ObjectPtr<Listen>& listen, ScrobblingBackend backend)
     {
         return utils::addObject(session, std::unique_ptr<ListenBackendSync>{ new ListenBackendSync{ listen, backend } });
     }

@@ -268,7 +268,7 @@ namespace lms::ui::utils
         return filter;
     }
 
-    std::unique_ptr<Wt::WContainerWidget> createFilterClustersForTrack(db::Track::pointer track, Filters& filters)
+    std::unique_ptr<Wt::WContainerWidget> createFilterClustersForTrack(const db::Track::pointer& track, Filters& filters)
     {
         using namespace db;
 
@@ -310,12 +310,12 @@ namespace lms::ui::utils
         return artistContainer;
     }
 
-    std::unique_ptr<Wt::WAnchor> createArtistAnchor(db::Artist::pointer artist, bool setText)
+    std::unique_ptr<Wt::WAnchor> createArtistAnchor(const db::Artist::pointer& artist, bool setText)
     {
         return createArtistAnchor(artist, artist->getName(), setText);
     }
 
-    Wt::WLink createReleaseLink(db::Release::pointer release)
+    Wt::WLink createReleaseLink(const db::Release::pointer& release)
     {
         if (const auto mbid{ release->getMBID() })
             return Wt::WLink{ Wt::LinkType::InternalPath, "/release/mbid/" + mbid->toString() };
@@ -323,7 +323,7 @@ namespace lms::ui::utils
         return Wt::WLink{ Wt::LinkType::InternalPath, "/release/" + release->getId().toString() };
     }
 
-    std::unique_ptr<Wt::WAnchor> createReleaseAnchor(db::Release::pointer release, bool setText)
+    std::unique_ptr<Wt::WAnchor> createReleaseAnchor(const db::Release::pointer& release, bool setText)
     {
         auto res = std::make_unique<Wt::WAnchor>(createReleaseLink(release));
         if (setText)
@@ -344,7 +344,7 @@ namespace lms::ui::utils
         return res;
     }
 
-    std::unique_ptr<Wt::WAnchor> createTrackListAnchor(db::TrackList::pointer trackList, bool setText)
+    std::unique_ptr<Wt::WAnchor> createTrackListAnchor(const db::TrackList::pointer& trackList, bool setText)
     {
         Wt::WLink link{ Wt::LinkType::InternalPath, "/tracklist/" + trackList->getId().toString() };
         auto res{ std::make_unique<Wt::WAnchor>(link) };
@@ -360,7 +360,7 @@ namespace lms::ui::utils
         return res;
     }
 
-    ArtistDisplayInfo computeArtistDisplayInfo(db::ObjectPtr<db::Release> release)
+    ArtistDisplayInfo computeArtistDisplayInfo(const db::ObjectPtr<db::Release>& release)
     {
         ArtistDisplayInfo res;
 
@@ -385,7 +385,7 @@ namespace lms::ui::utils
         return res;
     }
 
-    ArtistDisplayInfo computeArtistDisplayInfo(db::ObjectPtr<db::Track> track, db::TrackArtistLinkType linkType)
+    ArtistDisplayInfo computeArtistDisplayInfo(const db::ObjectPtr<db::Track>& track, db::TrackArtistLinkType linkType)
     {
         ArtistDisplayInfo res;
 
@@ -452,19 +452,19 @@ namespace lms::ui::utils
         return result;
     }
 
-    std::unique_ptr<Wt::WContainerWidget> createArtistsAnchors(db::ObjectPtr<db::Track> track, db::TrackArtistLinkType linkType, std::string_view cssAnchorClass)
+    std::unique_ptr<Wt::WContainerWidget> createArtistsAnchors(const db::ObjectPtr<db::Track>& track, db::TrackArtistLinkType linkType, std::string_view cssAnchorClass)
     {
         const auto computeArtistDisplayInfo{ utils::computeArtistDisplayInfo(track, linkType) };
         return utils::createArtistsAnchors(computeArtistDisplayInfo, cssAnchorClass);
     }
 
-    std::unique_ptr<Wt::WContainerWidget> createArtistsAnchors(db::ObjectPtr<db::Release> release, std::string_view cssAnchorClass)
+    std::unique_ptr<Wt::WContainerWidget> createArtistsAnchors(const db::ObjectPtr<db::Release>& release, std::string_view cssAnchorClass)
     {
         const auto computeArtistDisplayInfo{ utils::computeArtistDisplayInfo(release) };
         return utils::createArtistsAnchors(computeArtistDisplayInfo, cssAnchorClass);
     }
 
-    std::map<Wt::WString, std::vector<db::ObjectPtr<db::Artist>>> getArtistsByRole(db::ObjectPtr<db::Track> track, core::EnumSet<db::TrackArtistLinkType> artistLinkTypes)
+    std::map<Wt::WString, std::vector<db::ObjectPtr<db::Artist>>> getArtistsByRole(const db::ObjectPtr<db::Track>& track, core::EnumSet<db::TrackArtistLinkType> artistLinkTypes)
     {
         std::map<Wt::WString, std::vector<db::Artist::pointer>> artistMap;
 
@@ -514,7 +514,7 @@ namespace lms::ui::utils
         return artistMap;
     }
 
-    std::map<Wt::WString, std::vector<db::ObjectPtr<db::Artist>>> getTrackArtistsByRole(db::ObjectPtr<db::Release> release)
+    std::map<Wt::WString, std::vector<db::ObjectPtr<db::Artist>>> getTrackArtistsByRole(const db::ObjectPtr<db::Release>& release)
     {
         std::map<Wt::WString, std::vector<db::Artist::pointer>> artistMap;
 

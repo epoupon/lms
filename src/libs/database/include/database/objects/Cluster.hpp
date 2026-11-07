@@ -104,7 +104,7 @@ namespace lms::db
 
         Cluster() = default;
 
-        static pointer create(ISession& session, ObjectPtr<ClusterType> type, std::string_view name);
+        static pointer create(ISession& session, const ObjectPtr<ClusterType>& type, std::string_view name);
         static void destroy(ISession& session, std::span<const ClusterId> ids);
 
         // Find utility
@@ -123,7 +123,7 @@ namespace lms::db
         std::string_view getName() const { return _name; }
         ObjectPtr<ClusterType> getType() const { return _clusterType; }
         std::vector<TrackId> getTracks(std::optional<Range> range = std::nullopt) const;
-        void addTrack(ObjectPtr<Track> track);
+        void addTrack(const ObjectPtr<Track>& track);
 
         template<class Action>
         void persist(Action& a)
@@ -135,7 +135,7 @@ namespace lms::db
         }
 
     private:
-        Cluster(ObjectPtr<ClusterType> type, std::string_view name);
+        Cluster(const ObjectPtr<ClusterType>& type, std::string_view name);
 
         std::string _name;
 

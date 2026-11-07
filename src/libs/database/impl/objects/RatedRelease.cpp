@@ -33,13 +33,13 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::RatedRelease)
 
 namespace lms::db
 {
-    RatedRelease::RatedRelease(ObjectPtr<Release> release, ObjectPtr<User> user)
+    RatedRelease::RatedRelease(const ObjectPtr<Release>& release, const ObjectPtr<User>& user)
         : _release{ getDboPtr(release) }
         , _user{ getDboPtr(user) }
     {
     }
 
-    RatedRelease::pointer RatedRelease::create(ISession& session, ObjectPtr<Release> release, ObjectPtr<User> user)
+    RatedRelease::pointer RatedRelease::create(ISession& session, const ObjectPtr<Release>& release, const ObjectPtr<User>& user)
     {
         return utils::addObject(session, std::unique_ptr<RatedRelease>{ new RatedRelease{ release, user } });
     }

@@ -124,7 +124,7 @@ namespace lms::db
         }
     } // namespace
 
-    Cluster::Cluster(ObjectPtr<ClusterType> type, std::string_view name)
+    Cluster::Cluster(const ObjectPtr<ClusterType>& type, std::string_view name)
         : _name{ name }
         , _clusterType{ getDboPtr(type) }
     {
@@ -133,7 +133,7 @@ namespace lms::db
             throw Exception{ "Cluster name is too long: " + std::string{ name } + "'" };
     }
 
-    Cluster::pointer Cluster::create(ISession& session, ObjectPtr<ClusterType> type, std::string_view name)
+    Cluster::pointer Cluster::create(ISession& session, const ObjectPtr<ClusterType>& type, std::string_view name)
     {
         return utils::addObject(session, std::unique_ptr<Cluster>{ new Cluster{ type, name } });
     }
@@ -203,7 +203,7 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(DISTINCT t.release_id) FROM track t INNER JOIN track_cluster t_c ON t_c.track_id = t.id").where("t_c.cluster_id = ?").bind(id));
     }
 
-    void Cluster::addTrack(ObjectPtr<Track> track)
+    void Cluster::addTrack(const ObjectPtr<Track>& track)
     {
         _tracks.insert(getDboPtr(track));
     }

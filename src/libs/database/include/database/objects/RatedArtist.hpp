@@ -42,7 +42,7 @@ namespace lms::db
     public:
         RatedArtist() = default;
 
-        static pointer create(ISession& session, ObjectPtr<Artist> artist, ObjectPtr<User> user);
+        static pointer create(ISession& session, const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user);
 
         struct FindParameters
         {
@@ -88,7 +88,7 @@ namespace lms::db
         }
 
     private:
-        RatedArtist(ObjectPtr<Artist> artist, ObjectPtr<User> user);
+        RatedArtist(const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user);
 
         Rating _rating{};
         Wt::WDateTime _lastUpdated; // when it was rated for the last time

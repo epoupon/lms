@@ -40,7 +40,7 @@ namespace lms::db
     public:
         ReleaseFeedback() = default;
 
-        static pointer create(ISession& session, ObjectPtr<Release> release, ObjectPtr<User> user);
+        static pointer create(ISession& session, const ObjectPtr<Release>& release, const ObjectPtr<User>& user);
 
         // Search utility
         static std::size_t getCount(ISession& session);
@@ -68,7 +68,7 @@ namespace lms::db
         }
 
     private:
-        ReleaseFeedback(ObjectPtr<Release> release, ObjectPtr<User> user);
+        ReleaseFeedback(const ObjectPtr<Release>& release, const ObjectPtr<User>& user);
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };

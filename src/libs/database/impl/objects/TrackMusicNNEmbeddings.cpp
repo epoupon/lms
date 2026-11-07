@@ -35,12 +35,12 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::TrackMusicNNEmbeddings)
 
 namespace lms::db
 {
-    TrackMusicNNEmbeddings::TrackMusicNNEmbeddings(ObjectPtr<Track> track)
+    TrackMusicNNEmbeddings::TrackMusicNNEmbeddings(const ObjectPtr<Track>& track)
         : _track{ getDboPtr(track) }
     {
     }
 
-    TrackMusicNNEmbeddings::pointer TrackMusicNNEmbeddings::create(ISession& session, ObjectPtr<Track> track)
+    TrackMusicNNEmbeddings::pointer TrackMusicNNEmbeddings::create(ISession& session, const ObjectPtr<Track>& track)
     {
         return utils::addObject(session, std::unique_ptr<TrackMusicNNEmbeddings>{ new TrackMusicNNEmbeddings{ track } });
     }

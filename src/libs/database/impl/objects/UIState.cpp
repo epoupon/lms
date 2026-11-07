@@ -32,13 +32,13 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::UIState)
 
 namespace lms::db
 {
-    UIState::UIState(std::string_view item, ObjectPtr<User> user)
+    UIState::UIState(std::string_view item, const ObjectPtr<User>& user)
         : _item{ item }
         , _user{ getDboPtr(user) }
     {
     }
 
-    UIState::pointer UIState::create(ISession& session, std::string_view item, ObjectPtr<User> user)
+    UIState::pointer UIState::create(ISession& session, std::string_view item, const ObjectPtr<User>& user)
     {
         return utils::addObject(session, std::unique_ptr<UIState>{ new UIState{ item, user } });
     }

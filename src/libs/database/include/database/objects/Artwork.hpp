@@ -40,8 +40,8 @@ namespace lms::db
     public:
         Artwork() = default;
 
-        static pointer create(ISession& session, ObjectPtr<TrackEmbeddedImage> trackEmbeddedImage);
-        static pointer create(ISession& session, ObjectPtr<Image> image);
+        static pointer create(ISession& session, const ObjectPtr<TrackEmbeddedImage>& trackEmbeddedImage);
+        static pointer create(ISession& session, const ObjectPtr<Image>& image);
 
         // find
         static std::size_t getCount(ISession& session);
@@ -64,8 +64,8 @@ namespace lms::db
         }
 
     private:
-        Artwork(ObjectPtr<TrackEmbeddedImage> trackEmbeddedImage);
-        Artwork(ObjectPtr<Image> image);
+        Artwork(const ObjectPtr<TrackEmbeddedImage>& trackEmbeddedImage);
+        Artwork(const ObjectPtr<Image>& image);
         Wt::Dbo::ptr<TrackEmbeddedImage> _trackEmbeddedImage;
         Wt::Dbo::ptr<Image> _image;
     };

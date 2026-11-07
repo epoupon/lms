@@ -852,22 +852,22 @@ namespace lms::db
         _releaseTypes.clear();
     }
 
-    void Release::addLabel(ObjectPtr<Label> label)
+    void Release::addLabel(const ObjectPtr<Label>& label)
     {
         _labels.insert(getDboPtr(label));
     }
 
-    void Release::addCountry(ObjectPtr<Country> country)
+    void Release::addCountry(const ObjectPtr<Country>& country)
     {
         _countries.insert(getDboPtr(country));
     }
 
-    void Release::addReleaseType(ObjectPtr<ReleaseType> releaseType)
+    void Release::addReleaseType(const ObjectPtr<ReleaseType>& releaseType)
     {
         _releaseTypes.insert(getDboPtr(releaseType));
     }
 
-    void Release::setPreferredArtwork(ObjectPtr<Artwork> artwork)
+    void Release::setPreferredArtwork(const ObjectPtr<Artwork>& artwork)
     {
         _preferredArtwork = getDboPtr(artwork);
     }

@@ -42,7 +42,7 @@ namespace lms::db
     public:
         ListenBackendSync() = default;
 
-        static pointer create(ISession& session, ObjectPtr<Listen> listen, ScrobblingBackend backend);
+        static pointer create(ISession& session, const ObjectPtr<Listen>& listen, ScrobblingBackend backend);
 
         struct FindParameters
         {
@@ -89,7 +89,7 @@ namespace lms::db
         }
 
     private:
-        ListenBackendSync(ObjectPtr<Listen> listen, ScrobblingBackend backend);
+        ListenBackendSync(const ObjectPtr<Listen>& listen, ScrobblingBackend backend);
 
         ScrobblingBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };

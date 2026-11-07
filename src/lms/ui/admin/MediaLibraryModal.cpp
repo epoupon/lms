@@ -53,7 +53,7 @@ namespace lms::ui
                 auto& session{ LmsApp->getDbSession() };
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer library) {
+                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer& library) {
                     if (library->getId() == _libraryId)
                         return;
 
@@ -97,7 +97,7 @@ namespace lms::ui
 
                 Wt::WValidator::Result result{ Wt::ValidationState::Valid };
                 const std::filesystem::path rootPath{ std::filesystem::path{ input.toUTF8() }.lexically_normal() };
-                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer library) {
+                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer& library) {
                     if (library->getId() == _libraryId)
                         return;
 

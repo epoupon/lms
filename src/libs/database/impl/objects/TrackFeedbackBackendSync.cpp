@@ -32,13 +32,13 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::TrackFeedbackBackendSync)
 
 namespace lms::db
 {
-    TrackFeedbackBackendSync::TrackFeedbackBackendSync(ObjectPtr<TrackFeedback> trackFeedback, FeedbackBackend backend)
+    TrackFeedbackBackendSync::TrackFeedbackBackendSync(const ObjectPtr<TrackFeedback>& trackFeedback, FeedbackBackend backend)
         : _backend{ backend }
         , _trackFeedback{ getDboPtr(trackFeedback) }
     {
     }
 
-    TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::create(ISession& session, ObjectPtr<TrackFeedback> trackFeedback, FeedbackBackend backend)
+    TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::create(ISession& session, const ObjectPtr<TrackFeedback>& trackFeedback, FeedbackBackend backend)
     {
         return utils::addObject(session, std::unique_ptr<TrackFeedbackBackendSync>{ new TrackFeedbackBackendSync{ trackFeedback, backend } });
     }

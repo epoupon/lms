@@ -32,13 +32,13 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::ReleaseFeedbackBackendSync)
 
 namespace lms::db
 {
-    ReleaseFeedbackBackendSync::ReleaseFeedbackBackendSync(ObjectPtr<ReleaseFeedback> releaseFeedback, FeedbackBackend backend)
+    ReleaseFeedbackBackendSync::ReleaseFeedbackBackendSync(const ObjectPtr<ReleaseFeedback>& releaseFeedback, FeedbackBackend backend)
         : _backend{ backend }
         , _releaseFeedback{ getDboPtr(releaseFeedback) }
     {
     }
 
-    ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::create(ISession& session, ObjectPtr<ReleaseFeedback> releaseFeedback, FeedbackBackend backend)
+    ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::create(ISession& session, const ObjectPtr<ReleaseFeedback>& releaseFeedback, FeedbackBackend backend)
     {
         return utils::addObject(session, std::unique_ptr<ReleaseFeedbackBackendSync>{ new ReleaseFeedbackBackendSync{ releaseFeedback, backend } });
     }

@@ -78,8 +78,8 @@ namespace lms::db
         void setScanVersion(std::size_t version) { _scanVersion = version; }
         void setAbsoluteFilePath(const std::filesystem::path& filePath);
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
-        void setDirectory(ObjectPtr<Directory> directory);
-        void setArtist(ObjectPtr<Artist> artist);
+        void setDirectory(const ObjectPtr<Directory>& directory);
+        void setArtist(const ObjectPtr<Artist>& artist);
         void setName(std::string_view name);
         void setSortName(std::string_view sortName);
         void setType(std::string_view type) { _type = type; }

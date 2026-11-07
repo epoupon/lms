@@ -40,7 +40,7 @@ namespace lms::db
     public:
         ArtistFeedback() = default;
 
-        static pointer create(ISession& session, ObjectPtr<Artist> artist, ObjectPtr<User> user);
+        static pointer create(ISession& session, const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user);
 
         // Search utility
         static std::size_t getCount(ISession& session);
@@ -68,7 +68,7 @@ namespace lms::db
         }
 
     private:
-        ArtistFeedback(ObjectPtr<Artist> artist, ObjectPtr<User> user);
+        ArtistFeedback(const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user);
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };

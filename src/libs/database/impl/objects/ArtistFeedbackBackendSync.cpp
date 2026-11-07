@@ -32,13 +32,13 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::ArtistFeedbackBackendSync)
 
 namespace lms::db
 {
-    ArtistFeedbackBackendSync::ArtistFeedbackBackendSync(ObjectPtr<ArtistFeedback> artistFeedback, FeedbackBackend backend)
+    ArtistFeedbackBackendSync::ArtistFeedbackBackendSync(const ObjectPtr<ArtistFeedback>& artistFeedback, FeedbackBackend backend)
         : _backend{ backend }
         , _artistFeedback{ getDboPtr(artistFeedback) }
     {
     }
 
-    ArtistFeedbackBackendSync::pointer ArtistFeedbackBackendSync::create(ISession& session, ObjectPtr<ArtistFeedback> artistFeedback, FeedbackBackend backend)
+    ArtistFeedbackBackendSync::pointer ArtistFeedbackBackendSync::create(ISession& session, const ObjectPtr<ArtistFeedback>& artistFeedback, FeedbackBackend backend)
     {
         return utils::addObject(session, std::unique_ptr<ArtistFeedbackBackendSync>{ new ArtistFeedbackBackendSync{ artistFeedback, backend } });
     }

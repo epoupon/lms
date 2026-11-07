@@ -42,7 +42,7 @@ namespace lms::db
     public:
         RatedRelease() = default;
 
-        static pointer create(ISession& session, ObjectPtr<Release> release, ObjectPtr<User> user);
+        static pointer create(ISession& session, const ObjectPtr<Release>& release, const ObjectPtr<User>& user);
 
         struct FindParameters
         {
@@ -88,7 +88,7 @@ namespace lms::db
         }
 
     private:
-        RatedRelease(ObjectPtr<Release> release, ObjectPtr<User> user);
+        RatedRelease(const ObjectPtr<Release>& release, const ObjectPtr<User>& user);
 
         Rating _rating{};
         Wt::WDateTime _lastUpdated; // when it was rated for the last time

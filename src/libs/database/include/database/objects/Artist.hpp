@@ -151,7 +151,7 @@ namespace lms::db
         void setName(std::string_view name);
         void setMBID(const std::optional<core::UUID>& mbid) { _mbid = mbid; }
         void setSortName(std::string_view sortName);
-        void setPreferredArtwork(ObjectPtr<Artwork> artwork);
+        void setPreferredArtwork(const ObjectPtr<Artwork>& artwork);
 
         template<class Action>
         void persist(Action& a)

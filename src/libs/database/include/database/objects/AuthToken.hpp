@@ -39,7 +39,7 @@ namespace lms::db
     public:
         AuthToken() = default;
 
-        static pointer create(ISession& session, std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, ObjectPtr<User> user);
+        static pointer create(ISession& session, std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, const ObjectPtr<User>& user);
 
         // Utility
         static std::size_t getCount(ISession& session);
@@ -74,7 +74,7 @@ namespace lms::db
         }
 
     private:
-        AuthToken(std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, ObjectPtr<User> user);
+        AuthToken(std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, const ObjectPtr<User>& user);
 
         std::string _domain;
         std::string _value;

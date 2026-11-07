@@ -85,7 +85,7 @@ namespace lms::db
         return _artwork.id();
     }
 
-    void Podcast::setArtwork(ObjectPtr<Artwork> artwork)
+    void Podcast::setArtwork(const ObjectPtr<Artwork>& artwork)
     {
         _artwork = getDboPtr(artwork);
     }

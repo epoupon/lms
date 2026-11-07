@@ -326,12 +326,12 @@ namespace lms::db
         void clearLabels();
         void clearCountries();
         void clearReleaseTypes();
-        void addLabel(ObjectPtr<Label> label);
-        void addCountry(ObjectPtr<Country> country);
-        void addReleaseType(ObjectPtr<ReleaseType> releaseType);
+        void addLabel(const ObjectPtr<Label>& label);
+        void addCountry(const ObjectPtr<Country>& country);
+        void addReleaseType(const ObjectPtr<ReleaseType>& releaseType);
         void setBarcode(std::string_view barcode) { _barcode = barcode; }
         void setComment(std::string_view comment) { _comment = comment; }
-        void setPreferredArtwork(ObjectPtr<Artwork> artwork);
+        void setPreferredArtwork(const ObjectPtr<Artwork>& artwork);
 
         // Get the artists of this release
         std::vector<ObjectPtr<Artist>> getArtists() const;

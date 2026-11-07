@@ -33,13 +33,13 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::ArtistFeedback)
 
 namespace lms::db
 {
-    ArtistFeedback::ArtistFeedback(ObjectPtr<Artist> artist, ObjectPtr<User> user)
+    ArtistFeedback::ArtistFeedback(const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user)
         : _artist{ getDboPtr(artist) }
         , _user{ getDboPtr(user) }
     {
     }
 
-    ArtistFeedback::pointer ArtistFeedback::create(ISession& session, ObjectPtr<Artist> artist, ObjectPtr<User> user)
+    ArtistFeedback::pointer ArtistFeedback::create(ISession& session, const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user)
     {
         return utils::addObject(session, std::unique_ptr<ArtistFeedback>{ new ArtistFeedback{ artist, user } });
     }

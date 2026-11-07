@@ -39,13 +39,13 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::TrackFeedback)
 
 namespace lms::db
 {
-    TrackFeedback::TrackFeedback(ObjectPtr<Track> track, ObjectPtr<User> user)
+    TrackFeedback::TrackFeedback(const ObjectPtr<Track>& track, const ObjectPtr<User>& user)
         : _track{ getDboPtr(track) }
         , _user{ getDboPtr(user) }
     {
     }
 
-    TrackFeedback::pointer TrackFeedback::create(ISession& session, ObjectPtr<Track> track, ObjectPtr<User> user)
+    TrackFeedback::pointer TrackFeedback::create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<User>& user)
     {
         return utils::addObject(session, std::unique_ptr<TrackFeedback>{ new TrackFeedback{ track, user } });
     }

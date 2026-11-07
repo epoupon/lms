@@ -39,13 +39,13 @@ DBO_INSTANTIATE_TEMPLATES(lms::db::TrackEmbeddedImageLink)
 
 namespace lms::db
 {
-    TrackEmbeddedImageLink::TrackEmbeddedImageLink(ObjectPtr<Track> track, ObjectPtr<TrackEmbeddedImage> image)
+    TrackEmbeddedImageLink::TrackEmbeddedImageLink(const ObjectPtr<Track>& track, const ObjectPtr<TrackEmbeddedImage>& image)
         : _track{ getDboPtr(track) }
         , _image{ getDboPtr(image) }
     {
     }
 
-    TrackEmbeddedImageLink::pointer TrackEmbeddedImageLink::create(ISession& session, ObjectPtr<Track> track, ObjectPtr<TrackEmbeddedImage> image)
+    TrackEmbeddedImageLink::pointer TrackEmbeddedImageLink::create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<TrackEmbeddedImage>& image)
     {
         return utils::addObject(session, std::unique_ptr<TrackEmbeddedImageLink>{ new TrackEmbeddedImageLink{ track, image } });
     }

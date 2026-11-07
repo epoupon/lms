@@ -87,7 +87,7 @@ namespace lms::db
 
         PodcastEpisode() = default;
 
-        static pointer create(ISession& session, ObjectPtr<Podcast> podcast);
+        static pointer create(ISession& session, const ObjectPtr<Podcast>& podcast);
         static std::size_t getCount(ISession& session);
         static pointer find(ISession& session, PodcastEpisodeId id);
         static pointer findNewtestEpisode(ISession& session, PodcastId id);
@@ -151,7 +151,7 @@ namespace lms::db
         void setSummary(std::string_view summary) { _summary = summary; }
         void setExplicit(bool explicit_) { _explicit = explicit_; }
         void setDuration(std::chrono::duration<int, std::milli> duration) { _duration = duration; }
-        void setArtwork(ObjectPtr<Artwork> artwork);
+        void setArtwork(const ObjectPtr<Artwork>& artwork);
 
         template<class Action>
         void persist(Action& a)
@@ -186,7 +186,7 @@ namespace lms::db
         }
 
     private:
-        PodcastEpisode(ObjectPtr<Podcast> podcast);
+        PodcastEpisode(const ObjectPtr<Podcast>& podcast);
 
         ManualDownloadState _manualDownloadState{ ManualDownloadState::None };
         std::filesystem::path _audioRelativeFilePath; // relative to cache dir, only set if downloaded

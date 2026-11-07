@@ -41,7 +41,7 @@ namespace lms::db
     public:
         ReleaseFeedbackBackendSync() = default;
 
-        static pointer create(ISession& session, ObjectPtr<ReleaseFeedback> releaseFeedback, FeedbackBackend backend);
+        static pointer create(ISession& session, const ObjectPtr<ReleaseFeedback>& releaseFeedback, FeedbackBackend backend);
 
         struct FindParameters
         {
@@ -88,7 +88,7 @@ namespace lms::db
         }
 
     private:
-        ReleaseFeedbackBackendSync(ObjectPtr<ReleaseFeedback> releaseFeedback, FeedbackBackend backend);
+        ReleaseFeedbackBackendSync(const ObjectPtr<ReleaseFeedback>& releaseFeedback, FeedbackBackend backend);
 
         FeedbackBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };

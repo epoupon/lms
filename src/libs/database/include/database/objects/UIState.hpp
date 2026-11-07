@@ -38,7 +38,7 @@ namespace lms::db
     public:
         UIState() = default;
 
-        static pointer create(ISession& session, std::string_view item, ObjectPtr<User> user);
+        static pointer create(ISession& session, std::string_view item, const ObjectPtr<User>& user);
 
         static std::size_t getCount(ISession& session);
         static pointer find(ISession& session, UIStateId settingId);
@@ -60,7 +60,7 @@ namespace lms::db
         }
 
     private:
-        UIState(std::string_view item, ObjectPtr<User> user);
+        UIState(std::string_view item, const ObjectPtr<User>& user);
 
         std::string _item;
         std::string _value;
