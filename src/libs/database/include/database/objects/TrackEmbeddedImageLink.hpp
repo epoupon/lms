@@ -22,8 +22,6 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-
 #include "core/media/ImageType.hpp"
 
 #include "database/Object.hpp"
@@ -38,11 +36,9 @@ namespace lms::db
     class TrackEmbeddedImage;
     class Track;
 
-    class TrackEmbeddedImageLink final : public Object<TrackEmbeddedImageLink, TrackEmbeddedImageLinkId>
+    class TrackEmbeddedImageLink : public Object<TrackEmbeddedImageLink, TrackEmbeddedImageLinkId>
     {
     public:
-        TrackEmbeddedImageLink() = default;
-
         static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<TrackEmbeddedImage>& image);
 
         // find
@@ -62,25 +58,11 @@ namespace lms::db
         void setType(core::media::ImageType type);
         void setDescription(std::string_view description) { _description = description; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _index, "index");
-            Wt::Dbo::field(a, _type, "type");
-            Wt::Dbo::field(a, _description, "description");
-
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _image, "track_embedded_image", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        TrackEmbeddedImageLink(const ObjectPtr<Track>& track, const ObjectPtr<TrackEmbeddedImage>& image);
+    protected:
+        TrackEmbeddedImageLink() = default;
 
         int _index{}; // index within the track
         detail::ImageType _type{ detail::ImageType::Unknown };
         std::string _description;
-
-        Wt::Dbo::ptr<Track> _track;
-        Wt::Dbo::ptr<TrackEmbeddedImage> _image;
     };
 } // namespace lms::db

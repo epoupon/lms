@@ -21,10 +21,10 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "database/objects/User.hpp"
-
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
+#include "UIStateDbo.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
@@ -33,15 +33,20 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::UIState)
 
 namespace lms::db
 {
-    UIState::UIState(std::string_view item, const ObjectPtr<User>& user)
+    UIState::UIState(std::string_view item)
         : _item{ item }
+    {
+    }
+
+    dbo::UIState::UIState(std::string_view item, const ObjectPtr<db::User>& user)
+        : db::UIState{ item }
         , _user{ getDboPtr(user) }
     {
     }
 
     UIState::pointer UIState::create(ISession& session, std::string_view item, const ObjectPtr<User>& user)
     {
-        return utils::addObject(session, std::unique_ptr<UIState>{ new UIState{ item, user } });
+        return utils::addObject(session, std::unique_ptr<dbo::UIState>{ new dbo::UIState{ item, user } });
     }
 
     std::size_t UIState::getCount(ISession& session)
@@ -55,7 +60,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<UIState>>("SELECT ui_s from ui_state ui_s").where("ui_s.id = ?").bind(settingId) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::UIState>>("SELECT ui_s from ui_state ui_s").where("ui_s.id = ?").bind(settingId) };
         return utils::fetchQuerySingleResult(query);
     }
 
@@ -63,7 +68,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<UIState>>("SELECT ui_s from ui_state ui_s").where("ui_s.item = ?").bind(item).where("ui_s.user_id = ?").bind(userId) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::UIState>>("SELECT ui_s from ui_state ui_s").where("ui_s.item = ?").bind(item).where("ui_s.user_id = ?").bind(userId) };
         return utils::fetchQuerySingleResult(query);
     }
 } // namespace lms::db

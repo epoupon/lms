@@ -22,8 +22,6 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-
 #include "database/Object.hpp"
 #include "database/objects/UIStateId.hpp"
 #include "database/objects/UserId.hpp"
@@ -33,11 +31,9 @@ namespace lms::db
     class ISession;
     class User;
 
-    class UIState final : public Object<UIState, UIStateId>
+    class UIState : public Object<UIState, UIStateId>
     {
     public:
-        UIState() = default;
-
         static pointer create(ISession& session, std::string_view item, const ObjectPtr<User>& user);
 
         static std::size_t getCount(ISession& session);
@@ -50,20 +46,11 @@ namespace lms::db
         // Setters
         void setValue(std::string_view value) { _value = value; };
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _item, "item");
-            Wt::Dbo::field(a, _value, "value");
-
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        UIState(std::string_view item, const ObjectPtr<User>& user);
+    protected:
+        UIState() = default;
+        explicit UIState(std::string_view item);
 
         std::string _item;
         std::string _value;
-        Wt::Dbo::ptr<User> _user;
     };
 } // namespace lms::db

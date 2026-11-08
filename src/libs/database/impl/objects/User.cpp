@@ -24,18 +24,11 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/objects/Artist.hpp"
-#include "database/objects/AuthToken.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/UIState.hpp"
-
+#include "AuthTokenDbo.hpp"
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
+#include "UIStateDbo.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/EnumSetTraits.hpp"
 #include "traits/IdTypeTraits.hpp"
@@ -52,7 +45,7 @@ namespace lms::db
 
     User::pointer User::create(ISession& session, std::string_view loginName)
     {
-        return utils::addObject(session, std::unique_ptr<User>{ new User{ loginName } });
+        return utils::addObject(session, std::unique_ptr<dbo::User>{ new dbo::User{ loginName } });
     }
 
     std::size_t User::getCount(ISession& session)
@@ -75,7 +68,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->find<User>() };
+        auto query{ getDboSession(session)->find<dbo::User>() };
 
         return utils::forEachQueryRangeResult(query, params.range, func);
     }
@@ -84,21 +77,21 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<User>>("SELECT u from user u").where("u.type = ?").bind(UserType::DEMO));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::User>>("SELECT u from user u").where("u.type = ?").bind(UserType::DEMO));
     }
 
     User::pointer User::find(ISession& session, UserId id)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<User>>("SELECT u from user u").where("u.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::User>>("SELECT u from user u").where("u.id = ?").bind(id));
     }
 
     User::pointer User::find(ISession& session, std::string_view name)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<User>>("SELECT u from user u").where("u.login_name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::User>>("SELECT u from user u").where("u.login_name = ?").bind(name));
     }
 
     void User::setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate)
@@ -115,5 +108,10 @@ namespace lms::db
     void User::setFeedbackBackends(core::EnumSet<FeedbackBackend> backends)
     {
         _feedbackBackends = backends;
+    }
+
+    std::size_t User::getAuthTokensCount() const
+    {
+        return getDbo(*this)._authTokens.size();
     }
 } // namespace lms::db

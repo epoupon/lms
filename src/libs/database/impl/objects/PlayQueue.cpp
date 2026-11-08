@@ -22,29 +22,29 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/objects/Artist.hpp"
-#include "database/objects/Artwork.hpp"
-#include "database/objects/Cluster.hpp"
-#include "database/objects/Directory.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/MediaLibrary.hpp"
-#include "database/objects/Medium.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Movement.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/TrackArtistLink.hpp"
-#include "database/objects/TrackEmbeddedImage.hpp"
-#include "database/objects/TrackEmbeddedImageLink.hpp"
-#include "database/objects/TrackLyrics.hpp"
-#include "database/objects/User.hpp"
-#include "database/objects/Work.hpp"
-
+#include "ArtistDbo.hpp"
+#include "ArtworkDbo.hpp"
+#include "ClusterDbo.hpp"
+#include "DirectoryDbo.hpp"
+#include "GenreDbo.hpp"
+#include "GroupingDbo.hpp"
+#include "LanguageDbo.hpp"
+#include "MediaLibraryDbo.hpp"
+#include "MediumDbo.hpp"
+#include "MoodDbo.hpp"
+#include "MovementDbo.hpp"
 #include "ObjectPtrImpl.hpp"
+#include "PlayQueueDbo.hpp"
+#include "ReleaseDbo.hpp"
 #include "Session.hpp"
+#include "TrackArtistLinkDbo.hpp"
+#include "TrackDbo.hpp"
+#include "TrackEmbeddedImageDbo.hpp"
+#include "TrackEmbeddedImageLinkDbo.hpp"
+#include "TrackLyricsDbo.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
+#include "WorkDbo.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
@@ -52,15 +52,20 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::PlayQueue)
 
 namespace lms::db
 {
-    PlayQueue::PlayQueue(const ObjectPtr<User>& user, std::string_view name)
+    PlayQueue::PlayQueue(std::string_view name)
         : _name{ name }
+    {
+    }
+
+    dbo::PlayQueue::PlayQueue(const ObjectPtr<db::User>& user, std::string_view name)
+        : db::PlayQueue{ name }
         , _user{ getDboPtr(user) }
     {
     }
 
     PlayQueue::pointer PlayQueue::create(ISession& session, const ObjectPtr<User>& user, std::string_view name)
     {
-        return utils::addObject(session, std::unique_ptr<PlayQueue>{ new PlayQueue{ user, name } });
+        return utils::addObject(session, std::unique_ptr<dbo::PlayQueue>{ new dbo::PlayQueue{ user, name } });
     }
 
     std::size_t PlayQueue::getCount(ISession& session)
@@ -74,14 +79,14 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<PlayQueue>>("SELECT p from playqueue p").where("p.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayQueue>>("SELECT p from playqueue p").where("p.id = ?").bind(id));
     }
 
     PlayQueue::pointer PlayQueue::find(ISession& session, UserId userId, std::string_view name)
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<PlayQueue>>("SELECT p from playqueue p") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayQueue>>("SELECT p from playqueue p") };
         query.where("p.user_id = ?").bind(userId);
         query.where("p.name = ?").bind(name);
 
@@ -90,17 +95,17 @@ namespace lms::db
 
     void PlayQueue::clear()
     {
-        _tracks.clear();
+        getDbo(*this)._tracks.clear();
     }
 
     void PlayQueue::addTrack(const ObjectPtr<Track>& track)
     {
-        _tracks.insert(getDboPtr(track));
+        getDbo(*this)._tracks.insert(getDboPtr(track));
     }
 
     Track::pointer PlayQueue::getTrackAtCurrentIndex() const
     {
-        auto query{ _tracks.find() };
+        auto query{ getDbo(*this)._tracks.find() };
         query.offset(_currentIndex);
         query.limit(1);
 
@@ -109,7 +114,16 @@ namespace lms::db
 
     void PlayQueue::visitTracks(const std::function<void(const ObjectPtr<Track>& track)>& visitor) const
     {
-        utils::forEachQueryResult(_tracks.find(), visitor);
+        utils::forEachQueryResult(getDbo(*this)._tracks.find(), visitor);
     }
 
+    ObjectPtr<User> PlayQueue::getUser() const
+    {
+        return getDbo(*this)._user;
+    }
+
+    bool PlayQueue::isEmpty() const
+    {
+        return getDbo(*this)._tracks.empty();
+    }
 } // namespace lms::db

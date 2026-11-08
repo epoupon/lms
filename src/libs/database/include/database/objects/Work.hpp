@@ -25,9 +25,6 @@
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
-
 #include "core/UUID.hpp"
 
 #include "database/Object.hpp"
@@ -39,14 +36,11 @@
 namespace lms::db
 {
     class ISession;
-    class Track;
 
-    class Work final : public Object<Work, WorkId>
+    class Work : public Object<Work, WorkId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
-
-        Work() = default;
 
         static pointer create(ISession& session, std::string_view name, const std::optional<core::UUID>& mbid);
         static void destroy(ISession& session, std::span<const WorkId> ids);
@@ -65,20 +59,12 @@ namespace lms::db
         std::string_view getName() const { return _name; }
         std::optional<core::UUID> getMBID() const { return _mbid; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _mbid, "mbid");
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_work", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
+    protected:
+        Work() = default;
         Work(std::string_view name, const std::optional<core::UUID>& mbid);
 
         std::string _name;
         std::optional<core::UUID> _mbid;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
     };
 
 } // namespace lms::db

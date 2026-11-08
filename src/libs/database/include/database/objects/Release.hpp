@@ -25,8 +25,6 @@
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "core/EnumSet.hpp"
@@ -59,15 +57,12 @@ namespace lms::db
     class Medium;
     class Release;
     class ReleaseArtistLink;
-    class Track;
     class TrackArtistLink;
     class User;
 
-    class Country final : public Object<Country, CountryId>
+    class Country : public Object<Country, CountryId>
     {
     public:
-        Country() = default;
-
         static pointer create(ISession& session, std::string_view name);
         static void destroy(ISession& session, std::span<const CountryId> ids);
 
@@ -79,27 +74,18 @@ namespace lms::db
         // Accessors
         std::string_view getName() const { return _name; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::hasMany(a, _releases, Wt::Dbo::ManyToMany, "release_country", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
+    protected:
+        Country() = default;
         static constexpr std::size_t _maxNameLength{ 1024 };
 
-        Country(std::string_view name);
+        explicit Country(std::string_view name);
 
         std::string _name;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this country
     };
 
-    class Label final : public Object<Label, LabelId>
+    class Label : public Object<Label, LabelId>
     {
     public:
-        Label() = default;
-
         static pointer create(ISession& session, std::string_view name);
         static void destroy(ISession& session, std::span<const LabelId> ids);
 
@@ -112,27 +98,18 @@ namespace lms::db
         // Accessors
         std::string_view getName() const { return _name; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::hasMany(a, _releases, Wt::Dbo::ManyToMany, "release_label", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
+    protected:
+        Label() = default;
         static constexpr std::size_t _maxNameLength{ 1024 };
 
-        Label(std::string_view name);
+        explicit Label(std::string_view name);
 
         std::string _name;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this label
     };
 
-    class ReleaseType final : public Object<ReleaseType, ReleaseTypeId>
+    class ReleaseType : public Object<ReleaseType, ReleaseTypeId>
     {
     public:
-        ReleaseType() = default;
-
         static pointer create(ISession& session, std::string_view name);
         static void destroy(ISession& session, std::span<const ReleaseTypeId> ids);
 
@@ -145,23 +122,16 @@ namespace lms::db
         // Accessors
         std::string_view getName() const { return _name; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::hasMany(a, _releases, Wt::Dbo::ManyToMany, "release_release_type", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
+    protected:
+        ReleaseType() = default;
         static constexpr std::size_t _maxNameLength{ 1024 };
 
-        ReleaseType(std::string_view name);
+        explicit ReleaseType(std::string_view name);
 
         std::string _name;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this type
     };
 
-    class Release final : public Object<Release, ReleaseId>
+    class Release : public Object<Release, ReleaseId>
     {
     public:
         struct FindParameters
@@ -251,8 +221,6 @@ namespace lms::db
             }
         };
 
-        Release() = default;
-
         static pointer create(ISession& session, const std::string& name, const std::optional<core::UUID>& MBID = {});
         static void destroy(ISession& session, std::span<const ReleaseId> ids);
 
@@ -340,28 +308,9 @@ namespace lms::db
         void visitTrackArtists(TrackArtistLinkType type, std::function<void(const ObjectPtr<Artist>&)> visitor) const;
         std::vector<ArtistId> getTrackArtistIds(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
         bool hasVariousArtists() const;
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _sortName, "sort_name");
-            Wt::Dbo::field(a, _MBID, "mbid");
-            Wt::Dbo::field(a, _groupMBID, "group_mbid");
-            Wt::Dbo::field(a, _totalDisc, "total_disc");
-            Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
-            Wt::Dbo::field(a, _isCompilation, "is_compilation");
-            Wt::Dbo::field(a, _barcode, "barcode");
-            Wt::Dbo::field(a, _comment, "comment");
 
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
-            Wt::Dbo::hasMany(a, _releaseArtistLinks, Wt::Dbo::ManyToOne, "release");
-            Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::hasMany(a, _labels, Wt::Dbo::ManyToMany, "release_label", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _releaseTypes, Wt::Dbo::ManyToMany, "release_release_type", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _countries, Wt::Dbo::ManyToMany, "release_country", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
+    protected:
+        Release() = default;
         Release(const std::string& name, const std::optional<core::UUID>& MBID = {});
 
         core::PartialDateTime getDate(bool original) const;
@@ -378,13 +327,6 @@ namespace lms::db
         bool _isCompilation{}; // See https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#compilation-itunes-5
         std::string _barcode;
         std::string _comment;
-
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
-        Wt::Dbo::collection<Wt::Dbo::ptr<ReleaseArtistLink>> _releaseArtistLinks;
-        Wt::Dbo::ptr<Artwork> _preferredArtwork;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Label>> _labels;
-        Wt::Dbo::collection<Wt::Dbo::ptr<ReleaseType>> _releaseTypes;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Country>> _countries;
     };
 
 } // namespace lms::db

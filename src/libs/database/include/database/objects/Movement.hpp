@@ -23,8 +23,6 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-
 #include "database/Object.hpp"
 #include "database/objects/MovementId.hpp"
 #include "database/objects/TrackId.hpp"
@@ -34,12 +32,10 @@ namespace lms::db
     class ISession;
     class Track;
 
-    class Movement final : public Object<Movement, MovementId>
+    class Movement : public Object<Movement, MovementId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
-
-        Movement() = default;
 
         static pointer create(ISession& session, std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<Track>& track);
 
@@ -47,22 +43,13 @@ namespace lms::db
         std::optional<std::size_t> getNumber() const { return _number; }
         std::optional<std::size_t> getCount() const { return _count; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _number, "number");
-            Wt::Dbo::field(a, _count, "count");
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        Movement(std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<Track>& track);
+    protected:
+        Movement() = default;
+        Movement(std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count);
 
         std::string _name;
         std::optional<int> _number;
         std::optional<int> _count;
-        Wt::Dbo::ptr<Track> _track;
     };
 
 } // namespace lms::db

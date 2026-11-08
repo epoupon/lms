@@ -22,18 +22,14 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/objects/Artist.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/User.hpp"
-
+#include "ArtistDbo.hpp"
 #include "JoinSet.hpp"
+#include "ListenDbo.hpp"
 #include "ObjectPtrImpl.hpp"
+#include "ReleaseDbo.hpp"
 #include "Session.hpp"
+#include "TrackDbo.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "objects/FilterExprCompiler.hpp"
 #include "traits/IdTypeTraits.hpp"
@@ -179,8 +175,13 @@ namespace lms::db
         }
     } // namespace
 
-    Listen::Listen(const ObjectPtr<User>& user, const ObjectPtr<Track>& track, const Wt::WDateTime& dateTime)
+    Listen::Listen(const Wt::WDateTime& dateTime)
         : _dateTime{ Wt::WDateTime::fromTime_t(dateTime.toTime_t()) }
+    {
+    }
+
+    dbo::Listen::Listen(const ObjectPtr<db::User>& user, const ObjectPtr<db::Track>& track, const Wt::WDateTime& dateTime)
+        : db::Listen{ dateTime }
         , _user{ getDboPtr(user) }
         , _track{ getDboPtr(track) }
     {
@@ -188,7 +189,7 @@ namespace lms::db
 
     Listen::pointer Listen::create(ISession& session, const ObjectPtr<User>& user, const ObjectPtr<Track>& track, const Wt::WDateTime& dateTime)
     {
-        return utils::addObject(session, std::unique_ptr<Listen>{ new Listen{ user, track, dateTime } });
+        return utils::addObject(session, std::unique_ptr<dbo::Listen>{ new dbo::Listen{ user, track, dateTime } });
     }
 
     std::size_t Listen::getCount(ISession& session)
@@ -200,7 +201,7 @@ namespace lms::db
     Listen::pointer Listen::find(ISession& session, ListenId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l").where("l.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Listen>>("SELECT l from listen l").where("l.id = ?").bind(id));
     }
 
     std::vector<ListenId> Listen::find(ISession& session, const FindParameters& parameters)
@@ -219,7 +220,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<Listen>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId).where("date_time = ?").bind(Wt::WDateTime::fromTime_t(dateTime.toTime_t())));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Listen>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId).where("date_time = ?").bind(Wt::WDateTime::fromTime_t(dateTime.toTime_t())));
     }
 
     std::vector<ArtistId> Listen::getTopArtists(ISession& session, const ArtistStatsFindParameters& params)
@@ -373,7 +374,7 @@ namespace lms::db
         checkReadTransaction(session);
 
         // clang-format off
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Listen>>("SELECT l from listen l")
                         .join("track t ON l.track_id = t.id")
                         .where("t.release_id = ?").bind(releaseId)
                         .where("l.user_id = ?").bind(userId)
@@ -390,7 +391,7 @@ namespace lms::db
         checkReadTransaction(session);
 
         // clang-format off
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Listen>>("SELECT l from listen l")
                         .where("l.track_id = ?").bind(trackId)
                         .where("l.user_id = ?").bind(userId)
                         .orderBy("l.date_time DESC")
@@ -399,5 +400,15 @@ namespace lms::db
         // clang-format on
 
         return utils::fetchQuerySingleResult(query);
+    }
+
+    ObjectPtr<User> Listen::getUser() const
+    {
+        return getDbo(*this)._user;
+    }
+
+    ObjectPtr<Track> Listen::getTrack() const
+    {
+        return getDbo(*this)._track;
     }
 } // namespace lms::db

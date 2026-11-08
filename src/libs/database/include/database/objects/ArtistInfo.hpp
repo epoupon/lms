@@ -25,7 +25,6 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"
@@ -40,11 +39,9 @@ namespace lms::db
     class Directory;
     class ISession;
 
-    class ArtistInfo final : public Object<ArtistInfo, ArtistInfoId>
+    class ArtistInfo : public Object<ArtistInfo, ArtistInfoId>
     {
     public:
-        ArtistInfo() = default;
-
         static pointer create(ISession& session);
         static void destroy(ISession& session, std::span<const ArtistInfoId> ids);
 
@@ -65,7 +62,7 @@ namespace lms::db
         const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
         ObjectPtr<Directory> getDirectory() const;
         ObjectPtr<Artist> getArtist() const;
-        DirectoryId getDirectoryId() const { return _directory.id(); }
+        DirectoryId getDirectoryId() const;
         std::string_view getName() const { return _name; }
         std::string_view getSortName() const { return _sortName; }
         std::string_view getType() const { return _type; }
@@ -88,27 +85,8 @@ namespace lms::db
         void setBiography(std::string_view biography) { _biography = biography; };
         void setMBIDMatched(bool matched) { _MBIDMatched = matched; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _scanVersion, "scan_version");
-            Wt::Dbo::field(a, _absoluteFilePath, "absolute_file_path");
-            Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
-
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _sortName, "sort_name");
-            Wt::Dbo::field(a, _type, "type");
-            Wt::Dbo::field(a, _gender, "gender");
-            Wt::Dbo::field(a, _disambiguation, "disambiguation");
-            Wt::Dbo::field(a, _biography, "biography");
-
-            Wt::Dbo::field(a, _MBIDMatched, "mbid_matched");
-
-            Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
+    protected:
+        ArtistInfo() = default;
         int _scanVersion{};
 
         // Set when coming from artist info file
@@ -127,8 +105,5 @@ namespace lms::db
         std::string _biography;
 
         bool _MBIDMatched{};
-
-        Wt::Dbo::ptr<Directory> _directory;
-        Wt::Dbo::ptr<Artist> _artist;
     };
 } // namespace lms::db

@@ -22,8 +22,6 @@
 #include <optional>
 #include <span>
 
-#include <Wt/Dbo/Field.h>
-
 #include "database/IdType.hpp"
 #include "database/Object.hpp"
 #include "database/Types.hpp"
@@ -36,11 +34,9 @@ namespace lms::db
     class ISession;
     class Track;
 
-    class TrackMusicNNEmbeddings final : public Object<TrackMusicNNEmbeddings, TrackMusicNNEmbeddingsId>
+    class TrackMusicNNEmbeddings : public Object<TrackMusicNNEmbeddings, TrackMusicNNEmbeddingsId>
     {
     public:
-        TrackMusicNNEmbeddings() = default;
-
         static pointer create(ISession& session, const ObjectPtr<Track>& track);
 
         // Find utilities
@@ -53,22 +49,14 @@ namespace lms::db
 
         // Accessors
         std::span<const std::byte> getData() const;
-        TrackId getTrackId() const { return _track.id(); }
-        Wt::Dbo::ptr<Track> getTrack() const { return _track; }
+        TrackId getTrackId() const;
+        ObjectPtr<Track> getTrack() const;
 
         void setData(std::span<const std::byte> data);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _data, "data");
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        TrackMusicNNEmbeddings(const ObjectPtr<Track>& track);
+    protected:
+        TrackMusicNNEmbeddings() = default;
 
         std::vector<unsigned char> _data;
-        Wt::Dbo::ptr<Track> _track;
     };
 } // namespace lms::db

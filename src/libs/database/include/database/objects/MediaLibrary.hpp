@@ -24,8 +24,6 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-
 #include "database/Object.hpp"
 #include "database/objects/MediaLibraryId.hpp"
 
@@ -33,12 +31,10 @@ namespace lms::db
 {
     class ISession;
 
-    class MediaLibrary final : public Object<MediaLibrary, MediaLibraryId>
+    class MediaLibrary : public Object<MediaLibrary, MediaLibraryId>
     {
     public:
         static const std::size_t maxNameLength{ 128 };
-
-        MediaLibrary() = default;
 
         static pointer create(ISession& session, std::string_view name, const std::filesystem::path& p);
 
@@ -59,14 +55,8 @@ namespace lms::db
         void setName(std::string_view name) { _name = name; }
         void setPath(const std::filesystem::path& p);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _path, "path");
-            Wt::Dbo::field(a, _name, "name");
-        }
-
-    private:
+    protected:
+        MediaLibrary() = default;
         MediaLibrary(std::string_view name, const std::filesystem::path& p);
 
         std::filesystem::path _path;

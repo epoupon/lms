@@ -22,8 +22,6 @@
 #include <functional>
 #include <optional>
 
-#include <Wt/Dbo/Field.h>
-
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ReleaseFeedbackBackendSyncId.hpp"
@@ -36,11 +34,9 @@ namespace lms::db
     class ReleaseFeedback;
 
     // Tracks the delivery of a single ReleaseFeedback to a given external feedback backend.
-    class ReleaseFeedbackBackendSync final : public Object<ReleaseFeedbackBackendSync, ReleaseFeedbackBackendSyncId>
+    class ReleaseFeedbackBackendSync : public Object<ReleaseFeedbackBackendSync, ReleaseFeedbackBackendSyncId>
     {
     public:
-        ReleaseFeedbackBackendSync() = default;
-
         static pointer create(ISession& session, const ObjectPtr<ReleaseFeedback>& releaseFeedback, FeedbackBackend backend);
 
         struct FindParameters
@@ -72,27 +68,17 @@ namespace lms::db
         static std::vector<ReleaseFeedbackBackendSyncId> find(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
 
-        ObjectPtr<ReleaseFeedback> getReleaseFeedback() const { return _releaseFeedback; }
+        ObjectPtr<ReleaseFeedback> getReleaseFeedback() const;
         FeedbackBackend getBackend() const { return _backend; }
         SyncState getSyncState() const { return _syncState; }
 
         void setSyncState(SyncState state) { _syncState = state; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _backend, "backend");
-            Wt::Dbo::field(a, _syncState, "sync_state");
-
-            Wt::Dbo::belongsTo(a, _releaseFeedback, "release_feedback", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        ReleaseFeedbackBackendSync(const ObjectPtr<ReleaseFeedback>& releaseFeedback, FeedbackBackend backend);
+    protected:
+        ReleaseFeedbackBackendSync() = default;
+        explicit ReleaseFeedbackBackendSync(FeedbackBackend backend);
 
         FeedbackBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };
-
-        Wt::Dbo::ptr<ReleaseFeedback> _releaseFeedback;
     };
 } // namespace lms::db

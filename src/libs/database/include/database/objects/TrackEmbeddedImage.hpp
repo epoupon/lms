@@ -22,9 +22,6 @@
 #include <optional>
 #include <span>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
-
 #include "core/media/ImageFormat.hpp"
 #include "core/media/ImageType.hpp"
 
@@ -41,14 +38,11 @@
 namespace lms::db
 {
     class ISession;
-    class TrackEmbeddedImageLink;
     class Track;
 
-    class TrackEmbeddedImage final : public Object<TrackEmbeddedImage, TrackEmbeddedImageId>
+    class TrackEmbeddedImage : public Object<TrackEmbeddedImage, TrackEmbeddedImageId>
     {
     public:
-        TrackEmbeddedImage() = default;
-
         static pointer create(ISession& session);
         static void destroy(ISession& session, std::span<const TrackEmbeddedImageId> ids);
 
@@ -120,25 +114,12 @@ namespace lms::db
         void setHeight(std::size_t height) { _height = static_cast<int>(height); }
         void setFormat(core::media::ImageFormat format);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _hash, "hash");
-            Wt::Dbo::field(a, _size, "size");
-            Wt::Dbo::field(a, _width, "width");
-            Wt::Dbo::field(a, _height, "height");
-            Wt::Dbo::field(a, _format, "format");
-
-            Wt::Dbo::hasMany(a, _links, Wt::Dbo::ManyToOne, "track_embedded_image");
-        }
-
-    private:
+    protected:
+        TrackEmbeddedImage() = default;
         ImageHashType _hash;
         int _size{};
         int _width{};
         int _height{};
         detail::ImageFormat _format{ detail::ImageFormat::Unknown };
-
-        Wt::Dbo::collection<Wt::Dbo::ptr<TrackEmbeddedImageLink>> _links;
     };
 } // namespace lms::db

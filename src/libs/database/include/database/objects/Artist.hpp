@@ -25,8 +25,6 @@
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "core/UUID.hpp"
@@ -50,7 +48,7 @@ namespace lms::db
     class Track;
     class User;
 
-    class Artist final : public Object<Artist, ArtistId>
+    class Artist : public Object<Artist, ArtistId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -116,8 +114,6 @@ namespace lms::db
             }
         };
 
-        Artist() = default;
-
         static pointer create(ISession& session, const std::string& name, const std::optional<core::UUID>& mbid = std::nullopt);
         static void destroy(ISession& session, std::span<const ArtistId> ids);
 
@@ -153,24 +149,13 @@ namespace lms::db
         void setSortName(std::string_view sortName);
         void setPreferredArtwork(const ObjectPtr<Artwork>& artwork);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _sortName, "sort_name");
-            Wt::Dbo::field(a, _mbid, "mbid");
-
-            Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
-        }
-
-    private:
+    protected:
+        Artist() = default;
         // Create
         Artist(const std::string& name, const std::optional<core::UUID>& MBID = {});
 
         std::string _name;
         std::string _sortName;
         std::optional<core::UUID> _mbid;
-
-        Wt::Dbo::ptr<Artwork> _preferredArtwork;
     };
 } // namespace lms::db

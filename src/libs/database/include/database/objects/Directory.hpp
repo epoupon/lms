@@ -27,8 +27,6 @@
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-
 #include "core/EnumSet.hpp"
 
 #include "database/Object.hpp"
@@ -45,11 +43,9 @@ namespace lms::db
     class ISession;
     class MediaLibrary;
 
-    class Directory final : public Object<Directory, DirectoryId>
+    class Directory : public Object<Directory, DirectoryId>
     {
     public:
-        Directory() = default;
-
         static pointer create(ISession& session, const std::filesystem::path& p);
         static void destroy(ISession& session, std::span<const DirectoryId> ids);
 
@@ -135,32 +131,20 @@ namespace lms::db
         // getters
         const std::filesystem::path& getAbsolutePath() const { return _absolutePath; }
         std::string_view getName() const { return _name; }
-        ObjectPtr<Directory> getParentDirectory() const { return _parent; }
-        DirectoryId getParentDirectoryId() const { return _parent.id(); }
-        ObjectPtr<MediaLibrary> getMediaLibrary() const { return _mediaLibrary; }
+        ObjectPtr<Directory> getParentDirectory() const;
+        DirectoryId getParentDirectoryId() const;
+        ObjectPtr<MediaLibrary> getMediaLibrary() const;
 
         // setters
         void setAbsolutePath(const std::filesystem::path& p);
         void setParent(const ObjectPtr<Directory>& parent);
-        void setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
+        void setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _absolutePath, "absolute_path");
-            Wt::Dbo::field(a, _name, "name");
-
-            Wt::Dbo::belongsTo(a, _parent, "parent_directory", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete directories on media library removal, we want to wait for the next scan to have a chance to migrate files
-        }
-
-    private:
-        Directory(const std::filesystem::path& p);
+    protected:
+        Directory() = default;
+        explicit Directory(const std::filesystem::path& p);
 
         std::filesystem::path _absolutePath;
         std::string _name;
-
-        Wt::Dbo::ptr<Directory> _parent;
-        Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
     };
 } // namespace lms::db

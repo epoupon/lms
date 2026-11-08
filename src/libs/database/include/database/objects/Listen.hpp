@@ -22,7 +22,6 @@
 #include <functional>
 #include <optional>
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"
@@ -43,11 +42,9 @@ namespace lms::db
     class Track;
     class User;
 
-    class Listen final : public Object<Listen, ListenId>
+    class Listen : public Object<Listen, ListenId>
     {
     public:
-        Listen() = default;
-
         static pointer create(ISession& session, const ObjectPtr<User>& user, const ObjectPtr<Track>& track, const Wt::WDateTime& dateTime);
 
         struct FindParameters
@@ -148,26 +145,15 @@ namespace lms::db
         static pointer getMostRecentListen(ISession& session, UserId userId, ReleaseId releaseId);
         static pointer getMostRecentListen(ISession& session, UserId userId, TrackId trackId);
 
-        ObjectPtr<User> getUser() const { return _user; }
-        ObjectPtr<Track> getTrack() const { return _track; }
+        ObjectPtr<User> getUser() const;
+        ObjectPtr<Track> getTrack() const;
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _dateTime, "date_time");
-
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        Listen(const ObjectPtr<User>& user, const ObjectPtr<Track>& track, const Wt::WDateTime& dateTime);
+    protected:
+        Listen() = default;
+        explicit Listen(const Wt::WDateTime& dateTime);
 
         Wt::WDateTime _dateTime;
-
-        Wt::Dbo::ptr<User> _user;
-        Wt::Dbo::ptr<Track> _track;
     };
 
 } // namespace lms::db

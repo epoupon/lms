@@ -21,11 +21,11 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "database/objects/Image.hpp"
-#include "database/objects/TrackEmbeddedImage.hpp"
-
+#include "ArtworkDbo.hpp"
+#include "ImageDbo.hpp"
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
+#include "TrackEmbeddedImageDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
@@ -34,24 +34,24 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::Artwork)
 
 namespace lms::db
 {
-    Artwork::Artwork(const ObjectPtr<TrackEmbeddedImage>& trackEmbeddedImage)
+    dbo::Artwork::Artwork(const ObjectPtr<db::TrackEmbeddedImage>& trackEmbeddedImage)
         : _trackEmbeddedImage{ getDboPtr(trackEmbeddedImage) }
     {
     }
 
-    Artwork::Artwork(const ObjectPtr<Image>& image)
+    dbo::Artwork::Artwork(const ObjectPtr<db::Image>& image)
         : _image{ getDboPtr(image) }
     {
     }
 
     Artwork::pointer Artwork::create(ISession& session, const ObjectPtr<TrackEmbeddedImage>& trackEmbeddedImage)
     {
-        return utils::addObject(session, std::unique_ptr<Artwork>{ new Artwork{ trackEmbeddedImage } });
+        return utils::addObject(session, std::unique_ptr<dbo::Artwork>{ new dbo::Artwork{ trackEmbeddedImage } });
     }
 
     Artwork::pointer Artwork::create(ISession& session, const ObjectPtr<Image>& image)
     {
-        return utils::addObject(session, std::unique_ptr<Artwork>{ new Artwork{ image } });
+        return utils::addObject(session, std::unique_ptr<dbo::Artwork>{ new dbo::Artwork{ image } });
     }
 
     std::size_t Artwork::getCount(ISession& session)
@@ -63,28 +63,29 @@ namespace lms::db
     Artwork::pointer Artwork::find(ISession& session, ArtworkId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artwork>>("SELECT a FROM artwork a").where("a.id = ?").bind(id));
     }
 
     Artwork::pointer Artwork::find(ISession& session, TrackEmbeddedImageId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.track_embedded_image_id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artwork>>("SELECT a FROM artwork a").where("a.track_embedded_image_id = ?").bind(id));
     }
 
     Artwork::pointer Artwork::find(ISession& session, ImageId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.image_id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artwork>>("SELECT a FROM artwork a").where("a.image_id = ?").bind(id));
     }
 
     Artwork::UnderlyingId Artwork::getUnderlyingId() const
     {
+        const auto& dbo{ getDbo(*this) };
         Artwork::UnderlyingId res;
 
-        if (const TrackEmbeddedImageId embeddedImageId{ _trackEmbeddedImage.id() }; embeddedImageId.isValid())
+        if (const TrackEmbeddedImageId embeddedImageId{ dbo._trackEmbeddedImage.id() }; embeddedImageId.isValid())
             res = embeddedImageId;
-        else if (const ImageId imageId{ _image.id() }; imageId.isValid())
+        else if (const ImageId imageId{ dbo._image.id() }; imageId.isValid())
             res = imageId;
 
         return res;
@@ -92,7 +93,7 @@ namespace lms::db
 
     std::filesystem::path Artwork::getAbsoluteFilePath() const
     {
-        auto query{ session()->query<std::filesystem::path>("SELECT COALESCE(image.absolute_file_path, track.absolute_file_path) AS absolute_file_path FROM artwork") };
+        auto query{ getDbo(*this).session()->query<std::filesystem::path>("SELECT COALESCE(image.absolute_file_path, track.absolute_file_path) AS absolute_file_path FROM artwork") };
         query.leftJoin("image ON artwork.image_id = image.id");
         query.leftJoin("track_embedded_image ON artwork.track_embedded_image_id = track_embedded_image.id");
         query.leftJoin("track_embedded_image_link ON track_embedded_image.id = track_embedded_image_link.track_embedded_image_id");
@@ -105,11 +106,11 @@ namespace lms::db
 
     ObjectPtr<Image> Artwork::getImage() const
     {
-        return _image;
+        return getDbo(*this)._image;
     }
 
     ImageId Artwork::getImageId() const
     {
-        return _image.id();
+        return getDbo(*this)._image.id();
     }
 } // namespace lms::db

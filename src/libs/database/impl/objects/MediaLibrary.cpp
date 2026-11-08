@@ -23,12 +23,7 @@
 
 #include "core/String.hpp"
 
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Track.hpp"
-
+#include "MediaLibraryDbo.hpp"
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
@@ -48,7 +43,7 @@ namespace lms::db
 
     MediaLibrary::pointer MediaLibrary::create(ISession& session, std::string_view name, const std::filesystem::path& p)
     {
-        return utils::addObject(session, std::unique_ptr<MediaLibrary>{ new MediaLibrary{ name, p } });
+        return utils::addObject(session, std::unique_ptr<dbo::MediaLibrary>{ new dbo::MediaLibrary{ name, p } });
     }
 
     std::size_t MediaLibrary::getCount(ISession& session)
@@ -62,36 +57,37 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<MediaLibrary>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::MediaLibrary>().where("id = ?").bind(id));
     }
 
     MediaLibrary::pointer MediaLibrary::find(ISession& session, std::string_view name)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<MediaLibrary>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::MediaLibrary>().where("name = ?").bind(name));
     }
 
     MediaLibrary::pointer MediaLibrary::find(ISession& session, const std::filesystem::path& p)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<MediaLibrary>().where("path = ?").bind(p));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::MediaLibrary>().where("path = ?").bind(p));
     }
 
     void MediaLibrary::find(ISession& session, std::function<void(const MediaLibrary::pointer&)> func)
     {
         checkReadTransaction(session);
 
-        utils::forEachQueryResult(getDboSession(session)->find<MediaLibrary>(), [&](const MediaLibrary::pointer& mediaLibrary) {
+        utils::forEachQueryResult(getDboSession(session)->find<dbo::MediaLibrary>(), [&](const MediaLibrary::pointer& mediaLibrary) {
             func(mediaLibrary);
         });
     }
 
     bool MediaLibrary::isEmpty() const
     {
-        assert(session());
-        auto query{ session()->query<bool>("SELECT EXISTS (SELECT 1 FROM track WHERE media_library_id = ? LIMIT 1) AS is_media_library_empty").bind(getId()) };
+        const auto& dbo{ getDbo(*this) };
+        assert(dbo.session());
+        auto query{ dbo.session()->query<bool>("SELECT EXISTS (SELECT 1 FROM track WHERE media_library_id = ? LIMIT 1) AS is_media_library_empty").bind(getId()) };
         return !utils::fetchQuerySingleResult(query);
     }
 

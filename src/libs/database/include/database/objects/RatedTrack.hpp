@@ -21,7 +21,6 @@
 
 #include <optional>
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"
@@ -37,11 +36,9 @@ namespace lms::db
     class Track;
     class User;
 
-    class RatedTrack final : public Object<RatedTrack, RatedTrackId>
+    class RatedTrack : public Object<RatedTrack, RatedTrackId>
     {
     public:
-        RatedTrack() = default;
-
         static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<User>& user);
 
         struct FindParameters
@@ -68,8 +65,8 @@ namespace lms::db
         static void find(ISession& session, const FindParameters& findParams, std::function<void(const pointer&)> func);
 
         // Accessors
-        ObjectPtr<Track> getTrack() const { return _track; }
-        ObjectPtr<User> getUser() const { return _user; }
+        ObjectPtr<Track> getTrack() const;
+        ObjectPtr<User> getUser() const;
         Rating getRating() const { return _rating; }
         const Wt::WDateTime& getLastUpdated() const { return _lastUpdated; }
 
@@ -77,23 +74,10 @@ namespace lms::db
         void setRating(Rating rating) { _rating = rating; }
         void setLastUpdated(const Wt::WDateTime& lastUpdated);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _rating, "rating");
-            Wt::Dbo::field(a, _lastUpdated, "last_updated");
-
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        RatedTrack(const ObjectPtr<Track>& track, const ObjectPtr<User>& user);
+    protected:
+        RatedTrack() = default;
 
         Rating _rating{};
         Wt::WDateTime _lastUpdated; // when it was rated for the last time
-
-        Wt::Dbo::ptr<Track> _track;
-        Wt::Dbo::ptr<User> _user;
     };
 } // namespace lms::db

@@ -23,28 +23,29 @@
 
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
+#include "core/Utils.hpp"
 
-#include "database/objects/Artist.hpp"
-#include "database/objects/Artwork.hpp"
-#include "database/objects/Cluster.hpp"
-#include "database/objects/Directory.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/MediaLibrary.hpp"
-#include "database/objects/Medium.hpp"
-#include "database/objects/Movement.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/TrackArtistLink.hpp"
-#include "database/objects/TrackEmbeddedImage.hpp"
-#include "database/objects/TrackEmbeddedImageLink.hpp"
-#include "database/objects/TrackLyrics.hpp"
-#include "database/objects/Work.hpp"
-
+#include "ArtistDbo.hpp"
+#include "ArtworkDbo.hpp"
+#include "ClusterDbo.hpp"
+#include "DirectoryDbo.hpp"
+#include "GenreDbo.hpp"
+#include "GroupingDbo.hpp"
+#include "LanguageDbo.hpp"
+#include "MediaLibraryDbo.hpp"
+#include "MediumDbo.hpp"
+#include "MoodDbo.hpp"
+#include "MovementDbo.hpp"
 #include "ObjectPtrImpl.hpp"
+#include "ReleaseDbo.hpp"
 #include "Session.hpp"
+#include "TrackArtistLinkDbo.hpp"
+#include "TrackDbo.hpp"
+#include "TrackEmbeddedImageDbo.hpp"
+#include "TrackEmbeddedImageLinkDbo.hpp"
+#include "TrackLyricsDbo.hpp"
 #include "Utils.hpp"
+#include "WorkDbo.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
@@ -106,10 +107,10 @@ namespace lms::db
 
             if constexpr (std::is_same_v<ResultType, MoodId>)
                 itemToSelect = "m.id";
-            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Mood>>)
+            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<dbo::Mood>>)
                 itemToSelect = "m";
             else
-                static_assert("Unhandled type");
+                static_assert(core::utils::dependent_false_v<ResultType>, "Unhandled type");
 
             return createQuery<ResultType>(session, itemToSelect, params);
         }
@@ -123,12 +124,12 @@ namespace lms::db
 
     Mood::pointer Mood::create(ISession& session, std::string_view name)
     {
-        return utils::addObject(session, std::unique_ptr<Mood>{ new Mood{ name } });
+        return utils::addObject(session, std::unique_ptr<dbo::Mood>{ new dbo::Mood{ name } });
     }
 
     void Mood::destroy(ISession& session, std::span<const MoodId> ids)
     {
-        utils::destroyObjects<Mood>(session, ids);
+        utils::destroyObjects<dbo::Mood>(session, ids);
     }
 
     std::size_t Mood::getCount(ISession& session)
@@ -147,21 +148,21 @@ namespace lms::db
     std::vector<Mood::pointer> Mood::find(ISession& session, const FindParameters& params)
     {
         checkReadTransaction(session);
-        auto query{ createQuery<Wt::Dbo::ptr<Mood>>(session, params) };
+        auto query{ createQuery<Wt::Dbo::ptr<dbo::Mood>>(session, params) };
         return utils::execRangeQuery<Mood::pointer>(query, params.range);
     }
 
     void Mood::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
         checkReadTransaction(session);
-        auto query{ createQuery<Wt::Dbo::ptr<Mood>>(session, params) };
+        auto query{ createQuery<Wt::Dbo::ptr<dbo::Mood>>(session, params) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
     Mood::pointer Mood::find(ISession& session, MoodId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<Mood>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Mood>().where("id = ?").bind(id));
     }
 
     Mood::pointer Mood::find(ISession& session, std::string_view name)
@@ -170,7 +171,7 @@ namespace lms::db
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<Mood>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Mood>().where("name = ?").bind(name));
     }
 
     std::vector<MoodId> Mood::findOrphanIds(ISession& session, std::optional<Range> range)

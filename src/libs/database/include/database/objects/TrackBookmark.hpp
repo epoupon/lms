@@ -22,8 +22,6 @@
 #include <chrono>
 #include <optional>
 
-#include <Wt/Dbo/Field.h>
-
 #include "database/IdType.hpp"
 #include "database/Object.hpp"
 #include "database/Types.hpp"
@@ -38,11 +36,9 @@ namespace lms::db
     class Track;
     class User;
 
-    class TrackBookmark final : public Object<TrackBookmark, TrackBookmarkId>
+    class TrackBookmark : public Object<TrackBookmark, TrackBookmarkId>
     {
     public:
-        TrackBookmark() = default;
-
         static pointer create(ISession& session, const ObjectPtr<User>& user, const ObjectPtr<Track>& track);
 
         // Find utility functions
@@ -58,28 +54,16 @@ namespace lms::db
         // Getters
         std::chrono::milliseconds getOffset() const { return _offset; }
         std::string_view getComment() const { return _comment; }
-        ObjectPtr<Track> getTrack() const { return _track; }
-        ObjectPtr<User> getUser() const { return _user; }
+        ObjectPtr<Track> getTrack() const;
+        ObjectPtr<User> getUser() const;
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _offset, "offset");
-            Wt::Dbo::field(a, _comment, "comment");
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        TrackBookmark(const ObjectPtr<User>& user, const ObjectPtr<Track>& track);
+    protected:
+        TrackBookmark() = default;
 
         static const std::size_t _maxCommentLength = 128;
 
         std::chrono::duration<int, std::milli> _offset;
         std::string _comment;
-
-        Wt::Dbo::ptr<User> _user;
-        Wt::Dbo::ptr<Track> _track;
     };
 
 } // namespace lms::db

@@ -24,9 +24,6 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
-
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
@@ -38,9 +35,8 @@
 namespace lms::db
 {
     class ISession;
-    class Track;
 
-    class Grouping final : public Object<Grouping, GroupingId>
+    class Grouping : public Object<Grouping, GroupingId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -80,8 +76,6 @@ namespace lms::db
             }
         };
 
-        Grouping() = default;
-
         static pointer create(ISession& session, std::string_view name);
         static void destroy(ISession& session, std::span<const GroupingId> ids);
 
@@ -95,18 +89,11 @@ namespace lms::db
 
         std::string_view getName() const { return _name; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_grouping", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        Grouping(std::string_view name);
+    protected:
+        Grouping() = default;
+        explicit Grouping(std::string_view name);
 
         std::string _name;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
     };
 
 } // namespace lms::db

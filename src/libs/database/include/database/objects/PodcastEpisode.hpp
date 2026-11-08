@@ -25,8 +25,6 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "core/media/Codec.hpp"
@@ -46,7 +44,7 @@ namespace lms::db
     class ISession;
     class Podcast;
 
-    class PodcastEpisode final : public Object<PodcastEpisode, PodcastEpisodeId>
+    class PodcastEpisode : public Object<PodcastEpisode, PodcastEpisodeId>
     {
     public:
         enum class ManualDownloadState
@@ -85,8 +83,6 @@ namespace lms::db
             }
         };
 
-        PodcastEpisode() = default;
-
         static pointer create(ISession& session, const ObjectPtr<Podcast>& podcast);
         static std::size_t getCount(ISession& session);
         static pointer find(ISession& session, PodcastEpisodeId id);
@@ -119,8 +115,8 @@ namespace lms::db
         std::string_view getSubtitle() const { return _subtitle; }
         std::string_view getSummary() const { return _summary; }
         bool isExplicit() const { return _explicit; }
-        ObjectPtr<Podcast> getPodcast() const { return _podcast; }
-        PodcastId getPodcastId() const { return _podcast.id(); }
+        ObjectPtr<Podcast> getPodcast() const;
+        PodcastId getPodcastId() const;
         ObjectPtr<Artwork> getArtwork() const;
         ArtworkId getArtworkId() const;
 
@@ -153,40 +149,8 @@ namespace lms::db
         void setDuration(std::chrono::duration<int, std::milli> duration) { _duration = duration; }
         void setArtwork(const ObjectPtr<Artwork>& artwork);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _manualDownloadState, "manual_download_state");
-            Wt::Dbo::field(a, _audioRelativeFilePath, "audio_relative_file_path");
-
-            Wt::Dbo::field(a, _duration, "duration");
-            Wt::Dbo::field(a, _container, "container");
-            Wt::Dbo::field(a, _codec, "codec");
-            Wt::Dbo::field(a, _bitrate, "bitrate");
-            Wt::Dbo::field(a, _channelCount, "channel_count");
-            Wt::Dbo::field(a, _sampleRate, "sample_rate");
-            Wt::Dbo::field(a, _bitsPerSample, "bits_per_sample");
-
-            Wt::Dbo::field(a, _title, "title");
-            Wt::Dbo::field(a, _link, "link");
-            Wt::Dbo::field(a, _description, "description");
-            Wt::Dbo::field(a, _author, "author");
-            Wt::Dbo::field(a, _category, "category");
-            Wt::Dbo::field(a, _enclosureUrl, "enclosure_url");
-            Wt::Dbo::field(a, _enclosureContentType, "enclosure_content_type");
-            Wt::Dbo::field(a, _enclosureLength, "enclosure_size");
-            Wt::Dbo::field(a, _pubDate, "pub_date");
-            Wt::Dbo::field(a, _imageUrl, "image_url");
-            Wt::Dbo::field(a, _subtitle, "subtitle");
-            Wt::Dbo::field(a, _summary, "summary");
-            Wt::Dbo::field(a, _explicit, "explicit");
-
-            Wt::Dbo::belongsTo(a, _artwork, "artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::belongsTo(a, _podcast, "podcast", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        PodcastEpisode(const ObjectPtr<Podcast>& podcast);
+    protected:
+        PodcastEpisode() = default;
 
         ManualDownloadState _manualDownloadState{ ManualDownloadState::None };
         std::filesystem::path _audioRelativeFilePath; // relative to cache dir, only set if downloaded
@@ -216,8 +180,5 @@ namespace lms::db
         std::string _subtitle;
         std::string _summary;
         bool _explicit{};
-
-        Wt::Dbo::ptr<Artwork> _artwork;
-        Wt::Dbo::ptr<Podcast> _podcast;
     };
 } // namespace lms::db

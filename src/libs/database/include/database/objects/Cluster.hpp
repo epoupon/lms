@@ -25,8 +25,6 @@
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"
@@ -44,7 +42,7 @@ namespace lms::db
     class Track;
     class ClusterType;
 
-    class Cluster final : public Object<Cluster, ClusterId>
+    class Cluster : public Object<Cluster, ClusterId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -102,8 +100,6 @@ namespace lms::db
             }
         };
 
-        Cluster() = default;
-
         static pointer create(ISession& session, const ObjectPtr<ClusterType>& type, std::string_view name);
         static void destroy(ISession& session, std::span<const ClusterId> ids);
 
@@ -121,33 +117,20 @@ namespace lms::db
 
         // Accessors
         std::string_view getName() const { return _name; }
-        ObjectPtr<ClusterType> getType() const { return _clusterType; }
+        ObjectPtr<ClusterType> getType() const;
         std::vector<TrackId> getTracks(std::optional<Range> range = std::nullopt) const;
         void addTrack(const ObjectPtr<Track>& track);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-
-            Wt::Dbo::belongsTo(a, _clusterType, "cluster_type", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        Cluster(const ObjectPtr<ClusterType>& type, std::string_view name);
+    protected:
+        Cluster() = default;
+        explicit Cluster(std::string_view name);
 
         std::string _name;
-
-        Wt::Dbo::ptr<ClusterType> _clusterType;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
     };
 
-    class ClusterType final : public Object<ClusterType, ClusterTypeId>
+    class ClusterType : public Object<ClusterType, ClusterTypeId>
     {
     public:
-        ClusterType() = default;
-
         static pointer create(ISession& session, std::string_view name);
         static void destroy(ISession& session, std::span<const ClusterTypeId> ids);
 
@@ -169,18 +152,11 @@ namespace lms::db
         std::vector<Cluster::pointer> getClusters() const;
         Cluster::pointer getCluster(const std::string& name) const;
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToOne, "cluster_type");
-        }
-
-    private:
-        ClusterType(std::string_view name);
+    protected:
+        ClusterType() = default;
+        explicit ClusterType(std::string_view name);
 
         std::string _name;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;
     };
 
 } // namespace lms::db

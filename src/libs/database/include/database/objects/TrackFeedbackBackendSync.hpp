@@ -22,8 +22,6 @@
 #include <functional>
 #include <optional>
 
-#include <Wt/Dbo/Field.h>
-
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/TrackFeedbackBackendSyncId.hpp"
@@ -36,11 +34,9 @@ namespace lms::db
     class TrackFeedback;
 
     // Tracks the delivery of a single TrackFeedback to a given external feedback backend.
-    class TrackFeedbackBackendSync final : public Object<TrackFeedbackBackendSync, TrackFeedbackBackendSyncId>
+    class TrackFeedbackBackendSync : public Object<TrackFeedbackBackendSync, TrackFeedbackBackendSyncId>
     {
     public:
-        TrackFeedbackBackendSync() = default;
-
         static pointer create(ISession& session, const ObjectPtr<TrackFeedback>& trackFeedback, FeedbackBackend backend);
 
         struct FindParameters
@@ -72,27 +68,17 @@ namespace lms::db
         static std::vector<TrackFeedbackBackendSyncId> find(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
 
-        ObjectPtr<TrackFeedback> getTrackFeedback() const { return _trackFeedback; }
+        ObjectPtr<TrackFeedback> getTrackFeedback() const;
         FeedbackBackend getBackend() const { return _backend; }
         SyncState getSyncState() const { return _syncState; }
 
         void setSyncState(SyncState state) { _syncState = state; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _backend, "backend");
-            Wt::Dbo::field(a, _syncState, "sync_state");
-
-            Wt::Dbo::belongsTo(a, _trackFeedback, "track_feedback", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        TrackFeedbackBackendSync(const ObjectPtr<TrackFeedback>& trackFeedback, FeedbackBackend backend);
+    protected:
+        TrackFeedbackBackendSync() = default;
+        explicit TrackFeedbackBackendSync(FeedbackBackend backend);
 
         FeedbackBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };
-
-        Wt::Dbo::ptr<TrackFeedback> _trackFeedback;
     };
 } // namespace lms::db

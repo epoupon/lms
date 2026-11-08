@@ -22,11 +22,11 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/objects/Release.hpp"
-#include "database/objects/User.hpp"
-
 #include "ObjectPtrImpl.hpp"
+#include "RatedReleaseDbo.hpp"
+#include "ReleaseDbo.hpp"
 #include "Session.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -34,7 +34,7 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::RatedRelease)
 
 namespace lms::db
 {
-    RatedRelease::RatedRelease(const ObjectPtr<Release>& release, const ObjectPtr<User>& user)
+    dbo::RatedRelease::RatedRelease(const ObjectPtr<db::Release>& release, const ObjectPtr<db::User>& user)
         : _release{ getDboPtr(release) }
         , _user{ getDboPtr(user) }
     {
@@ -42,7 +42,7 @@ namespace lms::db
 
     RatedRelease::pointer RatedRelease::create(ISession& session, const ObjectPtr<Release>& release, const ObjectPtr<User>& user)
     {
-        return utils::addObject(session, std::unique_ptr<RatedRelease>{ new RatedRelease{ release, user } });
+        return utils::addObject(session, std::unique_ptr<dbo::RatedRelease>{ new dbo::RatedRelease{ release, user } });
     }
 
     std::size_t RatedRelease::getCount(ISession& session)
@@ -54,20 +54,20 @@ namespace lms::db
     RatedRelease::pointer RatedRelease::find(ISession& session, RatedReleaseId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<RatedRelease>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::RatedRelease>().where("id = ?").bind(id));
     }
 
     RatedRelease::pointer RatedRelease::find(ISession& session, ReleaseId releaseId, UserId userId)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<RatedRelease>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::RatedRelease>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
     }
 
     void RatedRelease::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<RatedRelease>>("SELECT r_r FROM rated_release r_r") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::RatedRelease>>("SELECT r_r FROM rated_release r_r") };
 
         if (params.user.isValid())
             query.where("r_r.user_id = ?").bind(params.user);
@@ -78,5 +78,15 @@ namespace lms::db
     void RatedRelease::setLastUpdated(const Wt::WDateTime& lastUpdated)
     {
         _lastUpdated = utils::normalizeDateTime(lastUpdated);
+    }
+
+    ObjectPtr<Release> RatedRelease::getRelease() const
+    {
+        return getDbo(*this)._release;
+    }
+
+    ObjectPtr<User> RatedRelease::getUser() const
+    {
+        return getDbo(*this)._user;
     }
 } // namespace lms::db

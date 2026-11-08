@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <new>
+#include <type_traits>
 #include <utility>
 
 #include <Wt/Dbo/Impl.h>
@@ -29,12 +30,44 @@
 
 #include "Session.hpp"
 
-#define LMS_DB_INSTANTIATE_OBJECT(C) \
-    DBO_INSTANTIATE_TEMPLATES(C)     \
-    template class lms::db::ObjectPtr<C>;
+#define LMS_DB_INSTANTIATE_OBJECT(C)                                                             \
+    DBO_INSTANTIATE_TEMPLATES(lms::db::DboOf<C>::type)                                           \
+    template class lms::db::ObjectPtr<C>;                                                        \
+    template lms::db::ObjectPtr<C>::ObjectPtr(const Wt::Dbo::ptr<lms::db::DboOf<C>::type>&);     \
+    template lms::db::ObjectPtr<C>::ObjectPtr(Wt::Dbo::ptr<lms::db::DboOf<C>::type>&&) noexcept; \
+    template class lms::db::Object<C, C::IdType>;
 
 namespace lms::db
 {
+    // Mapped class of an entity: specialized next to each private mapped subclass
+    template<typename T>
+    struct DboOf;
+
+    template<typename T>
+        requires(!std::is_const_v<T>)
+    typename DboOf<T>::type& getDbo(T& obj)
+    {
+        return static_cast<typename DboOf<T>::type&>(obj);
+    }
+
+    template<typename T>
+    const typename DboOf<T>::type& getDbo(const T& obj)
+    {
+        return static_cast<const typename DboOf<T>::type&>(obj);
+    }
+
+    template<typename T>
+    auto& ObjectPtr<T>::dboPtr()
+    {
+        return *std::launder(reinterpret_cast<Wt::Dbo::ptr<typename DboOf<T>::type>*>(_storage));
+    }
+
+    template<typename T>
+    const auto& ObjectPtr<T>::dboPtr() const
+    {
+        return *std::launder(reinterpret_cast<const Wt::Dbo::ptr<typename DboOf<T>::type>*>(_storage));
+    }
+
     template<typename T>
     ObjectPtr<T>::Mutator::Mutator(const ObjectPtr& ptr)
         : _ptr{ ptr }
@@ -52,34 +85,41 @@ namespace lms::db
     template<typename T>
     ObjectPtr<T>::ObjectPtr() noexcept
     {
-        static_assert(sizeof(Wt::Dbo::ptr<T>) == sizeof(_storage));
-        static_assert(alignof(Wt::Dbo::ptr<T>) == alignof(void*));
+        using DboPtr = Wt::Dbo::ptr<typename DboOf<T>::type>;
+        static_assert(sizeof(DboPtr) == sizeof(_storage));
+        static_assert(alignof(DboPtr) == alignof(void*));
 
-        new (_storage) Wt::Dbo::ptr<T>{};
+        new (_storage) DboPtr{};
     }
 
     template<typename T>
-    ObjectPtr<T>::ObjectPtr(const Wt::Dbo::ptr<T>& obj)
+    template<typename DboType>
+        requires std::derived_from<DboType, T>
+    ObjectPtr<T>::ObjectPtr(const Wt::Dbo::ptr<DboType>& obj)
     {
-        new (_storage) Wt::Dbo::ptr<T>{ obj };
+        static_assert(std::is_same_v<DboType, typename DboOf<T>::type>);
+        new (_storage) Wt::Dbo::ptr<DboType>{ obj };
     }
 
     template<typename T>
-    ObjectPtr<T>::ObjectPtr(Wt::Dbo::ptr<T>&& obj) noexcept
+    template<typename DboType>
+        requires std::derived_from<DboType, T>
+    ObjectPtr<T>::ObjectPtr(Wt::Dbo::ptr<DboType>&& obj) noexcept
     {
-        new (_storage) Wt::Dbo::ptr<T>{ std::move(obj) };
+        static_assert(std::is_same_v<DboType, typename DboOf<T>::type>);
+        new (_storage) Wt::Dbo::ptr<DboType>{ std::move(obj) };
     }
 
     template<typename T>
     ObjectPtr<T>::ObjectPtr(const ObjectPtr& other)
     {
-        new (_storage) Wt::Dbo::ptr<T>{ other.dboPtr() };
+        new (_storage) Wt::Dbo::ptr<typename DboOf<T>::type>{ other.dboPtr() };
     }
 
     template<typename T>
     ObjectPtr<T>::ObjectPtr(ObjectPtr&& other) noexcept
     {
-        new (_storage) Wt::Dbo::ptr<T>{ std::move(other.dboPtr()) };
+        new (_storage) Wt::Dbo::ptr<typename DboOf<T>::type>{ std::move(other.dboPtr()) };
     }
 
     template<typename T>
@@ -146,15 +186,10 @@ namespace lms::db
         dboPtr().remove();
     }
 
-    template<typename T>
-    Wt::Dbo::ptr<T>& ObjectPtr<T>::dboPtr()
+    template<typename T, typename ObjectIdType>
+    ObjectIdType Object<T, ObjectIdType>::getId() const
     {
-        return *std::launder(reinterpret_cast<Wt::Dbo::ptr<T>*>(_storage));
-    }
-
-    template<typename T>
-    const Wt::Dbo::ptr<T>& ObjectPtr<T>::dboPtr() const
-    {
-        return *std::launder(reinterpret_cast<const Wt::Dbo::ptr<T>*>(_storage));
+        using Dbo = typename DboOf<T>::type;
+        return static_cast<const Dbo*>(this)->Wt::Dbo::template Dbo<Dbo>::id();
     }
 } // namespace lms::db

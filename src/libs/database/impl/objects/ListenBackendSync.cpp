@@ -22,8 +22,8 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/objects/Listen.hpp"
-
+#include "ListenBackendSyncDbo.hpp"
+#include "ListenDbo.hpp"
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
@@ -33,15 +33,20 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::ListenBackendSync)
 
 namespace lms::db
 {
-    ListenBackendSync::ListenBackendSync(const ObjectPtr<Listen>& listen, ScrobblingBackend backend)
+    ListenBackendSync::ListenBackendSync(ScrobblingBackend backend)
         : _backend{ backend }
+    {
+    }
+
+    dbo::ListenBackendSync::ListenBackendSync(const ObjectPtr<db::Listen>& listen, ScrobblingBackend backend)
+        : db::ListenBackendSync{ backend }
         , _listen{ getDboPtr(listen) }
     {
     }
 
     ListenBackendSync::pointer ListenBackendSync::create(ISession& session, const ObjectPtr<Listen>& listen, ScrobblingBackend backend)
     {
-        return utils::addObject(session, std::unique_ptr<ListenBackendSync>{ new ListenBackendSync{ listen, backend } });
+        return utils::addObject(session, std::unique_ptr<dbo::ListenBackendSync>{ new dbo::ListenBackendSync{ listen, backend } });
     }
 
     std::size_t ListenBackendSync::getCount(ISession& session)
@@ -53,13 +58,13 @@ namespace lms::db
     ListenBackendSync::pointer ListenBackendSync::find(ISession& session, ListenBackendSyncId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<ListenBackendSync>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ListenBackendSync>().where("id = ?").bind(id));
     }
 
     ListenBackendSync::pointer ListenBackendSync::find(ISession& session, ListenId listenId, ScrobblingBackend backend)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<ListenBackendSync>().where("listen_id = ?").bind(listenId).where("backend = ?").bind(backend));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ListenBackendSync>().where("listen_id = ?").bind(listenId).where("backend = ?").bind(backend));
     }
 
     std::vector<ListenBackendSyncId> ListenBackendSync::find(ISession& session, const FindParameters& params)
@@ -81,7 +86,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->find<ListenBackendSync>() };
+        auto query{ getDboSession(session)->find<dbo::ListenBackendSync>() };
 
         if (params.backend)
             query.where("backend = ?").bind(*params.backend);
@@ -90,5 +95,10 @@ namespace lms::db
             query.where("sync_state = ?").bind(*params.syncState);
 
         utils::forEachQueryRangeResult(query, params.range, func);
+    }
+
+    ObjectPtr<Listen> ListenBackendSync::getListen() const
+    {
+        return getDbo(*this)._listen;
     }
 } // namespace lms::db

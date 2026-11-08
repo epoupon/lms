@@ -22,18 +22,12 @@
 #include <Wt/Dbo/Impl.h>
 
 #include "database/Types.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Movement.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/Work.hpp"
-
-#include "database/objects/TrackEmbeddedImageLink.hpp"
 
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
+#include "TrackDbo.hpp"
+#include "TrackEmbeddedImageDbo.hpp"
+#include "TrackEmbeddedImageLinkDbo.hpp"
 #include "Utils.hpp"
 #include "detail/Types.hpp"
 #include "objects/detail/Types.hpp"
@@ -46,11 +40,11 @@ namespace lms::db
 {
     namespace
     {
-        Wt::Dbo::Query<Wt::Dbo::ptr<TrackEmbeddedImage>> createQuery(ISession& session, const TrackEmbeddedImage::FindParameters& params)
+        Wt::Dbo::Query<Wt::Dbo::ptr<dbo::TrackEmbeddedImage>> createQuery(ISession& session, const TrackEmbeddedImage::FindParameters& params)
         {
             checkReadTransaction(session);
 
-            auto query{ getDboSession(session)->query<Wt::Dbo::ptr<TrackEmbeddedImage>>("SELECT t_e_i FROM track_embedded_image t_e_i") };
+            auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackEmbeddedImage>>("SELECT t_e_i FROM track_embedded_image t_e_i") };
 
             if (params.medium.isValid()
                 || params.track.isValid()
@@ -120,12 +114,12 @@ namespace lms::db
 
     TrackEmbeddedImage::pointer TrackEmbeddedImage::create(ISession& session)
     {
-        return utils::addObject(session, std::unique_ptr<TrackEmbeddedImage>{ new TrackEmbeddedImage{} });
+        return utils::addObject(session, std::unique_ptr<dbo::TrackEmbeddedImage>{ new dbo::TrackEmbeddedImage{} });
     }
 
     void TrackEmbeddedImage::destroy(ISession& session, std::span<const TrackEmbeddedImageId> ids)
     {
-        utils::destroyObjects<TrackEmbeddedImage>(session, ids);
+        utils::destroyObjects<dbo::TrackEmbeddedImage>(session, ids);
     }
 
     std::size_t TrackEmbeddedImage::getCount(ISession& session)
@@ -139,7 +133,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<TrackEmbeddedImage>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackEmbeddedImage>().where("id = ?").bind(id));
     }
 
     void TrackEmbeddedImage::find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
@@ -154,7 +148,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->find<TrackEmbeddedImage>().where("size = ?").bind(static_cast<int>(size)).where("hash = ?").bind(hash) };
+        auto query{ getDboSession(session)->find<dbo::TrackEmbeddedImage>().where("size = ?").bind(static_cast<int>(size)).where("hash = ?").bind(hash) };
         return utils::fetchQuerySingleResult(query);
     }
 

@@ -22,17 +22,11 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/objects/Artist.hpp"
-#include "database/objects/Directory.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-
+#include "DirectoryDbo.hpp"
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
+#include "TrackDbo.hpp"
+#include "TrackLyricsDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
@@ -43,9 +37,9 @@ namespace lms::db
 {
     namespace
     {
-        Wt::Dbo::Query<Wt::Dbo::ptr<TrackLyrics>> createQuery(ISession& session, const TrackLyrics::FindParameters& params)
+        Wt::Dbo::Query<Wt::Dbo::ptr<dbo::TrackLyrics>> createQuery(ISession& session, const TrackLyrics::FindParameters& params)
         {
-            auto query{ getDboSession(session)->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc") };
+            auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc") };
 
             if (params.track.isValid())
                 query.where("t_lrc.track_id = ?").bind(params.track);
@@ -71,12 +65,12 @@ namespace lms::db
 
     TrackLyrics::pointer TrackLyrics::create(ISession& session)
     {
-        return utils::addObject(session, std::unique_ptr<TrackLyrics>{ new TrackLyrics{} });
+        return utils::addObject(session, std::unique_ptr<dbo::TrackLyrics>{ new dbo::TrackLyrics{} });
     }
 
     void TrackLyrics::destroy(ISession& session, std::span<const TrackLyricsId> ids)
     {
-        utils::destroyObjects<TrackLyrics>(session, ids);
+        utils::destroyObjects<dbo::TrackLyrics>(session, ids);
     }
 
     std::size_t TrackLyrics::getCount(ISession& session)
@@ -97,14 +91,14 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.id = ?").bind(id));
     }
 
     TrackLyrics::pointer TrackLyrics::find(ISession& session, const std::filesystem::path& path)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.absolute_file_path = ?").bind(path));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.absolute_file_path = ?").bind(path));
     }
 
     void TrackLyrics::find(ISession& session, const FindParameters& params, const std::function<void(const TrackLyrics::pointer&)>& func)
@@ -119,7 +113,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").orderBy("t_lrc.id").where("t_lrc.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").orderBy("t_lrc.id").where("t_lrc.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
         utils::forEachQueryResult(query, [&](const TrackLyrics::pointer& lyrics) {
             func(lyrics);
@@ -199,6 +193,16 @@ namespace lms::db
         _fileStem = p.stem().string();
     }
 
+    void TrackLyrics::setTrack(const ObjectPtr<Track>& track)
+    {
+        getDbo(*this)._track = getDboPtr(track);
+    }
+
+    void TrackLyrics::setDirectory(const ObjectPtr<Directory>& directory)
+    {
+        getDbo(*this)._directory = getDboPtr(directory);
+    }
+
     void TrackLyrics::setSynchronizedLines(const SynchronizedLines& synchronizedLines)
     {
         Wt::Json::Object root;
@@ -233,4 +237,13 @@ namespace lms::db
         _lines = Wt::Json::serialize(root);
     }
 
+    ObjectPtr<Track> TrackLyrics::getTrack() const
+    {
+        return getDbo(*this)._track;
+    }
+
+    ObjectPtr<Directory> TrackLyrics::getDirectory() const
+    {
+        return getDbo(*this)._directory;
+    }
 } // namespace lms::db

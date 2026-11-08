@@ -22,9 +22,9 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/objects/ReleaseFeedback.hpp"
-
 #include "ObjectPtrImpl.hpp"
+#include "ReleaseFeedbackBackendSyncDbo.hpp"
+#include "ReleaseFeedbackDbo.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
@@ -33,15 +33,20 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::ReleaseFeedbackBackendSync)
 
 namespace lms::db
 {
-    ReleaseFeedbackBackendSync::ReleaseFeedbackBackendSync(const ObjectPtr<ReleaseFeedback>& releaseFeedback, FeedbackBackend backend)
+    ReleaseFeedbackBackendSync::ReleaseFeedbackBackendSync(FeedbackBackend backend)
         : _backend{ backend }
+    {
+    }
+
+    dbo::ReleaseFeedbackBackendSync::ReleaseFeedbackBackendSync(const ObjectPtr<db::ReleaseFeedback>& releaseFeedback, FeedbackBackend backend)
+        : db::ReleaseFeedbackBackendSync{ backend }
         , _releaseFeedback{ getDboPtr(releaseFeedback) }
     {
     }
 
     ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::create(ISession& session, const ObjectPtr<ReleaseFeedback>& releaseFeedback, FeedbackBackend backend)
     {
-        return utils::addObject(session, std::unique_ptr<ReleaseFeedbackBackendSync>{ new ReleaseFeedbackBackendSync{ releaseFeedback, backend } });
+        return utils::addObject(session, std::unique_ptr<dbo::ReleaseFeedbackBackendSync>{ new dbo::ReleaseFeedbackBackendSync{ releaseFeedback, backend } });
     }
 
     std::size_t ReleaseFeedbackBackendSync::getCount(ISession& session)
@@ -53,13 +58,13 @@ namespace lms::db
     ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::find(ISession& session, ReleaseFeedbackBackendSyncId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<ReleaseFeedbackBackendSync>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ReleaseFeedbackBackendSync>().where("id = ?").bind(id));
     }
 
     ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::find(ISession& session, ReleaseFeedbackId releaseFeedbackId, FeedbackBackend backend)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<ReleaseFeedbackBackendSync>().where("release_feedback_id = ?").bind(releaseFeedbackId).where("backend = ?").bind(backend));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ReleaseFeedbackBackendSync>().where("release_feedback_id = ?").bind(releaseFeedbackId).where("backend = ?").bind(backend));
     }
 
     std::vector<ReleaseFeedbackBackendSyncId> ReleaseFeedbackBackendSync::find(ISession& session, const FindParameters& params)
@@ -81,7 +86,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->find<ReleaseFeedbackBackendSync>() };
+        auto query{ getDboSession(session)->find<dbo::ReleaseFeedbackBackendSync>() };
 
         if (params.backend)
             query.where("backend = ?").bind(*params.backend);
@@ -90,5 +95,10 @@ namespace lms::db
             query.where("sync_state = ?").bind(*params.syncState);
 
         utils::forEachQueryRangeResult(query, params.range, func);
+    }
+
+    ObjectPtr<ReleaseFeedback> ReleaseFeedbackBackendSync::getReleaseFeedback() const
+    {
+        return getDbo(*this)._releaseFeedback;
     }
 } // namespace lms::db

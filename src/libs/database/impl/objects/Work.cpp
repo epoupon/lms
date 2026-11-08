@@ -24,27 +24,27 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/objects/Artist.hpp"
-#include "database/objects/Artwork.hpp"
-#include "database/objects/Cluster.hpp"
-#include "database/objects/Directory.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/MediaLibrary.hpp"
-#include "database/objects/Medium.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Movement.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/TrackArtistLink.hpp"
-#include "database/objects/TrackEmbeddedImage.hpp"
-#include "database/objects/TrackEmbeddedImageLink.hpp"
-#include "database/objects/TrackLyrics.hpp"
-
+#include "ArtistDbo.hpp"
+#include "ArtworkDbo.hpp"
+#include "ClusterDbo.hpp"
+#include "DirectoryDbo.hpp"
+#include "GenreDbo.hpp"
+#include "GroupingDbo.hpp"
+#include "LanguageDbo.hpp"
+#include "MediaLibraryDbo.hpp"
+#include "MediumDbo.hpp"
+#include "MoodDbo.hpp"
+#include "MovementDbo.hpp"
 #include "ObjectPtrImpl.hpp"
+#include "ReleaseDbo.hpp"
 #include "Session.hpp"
+#include "TrackArtistLinkDbo.hpp"
+#include "TrackDbo.hpp"
+#include "TrackEmbeddedImageDbo.hpp"
+#include "TrackEmbeddedImageLinkDbo.hpp"
+#include "TrackLyricsDbo.hpp"
 #include "Utils.hpp"
+#include "WorkDbo.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/UUIDTraits.hpp"
 
@@ -66,25 +66,25 @@ namespace lms::db
 
     Work::pointer Work::create(ISession& session, std::string_view name, const std::optional<core::UUID>& mbid)
     {
-        return utils::addObject(session, std::unique_ptr<Work>{ new Work{ name, mbid } });
+        return utils::addObject(session, std::unique_ptr<dbo::Work>{ new dbo::Work{ name, mbid } });
     }
 
     void Work::destroy(ISession& session, std::span<const WorkId> ids)
     {
-        utils::destroyObjects<Work>(session, ids);
+        utils::destroyObjects<dbo::Work>(session, ids);
     }
 
     Work::pointer Work::find(ISession& session, WorkId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<Work>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Work>().where("id = ?").bind(id));
     }
 
     Work::pointer Work::find(ISession& session, const core::UUID& mbid)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<Work>().where("mbid = ?").bind(mbid));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Work>().where("mbid = ?").bind(mbid));
     }
 
     Work::pointer Work::find(ISession& session, ReleaseId releaseId, std::string_view name)
@@ -94,7 +94,7 @@ namespace lms::db
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
         auto query{
-            getDboSession(session)->query<Wt::Dbo::ptr<Work>>("SELECT w FROM work w")
+            getDboSession(session)->query<Wt::Dbo::ptr<dbo::Work>>("SELECT w FROM work w")
                 // clang-format off
                 .join("track_work t_w ON t_w.work_id = w.id")
                 .join("track t ON t.id = t_w.track_id")

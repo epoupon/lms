@@ -24,8 +24,6 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"
@@ -36,14 +34,11 @@ namespace lms::db
 {
     class Artwork;
     class ISession;
-    class PodcastEpisode;
 
-    class Podcast final : public Object<Podcast, PodcastId>
+    class Podcast : public Object<Podcast, PodcastId>
     {
     public:
         static const std::size_t maxMediaLength{ 64 };
-
-        Podcast() = default;
 
         static pointer create(ISession& session, std::string_view url);
         static void destroy(ISession& session, std::span<const PodcastId> ids);
@@ -93,34 +88,9 @@ namespace lms::db
         void setSummary(std::string_view summary) { _summary = summary; }
         void setArtwork(const ObjectPtr<Artwork>& artwork);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _url, "url");
-
-            Wt::Dbo::field(a, _deleteRequested, "delete_requested");
-            Wt::Dbo::field(a, _title, "title");
-            Wt::Dbo::field(a, _link, "link");
-            Wt::Dbo::field(a, _description, "description");
-            Wt::Dbo::field(a, _language, "language");
-            Wt::Dbo::field(a, _copyright, "copyright");
-            Wt::Dbo::field(a, _lastBuildDate, "last_build_date");
-
-            Wt::Dbo::field(a, _author, "author");
-            Wt::Dbo::field(a, _category, "category");
-            Wt::Dbo::field(a, _explicit, "explicit");
-            Wt::Dbo::field(a, _imageUrl, "image_url");
-            Wt::Dbo::field(a, _ownerEmail, "owner_email");
-            Wt::Dbo::field(a, _ownerName, "owner_name");
-            Wt::Dbo::field(a, _subtitle, "subtitle");
-            Wt::Dbo::field(a, _summary, "summary");
-
-            Wt::Dbo::belongsTo(a, _artwork, "artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::hasMany(a, _episodes, Wt::Dbo::ManyToOne, "podcast");
-        }
-
-    private:
-        Podcast(std::string_view url);
+    protected:
+        Podcast() = default;
+        explicit Podcast(std::string_view url);
 
         std::string _url;
 
@@ -141,8 +111,5 @@ namespace lms::db
         std::string _ownerName;
         std::string _subtitle;
         std::string _summary;
-
-        Wt::Dbo::ptr<Artwork> _artwork;
-        Wt::Dbo::collection<Wt::Dbo::ptr<PodcastEpisode>> _episodes;
     };
 } // namespace lms::db

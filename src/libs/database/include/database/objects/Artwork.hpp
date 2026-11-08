@@ -22,8 +22,6 @@
 #include <filesystem>
 #include <variant>
 
-#include <Wt/Dbo/Field.h>
-
 #include "database/Object.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/ImageId.hpp"
@@ -35,11 +33,9 @@ namespace lms::db
     class Image;
     class TrackEmbeddedImage;
 
-    class Artwork final : public Object<Artwork, ArtworkId>
+    class Artwork : public Object<Artwork, ArtworkId>
     {
     public:
-        Artwork() = default;
-
         static pointer create(ISession& session, const ObjectPtr<TrackEmbeddedImage>& trackEmbeddedImage);
         static pointer create(ISession& session, const ObjectPtr<Image>& image);
 
@@ -56,17 +52,7 @@ namespace lms::db
         ObjectPtr<Image> getImage() const;
         ImageId getImageId() const;
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::belongsTo(a, _trackEmbeddedImage, "track_embedded_image", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _image, "image", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        Artwork(const ObjectPtr<TrackEmbeddedImage>& trackEmbeddedImage);
-        Artwork(const ObjectPtr<Image>& image);
-        Wt::Dbo::ptr<TrackEmbeddedImage> _trackEmbeddedImage;
-        Wt::Dbo::ptr<Image> _image;
+    protected:
+        Artwork() = default;
     };
 } // namespace lms::db

@@ -22,7 +22,6 @@
 #include <optional>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"
@@ -34,11 +33,9 @@ namespace lms::db
     class ISession;
     class User;
 
-    class AuthToken final : public Object<AuthToken, AuthTokenId>
+    class AuthToken : public Object<AuthToken, AuthTokenId>
     {
     public:
-        AuthToken() = default;
-
         static pointer create(ISession& session, std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, const ObjectPtr<User>& user);
 
         // Utility
@@ -51,7 +48,7 @@ namespace lms::db
 
         // Accessors
         const Wt::WDateTime& getExpiry() const { return _expiry; }
-        ObjectPtr<User> getUser() const { return _user; }
+        ObjectPtr<User> getUser() const;
         const std::string& getValue() const { return _value; }
         std::size_t getUseCount() const { return _useCount; }
         Wt::WDateTime getLastUsed() const { return _lastUsed; }
@@ -61,20 +58,9 @@ namespace lms::db
         std::size_t incUseCount() { return ++_useCount; }
         void setLastUsed(const Wt::WDateTime& lastUsed) { _lastUsed = lastUsed; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _domain, "domain");
-            Wt::Dbo::field(a, _value, "value");
-            Wt::Dbo::field(a, _expiry, "expiry");
-            Wt::Dbo::field(a, _useCount, "use_count");
-            Wt::Dbo::field(a, _lastUsed, "last_used");
-            Wt::Dbo::field(a, _maxUseCount, "max_use_count");
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        AuthToken(std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, const ObjectPtr<User>& user);
+    protected:
+        AuthToken() = default;
+        AuthToken(std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount);
 
         std::string _domain;
         std::string _value;
@@ -82,6 +68,5 @@ namespace lms::db
         long _useCount{};
         Wt::WDateTime _lastUsed;
         std::optional<long> _maxUseCount;
-        Wt::Dbo::ptr<User> _user;
     };
 } // namespace lms::db

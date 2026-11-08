@@ -28,8 +28,6 @@
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "core/EnumSet.hpp"
@@ -83,7 +81,7 @@ namespace lms::db
     class User;
     class Work;
 
-    class Track final : public Object<Track, TrackId>
+    class Track : public Object<Track, TrackId>
     {
     public:
         struct FindParameters
@@ -204,8 +202,6 @@ namespace lms::db
             }
         };
 
-        Track() = default;
-
         static pointer create(ISession& session);
         static void destroy(ISession& session, std::span<const TrackId> ids);
 
@@ -268,8 +264,8 @@ namespace lms::db
         void setComment(std::string_view comment) { _comment = comment; }
         void clearArtistLinks();
         void addArtistLink(const ObjectPtr<TrackArtistLink>& artistLink);
-        void setRelease(const ObjectPtr<Release>& release) { _release = getDboPtr(release); }
-        void setMedium(const ObjectPtr<Medium>& medium) { _medium = getDboPtr(medium); }
+        void setRelease(const ObjectPtr<Release>& release);
+        void setMedium(const ObjectPtr<Medium>& medium);
         void setClusters(const std::vector<ObjectPtr<Cluster>>& clusters);
         void setGenres(std::span<const ObjectPtr<Genre>> genres);
         void setGroupings(std::span<const ObjectPtr<Grouping>> groupings);
@@ -331,10 +327,10 @@ namespace lms::db
         std::vector<ObjectPtr<TrackArtistLink>> getArtistLinks(TrackArtistLinkType type) const;
         void visitArtistLinks(TrackArtistLinkType type, const std::function<void(const ObjectPtr<TrackArtistLink>& artistLink)>& visitor) const;
 
-        ReleaseId getReleaseId() const { return _release.id(); }
-        ObjectPtr<Release> getRelease() const { return _release; }
-        MediumId getMediumId() const { return _medium.id(); }
-        ObjectPtr<Medium> getMedium() const { return _medium; }
+        ReleaseId getReleaseId() const;
+        ObjectPtr<Release> getRelease() const;
+        MediumId getMediumId() const;
+        ObjectPtr<Medium> getMedium() const;
         std::vector<ObjectPtr<Cluster>> getClusters() const;
         std::vector<ClusterId> getClusterIds() const;
         std::vector<ObjectPtr<Genre>> getGenres() const;
@@ -356,56 +352,8 @@ namespace lms::db
         ObjectPtr<Artwork> getPreferredMediaArtwork() const;
         ArtworkId getPreferredMediaArtworkId() const;
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _scanVersion, "scan_version");
-
-            Wt::Dbo::field(a, _absoluteFilePath, "absolute_file_path");
-            Wt::Dbo::field(a, _fileSize, "file_size");
-            Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
-            Wt::Dbo::field(a, _fileAdded, "file_added");
-
-            Wt::Dbo::field(a, _duration, "duration");
-            Wt::Dbo::field(a, _container, "container");
-            Wt::Dbo::field(a, _codec, "codec");
-            Wt::Dbo::field(a, _bitrate, "bitrate");
-            Wt::Dbo::field(a, _channelCount, "channel_count");
-            Wt::Dbo::field(a, _sampleRate, "sample_rate");
-            Wt::Dbo::field(a, _bitsPerSample, "bits_per_sample");
-            Wt::Dbo::field(a, _replayGain, "replay_gain");
-
-            Wt::Dbo::field(a, _trackNumber, "track_number");
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _date, "date");
-            Wt::Dbo::field(a, _originalDate, "original_date");
-            Wt::Dbo::field(a, _trackMBID, "mbid");
-            Wt::Dbo::field(a, _recordingMBID, "recording_mbid");
-            Wt::Dbo::field(a, _copyright, "copyright");
-            Wt::Dbo::field(a, _copyrightURL, "copyright_url");
-            Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
-            Wt::Dbo::field(a, _comment, "comment"); // TODO: move in a dedicated table?
-            Wt::Dbo::field(a, _advisory, "advisory");
-
-            Wt::Dbo::belongsTo(a, _medium, "medium", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete track on media library removal, we want to wait for the next scan to have a chance to migrate files
-            Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::belongsTo(a, _preferredMediaArtwork, "preferred_media_artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::hasMany(a, _movements, Wt::Dbo::ManyToOne, "track");
-            Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "track");
-            Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _genres, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _groupings, Wt::Dbo::ManyToMany, "track_grouping", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _languages, Wt::Dbo::ManyToMany, "track_language", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _moods, Wt::Dbo::ManyToMany, "track_mood", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _works, Wt::Dbo::ManyToMany, "track_work", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _trackLyrics, Wt::Dbo::ManyToOne, "track");
-            Wt::Dbo::hasMany(a, _embeddedImageLinks, Wt::Dbo::ManyToOne, "track");
-        }
-
-    private:
+    protected:
+        Track() = default;
         static constexpr std::size_t _maxNameLength{ 512 };
         static constexpr std::size_t _maxCopyrightLength{ 512 };
         static constexpr std::size_t _maxCopyrightURLLength{ 512 };
@@ -440,22 +388,6 @@ namespace lms::db
         std::string _artistDisplayName;
         std::string _comment;
         Advisory _advisory{ Advisory::UnSet };
-        Wt::Dbo::ptr<Medium> _medium;
-        Wt::Dbo::ptr<Release> _release;
-        Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
-        Wt::Dbo::ptr<Directory> _directory;
-        Wt::Dbo::ptr<Artwork> _preferredArtwork;
-        Wt::Dbo::ptr<Artwork> _preferredMediaArtwork;
-        Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Genre>> _genres;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Grouping>> _groupings;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Language>> _languages;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Mood>> _moods;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Work>> _works;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Movement>> _movements;
-        Wt::Dbo::collection<Wt::Dbo::ptr<TrackLyrics>> _trackLyrics;
-        Wt::Dbo::collection<Wt::Dbo::ptr<TrackEmbeddedImageLink>> _embeddedImageLinks;
     };
 
     namespace Debug

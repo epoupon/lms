@@ -25,10 +25,11 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfoId.hpp"
-#include "database/objects/Directory.hpp"
 
+#include "ArtistDbo.hpp"
+#include "ArtistInfoDbo.hpp"
+#include "DirectoryDbo.hpp"
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
@@ -41,12 +42,12 @@ namespace lms::db
 {
     ArtistInfo::pointer ArtistInfo::create(ISession& session)
     {
-        return utils::addObject(session, std::unique_ptr<ArtistInfo>{ new ArtistInfo{} });
+        return utils::addObject(session, std::unique_ptr<dbo::ArtistInfo>{ new dbo::ArtistInfo{} });
     }
 
     void ArtistInfo::destroy(ISession& session, std::span<const ArtistInfoId> ids)
     {
-        utils::destroyObjects<ArtistInfo>(session, ids);
+        utils::destroyObjects<dbo::ArtistInfo>(session, ids);
     }
 
     std::size_t ArtistInfo::getCount(ISession& session)
@@ -60,21 +61,21 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.absolute_file_path = ?").bind(p));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.absolute_file_path = ?").bind(p));
     }
 
     ArtistInfo::pointer ArtistInfo::find(ISession& session, ArtistInfoId id)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.id = ?").bind(id));
     }
 
     void ArtistInfo::find(ISession& session, ArtistId id, std::optional<Range> range, const std::function<void(const pointer&)>& func)
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.artist_id = ?").bind(id) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.artist_id = ?").bind(id) };
         utils::forEachQueryRangeResult(query, range, [&](const ArtistInfo::pointer& entry) {
             func(entry);
         });
@@ -89,7 +90,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i from artist_info a_i").orderBy("a_i.id").where("a_i.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::ArtistInfo>>("SELECT a_i from artist_info a_i").orderBy("a_i.id").where("a_i.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
         utils::forEachQueryResult(query, [&](const ArtistInfo::pointer& entry) {
             func(entry);
@@ -101,7 +102,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i FROM artist_info a_i") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::ArtistInfo>>("SELECT a_i FROM artist_info a_i") };
         query.join("artist a ON a_i.artist_id = a.id");
         query.where("a_i.mbid_matched = FALSE");
         query.where("a_i.name <> a.name");
@@ -116,7 +117,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i FROM artist_info a_i") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::ArtistInfo>>("SELECT a_i FROM artist_info a_i") };
         query.join("artist a ON a_i.artist_id = a.id");
         query.where("a_i.mbid_matched = FALSE");
         if (!allowArtistMBIDFallback)
@@ -150,12 +151,12 @@ namespace lms::db
 
     Artist::pointer ArtistInfo::getArtist() const
     {
-        return _artist;
+        return getDbo(*this)._artist;
     }
 
     Directory::pointer ArtistInfo::getDirectory() const
     {
-        return _directory;
+        return getDbo(*this)._directory;
     }
 
     void ArtistInfo::setAbsoluteFilePath(const std::filesystem::path& filePath)
@@ -167,12 +168,12 @@ namespace lms::db
 
     void ArtistInfo::setDirectory(const ObjectPtr<Directory>& directory)
     {
-        _directory = getDboPtr(directory);
+        getDbo(*this)._directory = getDboPtr(directory);
     }
 
     void ArtistInfo::setArtist(const ObjectPtr<Artist>& artist)
     {
-        _artist = getDboPtr(artist);
+        getDbo(*this)._artist = getDboPtr(artist);
     }
 
     // Truncated as the artist name/sort name, or they would never match
@@ -186,5 +187,10 @@ namespace lms::db
     {
         _sortName = core::stringUtils::utf8Truncate(sortName, Artist::maxNameLength);
         LMS_LOG_IF(DB, WARNING, sortName.size() > Artist::maxNameLength, "Artist info sort name too long, truncated to '" << _sortName << "'");
+    }
+
+    DirectoryId ArtistInfo::getDirectoryId() const
+    {
+        return getDbo(*this)._directory.id();
     }
 } // namespace lms::db

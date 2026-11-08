@@ -24,9 +24,6 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
-#include <Wt/Dbo/weak_ptr.h>
 #include <Wt/WDateTime.h>
 
 #include "database/IdRange.hpp"
@@ -38,17 +35,14 @@ LMS_DECLARE_IDTYPE(PlayListFileId)
 
 namespace lms::db
 {
-    class Artwork;
     class Directory;
     class ISession;
     class MediaLibrary;
     class TrackList;
 
-    class PlayListFile final : public Object<PlayListFile, PlayListFileId>
+    class PlayListFile : public Object<PlayListFile, PlayListFileId>
     {
     public:
-        PlayListFile() = default;
-
         static pointer create(ISession& session, const std::filesystem::path& file);
         static void destroy(ISession& session, std::span<const PlayListFileId> ids);
 
@@ -67,18 +61,18 @@ namespace lms::db
         std::size_t getFileSize() const { return _fileSize; }
         std::string_view getName() const { return _name; }
         const std::filesystem::path& getCoverImageFile() const { return _coverImageFile; }
-        ArtworkId getPreferredArtworkId() const { return _preferredArtwork.id(); }
+        ArtworkId getPreferredArtworkId() const;
         std::vector<std::filesystem::path> getFiles() const;
         ObjectPtr<TrackList> getTrackList() const;
         ObjectPtr<Directory> getDirectory() const;
-        DirectoryId getDirectoryId() const { return _directory.id(); }
+        DirectoryId getDirectoryId() const;
 
         // setters
         void setAbsoluteFilePath(const std::filesystem::path& filePath);
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
         void setCoverImageFile(const std::filesystem::path& file);
-        void setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
+        void setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary);
         void setDirectory(const ObjectPtr<Directory>& directory);
         void setTrackList(const ObjectPtr<TrackList>& trackList);
         void setName(std::string_view name);
@@ -86,25 +80,9 @@ namespace lms::db
 
         static void updatePreferredArtwork(ISession& session, PlayListFileId id, ArtworkId artworkId);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _absoluteFilePath, "absolute_file_path");
-            Wt::Dbo::field(a, _fileStem, "file_stem");
-            Wt::Dbo::field(a, _fileSize, "file_size");
-            Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _entries, "entries");
-            Wt::Dbo::field(a, _coverImageFile, "cover_image_file");
-
-            Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete playlist on media library removal, we want to wait for the next scan to have a chance to migrate files
-            Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::hasOne(a, _trackList, "playlist_file");
-        }
-
-    private:
-        PlayListFile(const std::filesystem::path& file);
+    protected:
+        PlayListFile() = default;
+        explicit PlayListFile(const std::filesystem::path& file);
 
         static constexpr std::size_t _maxNameLength{ 512 };
 
@@ -117,10 +95,5 @@ namespace lms::db
         std::string _name;
         std::string _entries; // A json encoded list of files
         std::filesystem::path _coverImageFile;
-
-        Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
-        Wt::Dbo::ptr<Directory> _directory;
-        Wt::Dbo::ptr<Artwork> _preferredArtwork;
-        Wt::Dbo::weak_ptr<TrackList> _trackList;
     };
 } // namespace lms::db

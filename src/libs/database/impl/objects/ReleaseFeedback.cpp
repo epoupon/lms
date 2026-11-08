@@ -22,11 +22,11 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/objects/Release.hpp"
-#include "database/objects/User.hpp"
-
 #include "ObjectPtrImpl.hpp"
+#include "ReleaseDbo.hpp"
+#include "ReleaseFeedbackDbo.hpp"
 #include "Session.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -34,7 +34,7 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::ReleaseFeedback)
 
 namespace lms::db
 {
-    ReleaseFeedback::ReleaseFeedback(const ObjectPtr<Release>& release, const ObjectPtr<User>& user)
+    dbo::ReleaseFeedback::ReleaseFeedback(const ObjectPtr<db::Release>& release, const ObjectPtr<db::User>& user)
         : _release{ getDboPtr(release) }
         , _user{ getDboPtr(user) }
     {
@@ -42,7 +42,7 @@ namespace lms::db
 
     ReleaseFeedback::pointer ReleaseFeedback::create(ISession& session, const ObjectPtr<Release>& release, const ObjectPtr<User>& user)
     {
-        return utils::addObject(session, std::unique_ptr<ReleaseFeedback>{ new ReleaseFeedback{ release, user } });
+        return utils::addObject(session, std::unique_ptr<dbo::ReleaseFeedback>{ new dbo::ReleaseFeedback{ release, user } });
     }
 
     std::size_t ReleaseFeedback::getCount(ISession& session)
@@ -54,17 +54,27 @@ namespace lms::db
     ReleaseFeedback::pointer ReleaseFeedback::find(ISession& session, ReleaseFeedbackId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<ReleaseFeedback>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ReleaseFeedback>().where("id = ?").bind(id));
     }
 
     ReleaseFeedback::pointer ReleaseFeedback::find(ISession& session, ReleaseId releaseId, UserId userId)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<ReleaseFeedback>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ReleaseFeedback>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
     }
 
     void ReleaseFeedback::setDateTime(const Wt::WDateTime& dateTime)
     {
         _dateTime = utils::normalizeDateTime(dateTime);
+    }
+
+    ObjectPtr<Release> ReleaseFeedback::getRelease() const
+    {
+        return getDbo(*this)._release;
+    }
+
+    ObjectPtr<User> ReleaseFeedback::getUser() const
+    {
+        return getDbo(*this)._user;
     }
 } // namespace lms::db

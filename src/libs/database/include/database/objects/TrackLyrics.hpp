@@ -26,8 +26,6 @@
 #include <span>
 #include <string>
 
-#include <Wt/Dbo/Field.h>
-
 #include "database/IdType.hpp"
 #include "database/Object.hpp"
 #include "database/Types.hpp"
@@ -42,11 +40,9 @@ namespace lms::db
     class ISession;
     class Track;
 
-    class TrackLyrics final : public Object<TrackLyrics, TrackLyricsId>
+    class TrackLyrics : public Object<TrackLyrics, TrackLyricsId>
     {
     public:
-        TrackLyrics() = default;
-
         static pointer create(ISession& session);
         static void destroy(ISession& session, std::span<const TrackLyricsId> ids);
 
@@ -103,8 +99,8 @@ namespace lms::db
         bool isSynchronized() const { return _synchronized; }
         SynchronizedLines getSynchronizedLines() const;
         std::vector<std::string> getUnsynchronizedLines() const;
-        Wt::Dbo::ptr<Track> getTrack() const { return _track; }
-        Wt::Dbo::ptr<Directory> getDirectory() const { return _directory; }
+        ObjectPtr<Track> getTrack() const;
+        ObjectPtr<Directory> getDirectory() const;
 
         // Writers
         void setAbsoluteFilePath(const std::filesystem::path& path);
@@ -116,27 +112,11 @@ namespace lms::db
         void setDisplayTitle(std::string_view displayTitle) { _displayTitle = displayTitle; }
         void setSynchronizedLines(const SynchronizedLines& lines);
         void setUnsynchronizedLines(std::span<const std::string> lines);
-        void setTrack(const ObjectPtr<Track>& track) { _track = getDboPtr(track); }
-        void setDirectory(const ObjectPtr<Directory>& directory) { _directory = getDboPtr(directory); }
+        void setTrack(const ObjectPtr<Track>& track);
+        void setDirectory(const ObjectPtr<Directory>& directory);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _fileAbsolutePath, "absolute_file_path");
-            Wt::Dbo::field(a, _fileStem, "stem");
-            Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
-            Wt::Dbo::field(a, _fileSize, "file_size");
-            Wt::Dbo::field(a, _lines, "lines");
-            Wt::Dbo::field(a, _language, "language");
-            Wt::Dbo::field(a, _offset, "offset");
-            Wt::Dbo::field(a, _displayArtist, "display_artist");
-            Wt::Dbo::field(a, _displayTitle, "display_title");
-            Wt::Dbo::field(a, _synchronized, "synchronized");
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
+    protected:
+        TrackLyrics() = default;
         std::filesystem::path _fileAbsolutePath; // optional (if embedded in media file)
         std::string _fileStem;                   // optional (if embedded in media file)
         Wt::WDateTime _fileLastWrite;            // optional (if embedded in media file)
@@ -147,8 +127,5 @@ namespace lms::db
         std::string _displayArtist;
         std::string _displayTitle;
         bool _synchronized{};
-
-        Wt::Dbo::ptr<Track> _track;
-        Wt::Dbo::ptr<Directory> _directory;
     };
 } // namespace lms::db

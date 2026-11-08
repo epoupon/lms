@@ -22,11 +22,11 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/objects/Artist.hpp"
-#include "database/objects/User.hpp"
-
+#include "ArtistDbo.hpp"
+#include "ArtistFeedbackDbo.hpp"
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -34,7 +34,7 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::ArtistFeedback)
 
 namespace lms::db
 {
-    ArtistFeedback::ArtistFeedback(const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user)
+    dbo::ArtistFeedback::ArtistFeedback(const ObjectPtr<db::Artist>& artist, const ObjectPtr<db::User>& user)
         : _artist{ getDboPtr(artist) }
         , _user{ getDboPtr(user) }
     {
@@ -42,7 +42,7 @@ namespace lms::db
 
     ArtistFeedback::pointer ArtistFeedback::create(ISession& session, const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user)
     {
-        return utils::addObject(session, std::unique_ptr<ArtistFeedback>{ new ArtistFeedback{ artist, user } });
+        return utils::addObject(session, std::unique_ptr<dbo::ArtistFeedback>{ new dbo::ArtistFeedback{ artist, user } });
     }
 
     std::size_t ArtistFeedback::getCount(ISession& session)
@@ -54,17 +54,27 @@ namespace lms::db
     ArtistFeedback::pointer ArtistFeedback::find(ISession& session, ArtistFeedbackId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<ArtistFeedback>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ArtistFeedback>().where("id = ?").bind(id));
     }
 
     ArtistFeedback::pointer ArtistFeedback::find(ISession& session, ArtistId artistId, UserId userId)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<ArtistFeedback>().where("artist_id = ?").bind(artistId).where("user_id = ?").bind(userId));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ArtistFeedback>().where("artist_id = ?").bind(artistId).where("user_id = ?").bind(userId));
     }
 
     void ArtistFeedback::setDateTime(const Wt::WDateTime& dateTime)
     {
         _dateTime = utils::normalizeDateTime(dateTime);
+    }
+
+    ObjectPtr<Artist> ArtistFeedback::getArtist() const
+    {
+        return getDbo(*this)._artist;
+    }
+
+    ObjectPtr<User> ArtistFeedback::getUser() const
+    {
+        return getDbo(*this)._user;
     }
 } // namespace lms::db

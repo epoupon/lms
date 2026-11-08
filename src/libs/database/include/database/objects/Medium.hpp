@@ -25,9 +25,6 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
-
 #include "database/IdRange.hpp"
 #include "database/Object.hpp"
 #include "database/Types.hpp"
@@ -41,14 +38,11 @@ namespace lms::db
     class Artwork;
     class ISession;
     class Release;
-    class Track;
 
-    class Medium final : public Object<Medium, MediumId>
+    class Medium : public Object<Medium, MediumId>
     {
     public:
         static const std::size_t maxMediaLength{ 64 };
-
-        Medium() = default;
 
         static pointer create(ISession& session, const ObjectPtr<Release>& release);
         static void destroy(ISession& session, std::span<const MediumId> ids);
@@ -93,10 +87,10 @@ namespace lms::db
         std::optional<std::size_t> getTrackCount() const { return _trackCount; } // not necessarily the number of tracks in the medium, but the number of tracks that should be in the medium
         std::string_view getMedia() const { return _media; }
         std::optional<float> getReplayGain() const { return _replayGain; }
-        ReleaseId getReleaseId() const { return _release.id(); }
-        ObjectPtr<Release> getRelease() const { return _release; }
-        ObjectPtr<Artwork> getPreferredArtwork() const { return _preferredArtwork; }
-        ArtworkId getPreferredArtworkId() const { return _preferredArtwork.id(); }
+        ReleaseId getReleaseId() const;
+        ObjectPtr<Release> getRelease() const;
+        ObjectPtr<Artwork> getPreferredArtwork() const;
+        ArtworkId getPreferredArtworkId() const;
 
         // setters
         void setName(std::string_view name) { _name = name; }
@@ -105,31 +99,13 @@ namespace lms::db
         void setMedia(std::string_view media) { _media = media; }
         void setReplayGain(std::optional<float> replayGain) { _replayGain = replayGain; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _position, "position");
-            Wt::Dbo::field(a, _trackCount, "track_count");
-            Wt::Dbo::field(a, _media, "media");
-            Wt::Dbo::field(a, _replayGain, "replay_gain");
-
-            Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "medium");
-        }
-
-    private:
-        Medium(const ObjectPtr<Release>& release);
+    protected:
+        Medium() = default;
 
         std::string _name;
         std::optional<int> _position; // position in the release
         std::optional<int> _trackCount;
         std::string _media; // CD, etc.
         std::optional<float> _replayGain;
-
-        Wt::Dbo::ptr<Release> _release;
-        Wt::Dbo::ptr<Artwork> _preferredArtwork;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks; // tracks that match this medium
     };
 } // namespace lms::db

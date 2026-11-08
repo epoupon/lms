@@ -22,10 +22,10 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/objects/User.hpp"
-
+#include "AuthTokenDbo.hpp"
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
@@ -34,18 +34,23 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::AuthToken)
 
 namespace lms::db
 {
-    AuthToken::AuthToken(std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, const ObjectPtr<User>& user)
+    AuthToken::AuthToken(std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount)
         : _domain{ domain }
         , _value{ value }
         , _expiry{ expiry }
         , _maxUseCount{ maxUseCount }
+    {
+    }
+
+    dbo::AuthToken::AuthToken(std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, const ObjectPtr<db::User>& user)
+        : db::AuthToken{ domain, value, expiry, maxUseCount }
         , _user{ getDboPtr(user) }
     {
     }
 
     AuthToken::pointer AuthToken::create(ISession& session, std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, const ObjectPtr<User>& user)
     {
-        return utils::addObject(session, std::unique_ptr<AuthToken>{ new AuthToken{ domain, value, expiry, maxUseCount, user } });
+        return utils::addObject(session, std::unique_ptr<dbo::AuthToken>{ new dbo::AuthToken{ domain, value, expiry, maxUseCount, user } });
     }
 
     std::size_t AuthToken::getCount(ISession& session)
@@ -59,14 +64,14 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<AuthToken>>("SELECT a_t from auth_token a_t").where("a_t.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::AuthToken>>("SELECT a_t from auth_token a_t").where("a_t.id = ?").bind(id));
     }
 
     AuthToken::pointer AuthToken::find(ISession& session, std::string_view domain, std::string_view value)
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->find<AuthToken>() };
+        auto query{ getDboSession(session)->find<dbo::AuthToken>() };
         query.where("domain = ?").bind(domain);
         query.where("value = ?").bind(value);
 
@@ -77,7 +82,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->find<AuthToken>() };
+        auto query{ getDboSession(session)->find<dbo::AuthToken>() };
         query.where("domain = ?").bind(domain);
         query.where("user_id = ?").bind(userId);
 
@@ -96,5 +101,10 @@ namespace lms::db
         checkWriteTransaction(session);
 
         utils::executeCommand(*getDboSession(session), "DELETE FROM auth_token WHERE user_id = ? AND domain = ?", user, domain);
+    }
+
+    ObjectPtr<User> AuthToken::getUser() const
+    {
+        return getDbo(*this)._user;
     }
 } // namespace lms::db

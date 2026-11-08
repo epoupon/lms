@@ -22,8 +22,9 @@
 #include <Wt/Dbo/Impl.h>
 
 #include "database/Types.hpp"
-#include "database/objects/MediaLibrary.hpp"
 
+#include "DirectoryDbo.hpp"
+#include "MediaLibraryDbo.hpp"
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
@@ -36,9 +37,9 @@ namespace lms::db
 {
     namespace
     {
-        Wt::Dbo::Query<Wt::Dbo::ptr<Directory>> createQuery(ISession& session, const Directory::FindParameters& params)
+        Wt::Dbo::Query<Wt::Dbo::ptr<dbo::Directory>> createQuery(ISession& session, const Directory::FindParameters& params)
         {
-            auto query{ getDboSession(session)->query<Wt::Dbo::ptr<Directory>>("SELECT d FROM directory d") };
+            auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d FROM directory d") };
 
             for (std::string_view keyword : params.keywords)
                 query.where("d.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
@@ -138,12 +139,12 @@ namespace lms::db
 
     Directory::pointer Directory::create(ISession& session, const std::filesystem::path& p)
     {
-        return utils::addObject(session, std::unique_ptr<Directory>{ new Directory{ p } });
+        return utils::addObject(session, std::unique_ptr<dbo::Directory>{ new dbo::Directory{ p } });
     }
 
     void Directory::destroy(ISession& session, std::span<const DirectoryId> ids)
     {
-        utils::destroyObjects<Directory>(session, ids);
+        utils::destroyObjects<dbo::Directory>(session, ids);
     }
 
     std::size_t Directory::getCount(ISession& session)
@@ -157,21 +158,21 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Directory>>("SELECT d from directory d").where("d.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.id = ?").bind(id));
     }
 
     Directory::pointer Directory::find(ISession& session, const std::filesystem::path& path)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Directory>>("SELECT d from directory d").where("d.absolute_path = ?").bind(path));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.absolute_path = ?").bind(path));
     }
 
     void Directory::find(ISession& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory::pointer&)>& func)
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<Directory>>("SELECT d from directory d").orderBy("d.id").where("d.id > ?").bind(lastRetrievedDirectory).limit(static_cast<int>(count)) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").orderBy("d.id").where("d.id > ?").bind(lastRetrievedDirectory).limit(static_cast<int>(count)) };
 
         utils::forEachQueryResult(query, [&](const Directory::pointer& image) {
             func(image);
@@ -229,7 +230,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<Directory>>("SELECT d from directory d").where("d.parent_directory_id IS NULL") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.parent_directory_id IS NULL") };
         return utils::execRangeQuery<Directory::pointer>(query, range);
     }
 
@@ -249,6 +250,11 @@ namespace lms::db
         }
     }
 
+    void Directory::setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary)
+    {
+        getDbo(*this)._mediaLibrary = getDboPtr(mediaLibrary);
+    }
+
     void Directory::setParent(const ObjectPtr<Directory>& parent)
     {
 #ifndef NDEBUG
@@ -259,6 +265,21 @@ namespace lms::db
         }
 #endif
 
-        _parent = getDboPtr(parent);
+        getDbo(*this)._parent = getDboPtr(parent);
+    }
+
+    ObjectPtr<Directory> Directory::getParentDirectory() const
+    {
+        return getDbo(*this)._parent;
+    }
+
+    DirectoryId Directory::getParentDirectoryId() const
+    {
+        return getDbo(*this)._parent.id();
+    }
+
+    ObjectPtr<MediaLibrary> Directory::getMediaLibrary() const
+    {
+        return getDbo(*this)._mediaLibrary;
     }
 } // namespace lms::db

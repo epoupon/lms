@@ -24,15 +24,10 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/objects/Artist.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-
+#include "ArtistDbo.hpp"
 #include "ObjectPtrImpl.hpp"
+#include "ReleaseArtistLinkDbo.hpp"
+#include "ReleaseDbo.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
@@ -41,8 +36,13 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::ReleaseArtistLink)
 
 namespace lms::db
 {
-    ReleaseArtistLink::ReleaseArtistLink(const ObjectPtr<Release>& release, const ObjectPtr<Artist>& artist, bool artistMBIDMatched)
+    ReleaseArtistLink::ReleaseArtistLink(bool artistMBIDMatched)
         : _artistMBIDMatched{ artistMBIDMatched }
+    {
+    }
+
+    dbo::ReleaseArtistLink::ReleaseArtistLink(const ObjectPtr<db::Release>& release, const ObjectPtr<db::Artist>& artist, bool artistMBIDMatched)
+        : db::ReleaseArtistLink{ artistMBIDMatched }
         , _release{ getDboPtr(release) }
         , _artist{ getDboPtr(artist) }
     {
@@ -50,7 +50,7 @@ namespace lms::db
 
     ReleaseArtistLink::pointer ReleaseArtistLink::create(ISession& session, const ObjectPtr<Release>& release, const ObjectPtr<Artist>& artist, bool artistMBIDMatched)
     {
-        return utils::addObject(session, std::make_unique<ReleaseArtistLink>(release, artist, artistMBIDMatched));
+        return utils::addObject(session, std::make_unique<dbo::ReleaseArtistLink>(release, artist, artistMBIDMatched));
     }
 
     std::size_t ReleaseArtistLink::getCount(ISession& session)
@@ -63,14 +63,14 @@ namespace lms::db
     ReleaseArtistLink::pointer ReleaseArtistLink::find(ISession& session, ReleaseArtistLinkId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l").where("r_a_l.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l").where("r_a_l.id = ?").bind(id));
     }
 
     void ReleaseArtistLink::findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const ReleaseArtistLink::pointer&)>& func)
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l") };
         query.join("artist a ON r_a_l.artist_id = a.id");
         query.where("r_a_l.artist_mbid_matched = FALSE");
         query.where("r_a_l.artist_name <> a.name");
@@ -85,7 +85,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l") };
         query.join("artist a ON r_a_l.artist_id = a.id");
         query.where("r_a_l.artist_mbid_matched = FALSE");
         if (!allowArtistMBIDFallback)
@@ -107,7 +107,7 @@ namespace lms::db
 
     void ReleaseArtistLink::setArtist(const ObjectPtr<Artist>& artist)
     {
-        _artist = getDboPtr(artist);
+        getDbo(*this)._artist = getDboPtr(artist);
     }
 
     void ReleaseArtistLink::setArtistName(std::string_view artistName)
@@ -120,5 +120,20 @@ namespace lms::db
     {
         _artistSortName = core::stringUtils::utf8Truncate(artistSortName, Artist::maxNameLength);
         LMS_LOG_IF(DB, WARNING, artistSortName.size() > Artist::maxNameLength, "Artist link sort name too long, truncated to '" << _artistSortName << "'");
+    }
+
+    ObjectPtr<Release> ReleaseArtistLink::getRelease() const
+    {
+        return getDbo(*this)._release;
+    }
+
+    ObjectPtr<Artist> ReleaseArtistLink::getArtist() const
+    {
+        return getDbo(*this)._artist;
+    }
+
+    ArtistId ReleaseArtistLink::getArtistId() const
+    {
+        return getDbo(*this)._artist.id();
     }
 } // namespace lms::db

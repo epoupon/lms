@@ -23,8 +23,6 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-
 #include "core/EnumSet.hpp"
 
 #include "database/IdType.hpp"
@@ -42,14 +40,11 @@ namespace lms::db
     class ISession;
     class Track;
 
-    class TrackArtistLink final : public Object<TrackArtistLink, TrackArtistLinkId>
+    class TrackArtistLink : public Object<TrackArtistLink, TrackArtistLinkId>
     {
     public:
-        TrackArtistLink() = default;
-
         static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched = false);
         static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, bool artistMBIDMatched = false);
-        TrackArtistLink(const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched);
 
         static void find(ISession& session, TrackId trackId, const std::function<void(const pointer&, const ObjectPtr<Artist>&)>& func);
         static pointer find(ISession& session, TrackArtistLinkId linkId);
@@ -59,9 +54,9 @@ namespace lms::db
         static void findWithArtistNameAmbiguity(ISession& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func);
 
         // accessors
-        ObjectPtr<Track> getTrack() const { return _track; }
-        ObjectPtr<Artist> getArtist() const { return _artist; }
-        ArtistId getArtistId() const { return _artist.id(); }
+        ObjectPtr<Track> getTrack() const;
+        ObjectPtr<Artist> getArtist() const;
+        ArtistId getArtistId() const;
         TrackArtistLinkType getType() const { return _type; }
         std::string_view getSubType() const { return _subType; }
         std::string_view getArtistName() const { return _artistName; }
@@ -73,27 +68,14 @@ namespace lms::db
         void setArtistName(std::string_view artistName);
         void setArtistSortName(std::string_view artistSortName);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _type, "type");
-            Wt::Dbo::field(a, _subType, "subtype");
-            Wt::Dbo::field(a, _artistName, "artist_name");
-            Wt::Dbo::field(a, _artistSortName, "artist_sort_name");
-            Wt::Dbo::field(a, _artistMBIDMatched, "artist_mbid_matched");
+    protected:
+        TrackArtistLink() = default;
+        TrackArtistLink(TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched);
 
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
         TrackArtistLinkType _type{ TrackArtistLinkType::Artist };
         std::string _subType;
         std::string _artistName;     // as it was in the tags
         std::string _artistSortName; // as it was in the tags
         bool _artistMBIDMatched{};
-
-        Wt::Dbo::ptr<Track> _track;
-        Wt::Dbo::ptr<Artist> _artist;
     };
 } // namespace lms::db

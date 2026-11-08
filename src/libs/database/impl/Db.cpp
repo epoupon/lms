@@ -33,6 +33,7 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
+
 #include "database/objects/ScanSettings.hpp"
 #include "database/objects/ServerInfo.hpp"
 

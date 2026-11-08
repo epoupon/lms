@@ -19,34 +19,25 @@
 
 #pragma once
 
-#include <Wt/Dbo/Field.h>
-
 #include "core/UUID.hpp"
+#include "database/Object.hpp"
+#include "database/objects/ServerInfoId.hpp"
 
 namespace lms::db
 {
     class ISession;
 
     // Singleton row holding server-level metadata (not tied to any particular schema version)
-    class ServerInfo
+    class ServerInfo : public Object<ServerInfo, ServerInfoId>
     {
     public:
-        using pointer = Wt::Dbo::ptr<ServerInfo>;
-
-        ServerInfo() = default;
-
         static pointer getOrCreate(ISession& session);
         static pointer get(ISession& session);
 
         core::UUID getInstanceId() const { return _instanceId; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _instanceId, "instance_id");
-        }
-
-    private:
+    protected:
+        ServerInfo() = default;
         explicit ServerInfo(core::UUID instanceId);
 
         core::UUID _instanceId;

@@ -19,13 +19,13 @@
 
 #pragma once
 
+#include <cstddef>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
-
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
+#include <vector>
 
 #include "database/Object.hpp"
 #include "database/Types.hpp"
@@ -38,9 +38,8 @@
 namespace lms::db
 {
     class ISession;
-    class Track;
 
-    class Genre final : public Object<Genre, GenreId>
+    class Genre : public Object<Genre, GenreId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -80,8 +79,6 @@ namespace lms::db
             }
         };
 
-        Genre() = default;
-
         static pointer create(ISession& session, std::string_view name);
         static void destroy(ISession& session, std::span<const GenreId> ids);
 
@@ -103,23 +100,13 @@ namespace lms::db
         void setTrackCount(std::size_t count) { _trackCount = count; }
         void setReleaseCount(std::size_t count) { _releaseCount = count; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _trackCount, "track_count");
-            Wt::Dbo::field(a, _releaseCount, "release_count");
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        Genre(std::string_view name);
+    protected:
+        Genre() = default;
+        explicit Genre(std::string_view name);
 
         std::string _name;
         int _trackCount{};
         int _releaseCount{};
-
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
     };
 
 } // namespace lms::db

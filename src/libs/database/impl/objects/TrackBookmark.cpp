@@ -21,15 +21,11 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/User.hpp"
-
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
+#include "TrackBookmarkDbo.hpp"
+#include "TrackDbo.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -37,7 +33,7 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackBookmark)
 
 namespace lms::db
 {
-    TrackBookmark::TrackBookmark(const ObjectPtr<User>& user, const ObjectPtr<Track>& track)
+    dbo::TrackBookmark::TrackBookmark(const ObjectPtr<db::User>& user, const ObjectPtr<db::Track>& track)
         : _user{ getDboPtr(user) }
         , _track{ getDboPtr(track) }
     {
@@ -45,7 +41,7 @@ namespace lms::db
 
     TrackBookmark::pointer TrackBookmark::create(ISession& session, const ObjectPtr<User>& user, const ObjectPtr<Track>& track)
     {
-        return utils::addObject(session, std::unique_ptr<TrackBookmark>{ new TrackBookmark{ user, track } });
+        return utils::addObject(session, std::unique_ptr<dbo::TrackBookmark>{ new dbo::TrackBookmark{ user, track } });
     }
 
     std::size_t TrackBookmark::getCount(ISession& session)
@@ -68,14 +64,23 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<TrackBookmark>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackBookmark>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId));
     }
 
     TrackBookmark::pointer TrackBookmark::find(ISession& session, TrackBookmarkId id)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<TrackBookmark>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackBookmark>().where("id = ?").bind(id));
     }
 
+    ObjectPtr<Track> TrackBookmark::getTrack() const
+    {
+        return getDbo(*this)._track;
+    }
+
+    ObjectPtr<User> TrackBookmark::getUser() const
+    {
+        return getDbo(*this)._user;
+    }
 } // namespace lms::db

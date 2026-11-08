@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"
@@ -35,11 +34,9 @@ namespace lms::db
     class ISession;
     class User;
 
-    class ArtistFeedback final : public Object<ArtistFeedback, ArtistFeedbackId>
+    class ArtistFeedback : public Object<ArtistFeedback, ArtistFeedbackId>
     {
     public:
-        ArtistFeedback() = default;
-
         static pointer create(ISession& session, const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user);
 
         // Search utility
@@ -48,8 +45,8 @@ namespace lms::db
         static pointer find(ISession& session, ArtistId artistId, UserId userId);
 
         // Accessors
-        ObjectPtr<Artist> getArtist() const { return _artist; }
-        ObjectPtr<User> getUser() const { return _user; }
+        ObjectPtr<Artist> getArtist() const;
+        ObjectPtr<User> getUser() const;
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
         FeedbackValue getValue() const { return _value; }
 
@@ -57,23 +54,10 @@ namespace lms::db
         void setDateTime(const Wt::WDateTime& dateTime);
         void setValue(FeedbackValue value) { _value = value; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _dateTime, "date_time");
-            Wt::Dbo::field(a, _value, "value");
-
-            Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        ArtistFeedback(const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user);
+    protected:
+        ArtistFeedback() = default;
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };
-
-        Wt::Dbo::ptr<Artist> _artist;
-        Wt::Dbo::ptr<User> _user;
     };
 } // namespace lms::db

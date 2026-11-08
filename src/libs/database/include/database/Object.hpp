@@ -19,11 +19,18 @@
 
 #pragma once
 
+#include <concepts>
 #include <cstddef>
-
-#include <Wt/Dbo/ptr.h>
+#include <type_traits>
 
 #include "database/IdType.hpp"
+
+// TODO remove this: only needed by the ObjectPtr constructors taking a Wt pointer
+namespace Wt::Dbo
+{
+    template<class C>
+    class ptr;
+}
 
 namespace lms::db
 {
@@ -50,8 +57,12 @@ namespace lms::db
         };
 
         ObjectPtr() noexcept;
-        ObjectPtr(const Wt::Dbo::ptr<T>& obj);
-        ObjectPtr(Wt::Dbo::ptr<T>&& obj) noexcept;
+        template<typename DboType>
+            requires std::derived_from<DboType, T>
+        ObjectPtr(const Wt::Dbo::ptr<DboType>& obj);
+        template<typename DboType>
+            requires std::derived_from<DboType, T>
+        ObjectPtr(Wt::Dbo::ptr<DboType>&& obj) noexcept;
         ObjectPtr(const ObjectPtr& other);
         ObjectPtr(ObjectPtr&& other) noexcept;
         ObjectPtr& operator=(const ObjectPtr& other);
@@ -71,15 +82,16 @@ namespace lms::db
         template<typename, typename>
         friend class Object;
 
-        Wt::Dbo::ptr<T>& dboPtr();
-        const Wt::Dbo::ptr<T>& dboPtr() const;
+        auto& dboPtr();
+        const auto& dboPtr() const;
 
         // Holds a Wt::Dbo::ptr: an opaque buffer so that this class won't depend on the mapped class
         alignas(void*) std::byte _storage[2 * sizeof(void*)];
     };
 
+    // The database mapping of each entity lives in a private subclass, see impl/objects/*Dbo.hpp
     template<typename T, typename ObjectIdType>
-    class Object : public Wt::Dbo::Dbo<T>
+    class Object
     {
         static_assert(std::is_base_of_v<db::IdType, ObjectIdType>);
         static_assert(!std::is_same_v<db::IdType, ObjectIdType>);
@@ -88,15 +100,17 @@ namespace lms::db
         using pointer = ObjectPtr<T>;
         using IdType = ObjectIdType;
 
-        IdType getId() const { return Wt::Dbo::Dbo<T>::self()->Wt::Dbo::template Dbo<T>::id(); }
-
-        // catch some misuses
-        typename Wt::Dbo::dbo_traits<T>::IdType id() const = delete;
+        IdType getId() const;
 
     protected:
+        Object() = default;
+        ~Object() = default;
+        Object(const Object&) = delete;
+        Object& operator=(const Object&) = delete;
+
         // Can get raw dbo ptr only from Objects
         template<typename SomeObject>
-        static const Wt::Dbo::ptr<SomeObject>& getDboPtr(const ObjectPtr<SomeObject>& ptr)
+        static const auto& getDboPtr(const ObjectPtr<SomeObject>& ptr)
         {
             return ptr.dboPtr();
         }

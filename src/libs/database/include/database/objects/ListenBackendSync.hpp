@@ -22,8 +22,6 @@
 #include <functional>
 #include <optional>
 
-#include <Wt/Dbo/Field.h>
-
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ListenBackendSyncId.hpp"
@@ -37,11 +35,9 @@ namespace lms::db
 
     // Tracks the delivery of a single Listen to a given external scrobbling backend.
     // Never created for local/internal recording: recording a Listen row is itself that behavior.
-    class ListenBackendSync final : public Object<ListenBackendSync, ListenBackendSyncId>
+    class ListenBackendSync : public Object<ListenBackendSync, ListenBackendSyncId>
     {
     public:
-        ListenBackendSync() = default;
-
         static pointer create(ISession& session, const ObjectPtr<Listen>& listen, ScrobblingBackend backend);
 
         struct FindParameters
@@ -73,27 +69,17 @@ namespace lms::db
         static std::vector<ListenBackendSyncId> find(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
 
-        ObjectPtr<Listen> getListen() const { return _listen; }
+        ObjectPtr<Listen> getListen() const;
         ScrobblingBackend getBackend() const { return _backend; }
         SyncState getSyncState() const { return _syncState; }
 
         void setSyncState(SyncState state) { _syncState = state; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _backend, "backend");
-            Wt::Dbo::field(a, _syncState, "sync_state");
-
-            Wt::Dbo::belongsTo(a, _listen, "listen", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        ListenBackendSync(const ObjectPtr<Listen>& listen, ScrobblingBackend backend);
+    protected:
+        ListenBackendSync() = default;
+        explicit ListenBackendSync(ScrobblingBackend backend);
 
         ScrobblingBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };
-
-        Wt::Dbo::ptr<Listen> _listen;
     };
 } // namespace lms::db

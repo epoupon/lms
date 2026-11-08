@@ -24,15 +24,11 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/objects/Artist.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Track.hpp"
-
+#include "ArtistDbo.hpp"
 #include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
+#include "TrackArtistLinkDbo.hpp"
+#include "TrackDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
@@ -40,10 +36,15 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackArtistLink)
 
 namespace lms::db
 {
-    TrackArtistLink::TrackArtistLink(const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched)
+    TrackArtistLink::TrackArtistLink(TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched)
         : _type{ type }
         , _subType{ subType }
         , _artistMBIDMatched{ artistMBIDMatched }
+    {
+    }
+
+    dbo::TrackArtistLink::TrackArtistLink(const ObjectPtr<db::Track>& track, const ObjectPtr<db::Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched)
+        : db::TrackArtistLink{ type, subType, artistMBIDMatched }
         , _track{ getDboPtr(track) }
         , _artist{ getDboPtr(artist) }
     {
@@ -51,7 +52,7 @@ namespace lms::db
 
     TrackArtistLink::pointer TrackArtistLink::create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched)
     {
-        return utils::addObject(session, std::make_unique<TrackArtistLink>(track, artist, type, subType, artistMBIDMatched));
+        return utils::addObject(session, std::make_unique<dbo::TrackArtistLink>(track, artist, type, subType, artistMBIDMatched));
     }
 
     TrackArtistLink::pointer TrackArtistLink::create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, bool artistMBIDMatched)
@@ -69,19 +70,19 @@ namespace lms::db
     TrackArtistLink::pointer TrackArtistLink::find(ISession& session, TrackArtistLinkId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l from track_artist_link t_a_l").where("t_a_l.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackArtistLink>>("SELECT t_a_l from track_artist_link t_a_l").where("t_a_l.id = ?").bind(id));
     }
 
     void TrackArtistLink::find(ISession& session, TrackId trackId, const std::function<void(const TrackArtistLink::pointer& link, const ObjectPtr<Artist>& artist)>& func)
     {
         checkReadTransaction(session);
 
-        using ResultType = std::tuple<Wt::Dbo::ptr<TrackArtistLink>, Wt::Dbo::ptr<Artist>>;
+        using ResultType = std::tuple<Wt::Dbo::ptr<dbo::TrackArtistLink>, Wt::Dbo::ptr<dbo::Artist>>;
 
         const auto query{ getDboSession(session)->query<ResultType>("SELECT t_a_l, a FROM track_artist_link t_a_l").join("artist a ON t_a_l.artist_id = a.id").where("t_a_l.track_id = ?").bind(trackId) };
 
         utils::forEachQueryResult(query, [&](const ResultType& result) {
-            func(std::get<Wt::Dbo::ptr<TrackArtistLink>>(result), std::get<Wt::Dbo::ptr<Artist>>(result));
+            func(std::get<Wt::Dbo::ptr<dbo::TrackArtistLink>>(result), std::get<Wt::Dbo::ptr<dbo::Artist>>(result));
         });
     }
 
@@ -102,7 +103,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
         query.join("artist a ON t_a_l.artist_id = a.id");
         query.where("t_a_l.artist_mbid_matched = FALSE");
         query.where("t_a_l.artist_name <> a.name");
@@ -117,7 +118,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
         query.join("artist a ON t_a_l.artist_id = a.id");
         query.where("t_a_l.artist_mbid_matched = FALSE");
         if (!allowArtistMBIDFallback)
@@ -139,7 +140,7 @@ namespace lms::db
 
     void TrackArtistLink::setArtist(const ObjectPtr<Artist>& artist)
     {
-        _artist = getDboPtr(artist);
+        getDbo(*this)._artist = getDboPtr(artist);
     }
 
     void TrackArtistLink::setArtistName(std::string_view artistName)
@@ -152,5 +153,20 @@ namespace lms::db
     {
         _artistSortName = core::stringUtils::utf8Truncate(artistSortName, Artist::maxNameLength);
         LMS_LOG_IF(DB, WARNING, artistSortName.size() > Artist::maxNameLength, "Artist link sort name too long, truncated to '" << _artistSortName << "'");
+    }
+
+    ObjectPtr<Track> TrackArtistLink::getTrack() const
+    {
+        return getDbo(*this)._track;
+    }
+
+    ObjectPtr<Artist> TrackArtistLink::getArtist() const
+    {
+        return getDbo(*this)._artist;
+    }
+
+    ArtistId TrackArtistLink::getArtistId() const
+    {
+        return getDbo(*this)._artist.id();
     }
 } // namespace lms::db

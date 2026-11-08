@@ -23,28 +23,29 @@
 
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
+#include "core/Utils.hpp"
 
-#include "database/objects/Artist.hpp"
-#include "database/objects/Artwork.hpp"
-#include "database/objects/Cluster.hpp"
-#include "database/objects/Directory.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/MediaLibrary.hpp"
-#include "database/objects/Medium.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Movement.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/TrackArtistLink.hpp"
-#include "database/objects/TrackEmbeddedImage.hpp"
-#include "database/objects/TrackEmbeddedImageLink.hpp"
-#include "database/objects/TrackLyrics.hpp"
-#include "database/objects/Work.hpp"
-
+#include "ArtistDbo.hpp"
+#include "ArtworkDbo.hpp"
+#include "ClusterDbo.hpp"
+#include "DirectoryDbo.hpp"
+#include "GenreDbo.hpp"
+#include "GroupingDbo.hpp"
+#include "LanguageDbo.hpp"
+#include "MediaLibraryDbo.hpp"
+#include "MediumDbo.hpp"
+#include "MoodDbo.hpp"
+#include "MovementDbo.hpp"
 #include "ObjectPtrImpl.hpp"
+#include "ReleaseDbo.hpp"
 #include "Session.hpp"
+#include "TrackArtistLinkDbo.hpp"
+#include "TrackDbo.hpp"
+#include "TrackEmbeddedImageDbo.hpp"
+#include "TrackEmbeddedImageLinkDbo.hpp"
+#include "TrackLyricsDbo.hpp"
 #include "Utils.hpp"
+#include "WorkDbo.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
@@ -106,10 +107,10 @@ namespace lms::db
 
             if constexpr (std::is_same_v<ResultType, LanguageId>)
                 itemToSelect = "l.id";
-            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Language>>)
+            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<dbo::Language>>)
                 itemToSelect = "l";
             else
-                static_assert("Unhandled type");
+                static_assert(core::utils::dependent_false_v<ResultType>, "Unhandled type");
 
             return createQuery<ResultType>(session, itemToSelect, params);
         }
@@ -123,12 +124,12 @@ namespace lms::db
 
     Language::pointer Language::create(ISession& session, std::string_view name)
     {
-        return utils::addObject(session, std::unique_ptr<Language>{ new Language{ name } });
+        return utils::addObject(session, std::unique_ptr<dbo::Language>{ new dbo::Language{ name } });
     }
 
     void Language::destroy(ISession& session, std::span<const LanguageId> ids)
     {
-        utils::destroyObjects<Language>(session, ids);
+        utils::destroyObjects<dbo::Language>(session, ids);
     }
 
     std::size_t Language::getCount(ISession& session)
@@ -147,21 +148,21 @@ namespace lms::db
     std::vector<Language::pointer> Language::find(ISession& session, const FindParameters& params)
     {
         checkReadTransaction(session);
-        auto query{ createQuery<Wt::Dbo::ptr<Language>>(session, params) };
+        auto query{ createQuery<Wt::Dbo::ptr<dbo::Language>>(session, params) };
         return utils::execRangeQuery<Language::pointer>(query, params.range);
     }
 
     void Language::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
         checkReadTransaction(session);
-        auto query{ createQuery<Wt::Dbo::ptr<Language>>(session, params) };
+        auto query{ createQuery<Wt::Dbo::ptr<dbo::Language>>(session, params) };
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
     Language::pointer Language::find(ISession& session, LanguageId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<Language>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Language>().where("id = ?").bind(id));
     }
 
     Language::pointer Language::find(ISession& session, std::string_view name)
@@ -170,7 +171,7 @@ namespace lms::db
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<Language>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Language>().where("name = ?").bind(name));
     }
 
     std::vector<LanguageId> Language::findOrphanIds(ISession& session, std::optional<Range> range)

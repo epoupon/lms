@@ -22,11 +22,13 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
+#include "ObjectPtrImpl.hpp"
+#include "ServerInfoDbo.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/UUIDTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::ServerInfo)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::ServerInfo)
 
 namespace lms::db
 {
@@ -39,9 +41,9 @@ namespace lms::db
     {
         checkWriteTransaction(session);
 
-        pointer serverInfo{ utils::fetchQuerySingleResult(getDboSession(session)->find<ServerInfo>()) };
+        pointer serverInfo{ utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ServerInfo>()) };
         if (!serverInfo)
-            return getDboSession(session)->add(std::unique_ptr<ServerInfo>{ new ServerInfo{ core::UUID::generate() } });
+            return getDboSession(session)->add(std::unique_ptr<dbo::ServerInfo>{ new dbo::ServerInfo{ core::UUID::generate() } });
 
         return serverInfo;
     }
@@ -50,6 +52,6 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<ServerInfo>());
+        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ServerInfo>());
     }
 } // namespace lms::db

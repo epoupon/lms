@@ -24,7 +24,6 @@
 #include <optional>
 #include <span>
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
 #include "core/TaggedType.hpp"
@@ -41,11 +40,9 @@ namespace lms::db
     class Directory;
     class ISession;
 
-    class Image final : public Object<Image, ImageId>
+    class Image : public Object<Image, ImageId>
     {
     public:
-        Image() = default;
-
         static pointer create(ISession& session, const std::filesystem::path& p);
         static void destroy(ISession& session, std::span<const ImageId> ids);
 
@@ -101,25 +98,11 @@ namespace lms::db
         void setWidth(std::size_t width) { _width = width; }
         void setHeight(std::size_t height) { _height = height; }
         void setFormat(core::media::ImageFormat format);
-        void setDirectory(const ObjectPtr<Directory>& directory) { _directory = getDboPtr(directory); }
+        void setDirectory(const ObjectPtr<Directory>& directory);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _fileAbsolutePath, "absolute_file_path");
-            Wt::Dbo::field(a, _fileStem, "stem");
-            Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
-            Wt::Dbo::field(a, _fileSize, "file_size");
-
-            Wt::Dbo::field(a, _width, "width");
-            Wt::Dbo::field(a, _height, "height");
-            Wt::Dbo::field(a, _format, "format");
-
-            Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        Image(const std::filesystem::path& p);
+    protected:
+        Image() = default;
+        explicit Image(const std::filesystem::path& p);
 
         std::filesystem::path _fileAbsolutePath;
         std::string _fileStem;
@@ -128,7 +111,5 @@ namespace lms::db
         int _width{};
         int _height{};
         detail::ImageFormat _format{ detail::ImageFormat::Unknown };
-
-        Wt::Dbo::ptr<Directory> _directory;
     };
 } // namespace lms::db

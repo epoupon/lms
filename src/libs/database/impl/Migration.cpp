@@ -28,8 +28,6 @@
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
 
-#include "database/objects/ScanSettings.hpp"
-
 #include "Db.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"

@@ -22,8 +22,6 @@
 #include <functional>
 #include <optional>
 
-#include <Wt/Dbo/Field.h>
-
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistFeedbackBackendSyncId.hpp"
@@ -36,11 +34,9 @@ namespace lms::db
     class ISession;
 
     // Tracks the delivery of a single ArtistFeedback to a given external feedback backend.
-    class ArtistFeedbackBackendSync final : public Object<ArtistFeedbackBackendSync, ArtistFeedbackBackendSyncId>
+    class ArtistFeedbackBackendSync : public Object<ArtistFeedbackBackendSync, ArtistFeedbackBackendSyncId>
     {
     public:
-        ArtistFeedbackBackendSync() = default;
-
         static pointer create(ISession& session, const ObjectPtr<ArtistFeedback>& artistFeedback, FeedbackBackend backend);
 
         struct FindParameters
@@ -72,27 +68,17 @@ namespace lms::db
         static std::vector<ArtistFeedbackBackendSyncId> find(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
 
-        ObjectPtr<ArtistFeedback> getArtistFeedback() const { return _artistFeedback; }
+        ObjectPtr<ArtistFeedback> getArtistFeedback() const;
         FeedbackBackend getBackend() const { return _backend; }
         SyncState getSyncState() const { return _syncState; }
 
         void setSyncState(SyncState state) { _syncState = state; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _backend, "backend");
-            Wt::Dbo::field(a, _syncState, "sync_state");
-
-            Wt::Dbo::belongsTo(a, _artistFeedback, "artist_feedback", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        ArtistFeedbackBackendSync(const ObjectPtr<ArtistFeedback>& artistFeedback, FeedbackBackend backend);
+    protected:
+        ArtistFeedbackBackendSync() = default;
+        explicit ArtistFeedbackBackendSync(FeedbackBackend backend);
 
         FeedbackBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };
-
-        Wt::Dbo::ptr<ArtistFeedback> _artistFeedback;
     };
 } // namespace lms::db

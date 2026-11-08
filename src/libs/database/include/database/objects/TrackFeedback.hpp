@@ -22,7 +22,6 @@
 #include <functional>
 #include <optional>
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"
@@ -38,11 +37,9 @@ namespace lms::db
     class Track;
     class User;
 
-    class TrackFeedback final : public Object<TrackFeedback, TrackFeedbackId>
+    class TrackFeedback : public Object<TrackFeedback, TrackFeedbackId>
     {
     public:
-        TrackFeedback() = default;
-
         static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<User>& user);
 
         struct FindParameters
@@ -81,8 +78,8 @@ namespace lms::db
         static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
 
         // Accessors
-        ObjectPtr<Track> getTrack() const { return _track; }
-        ObjectPtr<User> getUser() const { return _user; }
+        ObjectPtr<Track> getTrack() const;
+        ObjectPtr<User> getUser() const;
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
         FeedbackValue getValue() const { return _value; }
 
@@ -90,23 +87,10 @@ namespace lms::db
         void setDateTime(const Wt::WDateTime& dateTime);
         void setValue(FeedbackValue value) { _value = value; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _dateTime, "date_time");
-            Wt::Dbo::field(a, _value, "value");
-
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        TrackFeedback(const ObjectPtr<Track>& track, const ObjectPtr<User>& user);
+    protected:
+        TrackFeedback() = default;
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };
-
-        Wt::Dbo::ptr<Track> _track;
-        Wt::Dbo::ptr<User> _user;
     };
 } // namespace lms::db

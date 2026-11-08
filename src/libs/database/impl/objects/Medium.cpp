@@ -21,46 +21,46 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "database/objects/Artist.hpp"
-#include "database/objects/Artwork.hpp"
-#include "database/objects/Cluster.hpp"
-#include "database/objects/Directory.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/MediaLibrary.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Movement.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/TrackArtistLink.hpp"
-#include "database/objects/TrackEmbeddedImage.hpp"
-#include "database/objects/TrackEmbeddedImageLink.hpp"
-#include "database/objects/TrackLyrics.hpp"
-#include "database/objects/Work.hpp"
-
+#include "ArtistDbo.hpp"
+#include "ArtworkDbo.hpp"
+#include "ClusterDbo.hpp"
+#include "DirectoryDbo.hpp"
+#include "GenreDbo.hpp"
+#include "GroupingDbo.hpp"
+#include "LanguageDbo.hpp"
+#include "MediaLibraryDbo.hpp"
+#include "MediumDbo.hpp"
+#include "MoodDbo.hpp"
+#include "MovementDbo.hpp"
 #include "ObjectPtrImpl.hpp"
+#include "ReleaseDbo.hpp"
 #include "Session.hpp"
+#include "TrackArtistLinkDbo.hpp"
+#include "TrackDbo.hpp"
+#include "TrackEmbeddedImageDbo.hpp"
+#include "TrackEmbeddedImageLinkDbo.hpp"
+#include "TrackLyricsDbo.hpp"
 #include "Utils.hpp"
+#include "WorkDbo.hpp"
 #include "traits/IdTypeTraits.hpp"
 
 LMS_DB_INSTANTIATE_OBJECT(lms::db::Medium)
 
 namespace lms::db
 {
-    Medium::Medium(const ObjectPtr<Release>& release)
+    dbo::Medium::Medium(const ObjectPtr<db::Release>& release)
         : _release(getDboPtr(release))
     {
     }
 
     Medium::pointer Medium::create(ISession& session, const ObjectPtr<Release>& release)
     {
-        return utils::addObject(session, std::unique_ptr<Medium>{ new Medium{ release } });
+        return utils::addObject(session, std::unique_ptr<dbo::Medium>{ new dbo::Medium{ release } });
     }
 
     void Medium::destroy(ISession& session, std::span<const MediumId> ids)
     {
-        utils::destroyObjects<Medium>(session, ids);
+        utils::destroyObjects<dbo::Medium>(session, ids);
     }
 
     std::size_t Medium::getCount(ISession& session)
@@ -74,7 +74,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<Medium>>("SELECT m from medium m").where("m.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m").where("m.id = ?").bind(id));
     }
 
     Medium::pointer Medium::find(ISession& session, ReleaseId releaseId, std::optional<std::size_t> position)
@@ -85,7 +85,7 @@ namespace lms::db
         if (position)
             dbPosition = static_cast<int>(*position);
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<Medium>>("SELECT m from medium m") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m") };
         query.where("m.release_id = ?").bind(releaseId);
         if (position)
             query.where("m.position = ?").bind(*dbPosition);
@@ -101,7 +101,7 @@ namespace lms::db
 
         assert(idRange.isValid());
 
-        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<Medium>>("SELECT m from medium m").orderBy("m.id").where("m.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m").orderBy("m.id").where("m.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
 
         utils::forEachQueryResult(query, [&](const Medium::pointer& medium) {
             func(medium);
@@ -139,4 +139,23 @@ namespace lms::db
             utils::executeCommand(*getDboSession(session), "UPDATE medium SET preferred_artwork_id = NULL WHERE id = ?", mediumId);
     }
 
+    ReleaseId Medium::getReleaseId() const
+    {
+        return getDbo(*this)._release.id();
+    }
+
+    ObjectPtr<Release> Medium::getRelease() const
+    {
+        return getDbo(*this)._release;
+    }
+
+    ObjectPtr<Artwork> Medium::getPreferredArtwork() const
+    {
+        return getDbo(*this)._preferredArtwork;
+    }
+
+    ArtworkId Medium::getPreferredArtworkId() const
+    {
+        return getDbo(*this)._preferredArtwork.id();
+    }
 } // namespace lms::db
