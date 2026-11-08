@@ -91,14 +91,14 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.id = ?").bind(id));
     }
 
     TrackLyrics::pointer TrackLyrics::find(ISession& session, const std::filesystem::path& path)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.absolute_file_path = ?").bind(path));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.absolute_file_path = ?").bind(path));
     }
 
     void TrackLyrics::find(ISession& session, const FindParameters& params, const std::function<void(const TrackLyrics::pointer&)>& func)
@@ -106,7 +106,7 @@ namespace lms::db
         checkReadTransaction(session);
 
         auto query{ createQuery(session, params) };
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     void TrackLyrics::find(ISession& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(const TrackLyrics::pointer&)>& func)
@@ -115,7 +115,7 @@ namespace lms::db
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").orderBy("t_lrc.id").where("t_lrc.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
-        utils::forEachQueryResult(query, [&](const TrackLyrics::pointer& lyrics) {
+        utils::forEachQueryObject(query, [&](const TrackLyrics::pointer& lyrics) {
             func(lyrics);
             lastRetrievedId = lyrics->getId();
         });
@@ -239,11 +239,11 @@ namespace lms::db
 
     ObjectPtr<Track> TrackLyrics::getTrack() const
     {
-        return getDbo(*this)._track;
+        return toObjectPtr(getDbo(*this)._track);
     }
 
     ObjectPtr<Directory> TrackLyrics::getDirectory() const
     {
-        return getDbo(*this)._directory;
+        return toObjectPtr(getDbo(*this)._directory);
     }
 } // namespace lms::db

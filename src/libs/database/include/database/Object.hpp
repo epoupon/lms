@@ -19,18 +19,10 @@
 
 #pragma once
 
-#include <concepts>
 #include <cstddef>
 #include <type_traits>
 
 #include "database/IdType.hpp"
-
-// TODO remove this: only needed by the ObjectPtr constructors taking a Wt pointer
-namespace Wt::Dbo
-{
-    template<class C>
-    class ptr;
-}
 
 namespace lms::db
 {
@@ -57,12 +49,6 @@ namespace lms::db
         };
 
         ObjectPtr() noexcept;
-        template<typename DboType>
-            requires std::derived_from<DboType, T>
-        ObjectPtr(const Wt::Dbo::ptr<DboType>& obj);
-        template<typename DboType>
-            requires std::derived_from<DboType, T>
-        ObjectPtr(Wt::Dbo::ptr<DboType>&& obj) noexcept;
         ObjectPtr(const ObjectPtr& other);
         ObjectPtr(ObjectPtr&& other) noexcept;
         ObjectPtr& operator=(const ObjectPtr& other);
@@ -79,11 +65,8 @@ namespace lms::db
         void remove();
 
     private:
-        template<typename, typename>
-        friend class Object;
-
-        auto& dboPtr();
-        const auto& dboPtr() const;
+        // Defined in impl/DboAccess.hpp
+        friend class ObjectPtrAccess;
 
         // Holds a Wt::Dbo::ptr: an opaque buffer so that this class won't depend on the mapped class
         alignas(void*) std::byte _storage[2 * sizeof(void*)];
@@ -107,12 +90,5 @@ namespace lms::db
         ~Object() = default;
         Object(const Object&) = delete;
         Object& operator=(const Object&) = delete;
-
-        // Can get raw dbo ptr only from Objects
-        template<typename SomeObject>
-        static const auto& getDboPtr(const ObjectPtr<SomeObject>& ptr)
-        {
-            return ptr.dboPtr();
-        }
     };
 } // namespace lms::db

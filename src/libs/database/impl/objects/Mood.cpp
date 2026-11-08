@@ -149,20 +149,20 @@ namespace lms::db
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Mood>>(session, params) };
-        return utils::execRangeQuery<Mood::pointer>(query, params.range);
+        return utils::execRangeObjectQuery(query, params.range);
     }
 
     void Mood::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Mood>>(session, params) };
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     Mood::pointer Mood::find(ISession& session, MoodId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Mood>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Mood>().where("id = ?").bind(id));
     }
 
     Mood::pointer Mood::find(ISession& session, std::string_view name)
@@ -171,7 +171,7 @@ namespace lms::db
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Mood>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Mood>().where("name = ?").bind(name));
     }
 
     std::vector<MoodId> Mood::findOrphanIds(ISession& session, std::optional<Range> range)

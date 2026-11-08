@@ -54,13 +54,13 @@ namespace lms::db
     RatedArtist::pointer RatedArtist::find(ISession& session, RatedArtistId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::RatedArtist>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::RatedArtist>().where("id = ?").bind(id));
     }
 
     RatedArtist::pointer RatedArtist::find(ISession& session, ArtistId artistId, UserId userId)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::RatedArtist>().where("artist_id = ?").bind(artistId).where("user_id = ?").bind(userId));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::RatedArtist>().where("artist_id = ?").bind(artistId).where("user_id = ?").bind(userId));
     }
 
     void RatedArtist::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
@@ -72,7 +72,7 @@ namespace lms::db
         if (params.user.isValid())
             query.where("r_a.user_id = ?").bind(params.user);
 
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     void RatedArtist::setLastUpdated(const Wt::WDateTime& lastUpdated)
@@ -82,11 +82,11 @@ namespace lms::db
 
     ObjectPtr<Artist> RatedArtist::getArtist() const
     {
-        return getDbo(*this)._artist;
+        return toObjectPtr(getDbo(*this)._artist);
     }
 
     ObjectPtr<User> RatedArtist::getUser() const
     {
-        return getDbo(*this)._user;
+        return toObjectPtr(getDbo(*this)._user);
     }
 } // namespace lms::db

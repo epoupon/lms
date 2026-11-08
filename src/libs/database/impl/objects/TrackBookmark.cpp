@@ -64,23 +64,23 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackBookmark>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackBookmark>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId));
     }
 
     TrackBookmark::pointer TrackBookmark::find(ISession& session, TrackBookmarkId id)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackBookmark>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackBookmark>().where("id = ?").bind(id));
     }
 
     ObjectPtr<Track> TrackBookmark::getTrack() const
     {
-        return getDbo(*this)._track;
+        return toObjectPtr(getDbo(*this)._track);
     }
 
     ObjectPtr<User> TrackBookmark::getUser() const
     {
-        return getDbo(*this)._user;
+        return toObjectPtr(getDbo(*this)._user);
     }
 } // namespace lms::db

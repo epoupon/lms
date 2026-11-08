@@ -70,28 +70,28 @@ namespace lms::db
 
         auto query{ getDboSession(session)->find<dbo::User>() };
 
-        return utils::forEachQueryRangeResult(query, params.range, func);
+        return utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     User::pointer User::findDemoUser(ISession& session)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::User>>("SELECT u from user u").where("u.type = ?").bind(UserType::DEMO));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::User>>("SELECT u from user u").where("u.type = ?").bind(UserType::DEMO));
     }
 
     User::pointer User::find(ISession& session, UserId id)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::User>>("SELECT u from user u").where("u.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::User>>("SELECT u from user u").where("u.id = ?").bind(id));
     }
 
     User::pointer User::find(ISession& session, std::string_view name)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::User>>("SELECT u from user u").where("u.login_name = ?").bind(name));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::User>>("SELECT u from user u").where("u.login_name = ?").bind(name));
     }
 
     void User::setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate)

@@ -54,13 +54,13 @@ namespace lms::db
     RatedRelease::pointer RatedRelease::find(ISession& session, RatedReleaseId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::RatedRelease>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::RatedRelease>().where("id = ?").bind(id));
     }
 
     RatedRelease::pointer RatedRelease::find(ISession& session, ReleaseId releaseId, UserId userId)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::RatedRelease>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::RatedRelease>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
     }
 
     void RatedRelease::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
@@ -72,7 +72,7 @@ namespace lms::db
         if (params.user.isValid())
             query.where("r_r.user_id = ?").bind(params.user);
 
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     void RatedRelease::setLastUpdated(const Wt::WDateTime& lastUpdated)
@@ -82,11 +82,11 @@ namespace lms::db
 
     ObjectPtr<Release> RatedRelease::getRelease() const
     {
-        return getDbo(*this)._release;
+        return toObjectPtr(getDbo(*this)._release);
     }
 
     ObjectPtr<User> RatedRelease::getUser() const
     {
-        return getDbo(*this)._user;
+        return toObjectPtr(getDbo(*this)._user);
     }
 } // namespace lms::db

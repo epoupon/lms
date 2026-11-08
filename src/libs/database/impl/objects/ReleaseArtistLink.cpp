@@ -63,7 +63,7 @@ namespace lms::db
     ReleaseArtistLink::pointer ReleaseArtistLink::find(ISession& session, ReleaseArtistLinkId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l").where("r_a_l.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l").where("r_a_l.id = ?").bind(id));
     }
 
     void ReleaseArtistLink::findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const ReleaseArtistLink::pointer&)>& func)
@@ -76,7 +76,7 @@ namespace lms::db
         query.where("r_a_l.artist_name <> a.name");
 
         utils::applyRange(query, range);
-        utils::forEachQueryResult(query, [&](const ReleaseArtistLink::pointer& link) {
+        utils::forEachQueryObject(query, [&](const ReleaseArtistLink::pointer& link) {
             func(link);
         });
     }
@@ -100,7 +100,7 @@ namespace lms::db
         }
 
         utils::applyRange(query, range);
-        utils::forEachQueryResult(query, [&](const ReleaseArtistLink::pointer& link) {
+        utils::forEachQueryObject(query, [&](const ReleaseArtistLink::pointer& link) {
             func(link);
         });
     }
@@ -124,12 +124,12 @@ namespace lms::db
 
     ObjectPtr<Release> ReleaseArtistLink::getRelease() const
     {
-        return getDbo(*this)._release;
+        return toObjectPtr(getDbo(*this)._release);
     }
 
     ObjectPtr<Artist> ReleaseArtistLink::getArtist() const
     {
-        return getDbo(*this)._artist;
+        return toObjectPtr(getDbo(*this)._artist);
     }
 
     ArtistId ReleaseArtistLink::getArtistId() const

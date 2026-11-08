@@ -149,20 +149,20 @@ namespace lms::db
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Language>>(session, params) };
-        return utils::execRangeQuery<Language::pointer>(query, params.range);
+        return utils::execRangeObjectQuery(query, params.range);
     }
 
     void Language::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Language>>(session, params) };
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     Language::pointer Language::find(ISession& session, LanguageId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Language>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Language>().where("id = ?").bind(id));
     }
 
     Language::pointer Language::find(ISession& session, std::string_view name)
@@ -171,7 +171,7 @@ namespace lms::db
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Language>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Language>().where("name = ?").bind(name));
     }
 
     std::vector<LanguageId> Language::findOrphanIds(ISession& session, std::optional<Range> range)

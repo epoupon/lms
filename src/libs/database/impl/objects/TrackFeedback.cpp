@@ -56,13 +56,13 @@ namespace lms::db
     TrackFeedback::pointer TrackFeedback::find(ISession& session, TrackFeedbackId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackFeedback>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackFeedback>().where("id = ?").bind(id));
     }
 
     TrackFeedback::pointer TrackFeedback::find(ISession& session, TrackId trackId, UserId userId)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackFeedback>().where("track_id = ?").bind(trackId).where("user_id = ?").bind(userId));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackFeedback>().where("track_id = ?").bind(trackId).where("user_id = ?").bind(userId));
     }
 
     void TrackFeedback::find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
@@ -89,7 +89,7 @@ namespace lms::db
             break;
         }
 
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     void TrackFeedback::setDateTime(const Wt::WDateTime& dateTime)
@@ -99,11 +99,11 @@ namespace lms::db
 
     ObjectPtr<Track> TrackFeedback::getTrack() const
     {
-        return getDbo(*this)._track;
+        return toObjectPtr(getDbo(*this)._track);
     }
 
     ObjectPtr<User> TrackFeedback::getUser() const
     {
-        return getDbo(*this)._user;
+        return toObjectPtr(getDbo(*this)._user);
     }
 } // namespace lms::db

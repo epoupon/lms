@@ -54,13 +54,13 @@ namespace lms::db
     ReleaseFeedback::pointer ReleaseFeedback::find(ISession& session, ReleaseFeedbackId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ReleaseFeedback>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ReleaseFeedback>().where("id = ?").bind(id));
     }
 
     ReleaseFeedback::pointer ReleaseFeedback::find(ISession& session, ReleaseId releaseId, UserId userId)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ReleaseFeedback>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ReleaseFeedback>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
     }
 
     void ReleaseFeedback::setDateTime(const Wt::WDateTime& dateTime)
@@ -70,11 +70,11 @@ namespace lms::db
 
     ObjectPtr<Release> ReleaseFeedback::getRelease() const
     {
-        return getDbo(*this)._release;
+        return toObjectPtr(getDbo(*this)._release);
     }
 
     ObjectPtr<User> ReleaseFeedback::getUser() const
     {
-        return getDbo(*this)._user;
+        return toObjectPtr(getDbo(*this)._user);
     }
 } // namespace lms::db

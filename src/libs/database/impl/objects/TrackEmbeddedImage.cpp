@@ -133,7 +133,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackEmbeddedImage>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackEmbeddedImage>().where("id = ?").bind(id));
     }
 
     void TrackEmbeddedImage::find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
@@ -141,7 +141,7 @@ namespace lms::db
         checkReadTransaction(session);
 
         auto query{ createQuery(session, params) };
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     TrackEmbeddedImage::pointer TrackEmbeddedImage::find(ISession& session, std::size_t size, ImageHashType hash)
@@ -149,7 +149,7 @@ namespace lms::db
         checkReadTransaction(session);
 
         auto query{ getDboSession(session)->find<dbo::TrackEmbeddedImage>().where("size = ?").bind(static_cast<int>(size)).where("hash = ?").bind(hash) };
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
     std::vector<TrackEmbeddedImageId> TrackEmbeddedImage::findOrphanIds(ISession& session, std::optional<Range> range)

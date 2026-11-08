@@ -158,14 +158,14 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.id = ?").bind(id));
     }
 
     Directory::pointer Directory::find(ISession& session, const std::filesystem::path& path)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.absolute_path = ?").bind(path));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.absolute_path = ?").bind(path));
     }
 
     void Directory::find(ISession& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory::pointer&)>& func)
@@ -174,7 +174,7 @@ namespace lms::db
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").orderBy("d.id").where("d.id > ?").bind(lastRetrievedDirectory).limit(static_cast<int>(count)) };
 
-        utils::forEachQueryResult(query, [&](const Directory::pointer& image) {
+        utils::forEachQueryObject(query, [&](const Directory::pointer& image) {
             func(image);
             lastRetrievedDirectory = image->getId();
         });
@@ -183,13 +183,13 @@ namespace lms::db
     std::vector<Directory::pointer> Directory::find(ISession& session, const FindParameters& params)
     {
         auto query{ createQuery(session, params) };
-        return utils::execRangeQuery<Directory::pointer>(query, params.range);
+        return utils::execRangeObjectQuery(query, params.range);
     }
 
     void Directory::find(ISession& session, const FindParameters& params, const std::function<void(const Directory::pointer&)>& func)
     {
         auto query{ createQuery(session, params) };
-        utils::forEachQueryRangeResult(query, params.range, [&func](const Directory::pointer& dir) {
+        utils::forEachQueryRangeObject(query, params.range, [&func](const Directory::pointer& dir) {
             func(dir);
         });
     }
@@ -231,7 +231,7 @@ namespace lms::db
         checkReadTransaction(session);
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.parent_directory_id IS NULL") };
-        return utils::execRangeQuery<Directory::pointer>(query, range);
+        return utils::execRangeObjectQuery(query, range);
     }
 
     void Directory::setAbsolutePath(const std::filesystem::path& p)
@@ -270,7 +270,7 @@ namespace lms::db
 
     ObjectPtr<Directory> Directory::getParentDirectory() const
     {
-        return getDbo(*this)._parent;
+        return toObjectPtr(getDbo(*this)._parent);
     }
 
     DirectoryId Directory::getParentDirectoryId() const
@@ -280,6 +280,6 @@ namespace lms::db
 
     ObjectPtr<MediaLibrary> Directory::getMediaLibrary() const
     {
-        return getDbo(*this)._mediaLibrary;
+        return toObjectPtr(getDbo(*this)._mediaLibrary);
     }
 } // namespace lms::db

@@ -41,9 +41,9 @@ namespace lms::db
     {
         checkWriteTransaction(session);
 
-        pointer serverInfo{ utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ServerInfo>()) };
+        pointer serverInfo{ utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ServerInfo>()) };
         if (!serverInfo)
-            return getDboSession(session)->add(std::unique_ptr<dbo::ServerInfo>{ new dbo::ServerInfo{ core::UUID::generate() } });
+            return toObjectPtr(getDboSession(session)->add(std::unique_ptr<dbo::ServerInfo>{ new dbo::ServerInfo{ core::UUID::generate() } }));
 
         return serverInfo;
     }
@@ -52,6 +52,6 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ServerInfo>());
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ServerInfo>());
     }
 } // namespace lms::db

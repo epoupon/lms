@@ -77,14 +77,14 @@ namespace lms::db
     Work::pointer Work::find(ISession& session, WorkId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Work>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Work>().where("id = ?").bind(id));
     }
 
     Work::pointer Work::find(ISession& session, const core::UUID& mbid)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Work>().where("mbid = ?").bind(mbid));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Work>().where("mbid = ?").bind(mbid));
     }
 
     Work::pointer Work::find(ISession& session, ReleaseId releaseId, std::string_view name)
@@ -105,7 +105,7 @@ namespace lms::db
             // clang-format on
         };
 
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
     std::vector<WorkId> Work::findOrphanIds(ISession& session, std::optional<Range> range)

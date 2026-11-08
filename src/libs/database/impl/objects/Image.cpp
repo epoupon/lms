@@ -89,14 +89,14 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Image>>("SELECT i from image i").where("i.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Image>>("SELECT i from image i").where("i.id = ?").bind(id));
     }
 
     Image::pointer Image::find(ISession& session, const std::filesystem::path& file)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Image>>("SELECT i from image i").where("i.absolute_file_path = ?").bind(file));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Image>>("SELECT i from image i").where("i.absolute_file_path = ?").bind(file));
     }
 
     void Image::find(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(const Image::pointer&)>& func)
@@ -105,7 +105,7 @@ namespace lms::db
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Image>>("SELECT i from image i").orderBy("i.id").where("i.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
-        utils::forEachQueryResult(query, [&](const Image::pointer& image) {
+        utils::forEachQueryObject(query, [&](const Image::pointer& image) {
             func(image);
             lastRetrievedId = image->getId();
         });
@@ -116,13 +116,13 @@ namespace lms::db
         checkReadTransaction(session);
 
         auto query{ createQuery(session, params) };
-        return utils::execRangeQuery<Image::pointer>(query, params.range);
+        return utils::execRangeObjectQuery(query, params.range);
     }
 
     void Image::find(ISession& session, const FindParameters& params, const std::function<void(const Image::pointer&)>& func)
     {
         auto query{ createQuery(session, params) };
-        utils::forEachQueryResult(query, [&](const Image::pointer& image) {
+        utils::forEachQueryObject(query, [&](const Image::pointer& image) {
             func(image);
         });
     }

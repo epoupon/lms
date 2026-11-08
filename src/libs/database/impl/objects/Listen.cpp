@@ -201,7 +201,7 @@ namespace lms::db
     Listen::pointer Listen::find(ISession& session, ListenId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Listen>>("SELECT l from listen l").where("l.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Listen>>("SELECT l from listen l").where("l.id = ?").bind(id));
     }
 
     std::vector<ListenId> Listen::find(ISession& session, const FindParameters& parameters)
@@ -220,7 +220,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Listen>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId).where("date_time = ?").bind(Wt::WDateTime::fromTime_t(dateTime.toTime_t())));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Listen>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId).where("date_time = ?").bind(Wt::WDateTime::fromTime_t(dateTime.toTime_t())));
     }
 
     std::vector<ArtistId> Listen::getTopArtists(ISession& session, const ArtistStatsFindParameters& params)
@@ -383,7 +383,7 @@ namespace lms::db
         };
         // clang-format on
 
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
     Listen::pointer Listen::getMostRecentListen(ISession& session, UserId userId, TrackId trackId)
@@ -399,16 +399,16 @@ namespace lms::db
         };
         // clang-format on
 
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
     ObjectPtr<User> Listen::getUser() const
     {
-        return getDbo(*this)._user;
+        return toObjectPtr(getDbo(*this)._user);
     }
 
     ObjectPtr<Track> Listen::getTrack() const
     {
-        return getDbo(*this)._track;
+        return toObjectPtr(getDbo(*this)._track);
     }
 } // namespace lms::db

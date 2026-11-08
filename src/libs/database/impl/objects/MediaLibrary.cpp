@@ -57,28 +57,28 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::MediaLibrary>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::MediaLibrary>().where("id = ?").bind(id));
     }
 
     MediaLibrary::pointer MediaLibrary::find(ISession& session, std::string_view name)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::MediaLibrary>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::MediaLibrary>().where("name = ?").bind(name));
     }
 
     MediaLibrary::pointer MediaLibrary::find(ISession& session, const std::filesystem::path& p)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::MediaLibrary>().where("path = ?").bind(p));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::MediaLibrary>().where("path = ?").bind(p));
     }
 
     void MediaLibrary::find(ISession& session, std::function<void(const MediaLibrary::pointer&)> func)
     {
         checkReadTransaction(session);
 
-        utils::forEachQueryResult(getDboSession(session)->find<dbo::MediaLibrary>(), [&](const MediaLibrary::pointer& mediaLibrary) {
+        utils::forEachQueryObject(getDboSession(session)->find<dbo::MediaLibrary>(), [&](const MediaLibrary::pointer& mediaLibrary) {
             func(mediaLibrary);
         });
     }

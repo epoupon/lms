@@ -149,20 +149,20 @@ namespace lms::db
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Grouping>>(session, params) };
-        return utils::execRangeQuery<Grouping::pointer>(query, params.range);
+        return utils::execRangeObjectQuery(query, params.range);
     }
 
     void Grouping::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Grouping>>(session, params) };
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     Grouping::pointer Grouping::find(ISession& session, GroupingId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Grouping>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Grouping>().where("id = ?").bind(id));
     }
 
     Grouping::pointer Grouping::find(ISession& session, std::string_view name)
@@ -171,7 +171,7 @@ namespace lms::db
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::Grouping>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Grouping>().where("name = ?").bind(name));
     }
 
     std::vector<GroupingId> Grouping::findOrphanIds(ISession& session, std::optional<Range> range)

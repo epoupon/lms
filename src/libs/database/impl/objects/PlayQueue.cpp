@@ -79,7 +79,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayQueue>>("SELECT p from playqueue p").where("p.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayQueue>>("SELECT p from playqueue p").where("p.id = ?").bind(id));
     }
 
     PlayQueue::pointer PlayQueue::find(ISession& session, UserId userId, std::string_view name)
@@ -90,7 +90,7 @@ namespace lms::db
         query.where("p.user_id = ?").bind(userId);
         query.where("p.name = ?").bind(name);
 
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
     void PlayQueue::clear()
@@ -109,17 +109,17 @@ namespace lms::db
         query.offset(_currentIndex);
         query.limit(1);
 
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
     void PlayQueue::visitTracks(const std::function<void(const ObjectPtr<Track>& track)>& visitor) const
     {
-        utils::forEachQueryResult(getDbo(*this)._tracks.find(), visitor);
+        utils::forEachQueryObject(getDbo(*this)._tracks.find(), visitor);
     }
 
     ObjectPtr<User> PlayQueue::getUser() const
     {
-        return getDbo(*this)._user;
+        return toObjectPtr(getDbo(*this)._user);
     }
 
     bool PlayQueue::isEmpty() const

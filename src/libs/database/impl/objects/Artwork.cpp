@@ -63,19 +63,19 @@ namespace lms::db
     Artwork::pointer Artwork::find(ISession& session, ArtworkId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artwork>>("SELECT a FROM artwork a").where("a.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artwork>>("SELECT a FROM artwork a").where("a.id = ?").bind(id));
     }
 
     Artwork::pointer Artwork::find(ISession& session, TrackEmbeddedImageId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artwork>>("SELECT a FROM artwork a").where("a.track_embedded_image_id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artwork>>("SELECT a FROM artwork a").where("a.track_embedded_image_id = ?").bind(id));
     }
 
     Artwork::pointer Artwork::find(ISession& session, ImageId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artwork>>("SELECT a FROM artwork a").where("a.image_id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artwork>>("SELECT a FROM artwork a").where("a.image_id = ?").bind(id));
     }
 
     Artwork::UnderlyingId Artwork::getUnderlyingId() const
@@ -106,7 +106,7 @@ namespace lms::db
 
     ObjectPtr<Image> Artwork::getImage() const
     {
-        return getDbo(*this)._image;
+        return toObjectPtr(getDbo(*this)._image);
     }
 
     ImageId Artwork::getImageId() const

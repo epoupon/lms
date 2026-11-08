@@ -74,7 +74,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m").where("m.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m").where("m.id = ?").bind(id));
     }
 
     Medium::pointer Medium::find(ISession& session, ReleaseId releaseId, std::optional<std::size_t> position)
@@ -92,7 +92,7 @@ namespace lms::db
         else
             query.where("m.position IS NULL");
 
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
     void Medium::find(ISession& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium::pointer&)>& func)
@@ -103,7 +103,7 @@ namespace lms::db
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m").orderBy("m.id").where("m.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
 
-        utils::forEachQueryResult(query, [&](const Medium::pointer& medium) {
+        utils::forEachQueryObject(query, [&](const Medium::pointer& medium) {
             func(medium);
         });
     }
@@ -146,12 +146,12 @@ namespace lms::db
 
     ObjectPtr<Release> Medium::getRelease() const
     {
-        return getDbo(*this)._release;
+        return toObjectPtr(getDbo(*this)._release);
     }
 
     ObjectPtr<Artwork> Medium::getPreferredArtwork() const
     {
-        return getDbo(*this)._preferredArtwork;
+        return toObjectPtr(getDbo(*this)._preferredArtwork);
     }
 
     ArtworkId Medium::getPreferredArtworkId() const

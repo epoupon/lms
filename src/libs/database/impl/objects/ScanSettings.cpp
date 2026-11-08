@@ -49,14 +49,14 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ScanSettings>>("SELECT s_s from scan_settings s_s").where("s_s.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ScanSettings>>("SELECT s_s from scan_settings s_s").where("s_s.id = ?").bind(id));
     }
 
     ScanSettings::pointer ScanSettings::find(ISession& session, std::string_view name)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ScanSettings>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ScanSettings>().where("name = ?").bind(name));
     }
 
     std::vector<std::string_view> ScanSettings::getExtraTagsToScan() const

@@ -377,7 +377,7 @@ namespace lms::db
                 .bind(library);
         }
 
-        utils::forEachQueryResult(query, [&](const Artist::pointer& artist) {
+        utils::forEachQueryObject(query, [&](const Artist::pointer& artist) {
             func(artist);
             lastRetrievedArtist = artist->getId();
         });
@@ -391,7 +391,7 @@ namespace lms::db
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artist>>("SELECT a from artist a").orderBy("a.id").where("a.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
 
-        utils::forEachQueryResult(query, [&](const Artist::pointer& artist) {
+        utils::forEachQueryObject(query, [&](const Artist::pointer& artist) {
             func(artist);
         });
     }
@@ -402,19 +402,19 @@ namespace lms::db
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
-        return utils::fetchQueryResults<Artist::pointer>(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artist>>("SELECT a FROM artist a").where("a.name = ?").bind(name).orderBy("LENGTH(a.mbid) DESC")); // put mbid entries first
+        return utils::fetchQueryObjects(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artist>>("SELECT a FROM artist a").where("a.name = ?").bind(name).orderBy("LENGTH(a.mbid) DESC")); // put mbid entries first
     }
 
     Artist::pointer Artist::find(ISession& session, const core::UUID& mbid)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artist>>("SELECT a FROM artist a").where("a.mbid = ?").bind(mbid));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artist>>("SELECT a FROM artist a").where("a.mbid = ?").bind(mbid));
     }
 
     Artist::pointer Artist::find(ISession& session, ArtistId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artist>>("SELECT a FROM artist a").where("a.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artist>>("SELECT a FROM artist a").where("a.id = ?").bind(id));
     }
 
     std::vector<ArtistId> Artist::findIds(ISession& session, const FindParameters& params)
@@ -430,7 +430,7 @@ namespace lms::db
         checkReadTransaction(session);
 
         auto query{ createListQuery<Wt::Dbo::ptr<dbo::Artist>>(session, "a", params) };
-        return utils::execRangeQuery<Artist::pointer>(query, params.range);
+        return utils::execRangeObjectQuery(query, params.range);
     }
 
     void Artist::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
@@ -438,7 +438,7 @@ namespace lms::db
         checkReadTransaction(session);
 
         auto query{ createListQuery<Wt::Dbo::ptr<dbo::Artist>>(session, "a", params) };
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     IdRange<ArtistId> Artist::findNextIdRange(ISession& session, ArtistId lastRetrievedId, std::size_t count)
@@ -514,7 +514,7 @@ AND NOT EXISTS (
                                                                           " WHERE a.name <> n.name OR a.sort_name <> n.sort_name") };
 
         utils::forEachQueryResult(query, [&](const auto& res) {
-            func(std::get<0>(res), std::get<1>(res), std::get<2>(res));
+            func(toObjectPtr(std::get<0>(res)), std::get<1>(res), std::get<2>(res));
         });
     }
 
@@ -530,7 +530,7 @@ AND NOT EXISTS (
 
     ObjectPtr<Artwork> Artist::getPreferredArtwork() const
     {
-        return ObjectPtr<Artwork>{ getDbo(*this)._preferredArtwork };
+        return toObjectPtr(getDbo(*this)._preferredArtwork);
     }
 
     ArtworkId Artist::getPreferredArtworkId() const

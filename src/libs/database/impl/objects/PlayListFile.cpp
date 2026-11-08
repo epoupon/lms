@@ -69,7 +69,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayListFile>>("SELECT pl_f from playlist_file pl_f").where("pl_f.absolute_file_path = ?").bind(p));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayListFile>>("SELECT pl_f from playlist_file pl_f").where("pl_f.absolute_file_path = ?").bind(p));
     }
 
     void PlayListFile::find(ISession& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func)
@@ -78,7 +78,7 @@ namespace lms::db
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayListFile>>("SELECT pl_f from playlist_file pl_f").orderBy("pl_f.id").where("pl_f.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
-        utils::forEachQueryResult(query, [&](const PlayListFile::pointer& playList) {
+        utils::forEachQueryObject(query, [&](const PlayListFile::pointer& playList) {
             func(playList);
             lastRetrievedId = playList->getId();
         });
@@ -104,7 +104,7 @@ namespace lms::db
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayListFile>>("SELECT pl_f from playlist_file pl_f").orderBy("pl_f.id").where("pl_f.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
 
-        utils::forEachQueryResult(query, [&](const PlayListFile::pointer& release) {
+        utils::forEachQueryObject(query, [&](const PlayListFile::pointer& release) {
             func(release);
         });
     }
@@ -125,7 +125,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayListFile>>("SELECT pl_f from playlist_file pl_f").where("pl_f.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayListFile>>("SELECT pl_f from playlist_file pl_f").where("pl_f.id = ?").bind(id));
     }
 
     std::vector<std::filesystem::path> PlayListFile::getFiles() const
@@ -152,12 +152,12 @@ namespace lms::db
 
     TrackList::pointer PlayListFile::getTrackList() const
     {
-        return getDbo(*this)._trackList.lock();
+        return toObjectPtr(getDbo(*this)._trackList.lock());
     }
 
     Directory::pointer PlayListFile::getDirectory() const
     {
-        return getDbo(*this)._directory;
+        return toObjectPtr(getDbo(*this)._directory);
     }
 
     void PlayListFile::setAbsoluteFilePath(const std::filesystem::path& filePath)

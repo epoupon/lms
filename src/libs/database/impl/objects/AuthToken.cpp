@@ -64,7 +64,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::AuthToken>>("SELECT a_t from auth_token a_t").where("a_t.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::AuthToken>>("SELECT a_t from auth_token a_t").where("a_t.id = ?").bind(id));
     }
 
     AuthToken::pointer AuthToken::find(ISession& session, std::string_view domain, std::string_view value)
@@ -75,7 +75,7 @@ namespace lms::db
         query.where("domain = ?").bind(domain);
         query.where("value = ?").bind(value);
 
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
     void AuthToken::find(ISession& session, std::string_view domain, UserId userId, std::function<void(const AuthToken::pointer&)> visitor)
@@ -86,7 +86,7 @@ namespace lms::db
         query.where("domain = ?").bind(domain);
         query.where("user_id = ?").bind(userId);
 
-        utils::forEachQueryResult(query, visitor);
+        utils::forEachQueryObject(query, visitor);
     }
 
     void AuthToken::removeExpiredTokens(ISession& session, std::string_view domain, const Wt::WDateTime& now)
@@ -105,6 +105,6 @@ namespace lms::db
 
     ObjectPtr<User> AuthToken::getUser() const
     {
-        return getDbo(*this)._user;
+        return toObjectPtr(getDbo(*this)._user);
     }
 } // namespace lms::db

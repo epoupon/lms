@@ -61,14 +61,14 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.absolute_file_path = ?").bind(p));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.absolute_file_path = ?").bind(p));
     }
 
     ArtistInfo::pointer ArtistInfo::find(ISession& session, ArtistInfoId id)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.id = ?").bind(id));
     }
 
     void ArtistInfo::find(ISession& session, ArtistId id, std::optional<Range> range, const std::function<void(const pointer&)>& func)
@@ -76,7 +76,7 @@ namespace lms::db
         checkReadTransaction(session);
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::ArtistInfo>>("SELECT a_i from artist_info a_i").where("a_i.artist_id = ?").bind(id) };
-        utils::forEachQueryRangeResult(query, range, [&](const ArtistInfo::pointer& entry) {
+        utils::forEachQueryRangeObject(query, range, [&](const ArtistInfo::pointer& entry) {
             func(entry);
         });
     }
@@ -92,7 +92,7 @@ namespace lms::db
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::ArtistInfo>>("SELECT a_i from artist_info a_i").orderBy("a_i.id").where("a_i.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
-        utils::forEachQueryResult(query, [&](const ArtistInfo::pointer& entry) {
+        utils::forEachQueryObject(query, [&](const ArtistInfo::pointer& entry) {
             func(entry);
             lastRetrievedId = entry->getId();
         });
@@ -108,7 +108,7 @@ namespace lms::db
         query.where("a_i.name <> a.name");
 
         utils::applyRange(query, range);
-        utils::forEachQueryResult(query, [&](const pointer& info) {
+        utils::forEachQueryObject(query, [&](const pointer& info) {
             func(info);
         });
     }
@@ -132,7 +132,7 @@ namespace lms::db
         }
 
         utils::applyRange(query, range);
-        utils::forEachQueryResult(query, [&](const pointer& info) {
+        utils::forEachQueryObject(query, [&](const pointer& info) {
             func(info);
         });
     }
@@ -151,12 +151,12 @@ namespace lms::db
 
     Artist::pointer ArtistInfo::getArtist() const
     {
-        return getDbo(*this)._artist;
+        return toObjectPtr(getDbo(*this)._artist);
     }
 
     Directory::pointer ArtistInfo::getDirectory() const
     {
-        return getDbo(*this)._directory;
+        return toObjectPtr(getDbo(*this)._directory);
     }
 
     void ArtistInfo::setAbsoluteFilePath(const std::filesystem::path& filePath)

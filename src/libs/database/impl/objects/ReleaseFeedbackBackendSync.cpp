@@ -58,13 +58,13 @@ namespace lms::db
     ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::find(ISession& session, ReleaseFeedbackBackendSyncId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ReleaseFeedbackBackendSync>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ReleaseFeedbackBackendSync>().where("id = ?").bind(id));
     }
 
     ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::find(ISession& session, ReleaseFeedbackId releaseFeedbackId, FeedbackBackend backend)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::ReleaseFeedbackBackendSync>().where("release_feedback_id = ?").bind(releaseFeedbackId).where("backend = ?").bind(backend));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ReleaseFeedbackBackendSync>().where("release_feedback_id = ?").bind(releaseFeedbackId).where("backend = ?").bind(backend));
     }
 
     std::vector<ReleaseFeedbackBackendSyncId> ReleaseFeedbackBackendSync::find(ISession& session, const FindParameters& params)
@@ -94,11 +94,11 @@ namespace lms::db
         if (params.syncState)
             query.where("sync_state = ?").bind(*params.syncState);
 
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     ObjectPtr<ReleaseFeedback> ReleaseFeedbackBackendSync::getReleaseFeedback() const
     {
-        return getDbo(*this)._releaseFeedback;
+        return toObjectPtr(getDbo(*this)._releaseFeedback);
     }
 } // namespace lms::db

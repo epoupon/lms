@@ -58,7 +58,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackEmbeddedImageLink>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackEmbeddedImageLink>().where("id = ?").bind(id));
     }
 
     void TrackEmbeddedImageLink::find(ISession& session, TrackEmbeddedImageId trackEmbeddedImageId, std::function<void(const pointer&)> visitor)
@@ -68,17 +68,17 @@ namespace lms::db
         auto query{ getDboSession(session)->find<dbo::TrackEmbeddedImageLink>() };
         query.where("track_embedded_image_id = ?").bind(trackEmbeddedImageId);
 
-        return utils::forEachQueryResult(query, visitor);
+        return utils::forEachQueryObject(query, visitor);
     }
 
     ObjectPtr<Track> TrackEmbeddedImageLink::getTrack() const
     {
-        return getDbo(*this)._track;
+        return toObjectPtr(getDbo(*this)._track);
     }
 
     ObjectPtr<TrackEmbeddedImage> TrackEmbeddedImageLink::getImage() const
     {
-        return getDbo(*this)._image;
+        return toObjectPtr(getDbo(*this)._image);
     }
 
     core::media::ImageType TrackEmbeddedImageLink::getType() const

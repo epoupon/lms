@@ -21,57 +21,26 @@
 
 #include <memory>
 #include <new>
-#include <type_traits>
 #include <utility>
 
 #include <Wt/Dbo/Impl.h>
 
 #include "database/Object.hpp"
 
+#include "DboAccess.hpp"
 #include "Session.hpp"
 
-#define LMS_DB_INSTANTIATE_OBJECT(C)                                                             \
-    DBO_INSTANTIATE_TEMPLATES(lms::db::DboOf<C>::type)                                           \
-    template class lms::db::ObjectPtr<C>;                                                        \
-    template lms::db::ObjectPtr<C>::ObjectPtr(const Wt::Dbo::ptr<lms::db::DboOf<C>::type>&);     \
-    template lms::db::ObjectPtr<C>::ObjectPtr(Wt::Dbo::ptr<lms::db::DboOf<C>::type>&&) noexcept; \
+#define LMS_DB_INSTANTIATE_OBJECT(C)                   \
+    DBO_INSTANTIATE_TEMPLATES(lms::db::DboOf<C>::type) \
+    template class lms::db::ObjectPtr<C>;              \
     template class lms::db::Object<C, C::IdType>;
 
 namespace lms::db
 {
-    // Mapped class of an entity: specialized next to each private mapped subclass
-    template<typename T>
-    struct DboOf;
-
-    template<typename T>
-        requires(!std::is_const_v<T>)
-    typename DboOf<T>::type& getDbo(T& obj)
-    {
-        return static_cast<typename DboOf<T>::type&>(obj);
-    }
-
-    template<typename T>
-    const typename DboOf<T>::type& getDbo(const T& obj)
-    {
-        return static_cast<const typename DboOf<T>::type&>(obj);
-    }
-
-    template<typename T>
-    auto& ObjectPtr<T>::dboPtr()
-    {
-        return *std::launder(reinterpret_cast<Wt::Dbo::ptr<typename DboOf<T>::type>*>(_storage));
-    }
-
-    template<typename T>
-    const auto& ObjectPtr<T>::dboPtr() const
-    {
-        return *std::launder(reinterpret_cast<const Wt::Dbo::ptr<typename DboOf<T>::type>*>(_storage));
-    }
-
     template<typename T>
     ObjectPtr<T>::Mutator::Mutator(const ObjectPtr& ptr)
         : _ptr{ ptr }
-        , _obj{ ptr.dboPtr().modify().operator->() }
+        , _obj{ getDboPtr(ptr).modify().operator->() }
     {
     }
 
@@ -79,7 +48,7 @@ namespace lms::db
     ObjectPtr<T>::Mutator::~Mutator()
     {
         // A setter may have flushed the object: it has to be marked as dirty again
-        _ptr.dboPtr().modify();
+        getDboPtr(_ptr).modify();
     }
 
     template<typename T>
@@ -93,97 +62,79 @@ namespace lms::db
     }
 
     template<typename T>
-    template<typename DboType>
-        requires std::derived_from<DboType, T>
-    ObjectPtr<T>::ObjectPtr(const Wt::Dbo::ptr<DboType>& obj)
-    {
-        static_assert(std::is_same_v<DboType, typename DboOf<T>::type>);
-        new (_storage) Wt::Dbo::ptr<DboType>{ obj };
-    }
-
-    template<typename T>
-    template<typename DboType>
-        requires std::derived_from<DboType, T>
-    ObjectPtr<T>::ObjectPtr(Wt::Dbo::ptr<DboType>&& obj) noexcept
-    {
-        static_assert(std::is_same_v<DboType, typename DboOf<T>::type>);
-        new (_storage) Wt::Dbo::ptr<DboType>{ std::move(obj) };
-    }
-
-    template<typename T>
     ObjectPtr<T>::ObjectPtr(const ObjectPtr& other)
     {
-        new (_storage) Wt::Dbo::ptr<typename DboOf<T>::type>{ other.dboPtr() };
+        new (_storage) Wt::Dbo::ptr<typename DboOf<T>::type>{ getDboPtr(other) };
     }
 
     template<typename T>
     ObjectPtr<T>::ObjectPtr(ObjectPtr&& other) noexcept
     {
-        new (_storage) Wt::Dbo::ptr<typename DboOf<T>::type>{ std::move(other.dboPtr()) };
+        new (_storage) Wt::Dbo::ptr<typename DboOf<T>::type>{ std::move(ObjectPtrAccess::dboPtr(other)) };
     }
 
     template<typename T>
     ObjectPtr<T>& ObjectPtr<T>::operator=(const ObjectPtr& other)
     {
-        dboPtr() = other.dboPtr();
+        ObjectPtrAccess::dboPtr(*this) = getDboPtr(other);
         return *this;
     }
 
     template<typename T>
     ObjectPtr<T>& ObjectPtr<T>::operator=(ObjectPtr&& other) noexcept
     {
-        dboPtr() = std::move(other.dboPtr());
+        ObjectPtrAccess::dboPtr(*this) = std::move(ObjectPtrAccess::dboPtr(other));
         return *this;
     }
 
     template<typename T>
     ObjectPtr<T>::~ObjectPtr()
     {
-        std::destroy_at(&dboPtr());
+        std::destroy_at(&ObjectPtrAccess::dboPtr(*this));
     }
 
     template<typename T>
     const T* ObjectPtr<T>::operator->() const
     {
-        return dboPtr().get();
+        return getDboPtr(*this).get();
     }
 
     template<typename T>
     ObjectPtr<T>::operator bool() const
     {
-        return dboPtr().get();
+        return getDboPtr(*this).get();
     }
 
     template<typename T>
     bool ObjectPtr<T>::operator!() const
     {
-        return !dboPtr().get();
+        return !getDboPtr(*this).get();
     }
 
     template<typename T>
     bool ObjectPtr<T>::operator==(const ObjectPtr& other) const
     {
-        return dboPtr() == other.dboPtr();
+        return getDboPtr(*this) == getDboPtr(other);
     }
 
     template<typename T>
     bool ObjectPtr<T>::operator!=(const ObjectPtr& other) const
     {
-        return other.dboPtr() != dboPtr();
+        return getDboPtr(other) != getDboPtr(*this);
     }
 
     template<typename T>
     typename ObjectPtr<T>::Mutator ObjectPtr<T>::modify()
     {
-        checkWriteTransaction(*dboPtr().session());
+        checkWriteTransaction(*getDboPtr(*this).session());
         return Mutator{ *this };
     }
 
     template<typename T>
     void ObjectPtr<T>::remove()
     {
-        checkWriteTransaction(*dboPtr().session());
-        dboPtr().remove();
+        checkWriteTransaction(*getDboPtr(*this).session());
+        ObjectPtrAccess::dboPtr(*this).remove();
     }
 
     template<typename T, typename ObjectIdType>

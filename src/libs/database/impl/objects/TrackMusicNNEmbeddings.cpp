@@ -53,14 +53,14 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackMusicNNEmbeddings>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackMusicNNEmbeddings>().where("id = ?").bind(id));
     }
 
     TrackMusicNNEmbeddings::pointer TrackMusicNNEmbeddings::find(ISession& session, TrackId trackId)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackMusicNNEmbeddings>().where("track_id = ?").bind(trackId));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackMusicNNEmbeddings>().where("track_id = ?").bind(trackId));
     }
 
     std::vector<TrackMusicNNEmbeddingsId> TrackMusicNNEmbeddings::find(ISession& session, std::optional<Range> range)
@@ -78,7 +78,7 @@ namespace lms::db
 
         auto query{ getDboSession(session)->find<dbo::TrackMusicNNEmbeddings>() };
 
-        utils::forEachQueryResult(query, [&](const TrackMusicNNEmbeddings::pointer& embeddings) {
+        utils::forEachQueryObject(query, [&](const TrackMusicNNEmbeddings::pointer& embeddings) {
             func(embeddings);
         });
     }
@@ -107,6 +107,6 @@ namespace lms::db
 
     ObjectPtr<Track> TrackMusicNNEmbeddings::getTrack() const
     {
-        return getDbo(*this)._track;
+        return toObjectPtr(getDbo(*this)._track);
     }
 } // namespace lms::db

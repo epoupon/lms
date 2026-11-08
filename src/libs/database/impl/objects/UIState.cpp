@@ -61,7 +61,7 @@ namespace lms::db
         checkReadTransaction(session);
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::UIState>>("SELECT ui_s from ui_state ui_s").where("ui_s.id = ?").bind(settingId) };
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
     UIState::pointer UIState::find(ISession& session, std::string_view item, UserId userId)
@@ -69,6 +69,6 @@ namespace lms::db
         checkReadTransaction(session);
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::UIState>>("SELECT ui_s from ui_state ui_s").where("ui_s.item = ?").bind(item).where("ui_s.user_id = ?").bind(userId) };
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 } // namespace lms::db

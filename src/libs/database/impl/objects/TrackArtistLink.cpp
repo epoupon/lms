@@ -70,7 +70,7 @@ namespace lms::db
     TrackArtistLink::pointer TrackArtistLink::find(ISession& session, TrackArtistLinkId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackArtistLink>>("SELECT t_a_l from track_artist_link t_a_l").where("t_a_l.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackArtistLink>>("SELECT t_a_l from track_artist_link t_a_l").where("t_a_l.id = ?").bind(id));
     }
 
     void TrackArtistLink::find(ISession& session, TrackId trackId, const std::function<void(const TrackArtistLink::pointer& link, const ObjectPtr<Artist>& artist)>& func)
@@ -82,7 +82,7 @@ namespace lms::db
         const auto query{ getDboSession(session)->query<ResultType>("SELECT t_a_l, a FROM track_artist_link t_a_l").join("artist a ON t_a_l.artist_id = a.id").where("t_a_l.track_id = ?").bind(trackId) };
 
         utils::forEachQueryResult(query, [&](const ResultType& result) {
-            func(std::get<Wt::Dbo::ptr<dbo::TrackArtistLink>>(result), std::get<Wt::Dbo::ptr<dbo::Artist>>(result));
+            func(toObjectPtr(std::get<Wt::Dbo::ptr<dbo::TrackArtistLink>>(result)), toObjectPtr(std::get<Wt::Dbo::ptr<dbo::Artist>>(result)));
         });
     }
 
@@ -109,7 +109,7 @@ namespace lms::db
         query.where("t_a_l.artist_name <> a.name");
 
         utils::applyRange(query, range);
-        utils::forEachQueryResult(query, [&](const TrackArtistLink::pointer& link) {
+        utils::forEachQueryObject(query, [&](const TrackArtistLink::pointer& link) {
             func(link);
         });
     }
@@ -133,7 +133,7 @@ namespace lms::db
         }
 
         utils::applyRange(query, range);
-        utils::forEachQueryResult(query, [&](const TrackArtistLink::pointer& link) {
+        utils::forEachQueryObject(query, [&](const TrackArtistLink::pointer& link) {
             func(link);
         });
     }
@@ -157,12 +157,12 @@ namespace lms::db
 
     ObjectPtr<Track> TrackArtistLink::getTrack() const
     {
-        return getDbo(*this)._track;
+        return toObjectPtr(getDbo(*this)._track);
     }
 
     ObjectPtr<Artist> TrackArtistLink::getArtist() const
     {
-        return getDbo(*this)._artist;
+        return toObjectPtr(getDbo(*this)._artist);
     }
 
     ArtistId TrackArtistLink::getArtistId() const

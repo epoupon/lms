@@ -59,13 +59,13 @@ namespace lms::db
     Podcast::pointer Podcast::find(ISession& session, PodcastId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Podcast>>("SELECT p from podcast p").where("p.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Podcast>>("SELECT p from podcast p").where("p.id = ?").bind(id));
     }
 
     Podcast::pointer Podcast::find(ISession& session, std::string_view url)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Podcast>>("SELECT p from podcast p").where("p.url = ?").bind(url));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Podcast>>("SELECT p from podcast p").where("p.url = ?").bind(url));
     }
 
     void Podcast::find(ISession& session, std::function<void(const pointer&)> func)
@@ -73,12 +73,12 @@ namespace lms::db
         checkReadTransaction(session);
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Podcast>>("SELECT p from podcast p") };
-        utils::forEachQueryResult(query, func);
+        utils::forEachQueryObject(query, func);
     }
 
     ObjectPtr<Artwork> Podcast::getArtwork() const
     {
-        return getDbo(*this)._artwork;
+        return toObjectPtr(getDbo(*this)._artwork);
     }
 
     ArtworkId Podcast::getArtworkId() const

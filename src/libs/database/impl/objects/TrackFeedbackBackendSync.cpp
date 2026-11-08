@@ -58,13 +58,13 @@ namespace lms::db
     TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::find(ISession& session, TrackFeedbackBackendSyncId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackFeedbackBackendSync>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackFeedbackBackendSync>().where("id = ?").bind(id));
     }
 
     TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::find(ISession& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->find<dbo::TrackFeedbackBackendSync>().where("track_feedback_id = ?").bind(trackFeedbackId).where("backend = ?").bind(backend));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackFeedbackBackendSync>().where("track_feedback_id = ?").bind(trackFeedbackId).where("backend = ?").bind(backend));
     }
 
     std::vector<TrackFeedbackBackendSyncId> TrackFeedbackBackendSync::find(ISession& session, const FindParameters& params)
@@ -94,11 +94,11 @@ namespace lms::db
         if (params.syncState)
             query.where("sync_state = ?").bind(*params.syncState);
 
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     ObjectPtr<TrackFeedback> TrackFeedbackBackendSync::getTrackFeedback() const
     {
-        return getDbo(*this)._trackFeedback;
+        return toObjectPtr(getDbo(*this)._trackFeedback);
     }
 } // namespace lms::db

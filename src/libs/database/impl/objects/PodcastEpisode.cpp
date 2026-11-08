@@ -82,14 +82,14 @@ namespace lms::db
     PodcastEpisode::pointer PodcastEpisode::find(ISession& session, PodcastEpisodeId id)
     {
         checkReadTransaction(session);
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PodcastEpisode>>("SELECT p_e from podcast_episode p_e").where("p_e.id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PodcastEpisode>>("SELECT p_e from podcast_episode p_e").where("p_e.id = ?").bind(id));
     }
 
     PodcastEpisode::pointer PodcastEpisode::findNewtestEpisode(ISession& session, PodcastId podcastId)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PodcastEpisode>>("SELECT p_e from podcast_episode p_e").where("p_e.podcast_id = ?").bind(podcastId).orderBy("p_e.pub_date DESC").limit(1));
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PodcastEpisode>>("SELECT p_e from podcast_episode p_e").where("p_e.podcast_id = ?").bind(podcastId).orderBy("p_e.pub_date DESC").limit(1));
     }
 
     void PodcastEpisode::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
@@ -97,7 +97,7 @@ namespace lms::db
         checkReadTransaction(session);
 
         auto query{ createQuery(session, params) };
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     std::optional<core::media::Container> PodcastEpisode::getContainer() const
@@ -112,7 +112,7 @@ namespace lms::db
 
     ObjectPtr<Artwork> PodcastEpisode::getArtwork() const
     {
-        return getDbo(*this)._artwork;
+        return toObjectPtr(getDbo(*this)._artwork);
     }
 
     ArtworkId PodcastEpisode::getArtworkId() const
@@ -137,7 +137,7 @@ namespace lms::db
 
     ObjectPtr<Podcast> PodcastEpisode::getPodcast() const
     {
-        return getDbo(*this)._podcast;
+        return toObjectPtr(getDbo(*this)._podcast);
     }
 
     PodcastId PodcastEpisode::getPodcastId() const
