@@ -19,36 +19,41 @@
 
 #pragma once
 
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
 #include "core/media/ImageType.hpp"
 
-#include "database/Object.hpp"
 #include "database/objects/TrackEmbeddedImageId.hpp"
 #include "database/objects/TrackEmbeddedImageLinkId.hpp"
+#include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 #include "database/objects/detail/Types.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class TrackEmbeddedImage;
     class Track;
 
-    class TrackEmbeddedImageLink : public Object<TrackEmbeddedImageLink, TrackEmbeddedImageLinkId>
+    class TrackEmbeddedImageLink : public detail::Object<TrackEmbeddedImageLink, TrackEmbeddedImageLinkId>
     {
     public:
-        static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<TrackEmbeddedImage>& image);
+        static TrackEmbeddedImageLink create(ISession& session, TrackId track, TrackEmbeddedImageId image);
+        static void destroy(ISession& session, std::span<const TrackEmbeddedImageLinkId> ids);
 
         // find
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, TrackEmbeddedImageLinkId id);
-        static void find(ISession& session, TrackEmbeddedImageId trackEmbeddedImageId, std::function<void(const pointer&)> visitor);
+        static std::optional<TrackEmbeddedImageLink> find(ISession& session, TrackEmbeddedImageLinkId id);
+        static void find(ISession& session, TrackEmbeddedImageId trackEmbeddedImageId, const std::function<void(const TrackEmbeddedImageLink&)>& visitor);
+
+        static void update(ISession& session, const TrackEmbeddedImageLink& trackEmbeddedImageLink);
 
         // getters
-        ObjectPtr<Track> getTrack() const;
-        ObjectPtr<TrackEmbeddedImage> getImage() const;
+        TrackId getTrackId() const { return _trackId; }
+        TrackEmbeddedImageId getImageId() const { return _imageId; }
         std::size_t getIndex() const { return _index; }
         core::media::ImageType getType() const;
         std::string_view getDescription() const { return _description; }
@@ -64,5 +69,7 @@ namespace lms::db
         int _index{}; // index within the track
         detail::ImageType _type{ detail::ImageType::Unknown };
         std::string _description;
+        TrackId _trackId;
+        TrackEmbeddedImageId _imageId;
     };
 } // namespace lms::db

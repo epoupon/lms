@@ -35,8 +35,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Image::getCount(session), 1);
 
-            Image::pointer img{ Image::find(session, image.getId()) };
-            ASSERT_NE(img, Image::pointer{});
+            std::optional<Image> img{ Image::find(session, image.getId()) };
+            ASSERT_TRUE(img);
             EXPECT_EQ(img->getAbsoluteFilePath(), "/path/to/image");
             EXPECT_EQ(img->getFileStem(), "image");
             EXPECT_EQ(img->getWidth(), 0);
@@ -48,20 +48,21 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            Image::pointer img{ Image::find(session, image.getId()) };
-            ASSERT_NE(img, Image::pointer{});
-            img.modify()->setAbsoluteFilePath("/path/to/another/image2");
-            img.modify()->setWidth(640);
-            img.modify()->setHeight(480);
-            img.modify()->setFileSize(1024 * 1024);
-            img.modify()->setFormat(core::media::ImageFormat::JPEG);
+            std::optional<Image> img{ Image::find(session, image.getId()) };
+            ASSERT_TRUE(img);
+            img->setAbsoluteFilePath("/path/to/another/image2");
+            img->setWidth(640);
+            img->setHeight(480);
+            img->setFileSize(1024 * 1024);
+            img->setFormat(core::media::ImageFormat::JPEG);
+            Image::update(session, *img);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            Image::pointer img{ Image::find(session, image.getId()) };
-            ASSERT_NE(img, Image::pointer{});
+            std::optional<Image> img{ Image::find(session, image.getId()) };
+            ASSERT_TRUE(img);
             EXPECT_EQ(img->getAbsoluteFilePath(), "/path/to/another/image2");
             EXPECT_EQ(img->getFileStem(), "image2");
             EXPECT_EQ(img->getWidth(), 640);
@@ -73,8 +74,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            Image::pointer img{ Image::find(session, "/path/to/another/image2") };
-            ASSERT_NE(img, Image::pointer{});
+            std::optional<Image> img{ Image::find(session, "/path/to/another/image2") };
+            ASSERT_TRUE(img);
             EXPECT_EQ(img->getId(), image->getId());
         }
     }
@@ -91,14 +92,16 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            image.get().modify()->setDirectory(directory.get());
+            std::optional<Image> updatedImage{ image.get() };
+            updatedImage->setDirectory(directory.getId());
+            Image::update(session, *updatedImage);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             const auto results{ Image::find(session, Image::FindParameters{}.setDirectory(directory.getId())) };
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results.front()->getId(), image.getId());
+            EXPECT_EQ(results.front().getId(), image.getId());
         }
     }
 
@@ -109,7 +112,9 @@ namespace lms::db::tests
         const std::filesystem::path absoluteFilePath{ "/path/to/image" };
         {
             auto transaction{ session.createWriteTransaction() };
-            image.get().modify()->setAbsoluteFilePath(absoluteFilePath);
+            std::optional<Image> updatedImage{ image.get() };
+            updatedImage->setAbsoluteFilePath(absoluteFilePath);
+            Image::update(session, *updatedImage);
         }
 
         {
@@ -133,7 +138,9 @@ namespace lms::db::tests
         const std::string fileStem{ "image" };
         {
             auto transaction{ session.createWriteTransaction() };
-            image.get().modify()->setDirectory(directory.get());
+            std::optional<Image> updatedImage{ image.get() };
+            updatedImage->setDirectory(directory.getId());
+            Image::update(session, *updatedImage);
         }
 
         {
@@ -142,7 +149,7 @@ namespace lms::db::tests
             params.setFileStem(fileStem);
             const auto results{ Image::find(session, params) };
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0]->getId(), image.getId());
+            EXPECT_EQ(results[0].getId(), image.getId());
         }
 
         {
@@ -151,7 +158,7 @@ namespace lms::db::tests
             params.setFileStem(fileStem, Image::FindParameters::ProcessWildcards{ true });
             const auto results{ Image::find(session, params) };
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0]->getId(), image.getId());
+            EXPECT_EQ(results[0].getId(), image.getId());
         }
 
         {
@@ -176,7 +183,7 @@ namespace lms::db::tests
             params.setFileStem("ima*", Image::FindParameters::ProcessWildcards{ true });
             const auto results{ Image::find(session, params) };
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0]->getId(), image.getId());
+            EXPECT_EQ(results[0].getId(), image.getId());
         }
 
         {
@@ -185,7 +192,7 @@ namespace lms::db::tests
             params.setFileStem("*ge", Image::FindParameters::ProcessWildcards{ true });
             const auto results{ Image::find(session, params) };
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0]->getId(), image.getId());
+            EXPECT_EQ(results[0].getId(), image.getId());
         }
 
         {
@@ -194,7 +201,7 @@ namespace lms::db::tests
             params.setFileStem("*g*", Image::FindParameters::ProcessWildcards{ true });
             const auto results{ Image::find(session, params) };
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0]->getId(), image.getId());
+            EXPECT_EQ(results[0].getId(), image.getId());
         }
 
         {
@@ -203,7 +210,7 @@ namespace lms::db::tests
             params.setFileStem("*", Image::FindParameters::ProcessWildcards{ true });
             const auto results{ Image::find(session, params) };
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0]->getId(), image.getId());
+            EXPECT_EQ(results[0].getId(), image.getId());
         }
 
         {

@@ -20,12 +20,13 @@
 #pragma once
 
 #include <iosfwd>
+#include <optional>
 #include <string>
 #include <string_view>
 
 #include <Wt/Http/Request.h>
 
-#include "database/Object.hpp"
+#include "database/objects/User.hpp"
 
 #include "ProtocolVersion.hpp"
 #include "ResponseFormat.hpp"
@@ -34,7 +35,6 @@
 namespace lms::db
 {
     class ISession;
-    class User;
 } // namespace lms::db
 
 namespace lms::api::subsonic
@@ -54,8 +54,8 @@ namespace lms::api::subsonic
 
         db::ISession& getDbSession();
 
-        void setUser(const db::ObjectPtr<db::User>& user);
-        db::ObjectPtr<db::User> getUser() const;
+        void setUser(const std::optional<db::User>& user);
+        const std::optional<db::User>& getUser() const { return _user; }
 
         std::string getClientIpAddr() const;
         std::string_view getClientName() const;
@@ -66,7 +66,7 @@ namespace lms::api::subsonic
     private:
         const Wt::Http::Request& _request;
         db::ISession& _dbSession;
-        db::ObjectPtr<db::User> _user;
+        std::optional<db::User> _user;
         const SubsonicResourceConfig& _config;
 
         const std::string _clientName;

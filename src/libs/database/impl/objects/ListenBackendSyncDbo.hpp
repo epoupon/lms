@@ -24,7 +24,7 @@
 
 #include "database/objects/ListenBackendSync.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,7 +36,13 @@ namespace lms::db::dbo
         ListenBackendSync() = default;
         using db::ListenBackendSync::ListenBackendSync;
 
-        ListenBackendSync(const ObjectPtr<db::Listen>& listen, ScrobblingBackend backend);
+        ListenBackendSync(Wt::Dbo::ptr<Listen> listen, ScrobblingBackend backend);
+
+        void syncIds()
+        {
+            _id = id();
+            _listenId = _listen.id();
+        }
 
         template<class Action>
         void persist(Action& a)

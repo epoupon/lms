@@ -25,7 +25,6 @@
 #include "core/media/ImageFormat.hpp"
 #include "core/media/ImageType.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/MediumId.hpp"
 #include "database/objects/ReleaseId.hpp"
@@ -33,17 +32,17 @@
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 #include "database/objects/detail/Types.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class Track;
 
-    class TrackEmbeddedImage : public Object<TrackEmbeddedImage, TrackEmbeddedImageId>
+    class TrackEmbeddedImage : public detail::Object<TrackEmbeddedImage, TrackEmbeddedImageId>
     {
     public:
-        static pointer create(ISession& session);
+        static TrackEmbeddedImage create(ISession& session);
         static void destroy(ISession& session, std::span<const TrackEmbeddedImageId> ids);
 
         struct FindParameters
@@ -95,10 +94,12 @@ namespace lms::db
 
         // find
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, TrackEmbeddedImageId id);
-        static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
-        static pointer find(ISession& session, std::size_t size, ImageHashType hash);
+        static std::optional<TrackEmbeddedImage> find(ISession& session, TrackEmbeddedImageId id);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackEmbeddedImage&)>& func);
+        static std::optional<TrackEmbeddedImage> find(ISession& session, std::size_t size, ImageHashType hash);
         static std::vector<TrackEmbeddedImageId> findOrphanIds(ISession& session, std::optional<Range> range);
+
+        static void update(ISession& session, const TrackEmbeddedImage& trackEmbeddedImage);
 
         // getters
         ImageHashType getHash() const { return _hash; }

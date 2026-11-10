@@ -24,6 +24,7 @@
 #include "ArtistDbo.hpp"
 #include "ArtworkDbo.hpp"
 #include "ClusterDbo.hpp"
+#include "DboAccess.hpp"
 #include "DirectoryDbo.hpp"
 #include "GenreDbo.hpp"
 #include "GroupingDbo.hpp"
@@ -32,7 +33,6 @@
 #include "MediumDbo.hpp"
 #include "MoodDbo.hpp"
 #include "MovementDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "ReleaseDbo.hpp"
 #include "Session.hpp"
 #include "TrackArtistLinkDbo.hpp"
@@ -48,14 +48,14 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::Medium)
 
 namespace lms::db
 {
-    dbo::Medium::Medium(const ObjectPtr<db::Release>& release)
-        : _release(getDboPtr(release))
+    dbo::Medium::Medium(Wt::Dbo::ptr<Release> release)
+        : _release(std::move(release))
     {
     }
 
-    Medium::pointer Medium::create(ISession& session, const ObjectPtr<Release>& release)
+    Medium Medium::create(ISession& session, ReleaseId release)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::Medium>{ new dbo::Medium{ release } });
+        return utils::addObject(session, std::unique_ptr<dbo::Medium>{ new dbo::Medium{ getDboSession(session)->loadLazy<dbo::Release>(release.getValue()) } });
     }
 
     void Medium::destroy(ISession& session, std::span<const MediumId> ids)
@@ -70,14 +70,17 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM medium"));
     }
 
-    Medium::pointer Medium::find(ISession& session, MediumId id)
+    std::optional<Medium> Medium::find(ISession& session, MediumId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m").where("m.id = ?").bind(id));
     }
 
-    Medium::pointer Medium::find(ISession& session, ReleaseId releaseId, std::optional<std::size_t> position)
+    std::optional<Medium> Medium::find(ISession& session, ReleaseId releaseId, std::optional<std::size_t> position)
     {
         checkReadTransaction(session);
 
@@ -95,7 +98,7 @@ namespace lms::db
         return utils::fetchQuerySingleObject(query);
     }
 
-    void Medium::find(ISession& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium::pointer&)>& func)
+    void Medium::find(ISession& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium&)>& func)
     {
         checkReadTransaction(session);
 
@@ -103,9 +106,29 @@ namespace lms::db
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m").orderBy("m.id").where("m.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
 
-        utils::forEachQueryObject(query, [&](const Medium::pointer& medium) {
+        utils::forEachQueryObject(query, [&](const Medium& medium) {
             func(medium);
         });
+    }
+
+    void Medium::find(ISession& session, const FindParameters& params, const std::function<void(const Medium&)>& func)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m") };
+        if (params.release.isValid())
+            query.where("m.release_id = ?").bind(params.release);
+
+        switch (params.sortMethod)
+        {
+        case MediumSortMethod::None:
+            break;
+        case MediumSortMethod::PositionAsc:
+            query.orderBy("m.position");
+            break;
+        }
+
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     IdRange<MediumId> Medium::findNextIdRange(ISession& session, MediumId lastRetrievedId, std::size_t count)
@@ -129,33 +152,14 @@ namespace lms::db
         return utils::execRangeQuery<MediumId>(query, range);
     }
 
+    void Medium::update(ISession& session, const Medium& medium)
+    {
+        utils::updateObject<dbo::Medium>(session, medium);
+    }
+
     void Medium::updatePreferredArtwork(ISession& session, MediumId mediumId, ArtworkId artworkId)
     {
-        checkWriteTransaction(session);
-
-        if (artworkId.isValid())
-            utils::executeCommand(*getDboSession(session), "UPDATE medium SET preferred_artwork_id = ? WHERE id = ?", artworkId, mediumId);
-        else
-            utils::executeCommand(*getDboSession(session), "UPDATE medium SET preferred_artwork_id = NULL WHERE id = ?", mediumId);
-    }
-
-    ReleaseId Medium::getReleaseId() const
-    {
-        return getDbo(*this)._release.id();
-    }
-
-    ObjectPtr<Release> Medium::getRelease() const
-    {
-        return toObjectPtr(getDbo(*this)._release);
-    }
-
-    ObjectPtr<Artwork> Medium::getPreferredArtwork() const
-    {
-        return toObjectPtr(getDbo(*this)._preferredArtwork);
-    }
-
-    ArtworkId Medium::getPreferredArtworkId() const
-    {
-        return getDbo(*this)._preferredArtwork.id();
+        dbo::Medium& medium{ utils::modifyObject<dbo::Medium>(session, mediumId) };
+        setRelation(*getDboSession(session), medium._preferredArtwork, artworkId);
     }
 } // namespace lms::db

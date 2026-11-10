@@ -87,7 +87,7 @@ namespace lms::api::subsonic
                 // Mandatory param
                 const std::string genre{ getMandatoryParameterAs<std::string>(context.getParameters(), "genre") };
 
-                if (const Genre::pointer genreObj{ Genre::find(context.getDbSession(), genre) })
+                if (const std::optional<Genre> genreObj{ Genre::find(context.getDbSession(), genre) })
                 {
                     FilterExpr filter{ FilterExpr::equal(genreObj->getId()) };
                     if (mediaLibraryId.isValid())
@@ -181,8 +181,8 @@ namespace lms::api::subsonic
 
             for (const ReleaseId releaseId : releases)
             {
-                const Release::pointer release{ Release::find(context.getDbSession(), releaseId) };
-                albumListNode.addArrayChild("album", createAlbumNode(context, release, id3));
+                if (const std::optional<Release> release{ Release::find(context.getDbSession(), releaseId) })
+                    albumListNode.addArrayChild("album", createAlbumNode(context, *release, id3));
             }
 
             return response;
@@ -208,7 +208,7 @@ namespace lms::api::subsonic
                 for (const ArtistId artistId : Artist::findIds(context.getDbSession(), artistFindParams))
                 {
                     if (auto artist{ Artist::find(context.getDbSession(), artistId) })
-                        starredNode.addArrayChild("artist", createArtistNode(context, artist));
+                        starredNode.addArrayChild("artist", createArtistNode(context, *artist));
                 }
             }
 
@@ -221,8 +221,8 @@ namespace lms::api::subsonic
 
             for (const ReleaseId releaseId : Release::findIds(context.getDbSession(), releaseFindParameters))
             {
-                if (auto release{ Release::find(context.getDbSession(), releaseId) })
-                    starredNode.addArrayChild("album", createAlbumNode(context, release, id3));
+                if (const std::optional<Release> release{ Release::find(context.getDbSession(), releaseId) })
+                    starredNode.addArrayChild("album", createAlbumNode(context, *release, id3));
             }
 
             Track::FindParameters trackFindParameters;
@@ -235,7 +235,7 @@ namespace lms::api::subsonic
             for (const TrackId trackId : Track::findIds(context.getDbSession(), trackFindParameters))
             {
                 if (auto track{ Track::find(context.getDbSession(), trackId) })
-                    starredNode.addArrayChild("song", createSongNode(context, track, context.getUser()));
+                    starredNode.addArrayChild("song", createSongNode(context, *track, true /* id3 */));
             }
 
             return response;
@@ -271,8 +271,8 @@ namespace lms::api::subsonic
         if (mediaLibraryId.isValid())
             params.setFilter(FilterExpr::equal(mediaLibraryId));
 
-        Track::find(context.getDbSession(), params, [&](const Track::pointer& track) {
-            randomSongsNode.addArrayChild("song", createSongNode(context, track, context.getUser()));
+        Track::find(context.getDbSession(), params, [&](const Track& track) {
+            randomSongsNode.addArrayChild("song", createSongNode(context, track, true /* id3 */));
         });
 
         return response;
@@ -293,7 +293,7 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const Genre::pointer genreObj{ Genre::find(context.getDbSession(), genre) };
+        const std::optional<Genre> genreObj{ Genre::find(context.getDbSession(), genre) };
         if (!genreObj)
             throw RequestedDataNotFoundError{};
 
@@ -308,8 +308,8 @@ namespace lms::api::subsonic
         params.setFilter(std::move(filter));
         params.setRange(Range{ offset, count });
 
-        Track::find(context.getDbSession(), params, [&](const Track::pointer& track) {
-            songsByGenreNode.addArrayChild("song", createSongNode(context, track, context.getUser()));
+        Track::find(context.getDbSession(), params, [&](const Track& track) {
+            songsByGenreNode.addArrayChild("song", createSongNode(context, track, true /* id3 */));
         });
 
         return response;
@@ -331,15 +331,15 @@ namespace lms::api::subsonic
             if (!context.getUser()->isAdmin() && listen.userId != context.getUser()->getId())
                 return;
 
-            const User::pointer user{ User::find(context.getDbSession(), listen.userId) };
+            const std::optional<User> user{ User::find(context.getDbSession(), listen.userId) };
             if (!user)
                 return;
 
-            const Track::pointer track{ Track::find(context.getDbSession(), listen.trackId) };
+            const std::optional<Track> track{ Track::find(context.getDbSession(), listen.trackId) };
             if (!track)
                 return;
 
-            auto NowPlayingEntryNode{ createSongNode(context, track, context.getUser()) };
+            auto NowPlayingEntryNode{ createSongNode(context, *track, true /* id3 */) };
             NowPlayingEntryNode.setAttribute("username", user->getLoginName());
             NowPlayingEntryNode.setAttribute("minutesAgo", static_cast<int>(std::chrono::duration_cast<std::chrono::minutes>(now - startedAt).count()));
             NowPlayingEntryNode.setAttribute("playerId", user->getId().getValue()); // not sure what to put here

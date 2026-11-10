@@ -134,10 +134,10 @@ namespace lms::api::subsonic
             params.setWithNoTrack(true);
             params.setMediaLibrary(mediaLibrary);
 
-            Directory::find(context.getDbSession(), params, [&](const Directory::pointer& directory) {
+            Directory::find(context.getDbSession(), params, [&](const Directory& directory) {
                 Response::Node childNode;
-                childNode.setAttribute("id", idToString(directory->getId()));
-                childNode.setAttribute("name", directory->getName());
+                childNode.setAttribute("id", idToString(directory.getId()));
+                childNode.setAttribute("name", directory.getName());
                 childNode.setAttribute("isDir", true);
 
                 searchResultNode.addArrayChild("artist", std::move(childNode));
@@ -166,9 +166,9 @@ namespace lms::api::subsonic
                 params.setRange(Range{ artistOffset, artistCount });
                 params.setSortMethod(ArtistSortMethod::Id); // must be consistent with both methods
 
-                Artist::find(context.getDbSession(), params, [&](const Artist::pointer& artist) {
+                Artist::find(context.getDbSession(), params, [&](const Artist& artist) {
                     searchResultNode.addArrayChild("artist", createArtistNode(context, artist));
-                    lastRetrievedId = artist->getId();
+                    lastRetrievedId = artist.getId();
                 });
             } };
 
@@ -180,7 +180,7 @@ namespace lms::api::subsonic
                     {
                         if (const auto artist{ Artist::find(context.getDbSession(), *mbid) })
                         {
-                            searchResultNode.addArrayChild("artist", createArtistNode(context, artist));
+                            searchResultNode.addArrayChild("artist", createArtistNode(context, *artist));
                             return;
                         }
                     }
@@ -201,7 +201,7 @@ namespace lms::api::subsonic
             if (ArtistId cachedLastRetrievedId{ currentScansInProgress.extractLastRetrievedObjectId(scanInfo) }; cachedLastRetrievedId.isValid())
             {
                 Artist::find(
-                    context.getDbSession(), cachedLastRetrievedId, artistCount, [&](const Artist::pointer& artist) {
+                    context.getDbSession(), cachedLastRetrievedId, artistCount, [&](const Artist& artist) {
                         searchResultNode.addArrayChild("artist", createArtistNode(context, artist));
                     },
                     mediaLibrary);
@@ -242,9 +242,9 @@ namespace lms::api::subsonic
                     params.setFilter(FilterExpr::equal(mediaLibrary));
                 params.setSortMethod(ReleaseSortMethod::Id); // must be consistent with both methods
 
-                Release::find(context.getDbSession(), params, [&](const Release::pointer& release) {
+                Release::find(context.getDbSession(), params, [&](const Release& release) {
                     searchResultNode.addArrayChild("album", createAlbumNode(context, release, id3));
-                    lastRetrievedId = release->getId();
+                    lastRetrievedId = release.getId();
                 });
             } };
 
@@ -256,7 +256,7 @@ namespace lms::api::subsonic
                     {
                         if (const auto release{ Release::find(context.getDbSession(), *mbid) })
                         {
-                            searchResultNode.addArrayChild("album", createAlbumNode(context, release, id3));
+                            searchResultNode.addArrayChild("album", createAlbumNode(context, *release, id3));
                             return;
                         }
                     }
@@ -277,7 +277,7 @@ namespace lms::api::subsonic
             if (ReleaseId cachedLastRetrievedId{ currentScansInProgress.extractLastRetrievedObjectId(scanInfo) }; cachedLastRetrievedId.isValid())
             {
                 Release::find(
-                    context.getDbSession(), cachedLastRetrievedId, albumCount, [&](const Release::pointer& release) {
+                    context.getDbSession(), cachedLastRetrievedId, albumCount, [&](const Release& release) {
                         searchResultNode.addArrayChild("album", createAlbumNode(context, release, id3));
                     },
                     mediaLibrary);
@@ -318,9 +318,9 @@ namespace lms::api::subsonic
                     params.setFilter(FilterExpr::equal(mediaLibrary));
                 params.setSortMethod(TrackSortMethod::Id); // must be consistent with both methods
 
-                Track::find(context.getDbSession(), params, [&](const Track::pointer& track) {
+                Track::find(context.getDbSession(), params, [&](const Track& track) {
                     searchResultNode.addArrayChild("song", createSongNode(context, track, id3));
-                    lastRetrievedId = track->getId();
+                    lastRetrievedId = track.getId();
                 });
             } };
 
@@ -341,7 +341,7 @@ namespace lms::api::subsonic
             if (TrackId cachedLastRetrievedId{ currentScansInProgress.extractLastRetrievedObjectId(scanInfo) }; cachedLastRetrievedId.isValid())
             {
                 Track::find(
-                    context.getDbSession(), cachedLastRetrievedId, songCount, [&](const Track::pointer& track) {
+                    context.getDbSession(), cachedLastRetrievedId, songCount, [&](const Track& track) {
                         searchResultNode.addArrayChild("song", createSongNode(context, track, id3));
                     },
                     mediaLibrary);

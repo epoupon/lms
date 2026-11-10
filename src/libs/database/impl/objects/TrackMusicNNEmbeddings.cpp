@@ -21,7 +21,7 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "Session.hpp"
 #include "TrackDbo.hpp"
 #include "TrackMusicNNEmbeddingsDbo.hpp"
@@ -32,14 +32,19 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackMusicNNEmbeddings)
 
 namespace lms::db
 {
-    dbo::TrackMusicNNEmbeddings::TrackMusicNNEmbeddings(const ObjectPtr<db::Track>& track)
-        : _track{ getDboPtr(track) }
+    dbo::TrackMusicNNEmbeddings::TrackMusicNNEmbeddings(Wt::Dbo::ptr<Track> track)
+        : _track{ std::move(track) }
     {
     }
 
-    TrackMusicNNEmbeddings::pointer TrackMusicNNEmbeddings::create(ISession& session, const ObjectPtr<Track>& track)
+    TrackMusicNNEmbeddings TrackMusicNNEmbeddings::create(ISession& session, TrackId track)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::TrackMusicNNEmbeddings>{ new dbo::TrackMusicNNEmbeddings{ track } });
+        return utils::addObject(session, std::unique_ptr<dbo::TrackMusicNNEmbeddings>{ new dbo::TrackMusicNNEmbeddings{ getDboSession(session)->loadLazy<dbo::Track>(track.getValue()) } });
+    }
+
+    void TrackMusicNNEmbeddings::destroy(ISession& session, std::span<const TrackMusicNNEmbeddingsId> ids)
+    {
+        utils::destroyObjects<dbo::TrackMusicNNEmbeddings>(session, ids);
     }
 
     std::size_t TrackMusicNNEmbeddings::getCount(ISession& session)
@@ -49,14 +54,17 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_musicnn_embeddings"));
     }
 
-    TrackMusicNNEmbeddings::pointer TrackMusicNNEmbeddings::find(ISession& session, TrackMusicNNEmbeddingsId id)
+    std::optional<TrackMusicNNEmbeddings> TrackMusicNNEmbeddings::find(ISession& session, TrackMusicNNEmbeddingsId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackMusicNNEmbeddings>().where("id = ?").bind(id));
     }
 
-    TrackMusicNNEmbeddings::pointer TrackMusicNNEmbeddings::find(ISession& session, TrackId trackId)
+    std::optional<TrackMusicNNEmbeddings> TrackMusicNNEmbeddings::find(ISession& session, TrackId trackId)
     {
         checkReadTransaction(session);
 
@@ -72,15 +80,13 @@ namespace lms::db
         return utils::execRangeQuery<TrackMusicNNEmbeddingsId>(query, range);
     }
 
-    void TrackMusicNNEmbeddings::find(ISession& session, std::function<void(const pointer&)> func)
+    void TrackMusicNNEmbeddings::find(ISession& session, const std::function<void(const TrackMusicNNEmbeddings&)>& func)
     {
         checkReadTransaction(session);
 
         auto query{ getDboSession(session)->find<dbo::TrackMusicNNEmbeddings>() };
 
-        utils::forEachQueryObject(query, [&](const TrackMusicNNEmbeddings::pointer& embeddings) {
-            func(embeddings);
-        });
+        utils::forEachQueryObject(query, func);
     }
 
     void TrackMusicNNEmbeddings::removeAll(ISession& session)
@@ -100,13 +106,8 @@ namespace lms::db
         _data.assign(start, start + data.size());
     }
 
-    TrackId TrackMusicNNEmbeddings::getTrackId() const
+    void TrackMusicNNEmbeddings::update(ISession& session, const TrackMusicNNEmbeddings& trackMusicNNEmbeddings)
     {
-        return getDbo(*this)._track.id();
-    }
-
-    ObjectPtr<Track> TrackMusicNNEmbeddings::getTrack() const
-    {
-        return toObjectPtr(getDbo(*this)._track);
+        utils::updateObject<dbo::TrackMusicNNEmbeddings>(session, trackMusicNNEmbeddings);
     }
 } // namespace lms::db

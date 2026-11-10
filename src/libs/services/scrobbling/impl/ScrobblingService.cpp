@@ -100,7 +100,7 @@ namespace lms::scrobbling
         ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        const Track::pointer track{ Track::find(session, listen.trackId) };
+        const std::optional<Track> track{ Track::find(session, listen.trackId) };
         if (!track)
             return std::nullopt;
 
@@ -111,11 +111,11 @@ namespace lms::scrobbling
 
         if (!db::Listen::find(session, listen.userId, listen.trackId, listenedAt))
         {
-            const User::pointer user{ User::find(session, listen.userId) };
+            const std::optional<User> user{ User::find(session, listen.userId) };
             if (!user)
                 return std::nullopt;
 
-            db::Listen::create(session, user, track, listenedAt);
+            db::Listen::create(session, user->getId(), track->getId(), listenedAt);
         }
 
         return TimedListen{ listen, listenedAt };
@@ -167,7 +167,7 @@ namespace lms::scrobbling
 
         ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
-        if (const User::pointer user{ User::find(session, userId) })
+        if (const std::optional<User> user{ User::find(session, userId) })
             backends = user->getScrobblingBackends();
 
         return backends;
@@ -219,11 +219,11 @@ namespace lms::scrobbling
                     if (db::ListenBackendSync::find(session, id, backend))
                         continue; // already pending or synchronized: leave untouched
 
-                    const db::Listen::pointer listen{ db::Listen::find(session, id) };
-                    if (!listen || !backendImpl.canBeScrobbled(listen->getTrack()->getId(), std::nullopt))
+                    const std::optional<db::Listen> listen{ db::Listen::find(session, id) };
+                    if (!listen || !backendImpl.canBeScrobbled(listen->getTrackId(), std::nullopt))
                         continue;
 
-                    db::ListenBackendSync::create(session, listen, backend);
+                    db::ListenBackendSync::create(session, listen->getId(), backend);
                 }
             }
 
@@ -237,7 +237,7 @@ namespace lms::scrobbling
         ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        if (const db::Track::pointer track{ db::Track::find(session, listen.trackId) })
+        if (const std::optional<db::Track> track{ db::Track::find(session, listen.trackId) })
         {
             const Clock::time_point now{ Clock::now() };
 

@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <array>
+
 #include "Common.hpp"
 
 #include "database/objects/Work.hpp"
@@ -32,7 +34,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const Work::pointer found{ Work::find(session, work.getId()) };
+            const std::optional<Work> found{ Work::find(session, work.getId()) };
             ASSERT_TRUE(found);
             EXPECT_EQ(found->getName(), "Symphony No. 5");
             EXPECT_FALSE(found->getMBID());
@@ -49,7 +51,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const Work::pointer found{ Work::find(session, work.getId()) };
+            const std::optional<Work> found{ Work::find(session, work.getId()) };
             ASSERT_TRUE(found);
             EXPECT_EQ(found->getName(), "Symphony No. 9");
             ASSERT_TRUE(found->getMBID());
@@ -67,7 +69,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const Work::pointer byMbid{ Work::find(session, *mbid) };
+            const std::optional<Work> byMbid{ Work::find(session, *mbid) };
             ASSERT_TRUE(byMbid);
             EXPECT_EQ(byMbid->getId(), workWithMbid.getId());
         }
@@ -86,21 +88,25 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setRelease(release1.get());
-            track1.get().modify()->setWorks(std::array{ work1.get() });
-            track2.get().modify()->setRelease(release2.get());
-            track2.get().modify()->setWorks(std::array{ work2.get() });
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1);
+            Track::setWorks(session, track1.getId(), std::array{ work1.getId() });
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2);
+            Track::setWorks(session, track2.getId(), std::array{ work2.getId() });
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             // Same name, but each release resolves to its own work
-            const Work::pointer foundInRelease1{ Work::find(session, release1.getId(), "Piano Sonata") };
+            const std::optional<Work> foundInRelease1{ Work::find(session, release1.getId(), "Piano Sonata") };
             ASSERT_TRUE(foundInRelease1);
             EXPECT_EQ(foundInRelease1->getId(), work1.getId());
 
-            const Work::pointer foundInRelease2{ Work::find(session, release2.getId(), "Piano Sonata") };
+            const std::optional<Work> foundInRelease2{ Work::find(session, release2.getId(), "Piano Sonata") };
             ASSERT_TRUE(foundInRelease2);
             EXPECT_EQ(foundInRelease2->getId(), work2.getId());
 
@@ -130,12 +136,17 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Work::findOrphanIds(session).size(), 2);
-            EXPECT_EQ(track->getWorks().size(), 0);
+
+            bool visited{};
+            Work::find(session, track.getId(), [&](const Work&) {
+                visited = true;
+            });
+            EXPECT_FALSE(visited);
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setWorks(std::array{ work1.get() });
+            Track::setWorks(session, track.getId(), std::array{ work1.getId() });
         }
 
         {
@@ -145,9 +156,12 @@ namespace lms::db::tests
             ASSERT_EQ(orphans.size(), 1);
             EXPECT_EQ(orphans.front(), work2.getId());
 
-            const auto trackWorks{ track->getWorks() };
+            std::vector<Work> trackWorks;
+            Work::find(session, track.getId(), [&](const Work& trackWork) {
+                trackWorks.push_back(trackWork);
+            });
             ASSERT_EQ(trackWorks.size(), 1);
-            EXPECT_EQ(trackWorks.front()->getId(), work1.getId());
+            EXPECT_EQ(trackWorks.front().getId(), work1.getId());
         }
     }
 
@@ -159,14 +173,17 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setWorks(std::array{ work1.get(), work2.get() });
+            Track::setWorks(session, track.getId(), std::array{ work1.getId(), work2.getId() });
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Work::findOrphanIds(session).size(), 0);
 
-            const auto trackWorks{ track->getWorks() };
+            std::vector<Work> trackWorks;
+            Work::find(session, track.getId(), [&](const Work& trackWork) {
+                trackWorks.push_back(trackWork);
+            });
             EXPECT_EQ(trackWorks.size(), 2);
         }
     }
@@ -180,18 +197,32 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setWorks(std::array{ work.get() });
-            track2.get().modify()->setWorks(std::array{ work.get() });
-            track3.get().modify()->setWorks(std::array{ work.get() });
+            Track::setWorks(session, track1.getId(), std::array{ work.getId() });
+            Track::setWorks(session, track2.getId(), std::array{ work.getId() });
+            Track::setWorks(session, track3.getId(), std::array{ work.getId() });
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Work::findOrphanIds(session).size(), 0);
 
-            EXPECT_EQ(track1->getWorks().size(), 1);
-            EXPECT_EQ(track2->getWorks().size(), 1);
-            EXPECT_EQ(track3->getWorks().size(), 1);
+            std::vector<Work> track1Works;
+            Work::find(session, track1.getId(), [&](const Work& trackWork) {
+                track1Works.push_back(trackWork);
+            });
+            EXPECT_EQ(track1Works.size(), 1);
+
+            std::vector<Work> track2Works;
+            Work::find(session, track2.getId(), [&](const Work& trackWork) {
+                track2Works.push_back(trackWork);
+            });
+            EXPECT_EQ(track2Works.size(), 1);
+
+            std::vector<Work> track3Works;
+            Work::find(session, track3.getId(), [&](const Work& trackWork) {
+                track3Works.push_back(trackWork);
+            });
+            EXPECT_EQ(track3Works.size(), 1);
         }
     }
 
@@ -202,11 +233,10 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            Work::pointer work{ Work::create(session, longName, std::optional<core::UUID>{}) };
-            ASSERT_TRUE(work);
-            EXPECT_EQ(work->getName().size(), Work::maxNameLength);
-            EXPECT_EQ(work->getName(), expectedName);
-            work.remove();
+            const Work work{ Work::create(session, longName, std::optional<core::UUID>{}) };
+            EXPECT_EQ(work.getName().size(), Work::maxNameLength);
+            EXPECT_EQ(work.getName(), expectedName);
+            Work::destroy(session, std::array{ work.getId() });
         }
     }
 

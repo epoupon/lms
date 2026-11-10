@@ -24,7 +24,7 @@
 
 #include "database/objects/ArtistInfo.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,6 +36,14 @@ namespace lms::db::dbo
     public:
         ArtistInfo() = default;
         using db::ArtistInfo::ArtistInfo;
+
+        void syncIds()
+        {
+            _id = id();
+            _artistId = _artist.id();
+            _directoryId = _directory.id();
+        }
+        void applyIds();
 
         template<class Action>
         void persist(Action& a)

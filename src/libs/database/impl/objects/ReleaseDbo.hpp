@@ -25,7 +25,7 @@
 
 #include "database/objects/Release.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -43,6 +43,8 @@ namespace lms::db::dbo
         Country() = default;
         using db::Country::Country;
 
+        void syncIds() { _id = id(); }
+
         template<class Action>
         void persist(Action& a)
         {
@@ -58,6 +60,8 @@ namespace lms::db::dbo
     public:
         Label() = default;
         using db::Label::Label;
+
+        void syncIds() { _id = id(); }
 
         template<class Action>
         void persist(Action& a)
@@ -75,6 +79,8 @@ namespace lms::db::dbo
         ReleaseType() = default;
         using db::ReleaseType::ReleaseType;
 
+        void syncIds() { _id = id(); }
+
         template<class Action>
         void persist(Action& a)
         {
@@ -90,6 +96,12 @@ namespace lms::db::dbo
     public:
         Release() = default;
         using db::Release::Release;
+
+        void syncIds()
+        {
+            _id = id();
+            _preferredArtworkId = _preferredArtwork.id();
+        }
 
         template<class Action>
         void persist(Action& a)

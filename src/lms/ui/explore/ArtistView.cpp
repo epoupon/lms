@@ -71,7 +71,7 @@ namespace lms::ui
                 if (mbid)
                 {
                     auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    if (const db::Artist::pointer artist{ db::Artist::find(LmsApp->getDbSession(), *mbid) })
+                    if (const std::optional<db::Artist> artist{ db::Artist::find(LmsApp->getDbSession(), *mbid) })
                         return artist->getId();
                 }
 
@@ -125,7 +125,7 @@ namespace lms::ui
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const db::Artist::pointer artist{ db::Artist::find(LmsApp->getDbSession(), *artistId) };
+        const std::optional<db::Artist> artist{ db::Artist::find(LmsApp->getDbSession(), *artistId) };
         if (!artist)
             throw ArtistNotFoundException{};
 
@@ -138,38 +138,38 @@ namespace lms::ui
         refreshReleases();
         refreshAppearsOnReleases();
         refreshNonReleaseTracks();
-        refreshLinks(artist);
+        refreshLinks(*artist);
         refreshRelatedArtists(similarArtistIds);
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
 
         {
-            db::Genre::find(LmsApp->getDbSession(), db::Genre::FindParameters{}.setArtist(_artistId).setSortMethod(db::GenreSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Genre::pointer& genre) {
-                const db::GenreId genreId{ genre->getId() };
+            db::Genre::find(LmsApp->getDbSession(), db::Genre::FindParameters{}.setArtist(_artistId).setSortMethod(db::GenreSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Genre& genre) {
+                const db::GenreId genreId{ genre.getId() };
                 Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(genreId)) };
                 entry->clicked().connect([this, genreId] {
                     _filters.set(genreId);
                 });
             });
 
-            db::Grouping::find(LmsApp->getDbSession(), db::Grouping::FindParameters{}.setArtist(_artistId).setSortMethod(db::GroupingSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Grouping::pointer& grouping) {
-                const db::GroupingId groupingId{ grouping->getId() };
+            db::Grouping::find(LmsApp->getDbSession(), db::Grouping::FindParameters{}.setArtist(_artistId).setSortMethod(db::GroupingSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Grouping& grouping) {
+                const db::GroupingId groupingId{ grouping.getId() };
                 Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(groupingId)) };
                 entry->clicked().connect([this, groupingId] {
                     _filters.set(groupingId);
                 });
             });
 
-            db::Language::find(LmsApp->getDbSession(), db::Language::FindParameters{}.setArtist(_artistId).setSortMethod(db::LanguageSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Language::pointer& language) {
-                const db::LanguageId languageId{ language->getId() };
+            db::Language::find(LmsApp->getDbSession(), db::Language::FindParameters{}.setArtist(_artistId).setSortMethod(db::LanguageSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Language& language) {
+                const db::LanguageId languageId{ language.getId() };
                 Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(languageId)) };
                 entry->clicked().connect([this, languageId] {
                     _filters.set(languageId);
                 });
             });
 
-            db::Mood::find(LmsApp->getDbSession(), db::Mood::FindParameters{}.setArtist(_artistId).setSortMethod(db::MoodSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Mood::pointer& mood) {
-                const db::MoodId moodId{ mood->getId() };
+            db::Mood::find(LmsApp->getDbSession(), db::Mood::FindParameters{}.setArtist(_artistId).setSortMethod(db::MoodSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Mood& mood) {
+                const db::MoodId moodId{ mood.getId() };
                 Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(moodId)) };
                 entry->clicked().connect([this, moodId] {
                     _filters.set(moodId);
@@ -178,8 +178,8 @@ namespace lms::ui
 
             for (const db::ClusterTypeId clusterTypeId : db::ClusterType::findIds(LmsApp->getDbSession()))
             {
-                db::Cluster::find(LmsApp->getDbSession(), db::Cluster::FindParameters{}.setArtist(_artistId).setClusterType(clusterTypeId).setSortMethod(db::ClusterSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Cluster::pointer& cluster) {
-                    const db::ClusterId clusterId{ cluster->getId() };
+                db::Cluster::find(LmsApp->getDbSession(), db::Cluster::FindParameters{}.setArtist(_artistId).setClusterType(clusterTypeId).setSortMethod(db::ClusterSortMethod::TrackCountDesc).setRange(db::Range{ 0, maxTagCloudItems }), [&](const db::Cluster& cluster) {
+                    const db::ClusterId clusterId{ cluster.getId() };
                     Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(clusterId)) };
                     entry->clicked().connect([this, clusterId] {
                         _filters.add(clusterId);
@@ -260,11 +260,11 @@ namespace lms::ui
 
     void Artist::refreshArtistInfo()
     {
-        db::ArtistInfo::find(LmsApp->getDbSession(), _artistId, db::Range{ .offset = 0, .size = 1 }, [this](const db::ArtistInfo::pointer& _info) {
-            if (!_info->getBiography().empty())
+        db::ArtistInfo::find(LmsApp->getDbSession(), _artistId, db::Range{ .offset = 0, .size = 1 }, [this](const db::ArtistInfo& _info) {
+            if (!_info.getBiography().empty())
             {
                 setCondition("if-has-biography", true);
-                Wt::WText* bio{ bindNew<Wt::WText>("biography", std::string{ _info->getBiography() }, Wt::TextFormat::Plain) };
+                Wt::WText* bio{ bindNew<Wt::WText>("biography", std::string{ _info.getBiography() }, Wt::TextFormat::Plain) };
                 bio->setInline(false);
                 bio->setToolTip(tr("Lms.Explore.Artist.biography"));
                 bio->clicked().connect([bio] {
@@ -280,15 +280,20 @@ namespace lms::ui
 
         db::Release::FindParameters params;
         params.setArtist(_artistId);
-        params.setSortMethod(LmsApp->getUser()->getUIArtistReleaseSortMethod());
+        params.setSortMethod(LmsApp->getUser().getUIArtistReleaseSortMethod());
 
         // first pass: gather all ids and sort by release type
         bool hasReleaseWithDifferentName{};
-        db::Release::find(LmsApp->getDbSession(), params, [&](const db::Release::pointer& release) {
-            ReleaseType releaseType{ parseReleaseType(release->getReleaseTypeNames()) };
-            _releaseContainers[releaseType].releases.push_back(release->getId());
+        db::Release::find(LmsApp->getDbSession(), params, [&](const db::Release& release) {
+            std::vector<std::string> releaseTypeNames;
+            db::ReleaseType::find(LmsApp->getDbSession(), release.getId(), [&](const db::ReleaseType& type) {
+                releaseTypeNames.emplace_back(type.getName());
+            });
 
-            if (release->getArtistDisplayName() != _artistName)
+            ReleaseType releaseType{ parseReleaseType(releaseTypeNames) };
+            _releaseContainers[releaseType].releases.push_back(release.getId());
+
+            if (release.getArtistDisplayName() != _artistName)
                 hasReleaseWithDifferentName = true;
         });
 
@@ -333,11 +338,11 @@ namespace lms::ui
             params.setSortMethod(db::ReleaseSortMethod::OriginalDateDesc);
 
             bool found{};
-            db::Release::find(LmsApp->getDbSession(), params, [&](const db::Release::pointer& release) {
-                if (release->hasArtist(_artistId))
+            db::Release::find(LmsApp->getDbSession(), params, [&](const db::Release& release) {
+                if (db::Release::hasArtist(LmsApp->getDbSession(), release.getId(), _artistId))
                     return;
 
-                _appearsOnReleases[linkType].push_back(release->getId());
+                _appearsOnReleases[linkType].push_back(release.getId());
                 found = true;
             });
 
@@ -420,17 +425,17 @@ namespace lms::ui
 
         for (const db::ArtistId artistId : similarArtistsId)
         {
-            const db::Artist::pointer similarArtist{ db::Artist::find(LmsApp->getDbSession(), artistId) };
+            const std::optional<db::Artist> similarArtist{ db::Artist::find(LmsApp->getDbSession(), artistId) };
             if (!similarArtist)
                 continue;
 
-            similarArtistsContainer->addWidget(ArtistListHelpers::createEntry(similarArtist));
+            similarArtistsContainer->addWidget(ArtistListHelpers::createEntry(*similarArtist));
         }
     }
 
-    void Artist::refreshLinks(const db::Artist::pointer& artist)
+    void Artist::refreshLinks(const db::Artist& artist)
     {
-        const auto mbid{ artist->getMBID() };
+        const auto mbid{ artist.getMBID() };
         if (mbid)
         {
             setCondition("if-has-mbid", true);
@@ -442,12 +447,12 @@ namespace lms::ui
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        if (const db::Artist::pointer artist{ db::Artist::find(LmsApp->getDbSession(), _artistId) })
+        if (const std::optional<db::Artist> artist{ db::Artist::find(LmsApp->getDbSession(), _artistId) })
         {
             for (std::size_t i{ static_cast<std::size_t>(releaseContainer.container->getCount()) }; i < releaseContainer.releases.size(); ++i)
             {
-                const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseContainer.releases[i]) };
-                releaseContainer.container->add(releaseListHelpers::createEntry(release, displayOptions));
+                if (const std::optional<db::Release> release{ db::Release::find(LmsApp->getDbSession(), releaseContainer.releases[i]) })
+                    releaseContainer.container->add(releaseListHelpers::createEntry(*release, displayOptions));
             }
         }
 
@@ -463,8 +468,8 @@ namespace lms::ui
 
         for (std::size_t index{ startIndex }; index < endIndex; ++index)
         {
-            if (const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), _nonReleaseTracks[index]) })
-                _trackContainer->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
+            if (const std::optional<db::Track> track{ db::Track::find(LmsApp->getDbSession(), _nonReleaseTracks[index]) })
+                _trackContainer->add(TrackListHelpers::createEntry(*track, _playQueueController, _filters));
         }
 
         _trackContainer->setHasMore(endIndex < _nonReleaseTracks.size());

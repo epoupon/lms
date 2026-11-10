@@ -24,7 +24,7 @@
 
 #include "database/objects/ReleaseFeedback.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -37,7 +37,14 @@ namespace lms::db::dbo
         ReleaseFeedback() = default;
         using db::ReleaseFeedback::ReleaseFeedback;
 
-        ReleaseFeedback(const ObjectPtr<db::Release>& release, const ObjectPtr<db::User>& user);
+        ReleaseFeedback(Wt::Dbo::ptr<Release> release, Wt::Dbo::ptr<User> user);
+
+        void syncIds()
+        {
+            _id = id();
+            _releaseId = _release.id();
+            _userId = _user.id();
+        }
 
         template<class Action>
         void persist(Action& a)

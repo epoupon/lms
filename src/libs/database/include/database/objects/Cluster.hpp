@@ -27,7 +27,6 @@
 
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ClusterId.hpp"
@@ -35,14 +34,14 @@
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class Track;
     class ClusterType;
 
-    class Cluster : public Object<Cluster, ClusterId>
+    class Cluster : public detail::Object<Cluster, ClusterId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -100,38 +99,42 @@ namespace lms::db
             }
         };
 
-        static pointer create(ISession& session, const ObjectPtr<ClusterType>& type, std::string_view name);
+        static Cluster create(ISession& session, ClusterTypeId type, std::string_view name);
         static void destroy(ISession& session, std::span<const ClusterId> ids);
 
         // Find utility
         static std::size_t getCount(ISession& session);
         static std::vector<ClusterId> findIds(ISession& session, const FindParameters& params);
-        static std::vector<pointer> find(ISession& session, const FindParameters& params);
-        static void find(ISession& session, const FindParameters& params, std::function<void(const pointer& cluster)> _func);
-        static pointer find(ISession& session, ClusterId id);
+        static std::vector<Cluster> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Cluster& cluster)>& func);
+        static std::optional<Cluster> find(ISession& session, ClusterId id);
+        static std::optional<Cluster> find(ISession& session, ClusterTypeId type, std::string_view name);
         static std::vector<ClusterId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         // May be very slow
         static std::size_t computeTrackCount(ISession& session, ClusterId id);
         static std::size_t computeReleaseCount(ISession& session, ClusterId id);
 
+        // Updates
+        static void addTrack(ISession& session, ClusterId id, TrackId track);
+
         // Accessors
         std::string_view getName() const { return _name; }
-        ObjectPtr<ClusterType> getType() const;
-        std::vector<TrackId> getTracks(std::optional<Range> range = std::nullopt) const;
-        void addTrack(const ObjectPtr<Track>& track);
+        ClusterTypeId getTypeId() const { return _typeId; }
 
     protected:
         Cluster() = default;
         explicit Cluster(std::string_view name);
 
         std::string _name;
+
+        ClusterTypeId _typeId;
     };
 
-    class ClusterType : public Object<ClusterType, ClusterTypeId>
+    class ClusterType : public detail::Object<ClusterType, ClusterTypeId>
     {
     public:
-        static pointer create(ISession& session, std::string_view name);
+        static ClusterType create(ISession& session, std::string_view name);
         static void destroy(ISession& session, std::span<const ClusterTypeId> ids);
 
         static constexpr std::size_t maxNameLength{ 512 };
@@ -139,9 +142,9 @@ namespace lms::db
         // Getters
         static std::size_t getCount(ISession& session);
         static std::vector<ClusterTypeId> findIds(ISession& session, std::optional<Range> range = std::nullopt);
-        static void find(ISession& session, const std::function<void(const pointer&)>& func);
-        static pointer find(ISession& session, std::string_view name);
-        static pointer find(ISession& session, ClusterTypeId id);
+        static void find(ISession& session, const std::function<void(const ClusterType&)>& func);
+        static std::optional<ClusterType> find(ISession& session, std::string_view name);
+        static std::optional<ClusterType> find(ISession& session, ClusterTypeId id);
         static std::vector<ClusterTypeId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
         static std::vector<ClusterTypeId> findUsed(ISession& session, std::optional<Range> range = std::nullopt);
 
@@ -149,8 +152,6 @@ namespace lms::db
 
         // Accessors
         std::string_view getName() const { return _name; }
-        std::vector<Cluster::pointer> getClusters() const;
-        Cluster::pointer getCluster(const std::string& name) const;
 
     protected:
         ClusterType() = default;

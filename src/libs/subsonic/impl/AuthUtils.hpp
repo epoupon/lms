@@ -62,7 +62,7 @@ namespace lms::api::subsonic::utils
     bool checkAuthToken(std::string_view apiKey, std::string_view salt, std::string_view token);
 
     // Throws UserNotAuthorizedError if no such user exists
-    db::User::pointer getUserFromUserId(db::ISession& session, db::UserId userId);
+    db::User getUserFromUserId(db::ISession& session, db::UserId userId);
 
     // Throws on error
     db::UserId authenticateUser(const Wt::Http::Request& request, db::ISession& session);

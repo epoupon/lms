@@ -69,9 +69,9 @@ namespace lms::ui
                 if (!valueText(PasswordField).empty())
                 {
                     auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-                    const db::User::pointer user{ LmsApp->getUser() };
-                    _authPasswordService.setPassword(user->getId(), valueText(PasswordField).toUTF8());
-                    _authTokenService.clearAuthTokens("ui", user->getId());
+                    const db::User user{ LmsApp->getUser() };
+                    _authPasswordService.setPassword(user.getId(), valueText(PasswordField).toUTF8());
+                    _authTokenService.clearAuthTokens("ui", user.getId());
                 }
             }
 

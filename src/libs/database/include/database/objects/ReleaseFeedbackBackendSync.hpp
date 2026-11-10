@@ -21,12 +21,13 @@
 
 #include <functional>
 #include <optional>
+#include <span>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ReleaseFeedbackBackendSyncId.hpp"
 #include "database/objects/ReleaseFeedbackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
@@ -34,10 +35,11 @@ namespace lms::db
     class ReleaseFeedback;
 
     // Tracks the delivery of a single ReleaseFeedback to a given external feedback backend.
-    class ReleaseFeedbackBackendSync : public Object<ReleaseFeedbackBackendSync, ReleaseFeedbackBackendSyncId>
+    class ReleaseFeedbackBackendSync : public detail::Object<ReleaseFeedbackBackendSync, ReleaseFeedbackBackendSyncId>
     {
     public:
-        static pointer create(ISession& session, const ObjectPtr<ReleaseFeedback>& releaseFeedback, FeedbackBackend backend);
+        static ReleaseFeedbackBackendSync create(ISession& session, ReleaseFeedbackId releaseFeedback, FeedbackBackend backend);
+        static void destroy(ISession& session, std::span<const ReleaseFeedbackBackendSyncId> ids);
 
         struct FindParameters
         {
@@ -63,12 +65,14 @@ namespace lms::db
         };
 
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, ReleaseFeedbackBackendSyncId id);
-        static pointer find(ISession& session, ReleaseFeedbackId releaseFeedbackId, FeedbackBackend backend);
+        static std::optional<ReleaseFeedbackBackendSync> find(ISession& session, ReleaseFeedbackBackendSyncId id);
+        static std::optional<ReleaseFeedbackBackendSync> find(ISession& session, ReleaseFeedbackId releaseFeedbackId, FeedbackBackend backend);
         static std::vector<ReleaseFeedbackBackendSyncId> find(ISession& session, const FindParameters& params);
-        static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const ReleaseFeedbackBackendSync&)>& func);
 
-        ObjectPtr<ReleaseFeedback> getReleaseFeedback() const;
+        static void update(ISession& session, const ReleaseFeedbackBackendSync& releaseFeedbackBackendSync);
+
+        ReleaseFeedbackId getReleaseFeedbackId() const { return _releaseFeedbackId; }
         FeedbackBackend getBackend() const { return _backend; }
         SyncState getSyncState() const { return _syncState; }
 
@@ -80,5 +84,6 @@ namespace lms::db
 
         FeedbackBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };
+        ReleaseFeedbackId _releaseFeedbackId;
     };
 } // namespace lms::db

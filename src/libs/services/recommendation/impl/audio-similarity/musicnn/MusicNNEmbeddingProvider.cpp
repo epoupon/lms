@@ -27,12 +27,12 @@ namespace lms::recommendation
 {
     namespace
     {
-        void readEmbeddings(const db::ObjectPtr<db::TrackMusicNNEmbeddings>& dbEmbeddings, MusicNNEmbeddingProvider::Vector& vec)
+        void readEmbeddings(const db::TrackMusicNNEmbeddings& dbEmbeddings, MusicNNEmbeddingProvider::Vector& vec)
         {
             static_assert(MusicNNEmbeddingProvider::Vector::getSize() == MusicNNEmbeddingProvider::DimCount);
 
             audio::TrackMusicNNEmbeddings embeddings{};
-            audio::trackMusicNNEmbeddingsFromBlob(dbEmbeddings->getData(), embeddings);
+            audio::trackMusicNNEmbeddingsFromBlob(dbEmbeddings.getData(), embeddings);
 
             std::size_t outputIndex{};
 
@@ -45,9 +45,9 @@ namespace lms::recommendation
 
     bool MusicNNEmbeddingProvider::getVector(db::ISession& session, db::TrackId trackId, Vector& vec)
     {
-        const db::TrackMusicNNEmbeddings::pointer embeddings{ db::TrackMusicNNEmbeddings::find(session, trackId) };
+        const std::optional<db::TrackMusicNNEmbeddings> embeddings{ db::TrackMusicNNEmbeddings::find(session, trackId) };
         if (embeddings && !embeddings->getData().empty())
-            readEmbeddings(embeddings, vec);
+            readEmbeddings(*embeddings, vec);
 
         return embeddings && !embeddings->getData().empty();
     }
@@ -55,11 +55,11 @@ namespace lms::recommendation
     void MusicNNEmbeddingProvider::visitVectors(db::ISession& session, const std::function<void(db::TrackId, Vector&)>& visitor)
     {
         Vector vec;
-        db::TrackMusicNNEmbeddings::find(session, [&](const db::TrackMusicNNEmbeddings::pointer& embeddings) {
-            if (embeddings->getData().empty())
+        db::TrackMusicNNEmbeddings::find(session, [&](const db::TrackMusicNNEmbeddings& embeddings) {
+            if (embeddings.getData().empty())
                 return;
             readEmbeddings(embeddings, vec);
-            visitor(embeddings->getTrackId(), vec);
+            visitor(embeddings.getTrackId(), vec);
         });
     }
 } // namespace lms::recommendation

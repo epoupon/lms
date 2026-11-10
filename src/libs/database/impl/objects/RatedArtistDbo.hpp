@@ -24,7 +24,7 @@
 
 #include "database/objects/RatedArtist.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -37,7 +37,14 @@ namespace lms::db::dbo
         RatedArtist() = default;
         using db::RatedArtist::RatedArtist;
 
-        RatedArtist(const ObjectPtr<db::Artist>& artist, const ObjectPtr<db::User>& user);
+        RatedArtist(Wt::Dbo::ptr<Artist> artist, Wt::Dbo::ptr<User> user);
+
+        void syncIds()
+        {
+            _id = id();
+            _artistId = _artist.id();
+            _userId = _user.id();
+        }
 
         template<class Action>
         void persist(Action& a)

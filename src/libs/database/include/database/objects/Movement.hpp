@@ -19,25 +19,29 @@
 
 #pragma once
 
+#include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
-#include "database/Object.hpp"
 #include "database/objects/MovementId.hpp"
 #include "database/objects/TrackId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class Track;
 
-    class Movement : public Object<Movement, MovementId>
+    class Movement : public detail::Object<Movement, MovementId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
 
-        static pointer create(ISession& session, std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<Track>& track);
+        static Movement create(ISession& session, std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, TrackId track);
+
+        static void destroy(ISession& session, std::span<const MovementId> ids);
+        static void find(ISession& session, TrackId trackId, const std::function<void(const Movement&)>& func); // in creation order
 
         std::string_view getName() const { return _name; }
         std::optional<std::size_t> getNumber() const { return _number; }

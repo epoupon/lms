@@ -19,6 +19,8 @@
 
 #include "AudioFileScanOperation.hpp"
 
+#include <array>
+
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/PartialDateTime.hpp"
@@ -68,70 +70,102 @@ namespace lms::scanner
 {
     namespace
     {
-        void createTrackArtistLinks(db::ISession& session, const db::Track::pointer& track, db::TrackArtistLinkType linkType, std::string_view role, std::span<const Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
+        void createTrackArtistLinks(db::ISession& session, db::TrackId track, db::TrackArtistLinkType linkType, std::string_view role, std::span<const Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
         {
             for (const Artist& artist : artists)
             {
-                db::Artist::pointer dbArtist{ helpers::getOrCreateArtist(session, artist, allowArtistMBIDFallback) };
+                const db::Artist dbArtist{ helpers::getOrCreateArtist(session, artist, allowArtistMBIDFallback) };
 
-                const bool matchedUsingMbid{ artist.mbid.has_value() && dbArtist->getMBID() == artist.mbid };
-                db::TrackArtistLink::pointer link{ db::TrackArtistLink::create(session, track, dbArtist, linkType, role, matchedUsingMbid) };
-                link.modify()->setArtistName(artist.name);
+                const bool matchedUsingMbid{ artist.mbid.has_value() && dbArtist.getMBID() == artist.mbid };
+                db::TrackArtistLink link{ db::TrackArtistLink::create(session, track, dbArtist.getId(), linkType, role, matchedUsingMbid) };
+                link.setArtistName(artist.name);
                 if (artist.sortName)
-                    link.modify()->setArtistSortName(*artist.sortName);
+                    link.setArtistSortName(*artist.sortName);
+                db::TrackArtistLink::update(session, link);
             }
         }
 
-        void createTrackArtistLinks(db::ISession& session, const db::Track::pointer& track, db::TrackArtistLinkType linkType, std::span<const Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
+        void createTrackArtistLinks(db::ISession& session, db::TrackId track, db::TrackArtistLinkType linkType, std::span<const Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
         {
             constexpr std::string_view noRole{};
             createTrackArtistLinks(session, track, linkType, noRole, artists, allowArtistMBIDFallback);
         }
 
-        void createReleaseArtistLinks(db::ISession& session, const db::Release::pointer& dbRelease, std::span<const Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
+        void createReleaseArtistLinks(db::ISession& session, db::ReleaseId releaseId, std::span<const Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
         {
             for (const Artist& artist : artists)
             {
-                db::Artist::pointer dbArtist{ helpers::getOrCreateArtist(session, artist, allowArtistMBIDFallback) };
+                const db::Artist dbArtist{ helpers::getOrCreateArtist(session, artist, allowArtistMBIDFallback) };
 
-                const bool matchedUsingMbid{ artist.mbid.has_value() && dbArtist->getMBID() == artist.mbid };
-                db::ReleaseArtistLink::pointer link{ db::ReleaseArtistLink::create(session, dbRelease, dbArtist, matchedUsingMbid) };
-                link.modify()->setArtistName(artist.name);
+                const bool matchedUsingMbid{ artist.mbid.has_value() && dbArtist.getMBID() == artist.mbid };
+                db::ReleaseArtistLink link{ db::ReleaseArtistLink::create(session, releaseId, dbArtist.getId(), matchedUsingMbid) };
+                link.setArtistName(artist.name);
                 if (artist.sortName)
-                    link.modify()->setArtistSortName(*artist.sortName);
+                    link.setArtistSortName(*artist.sortName);
+                db::ReleaseArtistLink::update(session, link);
             }
         }
 
-        db::ReleaseType::pointer getOrCreateReleaseType(db::ISession& session, std::string_view name)
+        db::ReleaseType getOrCreateReleaseType(db::ISession& session, std::string_view name)
         {
-            db::ReleaseType::pointer releaseType{ db::ReleaseType::find(session, name) };
-            if (!releaseType)
-                releaseType = db::ReleaseType::create(session, name);
+            if (std::optional<db::ReleaseType> releaseType{ db::ReleaseType::find(session, name) })
+                return *releaseType;
 
-            return releaseType;
+            return db::ReleaseType::create(session, name);
         }
 
-        db::Country::pointer getOrCreateCountry(db::ISession& session, std::string_view name)
+        db::Country getOrCreateCountry(db::ISession& session, std::string_view name)
         {
-            db::Country::pointer country{ db::Country::find(session, name) };
-            if (!country)
-                country = db::Country::create(session, name);
+            if (std::optional<db::Country> country{ db::Country::find(session, name) })
+                return *country;
 
-            return country;
+            return db::Country::create(session, name);
         }
 
-        db::Label::pointer getOrCreateLabel(db::ISession& session, std::string_view name)
+        db::Label getOrCreateLabel(db::ISession& session, std::string_view name)
         {
-            db::Label::pointer label{ db::Label::find(session, name) };
-            if (!label)
-                label = db::Label::create(session, name);
+            if (std::optional<db::Label> label{ db::Label::find(session, name) })
+                return *label;
 
-            return label;
+            return db::Label::create(session, name);
         }
 
-        bool needUpdateReleaseArtists(const db::Release::pointer& dbRelease, const Release& release)
+        std::vector<std::string> getLabelNames(db::ISession& session, db::ReleaseId releaseId)
         {
-            const std::vector<db::ReleaseArtistLink::pointer> dbArtistLinks{ dbRelease->getArtistLinks() };
+            std::vector<std::string> names;
+            db::Label::find(session, releaseId, [&](const db::Label& label) {
+                names.emplace_back(label.getName());
+            });
+
+            return names;
+        }
+
+        std::vector<std::string> getCountryNames(db::ISession& session, db::ReleaseId releaseId)
+        {
+            std::vector<std::string> names;
+            db::Country::find(session, releaseId, [&](const db::Country& country) {
+                names.emplace_back(country.getName());
+            });
+
+            return names;
+        }
+
+        std::vector<std::string> getReleaseTypeNames(db::ISession& session, db::ReleaseId releaseId)
+        {
+            std::vector<std::string> names;
+            db::ReleaseType::find(session, releaseId, [&](const db::ReleaseType& releaseType) {
+                names.emplace_back(releaseType.getName());
+            });
+
+            return names;
+        }
+
+        bool needUpdateReleaseArtists(db::ISession& session, db::ReleaseId releaseId, const Release& release)
+        {
+            std::vector<db::ReleaseArtistLink> dbArtistLinks;
+            db::ReleaseArtistLink::find(session, releaseId, [&](const db::ReleaseArtistLink& link) {
+                dbArtistLinks.push_back(link);
+            });
 
             if (dbArtistLinks.size() != release.artists.size())
                 return true;
@@ -139,29 +173,29 @@ namespace lms::scanner
             // Must be in same order
             for (std::size_t i{}; i < dbArtistLinks.size(); ++i)
             {
-                const db::ReleaseArtistLink::pointer& dbArtistLink{ dbArtistLinks[i] };
+                const db::ReleaseArtistLink& dbArtistLink{ dbArtistLinks[i] };
                 const Artist& artist{ release.artists[i] };
 
-                if (dbArtistLink->getArtistName() != artist.name)
+                if (dbArtistLink.getArtistName() != artist.name)
                     return true;
 
                 const std::string_view artistSortName{ artist.sortName ? std::string_view{ *artist.sortName } : std::string_view{} };
-                if (dbArtistLink->getArtistSortName() != artistSortName)
+                if (dbArtistLink.getArtistSortName() != artistSortName)
                     return true;
 
-                if (!dbArtistLink->isArtistMBIDMatched() && artist.mbid)
+                if (!dbArtistLink.isArtistMBIDMatched() && artist.mbid)
                     return true;
 
-                if (dbArtistLink->isArtistMBIDMatched() && !artist.mbid)
+                if (dbArtistLink.isArtistMBIDMatched() && !artist.mbid)
                     return true;
 
                 if (artist.mbid)
                 {
-                    const db::Artist::pointer dbArtist{ dbArtistLink->getArtist() };
+                    const std::optional<db::Artist> dbArtist{ db::Artist::find(session, dbArtistLink.getArtistId()) };
                     if (!dbArtist)
                         return true;
 
-                    if (dbArtistLink->getArtist()->getMBID() != artist.mbid)
+                    if (dbArtist->getMBID() != artist.mbid)
                         return true;
                 }
             }
@@ -169,63 +203,92 @@ namespace lms::scanner
             return false;
         }
 
-        void updateReleaseIfNeeded(db::ISession& session, db::Release::pointer dbRelease, const Release& release, helpers::AllowFallbackOnMBIDEntry allowFallback)
+        void updateReleaseIfNeeded(db::ISession& session, db::Release dbRelease, const Release& release, helpers::AllowFallbackOnMBIDEntry allowFallback)
         {
-            if (dbRelease->getName() != release.name)
-                dbRelease.modify()->setName(release.name);
-            if (dbRelease->getSortName() != release.sortName)
-                dbRelease.modify()->setSortName(release.sortName);
-            if (dbRelease->getGroupMBID() != release.groupMBID)
-                dbRelease.modify()->setGroupMBID(release.groupMBID);
-            if (dbRelease->getTotalDisc() != release.mediumCount)
-                dbRelease.modify()->setTotalDisc(release.mediumCount);
-            if (dbRelease->getArtistDisplayName() != release.artistDisplayName)
-                dbRelease.modify()->setArtistDisplayName(release.artistDisplayName);
-            if (dbRelease->isCompilation() != release.isCompilation)
-                dbRelease.modify()->setCompilation(release.isCompilation);
-            if (dbRelease->getBarcode() != release.barcode)
-                dbRelease.modify()->setBarcode(release.barcode);
-            if (dbRelease->getComment() != release.comment)
-                dbRelease.modify()->setComment(release.comment);
-            if (dbRelease->getReleaseTypeNames() != release.releaseTypes)
+            bool changed{};
+            if (dbRelease.getName() != release.name)
             {
-                dbRelease.modify()->clearReleaseTypes();
+                dbRelease.setName(release.name);
+                changed = true;
+            }
+            if (dbRelease.getSortName() != release.sortName)
+            {
+                dbRelease.setSortName(release.sortName);
+                changed = true;
+            }
+            if (dbRelease.getGroupMBID() != release.groupMBID)
+            {
+                dbRelease.setGroupMBID(release.groupMBID);
+                changed = true;
+            }
+            if (dbRelease.getTotalDisc() != release.mediumCount)
+            {
+                dbRelease.setTotalDisc(release.mediumCount);
+                changed = true;
+            }
+            if (dbRelease.getArtistDisplayName() != release.artistDisplayName)
+            {
+                dbRelease.setArtistDisplayName(release.artistDisplayName);
+                changed = true;
+            }
+            if (dbRelease.isCompilation() != release.isCompilation)
+            {
+                dbRelease.setCompilation(release.isCompilation);
+                changed = true;
+            }
+            if (dbRelease.getBarcode() != release.barcode)
+            {
+                dbRelease.setBarcode(release.barcode);
+                changed = true;
+            }
+            if (dbRelease.getComment() != release.comment)
+            {
+                dbRelease.setComment(release.comment);
+                changed = true;
+            }
+            if (changed)
+                db::Release::update(session, dbRelease);
+
+            const db::ReleaseId releaseId{ dbRelease.getId() };
+            if (getReleaseTypeNames(session, releaseId) != release.releaseTypes)
+            {
+                db::Release::clearReleaseTypes(session, releaseId);
                 for (std::string_view releaseType : release.releaseTypes)
-                    dbRelease.modify()->addReleaseType(getOrCreateReleaseType(session, releaseType));
+                    db::Release::addReleaseType(session, releaseId, getOrCreateReleaseType(session, releaseType).getId());
             }
-            if (dbRelease->getCountryNames() != release.countries)
+            if (getCountryNames(session, releaseId) != release.countries)
             {
-                dbRelease.modify()->clearCountries();
+                db::Release::clearCountries(session, releaseId);
                 for (std::string_view country : release.countries)
-                    dbRelease.modify()->addCountry(getOrCreateCountry(session, country));
+                    db::Release::addCountry(session, releaseId, getOrCreateCountry(session, country).getId());
             }
-            if (dbRelease->getLabelNames() != release.labels)
+            if (getLabelNames(session, releaseId) != release.labels)
             {
-                dbRelease.modify()->clearLabels();
+                db::Release::clearLabels(session, releaseId);
                 for (std::string_view label : release.labels)
-                    dbRelease.modify()->addLabel(getOrCreateLabel(session, label));
+                    db::Release::addLabel(session, releaseId, getOrCreateLabel(session, label).getId());
             }
-            if (needUpdateReleaseArtists(dbRelease, release))
+            if (needUpdateReleaseArtists(session, releaseId, release))
             {
-                dbRelease.modify()->clearArtistLinks();
-                createReleaseArtistLinks(session, dbRelease, release.artists, allowFallback);
+                db::Release::clearArtistLinks(session, releaseId);
+                createReleaseArtistLinks(session, releaseId, release.artists, allowFallback);
             }
         }
 
         // Compare release level info
-        bool isReleaseMatching(const db::Release::pointer& dbCandidateRelease, const Release& release)
+        bool isReleaseMatching(db::ISession& session, const db::Release& dbCandidateRelease, const Release& release)
         {
             // TODO: add more criterias?
-            return dbCandidateRelease->getName() == release.name
-                && dbCandidateRelease->getTotalDisc() == release.mediumCount
-                && dbCandidateRelease->isCompilation() == release.isCompilation
-                && dbCandidateRelease->getLabelNames() == release.labels
-                && dbCandidateRelease->getBarcode() == release.barcode;
+            return dbCandidateRelease.getName() == release.name
+                && dbCandidateRelease.getTotalDisc() == release.mediumCount
+                && dbCandidateRelease.isCompilation() == release.isCompilation
+                && getLabelNames(session, dbCandidateRelease.getId()) == release.labels
+                && dbCandidateRelease.getBarcode() == release.barcode;
         }
 
-        db::Release::pointer getOrCreateRelease(db::ISession& session, const Release& release, const db::Directory::pointer& currentDirectory, helpers::AllowFallbackOnMBIDEntry allowFallback)
+        db::ReleaseId getOrCreateRelease(db::ISession& session, const Release& release, const db::Directory& currentDirectory, helpers::AllowFallbackOnMBIDEntry allowFallback)
         {
-            db::Release::pointer dbRelease;
+            std::optional<db::Release> dbRelease;
 
             // First try to get by MBID: fastest, safest
             if (release.mbid)
@@ -237,27 +300,27 @@ namespace lms::scanner
             else if (release.name.empty())
             {
                 // No release name (only mbid) -> nothing to do
-                return dbRelease;
+                return db::ReleaseId{};
             }
 
             // Fall back on release name (collisions may occur)
             // First try using all sibling directories (case for Album/DiscX), only if the disc number is set
-            const db::DirectoryId parentDirectoryId{ currentDirectory->getParentDirectoryId() };
+            const db::DirectoryId parentDirectoryId{ currentDirectory.getParentDirectoryId() };
             if (!dbRelease && release.mediumCount && *release.mediumCount > 1 && parentDirectoryId.isValid())
             {
                 db::Release::FindParameters params;
                 params.setParentDirectory(parentDirectoryId);
                 params.setName(release.name);
-                db::Release::find(session, params, [&](const db::Release::pointer& dbCandidateRelease) {
+                db::Release::find(session, params, [&](const db::Release& dbCandidateRelease) {
                     // Already found a candidate
                     if (dbRelease)
                         return;
 
                     // Do not fallback on properly tagged releases
-                    if (dbCandidateRelease->getMBID().has_value())
+                    if (dbCandidateRelease.getMBID().has_value())
                         return;
 
-                    if (!isReleaseMatching(dbCandidateRelease, release))
+                    if (!isReleaseMatching(session, dbCandidateRelease, release))
                         return;
 
                     dbRelease = dbCandidateRelease;
@@ -269,18 +332,18 @@ namespace lms::scanner
             if (!dbRelease)
             {
                 db::Release::FindParameters params;
-                params.setDirectory(currentDirectory->getId());
+                params.setDirectory(currentDirectory.getId());
                 params.setName(release.name);
-                db::Release::find(session, params, [&](const db::Release::pointer& dbCandidateRelease) {
+                db::Release::find(session, params, [&](const db::Release& dbCandidateRelease) {
                     // Already found a candidate
                     if (dbRelease)
                         return;
 
                     // Do not fallback on properly tagged releases
-                    if (dbCandidateRelease->getMBID().has_value())
+                    if (dbCandidateRelease.getMBID().has_value())
                         return;
 
-                    if (!isReleaseMatching(dbCandidateRelease, release))
+                    if (!isReleaseMatching(session, dbCandidateRelease, release))
                         return;
 
                     dbRelease = dbCandidateRelease;
@@ -290,107 +353,129 @@ namespace lms::scanner
             if (!dbRelease)
                 dbRelease = db::Release::create(session, release.name);
 
-            updateReleaseIfNeeded(session, dbRelease, release, allowFallback);
-            return dbRelease;
+            updateReleaseIfNeeded(session, *dbRelease, release, allowFallback);
+            return dbRelease->getId();
         }
 
-        db::Medium::pointer getOrCreateMedium(db::ISession& session, const Medium& medium, const db::Release::pointer& release)
+        db::MediumId getOrCreateMedium(db::ISession& session, const Medium& medium, db::ReleaseId releaseId)
         {
-            db::Medium::pointer dbMedium{ db::Medium::find(session, release->getId(), medium.position) };
+            std::optional<db::Medium> dbMedium{ db::Medium::find(session, releaseId, medium.position) };
             if (!dbMedium)
-                dbMedium = db::Medium::create(session, release);
+                dbMedium = db::Medium::create(session, releaseId);
 
+            bool changed{};
             if (dbMedium->getPosition() != medium.position)
-                dbMedium.modify()->setPosition(medium.position);
+            {
+                dbMedium->setPosition(medium.position);
+                changed = true;
+            }
             if (dbMedium->getMedia() != medium.media)
-                dbMedium.modify()->setMedia(medium.media);
+            {
+                dbMedium->setMedia(medium.media);
+                changed = true;
+            }
             if (dbMedium->getName() != medium.name)
-                dbMedium.modify()->setName(medium.name);
+            {
+                dbMedium->setName(medium.name);
+                changed = true;
+            }
             if (dbMedium->getTrackCount() != medium.trackCount)
-                dbMedium.modify()->setTrackCount(medium.trackCount);
+            {
+                dbMedium->setTrackCount(medium.trackCount);
+                changed = true;
+            }
             if (dbMedium->getReplayGain() != medium.replayGain)
-                dbMedium.modify()->setReplayGain(medium.replayGain);
+            {
+                dbMedium->setReplayGain(medium.replayGain);
+                changed = true;
+            }
 
-            return dbMedium;
+            if (changed)
+                db::Medium::update(session, *dbMedium);
+
+            return dbMedium->getId();
         }
 
-        std::vector<db::Genre::pointer> getOrCreateGenres(db::ISession& session, std::span<const std::string> names)
+        std::vector<db::GenreId> getOrCreateGenres(db::ISession& session, std::span<const std::string> names)
         {
-            std::vector<db::Genre::pointer> genres;
+            std::vector<db::GenreId> genres;
             genres.reserve(names.size());
             for (const std::string& name : names)
             {
-                db::Genre::pointer genre{ db::Genre::find(session, name) };
+                std::optional<db::Genre> genre{ db::Genre::find(session, name) };
                 if (!genre)
                     genre = db::Genre::create(session, name);
-                genres.push_back(genre);
+                genres.push_back(genre->getId());
             }
             return genres;
         }
 
-        std::vector<db::Grouping::pointer> getOrCreateGroupings(db::ISession& session, std::span<const std::string> names)
+        std::vector<db::GroupingId> getOrCreateGroupings(db::ISession& session, std::span<const std::string> names)
         {
-            std::vector<db::Grouping::pointer> groupings;
+            std::vector<db::GroupingId> groupings;
             groupings.reserve(names.size());
             for (const std::string& name : names)
             {
-                db::Grouping::pointer grouping{ db::Grouping::find(session, name) };
+                std::optional<db::Grouping> grouping{ db::Grouping::find(session, name) };
                 if (!grouping)
                     grouping = db::Grouping::create(session, name);
-                groupings.push_back(grouping);
+                groupings.push_back(grouping->getId());
             }
             return groupings;
         }
 
-        std::vector<db::Language::pointer> getOrCreateLanguages(db::ISession& session, std::span<const std::string> names)
+        std::vector<db::LanguageId> getOrCreateLanguages(db::ISession& session, std::span<const std::string> names)
         {
-            std::vector<db::Language::pointer> languages;
+            std::vector<db::LanguageId> languages;
             languages.reserve(names.size());
             for (const std::string& name : names)
             {
-                db::Language::pointer language{ db::Language::find(session, name) };
+                std::optional<db::Language> language{ db::Language::find(session, name) };
                 if (!language)
                     language = db::Language::create(session, name);
-                languages.push_back(language);
+                languages.push_back(language->getId());
             }
             return languages;
         }
 
-        std::vector<db::Mood::pointer> getOrCreateMoods(db::ISession& session, std::span<const std::string> names)
+        std::vector<db::MoodId> getOrCreateMoods(db::ISession& session, std::span<const std::string> names)
         {
-            std::vector<db::Mood::pointer> moods;
+            std::vector<db::MoodId> moods;
             moods.reserve(names.size());
             for (const std::string& name : names)
             {
-                db::Mood::pointer mood{ db::Mood::find(session, name) };
+                std::optional<db::Mood> mood{ db::Mood::find(session, name) };
                 if (!mood)
                     mood = db::Mood::create(session, name);
-                moods.push_back(mood);
+                moods.push_back(mood->getId());
             }
             return moods;
         }
 
-        std::vector<db::Work::pointer> getOrCreateWorks(db::ISession& session, db::ReleaseId releaseId, std::span<const Work> works)
+        std::vector<db::WorkId> getOrCreateWorks(db::ISession& session, db::ReleaseId releaseId, std::span<const Work> works)
         {
-            std::vector<db::Work::pointer> dbWorks;
+            std::vector<db::WorkId> dbWorks;
             dbWorks.reserve(works.size());
             for (const Work& work : works)
             {
                 // Work titles are often generic and collide across unrelated works, so
                 // without an mbid we only ever match a work already used on the same release, not globally by name
-                db::Work::pointer dbWork{ work.mbid ? db::Work::find(session, *work.mbid) : (releaseId.isValid() ? db::Work::find(session, releaseId, work.name) : db::Work::pointer{}) };
+                std::optional<db::Work> dbWork{ work.mbid ? db::Work::find(session, *work.mbid) : (releaseId.isValid() ? db::Work::find(session, releaseId, work.name) : std::optional<db::Work>{}) };
                 if (!dbWork)
                     dbWork = db::Work::create(session, work.name, work.mbid);
                 else if (dbWork->getName() != work.name)
-                    dbWork.modify()->setName(work.name);
-                dbWorks.push_back(dbWork);
+                {
+                    dbWork->setName(work.name);
+                    db::Work::update(session, *dbWork);
+                }
+                dbWorks.push_back(dbWork->getId());
             }
             return dbWorks;
         }
 
-        std::vector<db::Cluster::pointer> getOrCreateClusters(db::ISession& session, const Track& track)
+        std::vector<db::ClusterId> getOrCreateClusters(db::ISession& session, const Track& track)
         {
-            std::vector<db::Cluster::pointer> clusters;
+            std::vector<db::ClusterId> clusters;
 
             auto getOrCreateClusters{ [&](std::string_view tag, std::span<const std::string> values) {
                 auto clusterType = db::ClusterType::find(session, tag);
@@ -399,11 +484,11 @@ namespace lms::scanner
 
                 for (const auto& value : values)
                 {
-                    auto cluster{ clusterType->getCluster(value) };
+                    auto cluster{ db::Cluster::find(session, clusterType->getId(), value) };
                     if (!cluster)
-                        cluster = db::Cluster::create(session, clusterType, value);
+                        cluster = db::Cluster::create(session, clusterType->getId(), value);
 
-                    clusters.push_back(cluster);
+                    clusters.push_back(cluster->getId());
                 }
             } };
 
@@ -413,59 +498,55 @@ namespace lms::scanner
             return clusters;
         }
 
-        db::TrackLyrics::pointer createLyrics(db::ISession& session, const Lyrics& lyrics)
+        void createLyrics(db::ISession& session, db::TrackId trackId, const Lyrics& lyrics)
         {
-            db::TrackLyrics::pointer dbLyrics{ db::TrackLyrics::create(session) };
+            db::TrackLyrics dbLyrics{ db::TrackLyrics::create(session) };
 
-            dbLyrics.modify()->setLanguage(!lyrics.language.empty() ? lyrics.language : "xxx");
-            dbLyrics.modify()->setOffset(lyrics.offset);
-            dbLyrics.modify()->setDisplayArtist(lyrics.displayArtist);
-            dbLyrics.modify()->setDisplayTitle(lyrics.displayTitle);
+            dbLyrics.setTrack(trackId);
+            dbLyrics.setLanguage(!lyrics.language.empty() ? lyrics.language : "xxx");
+            dbLyrics.setOffset(lyrics.offset);
+            dbLyrics.setDisplayArtist(lyrics.displayArtist);
+            dbLyrics.setDisplayTitle(lyrics.displayTitle);
             if (!lyrics.synchronizedLines.empty())
-                dbLyrics.modify()->setSynchronizedLines(lyrics.synchronizedLines);
+                dbLyrics.setSynchronizedLines(lyrics.synchronizedLines);
             else
-                dbLyrics.modify()->setUnsynchronizedLines(lyrics.unsynchronizedLines);
-
-            return dbLyrics;
+                dbLyrics.setUnsynchronizedLines(lyrics.unsynchronizedLines);
+            db::TrackLyrics::update(session, dbLyrics);
         }
 
-        db::TrackEmbeddedImage::pointer getOrCreateTrackEmbeddedImage(db::ISession& session, const ImageInfo& imageInfo)
+        db::TrackEmbeddedImage getOrCreateTrackEmbeddedImage(db::ISession& session, const ImageInfo& imageInfo)
         {
-            db::TrackEmbeddedImage::pointer image{ db::TrackEmbeddedImage::find(session, imageInfo.size, db::ImageHashType{ imageInfo.hash }) };
-            if (!image)
-            {
-                image = db::TrackEmbeddedImage::create(session);
-                image.modify()->setSize(imageInfo.size);
-                image.modify()->setHash(db::ImageHashType{ imageInfo.hash });
-                image.modify()->setWidth(imageInfo.dimensions.width);
-                image.modify()->setHeight(imageInfo.dimensions.height);
-                image.modify()->setFormat(imageInfo.format);
+            if (std::optional<db::TrackEmbeddedImage> image{ db::TrackEmbeddedImage::find(session, imageInfo.size, db::ImageHashType{ imageInfo.hash }) })
+                return *image;
 
-                db::Artwork::create(session, image);
-            }
+            db::TrackEmbeddedImage image{ db::TrackEmbeddedImage::create(session) };
+            image.setSize(imageInfo.size);
+            image.setHash(db::ImageHashType{ imageInfo.hash });
+            image.setWidth(imageInfo.dimensions.width);
+            image.setHeight(imageInfo.dimensions.height);
+            image.setFormat(imageInfo.format);
+            db::TrackEmbeddedImage::update(session, image);
+
+            db::Artwork::create(session, image.getId());
 
             return image;
         }
 
-        db::TrackEmbeddedImageLink::pointer createTrackEmbeddedImageLink(db::ISession& session, const db::Track::pointer& dbTrack, const ImageInfo& imageInfo)
+        void createTrackEmbeddedImageLink(db::ISession& session, db::TrackId trackId, const ImageInfo& imageInfo)
         {
-            const db::TrackEmbeddedImage::pointer image{ getOrCreateTrackEmbeddedImage(session, imageInfo) };
-            db::TrackEmbeddedImageLink::pointer imageLink{ db::TrackEmbeddedImageLink::create(session, dbTrack, image) };
-            imageLink.modify()->setIndex(imageInfo.index);
-            imageLink.modify()->setType(imageInfo.type);
-            imageLink.modify()->setDescription(imageInfo.description);
-
-            return imageLink;
+            const db::TrackEmbeddedImage image{ getOrCreateTrackEmbeddedImage(session, imageInfo) };
+            db::TrackEmbeddedImageLink imageLink{ db::TrackEmbeddedImageLink::create(session, trackId, image.getId()) };
+            imageLink.setIndex(imageInfo.index);
+            imageLink.setType(imageInfo.type);
+            imageLink.setDescription(imageInfo.description);
+            db::TrackEmbeddedImageLink::update(session, imageLink);
         }
 
-        void updateEmbeddedImages(db::ISession& session, db::Track::pointer& dbTrack, std::span<const ImageInfo> images)
+        void updateEmbeddedImages(db::ISession& session, db::TrackId trackId, std::span<const ImageInfo> images)
         {
-            dbTrack.modify()->clearEmbeddedImageLinks();
+            db::Track::clearEmbeddedImageLinks(session, trackId);
             for (const ImageInfo& imageInfo : images)
-            {
-                db::TrackEmbeddedImageLink::pointer link{ createTrackEmbeddedImageLink(session, dbTrack, imageInfo) };
-                dbTrack.modify()->addEmbeddedImageLink(link);
-            }
+                createTrackEmbeddedImageLink(session, trackId, imageInfo);
         }
 
         db::Advisory getAdvisory(std::optional<Track::Advisory> advisory)
@@ -486,7 +567,7 @@ namespace lms::scanner
             return db::Advisory::UnSet;
         }
 
-        db::Track::pointer findMovedTrackBySizeAndMetaData(db::ISession& session, const Track& parsedTrack, const std::filesystem::path& trackPath, size_t fileSize)
+        std::optional<db::Track> findMovedTrackBySizeAndMetaData(db::ISession& session, const Track& parsedTrack, const std::filesystem::path& trackPath, size_t fileSize)
         {
             db::Track::FindParameters params;
             // Add as many fields as possible to limit errors
@@ -501,23 +582,23 @@ namespace lms::scanner
                 params.setTrackNumber(*parsedTrack.position);
 
             bool error{};
-            db::Track::pointer res;
-            db::Track::find(session, params, [&](const db::Track::pointer& track) {
+            std::optional<db::Track> res;
+            db::Track::find(session, params, [&](const db::Track& track) {
                 // Check that the track is truly no longer where it was during the last scan
                 std::error_code ec;
-                if (std::filesystem::exists(track->getAbsoluteFilePath(), ec))
+                if (std::filesystem::exists(track.getAbsoluteFilePath(), ec))
                     return;
 
                 if (res)
                 {
-                    LMS_LOG(DBUPDATER, DEBUG, "Found too many candidates for file move. New file = " << trackPath << ", candidate = " << track->getAbsoluteFilePath() << ", previous candidate = " << res->getAbsoluteFilePath());
+                    LMS_LOG(DBUPDATER, DEBUG, "Found too many candidates for file move. New file = " << trackPath << ", candidate = " << track.getAbsoluteFilePath() << ", previous candidate = " << res->getAbsoluteFilePath());
                     error = true;
                 }
                 res = track;
             });
 
             if (error)
-                res = db::Track::pointer{};
+                res.reset();
 
             return res;
         }
@@ -599,23 +680,23 @@ namespace lms::scanner
     }
 
     // Returns true if any value actually changed.
-    bool updateAudioProperties(db::Track::pointer& track, const audio::AudioProperties& props)
+    bool updateAudioProperties(db::Track& track, const audio::AudioProperties& props)
     {
-        const bool changed{ track->getDuration() != props.duration
-                            || track->getContainer() != props.container
-                            || track->getCodec() != props.codec
-                            || track->getBitrate() != props.bitrate
-                            || track->getChannelCount() != props.channelCount
-                            || track->getSampleRate() != props.sampleRate
-                            || track->getBitsPerSample() != props.bitsPerSample };
+        const bool changed{ track.getDuration() != props.duration
+                            || track.getContainer() != props.container
+                            || track.getCodec() != props.codec
+                            || track.getBitrate() != props.bitrate
+                            || track.getChannelCount() != props.channelCount
+                            || track.getSampleRate() != props.sampleRate
+                            || track.getBitsPerSample() != props.bitsPerSample };
 
-        track.modify()->setDuration(props.duration);
-        track.modify()->setContainer(props.container);
-        track.modify()->setCodec(props.codec);
-        track.modify()->setBitrate(props.bitrate);
-        track.modify()->setChannelCount(props.channelCount);
-        track.modify()->setSampleRate(props.sampleRate);
-        track.modify()->setBitsPerSample(props.bitsPerSample);
+        track.setDuration(props.duration);
+        track.setContainer(props.container);
+        track.setCodec(props.codec);
+        track.setBitrate(props.bitrate);
+        track.setChannelCount(props.channelCount);
+        track.setSampleRate(props.sampleRate);
+        track.setBitsPerSample(props.bitsPerSample);
 
         return changed;
     }
@@ -625,12 +706,15 @@ namespace lms::scanner
         LMS_SCOPED_TRACE_DETAILED("Scanner", "ProcessAudioScanData");
 
         db::ISession& dbSession{ getDb().getTLSSession() };
-        db::Track::pointer track{ db::Track::findByPath(dbSession, getFilePath()) };
+        std::optional<db::Track> track{ db::Track::findByPath(dbSession, getFilePath()) };
+        const auto removeTrack{ [&](db::TrackId trackId) {
+            db::Track::destroy(dbSession, std::span{ &trackId, 1 });
+        } };
         if (!_file)
         {
             if (track)
             {
-                track.remove();
+                removeTrack(track->getId());
                 LMS_LOG(DBUPDATER, DEBUG, "Removed track " << getFilePath());
                 return OperationResult::Removed;
             }
@@ -639,33 +723,33 @@ namespace lms::scanner
 
         if (_file->track.mbid && (!track || getScannerSettings().skipDuplicateTrackMBID))
         {
-            std::vector<db::Track::pointer> duplicateTracks{ db::Track::findByMBID(dbSession, *_file->track.mbid) };
+            const std::vector<db::Track> duplicateTracks{ db::Track::findByMBID(dbSession, *_file->track.mbid) };
 
             // find for an existing track MBID as the file may have just been moved
             if (!track && duplicateTracks.size() == 1)
             {
-                db::Track::pointer otherTrack{ duplicateTracks.front() };
+                const db::Track& otherTrack{ duplicateTracks.front() };
                 std::error_code ec;
-                if (!std::filesystem::exists(otherTrack->getAbsoluteFilePath(), ec))
+                if (!std::filesystem::exists(otherTrack.getAbsoluteFilePath(), ec))
                 {
-                    LMS_LOG(DBUPDATER, DEBUG, "Considering track " << getFilePath() << " moved from " << otherTrack->getAbsoluteFilePath());
+                    LMS_LOG(DBUPDATER, DEBUG, "Considering track " << getFilePath() << " moved from " << otherTrack.getAbsoluteFilePath());
                     track = otherTrack;
-                    track.modify()->setAbsoluteFilePath(getFilePath());
+                    track->setAbsoluteFilePath(getFilePath());
                 }
             }
 
             // Skip duplicate track MBID
             if (getScannerSettings().skipDuplicateTrackMBID)
             {
-                for (db::Track::pointer& otherTrack : duplicateTracks)
+                for (const db::Track& otherTrack : duplicateTracks)
                 {
                     // Skip ourselves
-                    if (track && track->getId() == otherTrack->getId())
+                    if (track && track->getId() == otherTrack.getId())
                         continue;
 
                     // If the other file is no longer in an active library it will be removed later:
                     // do not treat the current file as a duplicate, otherwise no file will remain for this MBID
-                    const std::filesystem::path otherFilePath{ otherTrack->getAbsoluteFilePath() };
+                    const std::filesystem::path otherFilePath{ otherTrack.getAbsoluteFilePath() };
                     const auto isInActiveLibrary{ [&](const MediaLibraryInfo& libraryInfo) {
                         if (!core::pathUtils::isPathInRootPath(otherFilePath, libraryInfo.rootDirectory))
                             return false;
@@ -675,13 +759,13 @@ namespace lms::scanner
                     if (!std::any_of(std::cbegin(mediaLibraries), std::cend(mediaLibraries), isInActiveLibrary))
                         continue;
 
-                    LMS_LOG(DBUPDATER, DEBUG, "Skipped " << getFilePath() << ": same MBID already found in " << otherTrack->getAbsoluteFilePath());
+                    LMS_LOG(DBUPDATER, DEBUG, "Skipped " << getFilePath() << ": same MBID already found in " << otherTrack.getAbsoluteFilePath());
                     // As this MBID already exists, just remove what we just scanned
                     if (track)
                     {
-                        track.remove();
+                        removeTrack(track->getId());
 
-                        LMS_LOG(DBUPDATER, DEBUG, "Removed " << getFilePath() << ": same MBID already found in " << otherTrack->getAbsoluteFilePath());
+                        LMS_LOG(DBUPDATER, DEBUG, "Removed " << getFilePath() << ": same MBID already found in " << otherTrack.getAbsoluteFilePath());
                         return OperationResult::Removed;
                     }
 
@@ -697,7 +781,7 @@ namespace lms::scanner
             if (track)
             {
                 LMS_LOG(DBUPDATER, DEBUG, "Considering track " << getFilePath() << " moved from " << track->getAbsoluteFilePath());
-                track.modify()->setAbsoluteFilePath(getFilePath());
+                track->setAbsoluteFilePath(getFilePath());
             }
         }
 
@@ -708,7 +792,7 @@ namespace lms::scanner
 
             if (track)
             {
-                track.remove();
+                removeTrack(track->getId());
                 LMS_LOG(DBUPDATER, DEBUG, "Removed track " << getFilePath());
                 return OperationResult::Removed;
             }
@@ -734,19 +818,19 @@ namespace lms::scanner
             track = db::Track::create(dbSession);
             added = true;
 
-            track.modify()->setAbsoluteFilePath(getFilePath());
-            track.modify()->setAddedTime(getMediaLibrary().firstScan ? getLastWriteTime() : Wt::WDateTime::currentDateTime()); // may be erased by encodingTime
+            track->setAbsoluteFilePath(getFilePath());
+            track->setAddedTime(getMediaLibrary().firstScan ? getLastWriteTime() : Wt::WDateTime::currentDateTime()); // may be erased by encodingTime
         }
 
         // Track related data
         assert(track);
-        track.modify()->setScanVersion(getScannerSettings().audioScanVersion);
+        track->setScanVersion(getScannerSettings().audioScanVersion);
 
         // Audio properties
-        const bool audioPropertiesChanged{ updateAudioProperties(track, _file->audioProperties) };
+        const bool audioPropertiesChanged{ updateAudioProperties(*track, _file->audioProperties) };
 
-        track.modify()->setFileSize(getFileSize());
-        track.modify()->setLastWriteTime(getLastWriteTime());
+        track->setFileSize(getFileSize());
+        track->setLastWriteTime(getLastWriteTime());
 
         if (_file->track.encodingTime.isValid())
         {
@@ -759,83 +843,86 @@ namespace lms::scanner
                 time = Wt::WTime{ *encodingTime.getHour(), *encodingTime.getMin(), *encodingTime.getSec() };
 
             if (date.isValid())
-                track.modify()->setAddedTime(time.isValid() ? Wt::WDateTime{ date, time } : Wt::WDateTime{ date });
+                track->setAddedTime(time.isValid() ? Wt::WDateTime{ date, time } : Wt::WDateTime{ date });
         }
 
-        db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
-        track.modify()->setMediaLibrary(mediaLibrary);
-        db::Directory::pointer directory{ utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary) };
-        track.modify()->setDirectory(directory);
+        std::optional<db::MediaLibrary> mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
+        track->setMediaLibrary(mediaLibrary ? mediaLibrary->getId() : db::MediaLibraryId{});
+        const db::Directory directory{ utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary) };
+        track->setDirectory(directory.getId());
 
         const helpers::AllowFallbackOnMBIDEntry allowFallback{ getScannerSettings().allowArtistMBIDFallback };
 
         // For now, alway tie a medium to a release, and a release mst have at least one medium, even if no disc number is set
         if (_file->track.medium && _file->track.medium->release)
         {
-            db::Release::pointer release{ getOrCreateRelease(dbSession, *_file->track.medium->release, directory, allowFallback) };
-            assert(release);
-            track.modify()->setRelease(release);
-            track.modify()->setMedium(getOrCreateMedium(dbSession, *_file->track.medium, release));
+            const db::ReleaseId releaseId{ getOrCreateRelease(dbSession, *_file->track.medium->release, directory, allowFallback) };
+            assert(releaseId.isValid());
+            track->setRelease(releaseId);
+            track->setMedium(getOrCreateMedium(dbSession, *_file->track.medium, releaseId));
         }
         else
         {
-            track.modify()->setRelease({});
-            track.modify()->setMedium({});
+            track->setRelease({});
+            track->setMedium({});
         }
 
-        track.modify()->clearArtistLinks();
-        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Artist, _file->track.artists, allowFallback);
-        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Conductor, _file->track.conductorArtists, allowFallback);
-        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Composer, _file->track.composerArtists, allowFallback);
-        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Lyricist, _file->track.lyricistArtists, allowFallback);
-        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Mixer, _file->track.mixerArtists, allowFallback);
-        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Producer, _file->track.producerArtists, allowFallback);
-        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Remixer, _file->track.remixerArtists, allowFallback);
+        const db::TrackId trackId{ track->getId() };
+        db::Track::clearArtistLinks(dbSession, trackId);
+        createTrackArtistLinks(dbSession, trackId, db::TrackArtistLinkType::Artist, _file->track.artists, allowFallback);
+        createTrackArtistLinks(dbSession, trackId, db::TrackArtistLinkType::Conductor, _file->track.conductorArtists, allowFallback);
+        createTrackArtistLinks(dbSession, trackId, db::TrackArtistLinkType::Composer, _file->track.composerArtists, allowFallback);
+        createTrackArtistLinks(dbSession, trackId, db::TrackArtistLinkType::Lyricist, _file->track.lyricistArtists, allowFallback);
+        createTrackArtistLinks(dbSession, trackId, db::TrackArtistLinkType::Mixer, _file->track.mixerArtists, allowFallback);
+        createTrackArtistLinks(dbSession, trackId, db::TrackArtistLinkType::Producer, _file->track.producerArtists, allowFallback);
+        createTrackArtistLinks(dbSession, trackId, db::TrackArtistLinkType::Remixer, _file->track.remixerArtists, allowFallback);
 
         for (const auto& [role, performers] : _file->track.performerArtists)
-            createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Performer, role, performers, allowFallback);
+            createTrackArtistLinks(dbSession, trackId, db::TrackArtistLinkType::Performer, role, performers, allowFallback);
 
-        track.modify()->setClusters(getOrCreateClusters(dbSession, _file->track));
-        track.modify()->setGenres(getOrCreateGenres(dbSession, _file->track.genres));
-        track.modify()->setGroupings(getOrCreateGroupings(dbSession, _file->track.groupings));
-        track.modify()->setLanguages(getOrCreateLanguages(dbSession, _file->track.languages));
-        track.modify()->setMoods(getOrCreateMoods(dbSession, _file->track.moods));
-        track.modify()->setWorks(getOrCreateWorks(dbSession, track->getReleaseId(), _file->track.works));
+        db::Track::setClusters(dbSession, trackId, getOrCreateClusters(dbSession, _file->track));
+        db::Track::setGenres(dbSession, trackId, getOrCreateGenres(dbSession, _file->track.genres));
+        db::Track::setGroupings(dbSession, trackId, getOrCreateGroupings(dbSession, _file->track.groupings));
+        db::Track::setLanguages(dbSession, trackId, getOrCreateLanguages(dbSession, _file->track.languages));
+        db::Track::setMoods(dbSession, trackId, getOrCreateMoods(dbSession, _file->track.moods));
+        db::Track::setWorks(dbSession, trackId, getOrCreateWorks(dbSession, track->getReleaseId(), _file->track.works));
 
-        track.modify()->clearMovements();
+        db::Track::clearMovements(dbSession, trackId);
         for (const auto& movement : _file->track.movements)
-            db::Movement::create(dbSession, movement.name, movement.number, movement.count, track);
+            db::Movement::create(dbSession, movement.name, movement.number, movement.count, trackId);
 
-        track.modify()->setName(title);
-        track.modify()->setTrackNumber(_file->track.position);
-        track.modify()->setDate(_file->track.date);
-        track.modify()->setOriginalDate(_file->track.originalDate);
+        track->setName(title);
+        track->setTrackNumber(_file->track.position);
+        track->setDate(_file->track.date);
+        track->setOriginalDate(_file->track.originalDate);
         if (!track->getOriginalDate().isValid() && _file->track.originalYear)
-            track.modify()->setOriginalDate(core::PartialDateTime{ *_file->track.originalYear });
+            track->setOriginalDate(core::PartialDateTime{ *_file->track.originalYear });
 
         // If a file has an OriginalDate but no date, set it to ease filtering
         if (!_file->track.date.isValid() && _file->track.originalDate.isValid())
-            track.modify()->setDate(_file->track.originalDate);
+            track->setDate(_file->track.originalDate);
 
-        track.modify()->setRecordingMBID(_file->track.recordingMBID);
-        track.modify()->setTrackMBID(_file->track.mbid);
+        track->setRecordingMBID(_file->track.recordingMBID);
+        track->setTrackMBID(_file->track.mbid);
         if (audioPropertiesChanged)
         {
-            if (auto musicnnEmbedding{ db::TrackMusicNNEmbeddings::find(dbSession, track->getId()) })
-                musicnnEmbedding.remove();
+            if (const auto musicnnEmbedding{ db::TrackMusicNNEmbeddings::find(dbSession, track->getId()) })
+                db::TrackMusicNNEmbeddings::destroy(dbSession, std::array{ musicnnEmbedding->getId() });
         }
-        track.modify()->setCopyright(_file->track.copyright);
-        track.modify()->setCopyrightURL(_file->track.copyrightURL);
-        track.modify()->setAdvisory(getAdvisory(_file->track.advisory));
-        track.modify()->setComment(!_file->track.comments.empty() ? _file->track.comments.front() : ""); // only take the first one for now
-        track.modify()->setReplayGain(_file->track.replayGain);
-        track.modify()->setArtistDisplayName(_file->track.artistDisplayName);
+        track->setCopyright(_file->track.copyright);
+        track->setCopyrightURL(_file->track.copyrightURL);
+        track->setAdvisory(getAdvisory(_file->track.advisory));
+        track->setComment(!_file->track.comments.empty() ? _file->track.comments.front() : ""); // only take the first one for now
+        track->setReplayGain(_file->track.replayGain);
+        track->setArtistDisplayName(_file->track.artistDisplayName);
 
-        track.modify()->clearEmbeddedLyrics();
+        db::Track::clearEmbeddedLyrics(dbSession, trackId);
         for (const Lyrics& lyricsInfo : _file->track.lyrics)
-            track.modify()->addLyrics(createLyrics(dbSession, lyricsInfo));
+            createLyrics(dbSession, trackId, lyricsInfo);
 
-        updateEmbeddedImages(dbSession, track, _file->images);
+        updateEmbeddedImages(dbSession, trackId, _file->images);
+
+        db::Track::update(dbSession, *track);
 
         if (added)
         {

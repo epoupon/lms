@@ -25,7 +25,7 @@
 
 #include "database/objects/Medium.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -39,7 +39,14 @@ namespace lms::db::dbo
         Medium() = default;
         using db::Medium::Medium;
 
-        explicit Medium(const ObjectPtr<db::Release>& release);
+        explicit Medium(Wt::Dbo::ptr<Release> release);
+
+        void syncIds()
+        {
+            _id = id();
+            _releaseId = _release.id();
+            _preferredArtworkId = _preferredArtwork.id();
+        }
 
         template<class Action>
         void persist(Action& a)

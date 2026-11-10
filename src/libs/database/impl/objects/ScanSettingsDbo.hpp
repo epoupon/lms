@@ -24,7 +24,7 @@
 
 #include "database/objects/ScanSettings.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -33,6 +33,11 @@ namespace lms::db::dbo
     public:
         ScanSettings() = default;
         using db::ScanSettings::ScanSettings;
+
+        void syncIds()
+        {
+            _id = id();
+        }
 
         template<class Action>
         void persist(Action& a)

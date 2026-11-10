@@ -24,7 +24,7 @@
 
 #include "database/objects/UIState.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,7 +36,12 @@ namespace lms::db::dbo
         UIState() = default;
         using db::UIState::UIState;
 
-        UIState(std::string_view item, const ObjectPtr<db::User>& user);
+        UIState(std::string_view item, Wt::Dbo::ptr<User> user);
+
+        void syncIds()
+        {
+            _id = id();
+        }
 
         template<class Action>
         void persist(Action& a)

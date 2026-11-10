@@ -64,7 +64,7 @@ namespace lms::feedback
 
         db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
-        if (const db::User::pointer user{ db::User::find(session, userId) })
+        if (const std::optional<db::User> user{ db::User::find(session, userId) })
             backends = user->getFeedbackBackends();
 
         return backends;
@@ -106,11 +106,11 @@ namespace lms::feedback
                 params.setLastRetrievedId(lastRetrievedId);
                 params.setRange(db::Range{ 0, chunkSize });
                 params.setSortMethod(db::TrackFeedbackSortMethod::Id);
-                db::TrackFeedback::find(session, params, [&](const db::TrackFeedback::pointer& feedback) {
+                db::TrackFeedback::find(session, params, [&](const db::TrackFeedback& feedback) {
                     ++rawCount;
-                    lastRetrievedId = feedback->getId();
-                    if (feedback->getValue() != db::FeedbackValue::None)
-                        ids.push_back(feedback->getId());
+                    lastRetrievedId = feedback.getId();
+                    if (feedback.getValue() != db::FeedbackValue::None)
+                        ids.push_back(feedback.getId());
                 });
             }
 
@@ -126,11 +126,11 @@ namespace lms::feedback
                     if (db::TrackFeedbackBackendSync::find(session, id, backend))
                         continue;
 
-                    const db::TrackFeedback::pointer trackFeedback{ db::TrackFeedback::find(session, id) };
-                    if (!trackFeedback || !backendImpl.canBeFeedbacked(trackFeedback->getTrack()->getId()))
+                    const std::optional<db::TrackFeedback> trackFeedback{ db::TrackFeedback::find(session, id) };
+                    if (!trackFeedback || !backendImpl.canBeFeedbacked(trackFeedback->getTrackId()))
                         continue;
 
-                    db::TrackFeedbackBackendSync::create(session, trackFeedback, backend);
+                    db::TrackFeedbackBackendSync::create(session, trackFeedback->getId(), backend);
                 }
             }
 

@@ -25,7 +25,7 @@
 
 #include "database/objects/Grouping.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,6 +36,8 @@ namespace lms::db::dbo
     public:
         Grouping() = default;
         using db::Grouping::Grouping;
+
+        void syncIds() { _id = id(); }
 
         template<class Action>
         void persist(Action& a)

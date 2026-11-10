@@ -19,6 +19,8 @@
 
 #include "MediaLibrariesView.hpp"
 
+#include <array>
+
 #include <Wt/WPushButton.h>
 
 #include "core/Service.hpp"
@@ -74,8 +76,8 @@ namespace lms::ui
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        db::MediaLibrary::find(LmsApp->getDbSession(), [&](const db::MediaLibrary::pointer& mediaLibrary) {
-            const db::MediaLibraryId mediaLibraryId{ mediaLibrary->getId() };
+        db::MediaLibrary::find(LmsApp->getDbSession(), [&](const db::MediaLibrary& mediaLibrary) {
+            const db::MediaLibraryId mediaLibraryId{ mediaLibrary.getId() };
             Wt::WTemplate* entry{ addEntry() };
             updateEntry(mediaLibraryId, entry);
         });
@@ -92,9 +94,7 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(LmsApp->getDbSession(), mediaLibraryId) };
-                if (mediaLibrary)
-                    mediaLibrary.remove();
+                db::MediaLibrary::destroy(LmsApp->getDbSession(), std::array{ mediaLibraryId });
             }
 
             // Don't want the scanner to go on with wrong settings
@@ -122,7 +122,7 @@ namespace lms::ui
     void MediaLibrariesView::updateEntry(db::MediaLibraryId mediaLibraryId, Wt::WTemplate* entry)
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-        db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(LmsApp->getDbSession(), mediaLibraryId) };
+        std::optional<db::MediaLibrary> mediaLibrary{ db::MediaLibrary::find(LmsApp->getDbSession(), mediaLibraryId) };
 
         entry->bindString("name", std::string{ mediaLibrary->getName() }, Wt::TextFormat::Plain);
         entry->bindString("path", std::string{ mediaLibrary->getPath() }, Wt::TextFormat::Plain);

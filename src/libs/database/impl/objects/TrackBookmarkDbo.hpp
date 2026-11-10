@@ -24,7 +24,7 @@
 
 #include "database/objects/TrackBookmark.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -37,7 +37,14 @@ namespace lms::db::dbo
         TrackBookmark() = default;
         using db::TrackBookmark::TrackBookmark;
 
-        TrackBookmark(const ObjectPtr<db::User>& user, const ObjectPtr<db::Track>& track);
+        TrackBookmark(Wt::Dbo::ptr<User> user, Wt::Dbo::ptr<Track> track);
+
+        void syncIds()
+        {
+            _id = id();
+            _trackId = _track.id();
+            _userId = _user.id();
+        }
 
         template<class Action>
         void persist(Action& a)

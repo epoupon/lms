@@ -25,7 +25,7 @@
 
 #include "database/objects/Mood.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,6 +36,8 @@ namespace lms::db::dbo
     public:
         Mood() = default;
         using db::Mood::Mood;
+
+        void syncIds() { _id = id(); }
 
         template<class Action>
         void persist(Action& a)

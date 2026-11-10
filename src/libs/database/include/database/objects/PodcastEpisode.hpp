@@ -22,6 +22,7 @@
 #include <chrono>
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -30,21 +31,20 @@
 #include "core/media/Codec.hpp"
 #include "core/media/Container.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/PodcastEpisodeId.hpp"
 #include "database/objects/PodcastId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 #include "database/objects/detail/Types.hpp"
 
 namespace lms::db
 {
-    class Artwork;
     class ISession;
     class Podcast;
 
-    class PodcastEpisode : public Object<PodcastEpisode, PodcastEpisodeId>
+    class PodcastEpisode : public detail::Object<PodcastEpisode, PodcastEpisodeId>
     {
     public:
         enum class ManualDownloadState
@@ -83,11 +83,15 @@ namespace lms::db
             }
         };
 
-        static pointer create(ISession& session, const ObjectPtr<Podcast>& podcast);
+        static PodcastEpisode create(ISession& session, PodcastId podcast);
+
+        static void destroy(ISession& session, std::span<const PodcastEpisodeId> ids);
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, PodcastEpisodeId id);
-        static pointer findNewtestEpisode(ISession& session, PodcastId id);
-        static void find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func);
+        static std::optional<PodcastEpisode> find(ISession& session, PodcastEpisodeId id);
+        static std::optional<PodcastEpisode> findNewtestEpisode(ISession& session, PodcastId id);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const PodcastEpisode&)>& func);
+
+        static void update(ISession& session, const PodcastEpisode& podcastEpisode);
 
         // getters
         ManualDownloadState getManualDownloadState() const { return _manualDownloadState; }
@@ -115,10 +119,8 @@ namespace lms::db
         std::string_view getSubtitle() const { return _subtitle; }
         std::string_view getSummary() const { return _summary; }
         bool isExplicit() const { return _explicit; }
-        ObjectPtr<Podcast> getPodcast() const;
-        PodcastId getPodcastId() const;
-        ObjectPtr<Artwork> getArtwork() const;
-        ArtworkId getArtworkId() const;
+        PodcastId getPodcastId() const { return _podcastId; }
+        ArtworkId getArtworkId() const { return _artworkId; }
 
         // setters
         void setManualDownloadState(ManualDownloadState state) { _manualDownloadState = state; }
@@ -147,7 +149,7 @@ namespace lms::db
         void setSummary(std::string_view summary) { _summary = summary; }
         void setExplicit(bool explicit_) { _explicit = explicit_; }
         void setDuration(std::chrono::duration<int, std::milli> duration) { _duration = duration; }
-        void setArtwork(const ObjectPtr<Artwork>& artwork);
+        void setArtwork(ArtworkId artwork) { _artworkId = artwork; }
 
     protected:
         PodcastEpisode() = default;
@@ -180,5 +182,7 @@ namespace lms::db
         std::string _subtitle;
         std::string _summary;
         bool _explicit{};
+        ArtworkId _artworkId;
+        PodcastId _podcastId;
     };
 } // namespace lms::db

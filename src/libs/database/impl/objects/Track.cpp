@@ -32,6 +32,7 @@
 #include "ArtistDbo.hpp"
 #include "ArtworkDbo.hpp"
 #include "ClusterDbo.hpp"
+#include "DboAccess.hpp"
 #include "DirectoryDbo.hpp"
 #include "GenreDbo.hpp"
 #include "GroupingDbo.hpp"
@@ -41,7 +42,6 @@
 #include "MediumDbo.hpp"
 #include "MoodDbo.hpp"
 #include "MovementDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "ReleaseDbo.hpp"
 #include "Session.hpp"
 #include "TrackArtistLinkDbo.hpp"
@@ -136,6 +136,18 @@ namespace lms::db
             if (params.medium.isValid())
                 res.combineWithAnd({ "t.medium_id = ?", { params.medium.getValue() } });
 
+            if (params.trackList.isValid())
+            {
+                joins.add("tracklist_entry t_l_e ON t_l_e.track_id = t.id");
+                res.combineWithAnd({ "t_l_e.tracklist_id = ?", { params.trackList.getValue() } });
+            }
+
+            if (params.playQueue.isValid())
+            {
+                joins.add("playqueue_track p_t ON p_t.track_id = t.id");
+                res.combineWithAnd({ "p_t.playqueue_id = ?", { params.playQueue.getValue() } });
+            }
+
             if (params.trackNumber)
                 res.combineWithAnd({ "t.track_number = ?", { *params.trackNumber } });
 
@@ -193,6 +205,8 @@ namespace lms::db
             switch (params.sortMethod)
             {
             case TrackSortMethod::None:
+                if (params.trackList.isValid())
+                    query.orderBy("t_l_e.id");
                 break;
             case TrackSortMethod::Id:
                 query.orderBy("t.id");
@@ -261,7 +275,7 @@ namespace lms::db
         }
     } // namespace
 
-    Track::pointer Track::create(ISession& session)
+    Track Track::create(ISession& session)
     {
         return utils::addObject(session, std::make_unique<dbo::Track>());
     }
@@ -278,7 +292,7 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track"));
     }
 
-    Track::pointer Track::findByPath(ISession& session, const std::filesystem::path& p)
+    std::optional<Track> Track::findByPath(ISession& session, const std::filesystem::path& p)
     {
         checkReadTransaction(session);
 
@@ -304,14 +318,17 @@ namespace lms::db
         return result;
     }
 
-    Track::pointer Track::find(ISession& session, TrackId id)
+    std::optional<Track> Track::find(ISession& session, TrackId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Track>>("SELECT t from track t").where("t.id = ?").bind(id));
     }
 
-    void Track::find(ISession& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(const Track::pointer&)>& func, MediaLibraryId library)
+    void Track::find(ISession& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(const Track&)>& func, MediaLibraryId library)
     {
         checkReadTransaction(session);
 
@@ -320,9 +337,9 @@ namespace lms::db
         if (library.isValid())
             query.where("media_library_id = ?").bind(library);
 
-        utils::forEachQueryObject(query, [&](const Track::pointer& track) {
+        utils::forEachQueryObject(query, [&](const Track& track) {
             func(track);
-            lastRetrievedId = track->getId();
+            lastRetrievedId = track.getId();
         });
     }
 
@@ -349,7 +366,7 @@ namespace lms::db
         });
     }
 
-    void Track::find(ISession& session, const IdRange<TrackId>& idRange, const std::function<void(const Track::pointer&)>& func)
+    void Track::find(ISession& session, const IdRange<TrackId>& idRange, const std::function<void(const Track&)>& func)
     {
         checkReadTransaction(session);
 
@@ -357,9 +374,7 @@ namespace lms::db
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Track>>("SELECT t from track t").orderBy("t.id").where("t.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
 
-        utils::forEachQueryObject(query, [&](const Track::pointer& track) {
-            func(track);
-        });
+        utils::forEachQueryObject(query, func);
     }
 
     IdRange<TrackId> Track::findNextIdRange(ISession& session, TrackId lastRetrievedId, std::size_t count)
@@ -381,14 +396,14 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT 1 from track").where("id = ?").bind(id)) == 1;
     }
 
-    std::vector<Track::pointer> Track::findByMBID(ISession& session, const core::UUID& mbid)
+    std::vector<Track> Track::findByMBID(ISession& session, const core::UUID& mbid)
     {
         checkReadTransaction(session);
 
         return utils::fetchQueryObjects(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Track>>("SELECT t from track t").where("t.mbid = ?").bind(mbid));
     }
 
-    std::vector<Track::pointer> Track::findByRecordingMBID(ISession& session, const core::UUID& mbid)
+    std::vector<Track> Track::findByRecordingMBID(ISession& session, const core::UUID& mbid)
     {
         checkReadTransaction(session);
 
@@ -406,127 +421,14 @@ namespace lms::db
 
     void Track::updatePreferredArtwork(ISession& session, TrackId trackId, ArtworkId artworkId)
     {
-        checkWriteTransaction(session);
-
-        if (artworkId.isValid())
-            utils::executeCommand(*getDboSession(session), "UPDATE track SET preferred_artwork_id = ? WHERE id = ?", artworkId, trackId);
-        else
-            utils::executeCommand(*getDboSession(session), "UPDATE track SET preferred_artwork_id = NULL WHERE id = ?", trackId);
+        dbo::Track& track{ utils::modifyObject<dbo::Track>(session, trackId) };
+        setRelation(*getDboSession(session), track._preferredArtwork, artworkId);
     }
 
     void Track::updatePreferredMediaArtwork(ISession& session, TrackId trackId, ArtworkId artworkId)
     {
-        checkWriteTransaction(session);
-
-        if (artworkId.isValid())
-            utils::executeCommand(*getDboSession(session), "UPDATE track SET preferred_media_artwork_id = ? WHERE id = ?", artworkId, trackId);
-        else
-            utils::executeCommand(*getDboSession(session), "UPDATE track SET preferred_media_artwork_id = NULL WHERE id = ?", trackId);
-    }
-
-    std::vector<Cluster::pointer> Track::getClusters() const
-    {
-        return utils::fetchQueryObjects(getDbo(*this)._clusters.find());
-    }
-
-    std::vector<ClusterId> Track::getClusterIds() const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        const auto query{ dbo.session()->query<ClusterId>("SELECT t_c.cluster_id FROM track_cluster t_c").where("t_c.track_id = ?").bind(getId()).groupBy("t_c.cluster_id") };
-
-        return utils::fetchQueryResults(query);
-    }
-
-    std::vector<Genre::pointer> Track::getGenres() const
-    {
-        return utils::fetchQueryObjects(getDbo(*this)._genres.find());
-    }
-
-    std::vector<GenreId> Track::getGenreIds() const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        const auto query{ dbo.session()->query<GenreId>("SELECT t_g.genre_id FROM track_genre t_g").where("t_g.track_id = ?").bind(getId()) };
-
-        return utils::fetchQueryResults(query);
-    }
-
-    std::vector<Grouping::pointer> Track::getGroupings() const
-    {
-        return utils::fetchQueryObjects(getDbo(*this)._groupings.find());
-    }
-
-    std::vector<GroupingId> Track::getGroupingIds() const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        const auto query{ dbo.session()->query<GroupingId>("SELECT t_gr.grouping_id FROM track_grouping t_gr").where("t_gr.track_id = ?").bind(getId()) };
-
-        return utils::fetchQueryResults(query);
-    }
-
-    std::vector<Language::pointer> Track::getLanguages() const
-    {
-        return utils::fetchQueryObjects(getDbo(*this)._languages.find());
-    }
-
-    std::vector<LanguageId> Track::getLanguageIds() const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        const auto query{ dbo.session()->query<LanguageId>("SELECT t_l.language_id FROM track_language t_l").where("t_l.track_id = ?").bind(getId()) };
-
-        return utils::fetchQueryResults(query);
-    }
-
-    std::vector<Mood::pointer> Track::getMoods() const
-    {
-        return utils::fetchQueryObjects(getDbo(*this)._moods.find());
-    }
-
-    std::vector<MoodId> Track::getMoodIds() const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        const auto query{ dbo.session()->query<MoodId>("SELECT t_m.mood_id FROM track_mood t_m").where("t_m.track_id = ?").bind(getId()) };
-
-        return utils::fetchQueryResults(query);
-    }
-
-    ObjectPtr<MediaLibrary> Track::getMediaLibrary() const
-    {
-        return toObjectPtr(getDbo(*this)._mediaLibrary);
-    }
-
-    ObjectPtr<Directory> Track::getDirectory() const
-    {
-        return toObjectPtr(getDbo(*this)._directory);
-    }
-
-    ObjectPtr<Artwork> Track::getPreferredArtwork() const
-    {
-        return toObjectPtr(getDbo(*this)._preferredArtwork);
-    }
-
-    ArtworkId Track::getPreferredArtworkId() const
-    {
-        return getDbo(*this)._preferredArtwork.id();
-    }
-
-    ObjectPtr<Artwork> Track::getPreferredMediaArtwork() const
-    {
-        return toObjectPtr(getDbo(*this)._preferredMediaArtwork);
-    }
-
-    ArtworkId Track::getPreferredMediaArtworkId() const
-    {
-        return getDbo(*this)._preferredMediaArtwork.id();
+        dbo::Track& track{ utils::modifyObject<dbo::Track>(session, trackId) };
+        setRelation(*getDboSession(session), track._preferredMediaArtwork, artworkId);
     }
 
     std::vector<TrackId> Track::findIds(ISession& session, const FindParameters& parameters)
@@ -537,7 +439,7 @@ namespace lms::db
         return utils::execRangeQuery<TrackId>(query, parameters.range);
     }
 
-    std::vector<Track::pointer> Track::find(ISession& session, const FindParameters& parameters)
+    std::vector<Track> Track::find(ISession& session, const FindParameters& parameters)
     {
         checkReadTransaction(session);
 
@@ -545,7 +447,7 @@ namespace lms::db
         return utils::execRangeObjectQuery(query, parameters.range);
     }
 
-    void Track::find(ISession& session, const FindParameters& params, const std::function<void(const Track::pointer&)>& func)
+    void Track::find(ISession& session, const FindParameters& params, const std::function<void(const Track&)>& func)
     {
         checkReadTransaction(session);
 
@@ -594,144 +496,100 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, copyrightURL.size() > _maxCopyrightURLLength, "Track copyright URL too long, truncated to '" << _copyrightURL << "'");
     }
 
-    void Track::clearArtistLinks()
+    void dbo::Track::applyIds()
     {
-        getDbo(*this)._trackArtistLinks.clear();
+        Wt::Dbo::Session& dboSession{ *session() };
+        setRelation(dboSession, _release, _releaseId);
+        setRelation(dboSession, _medium, _mediumId);
+        setRelation(dboSession, _mediaLibrary, _mediaLibraryId);
+        setRelation(dboSession, _directory, _directoryId);
+        setRelation(dboSession, _preferredArtwork, _preferredArtworkId);
+        setRelation(dboSession, _preferredMediaArtwork, _preferredMediaArtworkId);
     }
 
-    void Track::addArtistLink(const ObjectPtr<TrackArtistLink>& artistLink)
+    void Track::update(ISession& session, const Track& track)
     {
-        getDbo(*this)._trackArtistLinks.insert(getDboPtr(artistLink));
+        utils::updateObject<dbo::Track>(session, track);
     }
 
-    void Track::setRelease(const ObjectPtr<Release>& release)
+    namespace
     {
-        getDbo(*this)._release = getDboPtr(release);
+        template<typename DboType, typename IdType>
+        void setCollection(Wt::Dbo::Session& session, Wt::Dbo::collection<Wt::Dbo::ptr<DboType>>& collection, std::span<const IdType> ids)
+        {
+            collection.clear();
+            for (const IdType id : ids)
+                collection.insert(session.loadLazy<DboType>(id.getValue()));
+        }
+    } // namespace
+
+    void Track::clearArtistLinks(ISession& session, TrackId id)
+    {
+        utils::modifyObject<dbo::Track>(session, id)._trackArtistLinks.clear();
     }
 
-    void Track::setMedium(const ObjectPtr<Medium>& medium)
+    void Track::setClusters(ISession& session, TrackId id, std::span<const ClusterId> clusters)
     {
-        getDbo(*this)._medium = getDboPtr(medium);
+        setCollection(*getDboSession(session), utils::modifyObject<dbo::Track>(session, id)._clusters, clusters);
     }
 
-    void Track::setClusters(const std::vector<ObjectPtr<Cluster>>& clusters)
+    void Track::setGenres(ISession& session, TrackId id, std::span<const GenreId> genres)
     {
-        auto& dbo{ getDbo(*this) };
-        dbo._clusters.clear();
-        for (const ObjectPtr<Cluster>& cluster : clusters)
-            dbo._clusters.insert(getDboPtr(cluster));
+        setCollection(*getDboSession(session), utils::modifyObject<dbo::Track>(session, id)._genres, genres);
     }
 
-    void Track::setGenres(std::span<const ObjectPtr<Genre>> genres)
+    void Track::setGroupings(ISession& session, TrackId id, std::span<const GroupingId> groupings)
     {
-        auto& dbo{ getDbo(*this) };
-        dbo._genres.clear();
-        for (const ObjectPtr<Genre>& genre : genres)
-            dbo._genres.insert(getDboPtr(genre));
+        setCollection(*getDboSession(session), utils::modifyObject<dbo::Track>(session, id)._groupings, groupings);
     }
 
-    void Track::setGroupings(std::span<const ObjectPtr<Grouping>> groupings)
+    void Track::setLanguages(ISession& session, TrackId id, std::span<const LanguageId> languages)
     {
-        auto& dbo{ getDbo(*this) };
-        dbo._groupings.clear();
-        for (const ObjectPtr<Grouping>& grouping : groupings)
-            dbo._groupings.insert(getDboPtr(grouping));
+        setCollection(*getDboSession(session), utils::modifyObject<dbo::Track>(session, id)._languages, languages);
     }
 
-    void Track::setLanguages(std::span<const ObjectPtr<Language>> languages)
+    void Track::setMoods(ISession& session, TrackId id, std::span<const MoodId> moods)
     {
-        auto& dbo{ getDbo(*this) };
-        dbo._languages.clear();
-        for (const ObjectPtr<Language>& language : languages)
-            dbo._languages.insert(getDboPtr(language));
+        setCollection(*getDboSession(session), utils::modifyObject<dbo::Track>(session, id)._moods, moods);
     }
 
-    void Track::setMoods(std::span<const ObjectPtr<Mood>> moods)
+    void Track::setWorks(ISession& session, TrackId id, std::span<const WorkId> works)
     {
-        auto& dbo{ getDbo(*this) };
-        dbo._moods.clear();
-        for (const ObjectPtr<Mood>& mood : moods)
-            dbo._moods.insert(getDboPtr(mood));
+        setCollection(*getDboSession(session), utils::modifyObject<dbo::Track>(session, id)._works, works);
     }
 
-    void Track::setWorks(std::span<const ObjectPtr<Work>> works)
+    void Track::clearMovements(ISession& session, TrackId id)
     {
-        auto& dbo{ getDbo(*this) };
-        dbo._works.clear();
-        for (const ObjectPtr<Work>& work : works)
-            dbo._works.insert(getDboPtr(work));
+        utils::modifyObject<dbo::Track>(session, id)._movements.clear();
     }
 
-    std::vector<Work::pointer> Track::getWorks() const
+    void Track::clearEmbeddedLyrics(ISession& session, TrackId id)
     {
-        // deterministic order, callers rely on the first entry
-        return utils::fetchQueryObjects(getDbo(*this)._works.find().orderBy("id"));
+        checkWriteTransaction(session);
+        utils::executeCommand(*getDboSession(session), "DELETE FROM track_lyrics WHERE absolute_file_path = '' AND track_id = ?", id);
     }
 
-    bool Track::hasWork() const
+    void Track::clearEmbeddedImageLinks(ISession& session, TrackId id)
     {
-        return !getDbo(*this)._works.empty();
+        utils::modifyObject<dbo::Track>(session, id)._embeddedImageLinks.clear();
     }
 
-    void Track::clearMovements()
+    bool Track::hasLyrics(ISession& session, TrackId id)
     {
-        getDbo(*this)._movements.clear();
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT EXISTS (SELECT 1 FROM track_lyrics WHERE track_id = ?)").bind(id)) == 1;
     }
 
-    std::vector<Movement::pointer> Track::getMovements() const
+    bool Track::hasWork(ISession& session, TrackId id)
     {
-        // deterministic order, callers rely on the first entry
-        return utils::fetchQueryObjects(getDbo(*this)._movements.find().orderBy("id"));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT EXISTS (SELECT 1 FROM track_work WHERE track_id = ?)").bind(id)) == 1;
     }
 
-    bool Track::hasMovement() const
+    bool Track::hasMovement(ISession& session, TrackId id)
     {
-        return !getDbo(*this)._movements.empty();
-    }
-
-    void Track::clearLyrics()
-    {
-        getDbo(*this)._trackLyrics.clear();
-    }
-
-    void Track::clearEmbeddedLyrics()
-    {
-        utils::executeCommand(*getDbo(*this).session(), "DELETE FROM track_lyrics WHERE absolute_file_path = '' AND track_id = ?", getId());
-    }
-
-    void Track::addLyrics(const ObjectPtr<TrackLyrics>& lyrics)
-    {
-        getDbo(*this)._trackLyrics.insert(getDboPtr(lyrics));
-    }
-
-    void Track::clearEmbeddedImageLinks()
-    {
-        getDbo(*this)._embeddedImageLinks.clear();
-    }
-
-    void Track::addEmbeddedImageLink(const ObjectPtr<TrackEmbeddedImageLink>& image)
-    {
-        getDbo(*this)._embeddedImageLinks.insert(getDboPtr(image));
-    }
-
-    void Track::setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary)
-    {
-        getDbo(*this)._mediaLibrary = getDboPtr(mediaLibrary);
-    }
-
-    void Track::setDirectory(const ObjectPtr<Directory>& directory)
-    {
-        getDbo(*this)._directory = getDboPtr(directory);
-    }
-
-    void Track::setPreferredArtwork(const ObjectPtr<Artwork>& artwork)
-    {
-        getDbo(*this)._preferredArtwork = getDboPtr(artwork);
-    }
-
-    void Track::setPreferredMediaArtwork(const ObjectPtr<Artwork>& artwork)
-    {
-        getDbo(*this)._preferredMediaArtwork = getDboPtr(artwork);
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT EXISTS (SELECT 1 FROM track_movement WHERE track_id = ?)").bind(id)) == 1;
     }
 
     std::optional<core::media::Container> Track::getContainer() const
@@ -754,137 +612,23 @@ namespace lms::db
         return _originalDate.getYear();
     }
 
-    bool Track::hasLyrics() const
-    {
-        return !getDbo(*this)._trackLyrics.empty();
-    }
-
-    std::string_view Track::getCopyright() const
-    {
-        return _copyright;
-    }
-
-    std::string_view Track::getCopyrightURL() const
-    {
-        return _copyrightURL;
-    }
-
-    std::vector<Artist::pointer> Track::getArtists(core::EnumSet<TrackArtistLinkType> linkTypes) const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        std::ostringstream oss;
-        oss << "SELECT a from artist a"
-               " INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id";
-
-        if (!linkTypes.empty())
-        {
-            oss << " AND t_a_l.type IN (";
-
-            bool first{ true };
-            for ([[maybe_unused]] TrackArtistLinkType type : linkTypes)
-            {
-                if (!first)
-                    oss << ", ";
-
-                oss << "?";
-                first = false;
-            }
-            oss << ")";
-        }
-
-        auto query{ dbo.session()->query<Wt::Dbo::ptr<dbo::Artist>>(oss.str()) };
-        for (TrackArtistLinkType type : linkTypes)
-            query.bind(type);
-
-        query.where("t_a_l.track_id = ?").bind(getId());
-        query.groupBy("t_a_l.artist_id");
-        query.orderBy("t_a_l.id");
-
-        return utils::fetchQueryObjects(query);
-    }
-
-    std::vector<ArtistId> Track::getArtistIds(core::EnumSet<TrackArtistLinkType> linkTypes) const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.self());
-        assert(dbo.session());
-
-        auto query{ dbo.session()->query<ArtistId>("SELECT t_a_l.artist_id FROM track_artist_link t_a_l") };
-
-        if (!linkTypes.empty())
-        {
-            std::ostringstream oss;
-            oss << "t_a_l.type IN (";
-
-            bool first{ true };
-            for ([[maybe_unused]] TrackArtistLinkType type : linkTypes)
-            {
-                if (!first)
-                    oss << ", ";
-
-                oss << "?";
-                first = false;
-            }
-            oss << ")";
-
-            query.where(oss.str());
-            for (TrackArtistLinkType type : linkTypes)
-                query.bind(type);
-        }
-
-        query.where("t_a_l.track_id = ?").bind(getId());
-        query.groupBy("t_a_l.artist_id");
-        query.orderBy("t_a_l.id");
-
-        return utils::fetchQueryResults(query);
-    }
-
-    std::vector<TrackArtistLink::pointer> Track::getArtistLinks() const
-    {
-        return utils::fetchQueryObjects(getDbo(*this)._trackArtistLinks.find().orderBy("id"));
-    }
-
-    void Track::visitArtistLinks(const std::function<void(const ObjectPtr<TrackArtistLink>& artistLink)>& visitor) const
-    {
-        utils::forEachQueryObject(getDbo(*this)._trackArtistLinks.find().orderBy("id"), visitor);
-    }
-
-    std::vector<ObjectPtr<TrackArtistLink>> Track::getArtistLinks(TrackArtistLinkType type) const
-    {
-        std::vector<ObjectPtr<TrackArtistLink>> links;
-        visitArtistLinks(type, [&links](const ObjectPtr<TrackArtistLink>& artistLink) { links.push_back(artistLink); });
-        return links;
-    }
-
-    void Track::visitArtistLinks(TrackArtistLinkType type, const std::function<void(const ObjectPtr<TrackArtistLink>& artistLink)>& visitor) const
-    {
-        auto query{ getDbo(*this).session()->query<Wt::Dbo::ptr<dbo::TrackArtistLink>>("SELECT t_a_l from track_artist_link t_a_l") };
-        query.where("t_a_l.track_id = ?").bind(getId());
-        query.where("t_a_l.type = ?").bind(type);
-        query.orderBy("t_a_l.id");
-
-        return utils::forEachQueryObject(query, visitor);
-    }
-
     namespace Debug
     {
         std::ostream& operator<<(std::ostream& os, const TrackInfo& trackInfo)
         {
             auto transaction{ trackInfo.session.createReadTransaction() };
 
-            const Track::pointer track{ Track::find(trackInfo.session, trackInfo.trackId) };
+            const std::optional<Track> track{ Track::find(trackInfo.session, trackInfo.trackId) };
             if (track)
             {
                 os << track->getName();
 
-                if (const Release::pointer release{ track->getRelease() })
+                if (const std::optional<Release> release{ Release::find(trackInfo.session, track->getReleaseId()) })
                     os << " [" << release->getName() << "]";
-                for (auto artist : track->getArtists({ TrackArtistLinkType::Artist }))
-                    os << " - " << artist->getName();
-                for (auto cluster : track->getClusters())
-                    os << " {" << cluster->getType()->getName() << "-" << cluster->getName() << "}";
+                for (const Artist& artist : Artist::find(trackInfo.session, Artist::FindParameters{}.setTrack(track->getId()).setTrackArtistLinkType(TrackArtistLinkType::Artist)))
+                    os << " - " << artist.getName();
+                for (const Cluster& cluster : Cluster::find(trackInfo.session, Cluster::FindParameters{}.setTrack(track->getId())))
+                    os << " {" << ClusterType::find(trackInfo.session, cluster.getTypeId())->getName() << "-" << cluster.getName() << "}";
             }
             else
             {
@@ -895,23 +639,4 @@ namespace lms::db
         }
     } // namespace Debug
 
-    ReleaseId Track::getReleaseId() const
-    {
-        return getDbo(*this)._release.id();
-    }
-
-    ObjectPtr<Release> Track::getRelease() const
-    {
-        return toObjectPtr(getDbo(*this)._release);
-    }
-
-    MediumId Track::getMediumId() const
-    {
-        return getDbo(*this)._medium.id();
-    }
-
-    ObjectPtr<Medium> Track::getMedium() const
-    {
-        return toObjectPtr(getDbo(*this)._medium);
-    }
 } // namespace lms::db

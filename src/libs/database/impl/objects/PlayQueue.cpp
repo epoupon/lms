@@ -25,6 +25,7 @@
 #include "ArtistDbo.hpp"
 #include "ArtworkDbo.hpp"
 #include "ClusterDbo.hpp"
+#include "DboAccess.hpp"
 #include "DirectoryDbo.hpp"
 #include "GenreDbo.hpp"
 #include "GroupingDbo.hpp"
@@ -33,7 +34,6 @@
 #include "MediumDbo.hpp"
 #include "MoodDbo.hpp"
 #include "MovementDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "PlayQueueDbo.hpp"
 #include "ReleaseDbo.hpp"
 #include "Session.hpp"
@@ -57,15 +57,20 @@ namespace lms::db
     {
     }
 
-    dbo::PlayQueue::PlayQueue(const ObjectPtr<db::User>& user, std::string_view name)
+    dbo::PlayQueue::PlayQueue(Wt::Dbo::ptr<User> user, std::string_view name)
         : db::PlayQueue{ name }
-        , _user{ getDboPtr(user) }
+        , _user{ std::move(user) }
     {
     }
 
-    PlayQueue::pointer PlayQueue::create(ISession& session, const ObjectPtr<User>& user, std::string_view name)
+    PlayQueue PlayQueue::create(ISession& session, UserId user, std::string_view name)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::PlayQueue>{ new dbo::PlayQueue{ user, name } });
+        return utils::addObject(session, std::unique_ptr<dbo::PlayQueue>{ new dbo::PlayQueue{ getDboSession(session)->loadLazy<dbo::User>(user.getValue()), name } });
+    }
+
+    void PlayQueue::destroy(ISession& session, std::span<const PlayQueueId> ids)
+    {
+        utils::destroyObjects<dbo::PlayQueue>(session, ids);
     }
 
     std::size_t PlayQueue::getCount(ISession& session)
@@ -75,14 +80,17 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM playqueue"));
     }
 
-    PlayQueue::pointer PlayQueue::find(ISession& session, PlayQueueId id)
+    std::optional<PlayQueue> PlayQueue::find(ISession& session, PlayQueueId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayQueue>>("SELECT p from playqueue p").where("p.id = ?").bind(id));
     }
 
-    PlayQueue::pointer PlayQueue::find(ISession& session, UserId userId, std::string_view name)
+    std::optional<PlayQueue> PlayQueue::find(ISession& session, UserId userId, std::string_view name)
     {
         checkReadTransaction(session);
 
@@ -93,37 +101,26 @@ namespace lms::db
         return utils::fetchQuerySingleObject(query);
     }
 
-    void PlayQueue::clear()
+    bool PlayQueue::isEmpty(ISession& session, PlayQueueId id)
     {
-        getDbo(*this)._tracks.clear();
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT EXISTS (SELECT 1 FROM playqueue_track WHERE playqueue_id = ?)").bind(id)) == 0;
     }
 
-    void PlayQueue::addTrack(const ObjectPtr<Track>& track)
+    void PlayQueue::clear(ISession& session, PlayQueueId id)
     {
-        getDbo(*this)._tracks.insert(getDboPtr(track));
+        utils::modifyObject<dbo::PlayQueue>(session, id)._tracks.clear();
     }
 
-    Track::pointer PlayQueue::getTrackAtCurrentIndex() const
+    void PlayQueue::addTrack(ISession& session, PlayQueueId id, TrackId track)
     {
-        auto query{ getDbo(*this)._tracks.find() };
-        query.offset(_currentIndex);
-        query.limit(1);
-
-        return utils::fetchQuerySingleObject(query);
+        dbo::PlayQueue& playQueue{ utils::modifyObject<dbo::PlayQueue>(session, id) };
+        playQueue._tracks.insert(getDboSession(session)->loadLazy<dbo::Track>(track.getValue()));
     }
 
-    void PlayQueue::visitTracks(const std::function<void(const ObjectPtr<Track>& track)>& visitor) const
+    void PlayQueue::update(ISession& session, const PlayQueue& playQueue)
     {
-        utils::forEachQueryObject(getDbo(*this)._tracks.find(), visitor);
-    }
-
-    ObjectPtr<User> PlayQueue::getUser() const
-    {
-        return toObjectPtr(getDbo(*this)._user);
-    }
-
-    bool PlayQueue::isEmpty() const
-    {
-        return getDbo(*this)._tracks.empty();
+        utils::updateObject<dbo::PlayQueue>(session, playQueue);
     }
 } // namespace lms::db

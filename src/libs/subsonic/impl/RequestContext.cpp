@@ -72,14 +72,9 @@ namespace lms::api::subsonic
         return _dbSession;
     }
 
-    void RequestContext::setUser(const db::ObjectPtr<db::User>& user)
+    void RequestContext::setUser(const std::optional<db::User>& user)
     {
         _user = user;
-    }
-
-    db::ObjectPtr<db::User> RequestContext::getUser() const
-    {
-        return _user;
     }
 
     std::string RequestContext::getClientIpAddr() const

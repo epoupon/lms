@@ -42,7 +42,7 @@ namespace lms::db::tests
             EXPECT_EQ(artists.size(), 1);
         }
 
-        ScopedRatedArtist ratedArtist{ session, artist.lockAndGet(), user.lockAndGet() };
+        ScopedRatedArtist ratedArtist{ session, artist.getId(), user.getId() };
         {
             auto transaction{ session.createReadTransaction() };
 

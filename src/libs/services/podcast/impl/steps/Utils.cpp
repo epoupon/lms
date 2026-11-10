@@ -31,33 +31,33 @@
 
 namespace lms::podcast::utils
 {
-    std::filesystem::path getPodcastRelativePath(const db::Podcast::pointer& podcast)
+    std::filesystem::path getPodcastRelativePath(const db::Podcast& podcast)
     {
-        assert(podcast);
-        return podcast->getId().toString();
+        return podcast.getId().toString();
     }
 
-    db::Artwork::pointer createArtworkFromImage(db::ISession& session, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
+    std::optional<db::Artwork> createArtworkFromImage(db::ISession& session, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
     {
         std::error_code ec;
         const auto fileSize{ std::filesystem::file_size(filePath, ec) };
         if (ec)
         {
             LMS_LOG(PODCAST, ERROR, "Failed to get file size of " << filePath << ": " << ec.message());
-            return db::Artwork::pointer{};
+            return std::nullopt;
         }
 
-        db::Image::pointer image{ db::Image::create(session, filePath) };
-        image.modify()->setFileSize(static_cast<std::size_t>(fileSize));
+        db::Image image{ db::Image::create(session, filePath) };
+        image.setFileSize(static_cast<std::size_t>(fileSize));
         if (probedImage.dimensions)
         {
-            image.modify()->setWidth(probedImage.dimensions->width);
-            image.modify()->setHeight(probedImage.dimensions->height);
+            image.setWidth(probedImage.dimensions->width);
+            image.setHeight(probedImage.dimensions->height);
         }
-        image.modify()->setLastWriteTime(Wt::WDateTime::currentDateTime());
-        image.modify()->setFormat(probedImage.format);
+        image.setLastWriteTime(Wt::WDateTime::currentDateTime());
+        image.setFormat(probedImage.format);
+        db::Image::update(session, image);
 
-        return db::Artwork::create(session, image);
+        return db::Artwork::create(session, image.getId());
     }
 
     std::string generateRandomFileName()

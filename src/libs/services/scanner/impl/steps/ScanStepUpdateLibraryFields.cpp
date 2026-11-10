@@ -73,7 +73,7 @@ namespace lms::scanner
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                db::MediaLibrary::pointer library{ db::MediaLibrary::find(session, mediaLibrary.id) };
+                std::optional<db::MediaLibrary> library{ db::MediaLibrary::find(session, mediaLibrary.id) };
                 if (!library) // may be legit
                     break;
 
@@ -82,8 +82,9 @@ namespace lms::scanner
                     if (_abortScan)
                         break;
 
-                    db::Directory::pointer directory{ db::Directory::find(session, directoryId) };
-                    directory.modify()->setMediaLibrary(library);
+                    std::optional<db::Directory> directory{ db::Directory::find(session, directoryId) };
+                    directory->setMediaLibrary(library->getId());
+                    db::Directory::update(session, *directory);
                 }
             }
 

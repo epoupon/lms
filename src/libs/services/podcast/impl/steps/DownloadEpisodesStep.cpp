@@ -46,19 +46,20 @@ namespace lms::podcast
         {
             auto transaction{ session.createWriteTransaction() };
 
-            db::PodcastEpisode::pointer dbEpisode{ db::PodcastEpisode::find(session, episodeId) };
+            std::optional<db::PodcastEpisode> dbEpisode{ db::PodcastEpisode::find(session, episodeId) };
             if (!dbEpisode)
                 return; // may have been deleted by admin
 
-            dbEpisode.modify()->setAudioRelativeFilePath(relativeFilePath);
+            dbEpisode->setAudioRelativeFilePath(relativeFilePath);
 
-            dbEpisode.modify()->setDuration(audioProperties.duration);
-            dbEpisode.modify()->setContainer(audioProperties.container);
-            dbEpisode.modify()->setCodec(audioProperties.codec);
-            dbEpisode.modify()->setBitrate(audioProperties.bitrate);
-            dbEpisode.modify()->setChannelCount(audioProperties.channelCount);
-            dbEpisode.modify()->setSampleRate(audioProperties.sampleRate);
-            dbEpisode.modify()->setBitsPerSample(audioProperties.bitsPerSample);
+            dbEpisode->setDuration(audioProperties.duration);
+            dbEpisode->setContainer(audioProperties.container);
+            dbEpisode->setCodec(audioProperties.codec);
+            dbEpisode->setBitrate(audioProperties.bitrate);
+            dbEpisode->setChannelCount(audioProperties.channelCount);
+            dbEpisode->setSampleRate(audioProperties.sampleRate);
+            dbEpisode->setBitsPerSample(audioProperties.bitsPerSample);
+            db::PodcastEpisode::update(session, *dbEpisode);
         }
     } // namespace
 
@@ -93,24 +94,24 @@ namespace lms::podcast
         db::PodcastEpisode::FindParameters params;
 
         _episodesToDownload.clear();
-        db::PodcastEpisode::find(session, params, [&](const db::PodcastEpisode::pointer& episode) {
-            if (!episode->getAudioRelativeFilePath().empty())
+        db::PodcastEpisode::find(session, params, [&](const db::PodcastEpisode& episode) {
+            if (!episode.getAudioRelativeFilePath().empty())
                 return; // already downloaded
 
-            switch (episode->getManualDownloadState())
+            switch (episode.getManualDownloadState())
             {
             case db::PodcastEpisode::ManualDownloadState::DownloadRequested:
 
-                LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode->getTitle() << "' from podcast '" << episode->getPodcast()->getTitle() << "' to download queue (manually requested)");
-                _episodesToDownload.push_back(episode->getId());
+                LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode.getTitle() << "' from podcast '" << db::Podcast::find(session, episode.getPodcastId())->getTitle() << "' to download queue (manually requested)");
+                _episodesToDownload.push_back(episode.getId());
 
                 break;
 
             case db::PodcastEpisode::ManualDownloadState::None:
-                if (_autoDownloadEpisodes && now < episode->getPubDate().addDays(_autoDownloadEpisodesMaxAge.count()))
+                if (_autoDownloadEpisodes && now < episode.getPubDate().addDays(_autoDownloadEpisodesMaxAge.count()))
                 {
-                    LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode->getTitle() << "' from podcast '" << episode->getPodcast()->getTitle() << "' to download queue (auto-download enabled)");
-                    _episodesToDownload.push_back(episode->getId());
+                    LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode.getTitle() << "' from podcast '" << db::Podcast::find(session, episode.getPodcastId())->getTitle() << "' to download queue (auto-download enabled)");
+                    _episodesToDownload.push_back(episode.getId());
                 }
                 break;
 
@@ -141,7 +142,7 @@ namespace lms::podcast
         auto& session{ getDb().getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        const db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, episodeId) };
+        const std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(session, episodeId) };
         if (!episode)
         {
             LMS_LOG(PODCAST, DEBUG, "Cannot find episode: removed?"); // TODO if removed, need to keep it in the db to check for new episodes...

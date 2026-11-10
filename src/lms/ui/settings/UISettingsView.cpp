@@ -85,30 +85,31 @@ namespace lms::ui
             void saveData()
             {
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-                db::User::pointer user{ LmsApp->getUser() };
+                db::User user{ LmsApp->getUser() };
 
                 const auto artistReleaseSortMethodRow{ _artistReleaseSortMethodModel->getRowFromString(valueText(ArtistReleaseSortMethodField)) };
                 if (artistReleaseSortMethodRow)
-                    user.modify()->setUIArtistReleaseSortMethod(_artistReleaseSortMethodModel->getValue(*artistReleaseSortMethodRow));
+                    user.setUIArtistReleaseSortMethod(_artistReleaseSortMethodModel->getValue(*artistReleaseSortMethodRow));
 
                 const bool enableInlineArtistRelationships{ Wt::asNumber(value(EnableInlineArtistRelationships)) != 0 };
-                user.modify()->setUIEnableInlineArtistRelationships(enableInlineArtistRelationships);
+                user.setUIEnableInlineArtistRelationships(enableInlineArtistRelationships);
 
-                user.modify()->setUIInlineArtistRelationships(Wt::cpp17::any_cast<ArtistRelationships>(value(InlineArtistRelationships)));
+                user.setUIInlineArtistRelationships(Wt::cpp17::any_cast<ArtistRelationships>(value(InlineArtistRelationships)));
+                db::User::update(LmsApp->getDbSession(), user);
             }
 
             void loadData()
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                const db::User::pointer user{ LmsApp->getUser() };
+                const db::User user{ LmsApp->getUser() };
 
-                auto artistReleaseSortMethodRow{ _artistReleaseSortMethodModel->getRowFromValue(user->getUIArtistReleaseSortMethod()) };
+                auto artistReleaseSortMethodRow{ _artistReleaseSortMethodModel->getRowFromValue(user.getUIArtistReleaseSortMethod()) };
                 if (artistReleaseSortMethodRow)
                     setValue(ArtistReleaseSortMethodField, _artistReleaseSortMethodModel->getString(*artistReleaseSortMethodRow));
 
-                setValue(EnableInlineArtistRelationships, user->getUIEnableInlineArtistRelationships());
-                setReadOnly(InlineArtistRelationships, !user->getUIEnableInlineArtistRelationships());
-                setValue(InlineArtistRelationships, user->getUIInlineArtistRelationships());
+                setValue(EnableInlineArtistRelationships, user.getUIEnableInlineArtistRelationships());
+                setReadOnly(InlineArtistRelationships, !user.getUIEnableInlineArtistRelationships());
+                setValue(InlineArtistRelationships, user.getUIInlineArtistRelationships());
             }
 
         private:

@@ -53,11 +53,11 @@ namespace lms::ui
                 auto& session{ LmsApp->getDbSession() };
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer& library) {
-                    if (library->getId() == _libraryId)
+                db::MediaLibrary::find(session, [&](const db::MediaLibrary& library) {
+                    if (library.getId() == _libraryId)
                         return;
 
-                    if (core::stringUtils::stringCaseInsensitiveEqual(name, library->getName()))
+                    if (core::stringUtils::stringCaseInsensitiveEqual(name, library.getName()))
                         result = Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.MediaLibrary.name-already-exists") };
                 });
 
@@ -97,11 +97,11 @@ namespace lms::ui
 
                 Wt::WValidator::Result result{ Wt::ValidationState::Valid };
                 const std::filesystem::path rootPath{ std::filesystem::path{ input.toUTF8() }.lexically_normal() };
-                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer& library) {
-                    if (library->getId() == _libraryId)
+                db::MediaLibrary::find(session, [&](const db::MediaLibrary& library) {
+                    if (library.getId() == _libraryId)
                         return;
 
-                    const std::filesystem::path libraryRootPath{ library->getPath().lexically_normal() };
+                    const std::filesystem::path libraryRootPath{ library.getPath().lexically_normal() };
 
                     if (core::pathUtils::isPathInRootPath(rootPath, libraryRootPath)
                         || core::pathUtils::isPathInRootPath(libraryRootPath, rootPath))
@@ -152,14 +152,15 @@ namespace lms::ui
                 std::string name{ valueText(NameField).toUTF8() };
                 std::string path{ valueText(DirectoryField).toUTF8() };
 
-                db::MediaLibrary::pointer library;
+                std::optional<db::MediaLibrary> library;
                 if (_libraryId.isValid())
                 {
                     library = db::MediaLibrary::find(session, _libraryId);
                     if (library)
                     {
-                        library.modify()->setName(name);
-                        library.modify()->setPath(path);
+                        library->setName(name);
+                        library->setPath(path);
+                        db::MediaLibrary::update(session, *library);
                     }
                 }
                 else
@@ -176,7 +177,7 @@ namespace lms::ui
                 auto& session{ LmsApp->getDbSession() };
                 auto transaction{ session.createReadTransaction() };
 
-                const db::MediaLibrary::pointer library{ db::MediaLibrary::find(session, _libraryId) };
+                const std::optional<db::MediaLibrary> library{ db::MediaLibrary::find(session, _libraryId) };
 
                 setValue(NameField, std::string{ library->getName() });
                 setValue(DirectoryField, library->getPath().string());

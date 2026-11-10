@@ -26,16 +26,16 @@ namespace lms::api::subsonic
 {
     constexpr std::string_view reportedDummyDate{ "2000-01-01T00:00:00" };
 
-    Response::Node createBookmarkNode(const db::ObjectPtr<db::TrackBookmark>& trackBookmark)
+    Response::Node createBookmarkNode(db::ISession& session, const db::TrackBookmark& trackBookmark)
     {
         Response::Node trackBookmarkNode;
 
-        trackBookmarkNode.setAttribute("position", trackBookmark->getOffset().count());
-        if (!trackBookmark->getComment().empty())
-            trackBookmarkNode.setAttribute("comment", trackBookmark->getComment());
+        trackBookmarkNode.setAttribute("position", trackBookmark.getOffset().count());
+        if (!trackBookmark.getComment().empty())
+            trackBookmarkNode.setAttribute("comment", trackBookmark.getComment());
         trackBookmarkNode.setAttribute("created", reportedDummyDate);
         trackBookmarkNode.setAttribute("changed", reportedDummyDate);
-        trackBookmarkNode.setAttribute("username", trackBookmark->getUser()->getLoginName());
+        trackBookmarkNode.setAttribute("username", db::User::find(session, trackBookmark.getUserId())->getLoginName());
 
         return trackBookmarkNode;
     }

@@ -23,7 +23,7 @@
 
 #include "database/objects/Genre.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -34,6 +34,8 @@ namespace lms::db::dbo
     public:
         Genre() = default;
         using db::Genre::Genre;
+
+        void syncIds() { _id = id(); }
 
         template<class Action>
         void persist(Action& a)

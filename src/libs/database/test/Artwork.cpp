@@ -38,14 +38,16 @@ namespace lms::db::tests
         ScopedImage image{ session, "/MyImage" };
         {
             auto transaction{ session.createWriteTransaction() };
-            image.get().modify()->setAbsoluteFilePath("/tmp/foo");
+            std::optional<Image> updatedImage{ image.get() };
+            updatedImage->setAbsoluteFilePath("/tmp/foo");
+            Image::update(session, *updatedImage);
         }
-        ScopedArtwork artwork{ session, image.lockAndGet() };
+        ScopedArtwork artwork{ session, image.getId() };
 
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Artwork::getCount(session), 1);
-            EXPECT_EQ(artwork.get()->getAbsoluteFilePath(), "/tmp/foo");
+            EXPECT_EQ(Artwork::getAbsoluteFilePath(session, artwork.getId()), "/tmp/foo");
         }
     }
 
@@ -60,24 +62,26 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         {
             auto transaction{ session.createWriteTransaction() };
-            db::TrackEmbeddedImageLink::create(session, track.get(), image.get());
-            track.get().modify()->setAbsoluteFilePath("/tmp/foo");
+            db::TrackEmbeddedImageLink::create(session, track.getId(), image.getId());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setAbsoluteFilePath("/tmp/foo");
+            Track::update(session, *updatedTrack);
         }
-        ScopedArtwork artwork{ session, image.lockAndGet() };
+        ScopedArtwork artwork{ session, image.getId() };
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(artwork.get()->getAbsoluteFilePath(), "/tmp/foo");
+            EXPECT_EQ(Artwork::getAbsoluteFilePath(session, artwork.getId()), "/tmp/foo");
         }
     }
 
     TEST_F(DatabaseFixture, Artwork_underlyingId)
     {
         ScopedImage image1{ session, "/MyImage" };
-        ScopedArtwork artwork1{ session, image1.lockAndGet() };
+        ScopedArtwork artwork1{ session, image1.getId() };
 
         ScopedTrackEmbeddedImage image2{ session };
-        ScopedArtwork artwork2{ session, image2.lockAndGet() };
+        ScopedArtwork artwork2{ session, image2.getId() };
 
         {
             auto transaction{ session.createReadTransaction() };

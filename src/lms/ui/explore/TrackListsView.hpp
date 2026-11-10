@@ -23,7 +23,6 @@
 
 #include <Wt/WTemplate.h>
 
-#include "database/Object.hpp"
 #include "database/objects/TrackListId.hpp"
 
 #include "common/Template.hpp"
@@ -60,7 +59,7 @@ namespace lms::ui
 
         void refreshView();
         void addSome();
-        void addTracklist(const db::ObjectPtr<db::TrackList>& trackList);
+        void addTracklist(const db::TrackList& trackList);
 
         static constexpr SortMode _defaultSortMode{ SortMode::RecentlyModified };
         static constexpr Type _defaultType{ Type::Owned };

@@ -21,31 +21,34 @@
 
 #include <chrono>
 #include <optional>
+#include <span>
 
 #include "database/IdType.hpp"
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 LMS_DECLARE_IDTYPE(TrackBookmarkId)
 
 namespace lms::db
 {
     class ISession;
-    class Track;
     class User;
 
-    class TrackBookmark : public Object<TrackBookmark, TrackBookmarkId>
+    class TrackBookmark : public detail::Object<TrackBookmark, TrackBookmarkId>
     {
     public:
-        static pointer create(ISession& session, const ObjectPtr<User>& user, const ObjectPtr<Track>& track);
+        static TrackBookmark create(ISession& session, UserId user, TrackId track);
+        static void destroy(ISession& session, std::span<const TrackBookmarkId> ids);
 
         // Find utility functions
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, TrackBookmarkId id);
+        static std::optional<TrackBookmark> find(ISession& session, TrackBookmarkId id);
         static std::vector<TrackBookmarkId> find(ISession& session, UserId userId, std::optional<Range> range = std::nullopt);
-        static pointer find(ISession& session, UserId userId, TrackId trackId);
+        static std::optional<TrackBookmark> find(ISession& session, UserId userId, TrackId trackId);
+
+        static void update(ISession& session, const TrackBookmark& trackBookmark);
 
         // Setters
         void setOffset(std::chrono::milliseconds offset) { _offset = offset; }
@@ -54,8 +57,8 @@ namespace lms::db
         // Getters
         std::chrono::milliseconds getOffset() const { return _offset; }
         std::string_view getComment() const { return _comment; }
-        ObjectPtr<Track> getTrack() const;
-        ObjectPtr<User> getUser() const;
+        TrackId getTrackId() const { return _trackId; }
+        UserId getUserId() const { return _userId; }
 
     protected:
         TrackBookmark() = default;
@@ -64,6 +67,8 @@ namespace lms::db
 
         std::chrono::duration<int, std::milli> _offset;
         std::string _comment;
+        TrackId _trackId;
+        UserId _userId;
     };
 
 } // namespace lms::db

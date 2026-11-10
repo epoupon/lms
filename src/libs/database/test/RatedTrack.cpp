@@ -42,7 +42,7 @@ namespace lms::db::tests
             EXPECT_EQ(tracks.size(), 1);
         }
 
-        ScopedRatedTrack ratedTrack{ session, track.lockAndGet(), user.lockAndGet() };
+        ScopedRatedTrack ratedTrack{ session, track.getId(), user.getId() };
         {
             auto transaction{ session.createReadTransaction() };
 

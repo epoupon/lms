@@ -295,7 +295,7 @@ namespace lms::jukebox
             auto& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            const db::Track::pointer track{ db::Track::find(session, _tracks.at(trackIndex)) };
+            const std::optional<db::Track> track{ db::Track::find(session, _tracks.at(trackIndex)) };
             if (!track)
             {
                 LMS_LOG(JUKEBOX, DEBUG, "Track ID " << _tracks.at(trackIndex).getValue() << " not found");

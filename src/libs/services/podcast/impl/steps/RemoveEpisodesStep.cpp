@@ -52,11 +52,11 @@ namespace lms::podcast
 
         // Step 1 collect the episodes to remove
         {
-            auto removePodcastFile{ [&](const db::PodcastEpisode::pointer& episode) {
+            auto removePodcastFile{ [&](const db::PodcastEpisode& episode) {
                 // We keep the artwork of the episode (TODO, not if the episode is no longer referenced by the podcast?)
-                assert(!episode->getAudioRelativeFilePath().empty());
-                utils::removeFile(getCachePath() / episode->getAudioRelativeFilePath());
-                episodesToRemove.emplace_back(episode->getId());
+                assert(!episode.getAudioRelativeFilePath().empty());
+                utils::removeFile(getCachePath() / episode.getAudioRelativeFilePath());
+                episodesToRemove.emplace_back(episode.getId());
             } };
 
             const Wt::WDateTime now{ Wt::WDateTime::currentDateTime() };
@@ -64,13 +64,13 @@ namespace lms::podcast
             auto& session{ getDb().getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            db::PodcastEpisode::find(session, db::PodcastEpisode::FindParameters{}, [&](const db::PodcastEpisode::pointer& episode) {
-                switch (episode->getManualDownloadState())
+            db::PodcastEpisode::find(session, db::PodcastEpisode::FindParameters{}, [&](const db::PodcastEpisode& episode) {
+                switch (episode.getManualDownloadState())
                 {
                 case db::PodcastEpisode::ManualDownloadState::None:
-                    if (!episode->getAudioRelativeFilePath().empty() && now > episode->getPubDate().addDays(_autoDownloadEpisodesMaxAge.count())) // TODO make this configurable per podcast
+                    if (!episode.getAudioRelativeFilePath().empty() && now > episode.getPubDate().addDays(_autoDownloadEpisodesMaxAge.count())) // TODO make this configurable per podcast
                     {
-                        LMS_LOG(PODCAST, INFO, "Removing episode '" << episode->getTitle() << "' because it is older than " << _autoDownloadEpisodesMaxAge.count() << " days");
+                        LMS_LOG(PODCAST, INFO, "Removing episode '" << episode.getTitle() << "' because it is older than " << _autoDownloadEpisodesMaxAge.count() << " days");
                         removePodcastFile(episode);
                     }
                     break;
@@ -80,9 +80,9 @@ namespace lms::podcast
                     break;
 
                 case db::PodcastEpisode::ManualDownloadState::DeleteRequested:
-                    if (!episode->getAudioRelativeFilePath().empty())
+                    if (!episode.getAudioRelativeFilePath().empty())
                     {
-                        LMS_LOG(PODCAST, DEBUG, "Removing episode '" << episode->getTitle() << "' because it was manually deleted");
+                        LMS_LOG(PODCAST, DEBUG, "Removing episode '" << episode.getTitle() << "' because it was manually deleted");
                         removePodcastFile(episode);
                     }
                     break;
@@ -98,8 +98,11 @@ namespace lms::podcast
 
             for (db::PodcastEpisodeId episodeId : episodesToRemove)
             {
-                if (db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, episodeId) })
-                    episode.modify()->setAudioRelativeFilePath(std::filesystem::path{});
+                if (std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(session, episodeId) })
+                {
+                    episode->setAudioRelativeFilePath(std::filesystem::path{});
+                    db::PodcastEpisode::update(session, *episode);
+                }
             }
         }
 

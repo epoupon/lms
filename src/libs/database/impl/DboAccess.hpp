@@ -19,13 +19,15 @@
 
 #pragma once
 
-#include <new>
-#include <type_traits>
+#include <concepts>
 #include <utility>
 
+#include <Wt/Dbo/Session.h>
 #include <Wt/Dbo/ptr.h>
 
-#include "database/Object.hpp"
+#include "database/objects/detail/Object.hpp"
+
+#define LMS_DB_INSTANTIATE_OBJECT(C) DBO_INSTANTIATE_TEMPLATES(lms::db::DboOf<C>::type)
 
 namespace lms::db
 {
@@ -33,55 +35,32 @@ namespace lms::db
     template<typename T>
     struct DboOf;
 
-    template<typename T>
-        requires(!std::is_const_v<T>)
-    typename DboOf<T>::type& getDbo(T& obj)
-    {
-        return static_cast<typename DboOf<T>::type&>(obj);
-    }
-
-    template<typename T>
-    const typename DboOf<T>::type& getDbo(const T& obj)
-    {
-        return static_cast<const typename DboOf<T>::type&>(obj);
-    }
-
-    class ObjectPtrAccess
-    {
-    public:
-        template<typename T>
-        static auto& dboPtr(ObjectPtr<T>& ptr)
-        {
-            return *std::launder(reinterpret_cast<Wt::Dbo::ptr<typename DboOf<T>::type>*>(ptr._storage));
-        }
-
-        template<typename T>
-        static const auto& dboPtr(const ObjectPtr<T>& ptr)
-        {
-            return *std::launder(reinterpret_cast<const Wt::Dbo::ptr<typename DboOf<T>::type>*>(ptr._storage));
-        }
-    };
-
-    template<typename T>
-    const auto& getDboPtr(const ObjectPtr<T>& ptr)
-    {
-        return ObjectPtrAccess::dboPtr(ptr);
-    }
-
-    template<typename T>
-    inline constexpr bool isObjectPtr{ false };
-
-    template<typename T>
-    inline constexpr bool isObjectPtr<ObjectPtr<T>>{ true };
+    template<typename T, typename IdType>
+    T entityOf(const detail::Object<T, IdType>&);
 
     template<typename DboType>
-    concept MappedEntity = isObjectPtr<typename DboType::pointer>;
+    concept MappedEntity = std::derived_from<DboType, Wt::Dbo::Dbo<DboType>> && requires(const DboType& dbo) { entityOf(dbo); };
 
     template<MappedEntity DboType>
-    typename DboType::pointer toObjectPtr(Wt::Dbo::ptr<DboType> ptr)
+    using EntityOf = decltype(entityOf(std::declval<const DboType&>()));
+
+    // Points a relation to the given id, without loading the object
+    template<typename DboType, typename IdType>
+    void setRelation(Wt::Dbo::Session& session, Wt::Dbo::ptr<DboType>& relation, IdType id)
     {
-        typename DboType::pointer res;
-        ObjectPtrAccess::dboPtr(res) = std::move(ptr);
-        return res;
+        if (!id.isValid())
+            relation = Wt::Dbo::ptr<DboType>{};
+        else if (relation.id() != id.getValue())
+            relation = session.loadLazy<DboType>(id.getValue());
+    }
+
+    // The ids carried by the value are not mapped: they are refreshed from Wt each time the value is handed out
+    template<MappedEntity DboType>
+    const EntityOf<DboType>& toEntity(const Wt::Dbo::ptr<DboType>& ptr)
+    {
+        // Wt allocates its objects non-const
+        DboType& dbo{ const_cast<DboType&>(*ptr) };
+        dbo.syncIds();
+        return dbo;
     }
 } // namespace lms::db

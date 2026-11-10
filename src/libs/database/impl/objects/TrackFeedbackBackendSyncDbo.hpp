@@ -24,7 +24,7 @@
 
 #include "database/objects/TrackFeedbackBackendSync.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,7 +36,13 @@ namespace lms::db::dbo
         TrackFeedbackBackendSync() = default;
         using db::TrackFeedbackBackendSync::TrackFeedbackBackendSync;
 
-        TrackFeedbackBackendSync(const ObjectPtr<db::TrackFeedback>& trackFeedback, FeedbackBackend backend);
+        TrackFeedbackBackendSync(Wt::Dbo::ptr<TrackFeedback> trackFeedback, FeedbackBackend backend);
+
+        void syncIds()
+        {
+            _id = id();
+            _trackFeedbackId = _trackFeedback.id();
+        }
 
         template<class Action>
         void persist(Action& a)

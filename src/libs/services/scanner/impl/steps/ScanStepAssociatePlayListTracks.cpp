@@ -56,16 +56,16 @@ namespace lms::scanner
         };
         using PlayListFileAssociationContainer = std::deque<PlayListFileAssociation>;
 
-        db::Track::pointer getMatchingTrack(db::ISession& session, const std::filesystem::path& filePath, const db::Directory::pointer& playListDirectory)
+        std::optional<db::Track> getMatchingTrack(db::ISession& session, const std::filesystem::path& filePath, const db::Directory& playListDirectory)
         {
-            db::Track::pointer matchingTrack;
+            std::optional<db::Track> matchingTrack;
             if (filePath.is_absolute())
             {
                 matchingTrack = db::Track::findByPath(session, filePath);
             }
             else
             {
-                const std::filesystem::path absolutePath{ playListDirectory->getAbsolutePath() / filePath };
+                const std::filesystem::path absolutePath{ playListDirectory.getAbsolutePath() / filePath };
                 matchingTrack = db::Track::findByPath(session, absolutePath.lexically_normal());
             }
 
@@ -81,18 +81,18 @@ namespace lms::scanner
             return std::all_of(std::cbegin(tracks) + 1, std::cend(tracks), [=](const TrackInfo& trackInfo) { return trackInfo.releaseId == releaseId; });
         }
 
-        bool trackListNeedsUpdate(db::ISession& session, std::string_view name, std::span<const TrackInfo> tracks, const db::TrackList::pointer& trackList)
+        bool trackListNeedsUpdate(db::ISession& session, std::string_view name, std::span<const TrackInfo> tracks, const db::TrackList& trackList)
         {
-            if (trackList->getName() != name)
+            if (trackList.getName() != name)
                 return true;
 
             db::TrackListEntry::FindParameters params;
-            params.setTrackList(trackList->getId());
+            params.setTrackList(trackList.getId());
 
             bool needUpdate{};
             std::size_t currentIndex{};
-            db::TrackListEntry::find(session, params, [&](const db::TrackListEntry::pointer& entry) {
-                if (currentIndex > tracks.size() || tracks[currentIndex].trackId != entry->getTrackId())
+            db::TrackListEntry::find(session, params, [&](const db::TrackListEntry& entry) {
+                if (currentIndex > tracks.size() || tracks[currentIndex].trackId != entry.getTrackId())
                     needUpdate = true;
 
                 currentIndex += 1;
@@ -106,16 +106,17 @@ namespace lms::scanner
 
         void updatePlayList(db::ISession& session, const PlayListFileAssociation& playListFileAssociation)
         {
-            db::PlayListFile::pointer playListFile{ db::PlayListFile::find(session, playListFileAssociation.playListFileIdId) };
+            std::optional<db::PlayListFile> playListFile{ db::PlayListFile::find(session, playListFileAssociation.playListFileIdId) };
             assert(playListFile);
 
-            db::TrackList::pointer trackList{ playListFile->getTrackList() };
+            std::optional<db::TrackList> trackList{ db::TrackList::find(session, playListFile->getId()) };
             if (playListFileAssociation.tracks.empty())
             {
                 if (trackList)
                 {
                     LMS_LOG(DBUPDATER, DEBUG, "Removed associated tracklist for " << playListFile->getAbsoluteFilePath() << "");
-                    trackList.remove();
+                    const db::TrackListId trackListId{ trackList->getId() };
+                    db::TrackList::destroy(session, std::span{ &trackListId, 1 });
                 }
 
                 return;
@@ -125,19 +126,19 @@ namespace lms::scanner
             if (createTrackList)
             {
                 trackList = db::TrackList::create(session, playListFile->getName(), db::TrackListType::PlayList);
-                playListFile.modify()->setTrackList(trackList);
+                trackList->setPlayListFile(playListFile->getId());
             }
 
-            trackList.modify()->setVisibility(db::TrackList::Visibility::Public);
-            trackList.modify()->setLastModifiedDateTime(playListFile->getLastWriteTime());
-            trackList.modify()->setName(playListFile->getName());
+            trackList->setVisibility(db::TrackList::Visibility::Public);
+            trackList->setLastModifiedDateTime(playListFile->getLastWriteTime());
+            trackList->setName(playListFile->getName());
+            db::TrackList::update(session, *trackList);
 
-            trackList.modify()->clear();
+            db::TrackList::clear(session, trackList->getId());
             for (const TrackInfo trackInfo : playListFileAssociation.tracks)
             {
-                // TODO no need to fetch the whole track for that
-                if (db::Track::pointer track{ db::Track::find(session, trackInfo.trackId) })
-                    db::TrackListEntry::create(session, track, trackList, playListFile->getLastWriteTime());
+                if (db::Track::exists(session, trackInfo.trackId))
+                    db::TrackListEntry::create(session, trackInfo.trackId, trackList->getId(), playListFile->getLastWriteTime());
             }
 
             LMS_LOG(DBUPDATER, DEBUG, std::string_view{ createTrackList ? "Created" : "Updated" } << " associated tracklist for " << playListFile->getAbsoluteFilePath() << " (" << playListFileAssociation.tracks.size() << " tracks)");
@@ -192,28 +193,29 @@ namespace lms::scanner
                 auto& session{ _db.getTLSSession() };
                 auto transaction{ session.createReadTransaction() };
 
-                db::PlayListFile::find(session, _playListFileIdRange, [&](const db::PlayListFile::pointer& playListFile) {
+                db::PlayListFile::find(session, _playListFileIdRange, [&](const db::PlayListFile& playListFile) {
                     PlayListFileAssociation playListAssociation;
 
-                    playListAssociation.playListFileIdId = playListFile->getId();
+                    playListAssociation.playListFileIdId = playListFile.getId();
 
                     std::vector<std::shared_ptr<ScanError>> pendingErrors;
 
-                    const auto& files{ playListFile->getFiles() };
+                    const std::optional<db::Directory> playListDirectory{ db::Directory::find(session, playListFile.getDirectoryId()) };
+                    const auto& files{ playListFile.getFiles() };
                     for (const std::filesystem::path& file : files)
                     {
                         // TODO optim: no need to fetch the whole track
-                        const db::Track::pointer track{ getMatchingTrack(session, file, playListFile->getDirectory()) };
+                        const std::optional<db::Track> track{ getMatchingTrack(session, file, *playListDirectory) };
                         if (track)
                             playListAssociation.tracks.push_back(TrackInfo{ .trackId = track->getId(), .releaseId = track->getReleaseId() });
                         else
-                            pendingErrors.emplace_back(std::make_shared<PlayListFilePathMissingError>(playListFile->getAbsoluteFilePath(), file));
+                            pendingErrors.emplace_back(std::make_shared<PlayListFilePathMissingError>(playListFile.getAbsoluteFilePath(), file));
                     }
 
                     if (pendingErrors.size() == files.size())
                     {
                         pendingErrors.clear();
-                        pendingErrors.emplace_back(std::make_shared<PlayListFileAllPathesMissingError>(playListFile->getAbsoluteFilePath()));
+                        pendingErrors.emplace_back(std::make_shared<PlayListFileAllPathesMissingError>(playListFile.getAbsoluteFilePath()));
                     }
                     _errors.insert(std::end(_errors), std::begin(pendingErrors), std::end(pendingErrors));
 
@@ -224,10 +226,10 @@ namespace lms::scanner
                     }
 
                     bool needUpdate{ true };
-                    if (const db::TrackList::pointer trackList{ playListFile->getTrackList() })
+                    if (const std::optional<db::TrackList> trackList{ db::TrackList::find(session, playListFile.getId()) })
                     {
                         if (!playListAssociation.tracks.empty())
-                            needUpdate = trackListNeedsUpdate(session, playListFile->getName(), playListAssociation.tracks, trackList);
+                            needUpdate = trackListNeedsUpdate(session, playListFile.getName(), playListAssociation.tracks, *trackList);
                     }
                     else if (playListAssociation.tracks.empty())
                         needUpdate = false;

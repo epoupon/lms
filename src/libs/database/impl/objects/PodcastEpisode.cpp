@@ -23,7 +23,7 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "ArtworkDbo.hpp"
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "PodcastDbo.hpp"
 #include "PodcastEpisodeDbo.hpp"
 #include "Session.hpp"
@@ -63,14 +63,19 @@ namespace lms::db
         }
     } // namespace
 
-    dbo::PodcastEpisode::PodcastEpisode(const ObjectPtr<db::Podcast>& podcast)
-        : _podcast{ getDboPtr(podcast) }
+    dbo::PodcastEpisode::PodcastEpisode(Wt::Dbo::ptr<Podcast> podcast)
+        : _podcast{ std::move(podcast) }
     {
     }
 
-    PodcastEpisode::pointer PodcastEpisode::create(ISession& session, const ObjectPtr<Podcast>& podcast)
+    PodcastEpisode PodcastEpisode::create(ISession& session, PodcastId podcast)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::PodcastEpisode>{ new dbo::PodcastEpisode{ podcast } });
+        return utils::addObject(session, std::unique_ptr<dbo::PodcastEpisode>{ new dbo::PodcastEpisode{ getDboSession(session)->loadLazy<dbo::Podcast>(podcast.getValue()) } });
+    }
+
+    void PodcastEpisode::destroy(ISession& session, std::span<const PodcastEpisodeId> ids)
+    {
+        utils::destroyObjects<dbo::PodcastEpisode>(session, ids);
     }
 
     std::size_t PodcastEpisode::getCount(ISession& session)
@@ -79,20 +84,24 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM podcast_episode"));
     }
 
-    PodcastEpisode::pointer PodcastEpisode::find(ISession& session, PodcastEpisodeId id)
+    std::optional<PodcastEpisode> PodcastEpisode::find(ISession& session, PodcastEpisodeId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PodcastEpisode>>("SELECT p_e from podcast_episode p_e").where("p_e.id = ?").bind(id));
     }
 
-    PodcastEpisode::pointer PodcastEpisode::findNewtestEpisode(ISession& session, PodcastId podcastId)
+    std::optional<PodcastEpisode> PodcastEpisode::findNewtestEpisode(ISession& session, PodcastId podcastId)
     {
         checkReadTransaction(session);
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PodcastEpisode>>("SELECT p_e from podcast_episode p_e").where("p_e.podcast_id = ?").bind(podcastId).orderBy("p_e.pub_date DESC").limit(1));
     }
 
-    void PodcastEpisode::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    void PodcastEpisode::find(ISession& session, const FindParameters& params, const std::function<void(const PodcastEpisode&)>& func)
     {
         checkReadTransaction(session);
 
@@ -110,16 +119,6 @@ namespace lms::db
         return detail::getMediaCodecType(_codec);
     }
 
-    ObjectPtr<Artwork> PodcastEpisode::getArtwork() const
-    {
-        return toObjectPtr(getDbo(*this)._artwork);
-    }
-
-    ArtworkId PodcastEpisode::getArtworkId() const
-    {
-        return getDbo(*this)._artwork.id();
-    }
-
     void PodcastEpisode::setContainer(core::media::Container container)
     {
         _container = detail::getDbContainer(container);
@@ -130,18 +129,13 @@ namespace lms::db
         _codec = detail::getDbCodec(codec);
     }
 
-    void PodcastEpisode::setArtwork(const ObjectPtr<Artwork>& artwork)
+    void dbo::PodcastEpisode::applyIds()
     {
-        getDbo(*this)._artwork = getDboPtr(artwork);
+        setRelation(*session(), _artwork, _artworkId);
     }
 
-    ObjectPtr<Podcast> PodcastEpisode::getPodcast() const
+    void PodcastEpisode::update(ISession& session, const PodcastEpisode& podcastEpisode)
     {
-        return toObjectPtr(getDbo(*this)._podcast);
-    }
-
-    PodcastId PodcastEpisode::getPodcastId() const
-    {
-        return getDbo(*this)._podcast.id();
+        utils::updateObject<dbo::PodcastEpisode>(session, podcastEpisode);
     }
 } // namespace lms::db

@@ -24,7 +24,7 @@
 
 #include "database/objects/AuthToken.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,7 +36,13 @@ namespace lms::db::dbo
         AuthToken() = default;
         using db::AuthToken::AuthToken;
 
-        AuthToken(std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, const ObjectPtr<db::User>& user);
+        AuthToken(std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, Wt::Dbo::ptr<User> user);
+
+        void syncIds()
+        {
+            _id = id();
+            _userId = _user.id();
+        }
 
         template<class Action>
         void persist(Action& a)

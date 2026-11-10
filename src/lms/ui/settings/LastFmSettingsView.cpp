@@ -67,18 +67,19 @@ namespace lms::ui
 
                 {
                     auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-                    db::User::pointer user{ LmsApp->getUser() };
-                    userId = user->getId();
+                    db::User user{ LmsApp->getUser() };
+                    userId = user.getId();
 
-                    const bool wasScrobblingEnabled{ user->getScrobblingBackends().contains(db::ScrobblingBackend::LastFm) };
+                    const bool wasScrobblingEnabled{ user.getScrobblingBackends().contains(db::ScrobblingBackend::LastFm) };
                     const bool scrobblingEnabled{ Wt::asNumber(value(EnableScrobblingField)) != 0 };
 
-                    core::EnumSet<db::ScrobblingBackend> scrobblingBackends{ user->getScrobblingBackends() };
+                    core::EnumSet<db::ScrobblingBackend> scrobblingBackends{ user.getScrobblingBackends() };
                     if (scrobblingEnabled)
                         scrobblingBackends.insert(db::ScrobblingBackend::LastFm);
                     else
                         scrobblingBackends.erase(db::ScrobblingBackend::LastFm);
-                    user.modify()->setScrobblingBackends(scrobblingBackends);
+                    user.setScrobblingBackends(scrobblingBackends);
+                    db::User::update(LmsApp->getDbSession(), user);
 
                     scrobblingTurnedOn = !wasScrobblingEnabled && scrobblingEnabled;
                 }
@@ -90,9 +91,9 @@ namespace lms::ui
             void loadData()
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                const db::User::pointer user{ LmsApp->getUser() };
+                const db::User user{ LmsApp->getUser() };
 
-                setValue(EnableScrobblingField, user->getScrobblingBackends().contains(db::ScrobblingBackend::LastFm));
+                setValue(EnableScrobblingField, user.getScrobblingBackends().contains(db::ScrobblingBackend::LastFm));
             }
         };
     } // namespace
@@ -131,7 +132,7 @@ namespace lms::ui
     void LastFmSettingsView::updateAccountCardVisibility()
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-        _accountCard->setHidden(!LmsApp->getUser()->getScrobblingBackends().contains(db::ScrobblingBackend::LastFm));
+        _accountCard->setHidden(!LmsApp->getUser().getScrobblingBackends().contains(db::ScrobblingBackend::LastFm));
     }
 
     void LastFmSettingsView::refreshAccountCard()
@@ -144,7 +145,7 @@ namespace lms::ui
 
         const bool linked{ [&] {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            return !LmsApp->getUser()->getLastFmSessionKey().empty();
+            return !LmsApp->getUser().getLastFmSessionKey().empty();
         }() };
 
         lastFmCard->setCondition("if-linked", linked);
@@ -162,7 +163,9 @@ namespace lms::ui
                     .connect(this, [this, modalPtr] {
                         {
                             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-                            LmsApp->getUser().modify()->setLastFmSessionKey("");
+                            db::User user{ LmsApp->getUser() };
+                            user.setLastFmSessionKey("");
+                            db::User::update(LmsApp->getDbSession(), user);
                         }
                         LmsApp->getModalManager().dispose(modalPtr);
                         refreshView();
@@ -193,10 +196,10 @@ namespace lms::ui
         // pre-fill from DB if credentials already exist
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            const db::User::pointer user{ LmsApp->getUser() };
-            if (const auto key{ user->getLastFmApiKey() }; !key.empty())
+            const db::User user{ LmsApp->getUser() };
+            if (const auto key{ user.getLastFmApiKey() }; !key.empty())
                 apiKeyEdit->setValueText(Wt::WString::fromUTF8(std::string{ key }));
-            if (const auto secret{ user->getLastFmApiSecret() }; !secret.empty())
+            if (const auto secret{ user.getLastFmApiSecret() }; !secret.empty())
                 apiSecretEdit->setValueText(Wt::WString::fromUTF8(std::string{ secret }));
         }
 

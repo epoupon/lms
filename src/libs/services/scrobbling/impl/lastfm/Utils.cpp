@@ -57,7 +57,7 @@ namespace lms::scrobbling::lastFm::utils
         LastFmCredentials creds;
 
         auto transaction{ session.createReadTransaction() };
-        if (const db::User::pointer user{ db::User::find(session, userId) })
+        if (const std::optional<db::User> user{ db::User::find(session, userId) })
         {
             creds.apiKey = user->getLastFmApiKey();
             creds.apiSecret = user->getLastFmApiSecret();

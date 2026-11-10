@@ -20,49 +20,51 @@
 #pragma once
 
 #include <chrono>
+#include <functional>
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
+#include "database/objects/PlayQueueId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/UserId.hpp"
-
-LMS_DECLARE_IDTYPE(PlayQueueId)
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class Track;
     class User;
 
     // Usage only for subsonic API
-    class PlayQueue : public Object<PlayQueue, PlayQueueId>
+    class PlayQueue : public detail::Object<PlayQueue, PlayQueueId>
     {
     public:
-        static pointer create(ISession& session, const ObjectPtr<User>& user, std::string_view name);
+        static PlayQueue create(ISession& session, UserId user, std::string_view name);
+        static void destroy(ISession& session, std::span<const PlayQueueId> ids);
 
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, PlayQueueId playQueueId);
-        static pointer find(ISession& session, UserId userId, std::string_view name);
+        static std::optional<PlayQueue> find(ISession& session, PlayQueueId playQueueId);
+        static std::optional<PlayQueue> find(ISession& session, UserId userId, std::string_view name);
+
+        static bool isEmpty(ISession& session, PlayQueueId id);
+
+        static void update(ISession& session, const PlayQueue& playQueue);
+        static void clear(ISession& session, PlayQueueId id);
+        static void addTrack(ISession& session, PlayQueueId id, TrackId track);
 
         // Accessors
         std::string_view getName() const { return _name; }
         std::size_t getCurrentIndex() const { return _currentIndex; }
         std::chrono::milliseconds getCurrentPositionInTrack() const { return _currentPositionInTrack; }
-        ObjectPtr<User> getUser() const;
-        ObjectPtr<Track> getTrackAtCurrentIndex() const;
-        // Get tracks, ordered by position
-        void visitTracks(const std::function<void(const ObjectPtr<Track>& track)>& visitor) const;
+        UserId getUserId() const { return _userId; }
         Wt::WDateTime getLastModifiedDateTime() const { return _lastModifiedDateTime; }
-        bool isEmpty() const;
 
         // Modifiers
         void setCurrentIndex(std::size_t index) { _currentIndex = index; }
         void setCurrentPositionInTrack(std::chrono::milliseconds position) { _currentPositionInTrack = position; }
-        void clear();
-        void addTrack(const ObjectPtr<Track>& track);
         void setLastModifiedDateTime(const Wt::WDateTime& lastModified) { _lastModifiedDateTime = lastModified; }
 
     protected:
@@ -73,5 +75,6 @@ namespace lms::db
         int _currentIndex{};
         std::chrono::duration<int, std::milli> _currentPositionInTrack{};
         Wt::WDateTime _lastModifiedDateTime;
+        UserId _userId;
     };
 } // namespace lms::db

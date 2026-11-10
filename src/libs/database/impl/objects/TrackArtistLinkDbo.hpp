@@ -24,7 +24,7 @@
 
 #include "database/objects/TrackArtistLink.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -37,7 +37,15 @@ namespace lms::db::dbo
         TrackArtistLink() = default;
         using db::TrackArtistLink::TrackArtistLink;
 
-        TrackArtistLink(const ObjectPtr<db::Track>& track, const ObjectPtr<db::Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched);
+        TrackArtistLink(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched);
+
+        void syncIds()
+        {
+            _id = id();
+            _trackId = _track.id();
+            _artistId = _artist.id();
+        }
+        void applyIds();
 
         template<class Action>
         void persist(Action& a)

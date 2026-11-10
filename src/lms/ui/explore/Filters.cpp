@@ -106,8 +106,8 @@ namespace lms::ui
 
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                db::ClusterType::find(LmsApp->getDbSession(), [&](const db::ClusterType::pointer& clusterType) {
-                    typeModel->add(Wt::WString::fromUTF8(std::string{ clusterType->getName() }), clusterType->getId());
+                db::ClusterType::find(LmsApp->getDbSession(), [&](const db::ClusterType& clusterType) {
+                    typeModel->add(Wt::WString::fromUTF8(std::string{ clusterType.getName() }), clusterType.getId());
                 });
             }
 
@@ -131,18 +131,18 @@ namespace lms::ui
 
             std::visit(core::utils::overloads{
                            [&](const MediaLibraryTag&) {
-                               db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer& library) {
-                                   valueModel->add(Wt::WString::fromUTF8(std::string{ library->getName() }), library->getId());
+                               db::MediaLibrary::find(session, [&](const db::MediaLibrary& library) {
+                                   valueModel->add(Wt::WString::fromUTF8(std::string{ library.getName() }), library.getId());
                                });
                            },
                            [&](const LabelTag&) {
-                               db::Label::find(session, db::LabelSortMethod::Name, [&](const db::Label::pointer& label) {
-                                   valueModel->add(Wt::WString::fromUTF8(std::string{ label->getName() }), label->getId());
+                               db::Label::find(session, db::LabelSortMethod::Name, [&](const db::Label& label) {
+                                   valueModel->add(Wt::WString::fromUTF8(std::string{ label.getName() }), label.getId());
                                });
                            },
                            [&](const ReleaseTypeTag&) {
-                               db::ReleaseType::find(session, db::ReleaseTypeSortMethod::Name, [&](const db::ReleaseType::pointer& releaseType) {
-                                   valueModel->add(Wt::WString::fromUTF8(std::string{ releaseType->getName() }), releaseType->getId());
+                               db::ReleaseType::find(session, db::ReleaseTypeSortMethod::Name, [&](const db::ReleaseType& releaseType) {
+                                   valueModel->add(Wt::WString::fromUTF8(std::string{ releaseType.getName() }), releaseType.getId());
                                });
                            },
                            [&](const CodecTag&) {
@@ -151,23 +151,23 @@ namespace lms::ui
                                });
                            },
                            [&](const GenreTag&) {
-                               db::Genre::find(session, db::Genre::FindParameters{}.setSortMethod(db::GenreSortMethod::Name), [&](const db::Genre::pointer& genre) {
-                                   valueModel->add(Wt::WString::fromUTF8(std::string{ genre->getName() }), genre->getId());
+                               db::Genre::find(session, db::Genre::FindParameters{}.setSortMethod(db::GenreSortMethod::Name), [&](const db::Genre& genre) {
+                                   valueModel->add(Wt::WString::fromUTF8(std::string{ genre.getName() }), genre.getId());
                                });
                            },
                            [&](const GroupingTag&) {
-                               db::Grouping::find(session, db::Grouping::FindParameters{}.setSortMethod(db::GroupingSortMethod::Name), [&](const db::Grouping::pointer& grouping) {
-                                   valueModel->add(Wt::WString::fromUTF8(std::string{ grouping->getName() }), grouping->getId());
+                               db::Grouping::find(session, db::Grouping::FindParameters{}.setSortMethod(db::GroupingSortMethod::Name), [&](const db::Grouping& grouping) {
+                                   valueModel->add(Wt::WString::fromUTF8(std::string{ grouping.getName() }), grouping.getId());
                                });
                            },
                            [&](const LanguageTag&) {
-                               db::Language::find(session, db::Language::FindParameters{}.setSortMethod(db::LanguageSortMethod::Name), [&](const db::Language::pointer& language) {
-                                   valueModel->add(Wt::WString::fromUTF8(std::string{ language->getName() }), language->getId());
+                               db::Language::find(session, db::Language::FindParameters{}.setSortMethod(db::LanguageSortMethod::Name), [&](const db::Language& language) {
+                                   valueModel->add(Wt::WString::fromUTF8(std::string{ language.getName() }), language.getId());
                                });
                            },
                            [&](const MoodTag&) {
-                               db::Mood::find(session, db::Mood::FindParameters{}.setSortMethod(db::MoodSortMethod::Name), [&](const db::Mood::pointer& mood) {
-                                   valueModel->add(Wt::WString::fromUTF8(std::string{ mood->getName() }), mood->getId());
+                               db::Mood::find(session, db::Mood::FindParameters{}.setSortMethod(db::MoodSortMethod::Name), [&](const db::Mood& mood) {
+                                   valueModel->add(Wt::WString::fromUTF8(std::string{ mood.getName() }), mood.getId());
                                });
                            },
                            [&](db::ClusterTypeId clusterTypeId) {
@@ -175,8 +175,8 @@ namespace lms::ui
                                params.setClusterType(clusterTypeId);
                                params.setSortMethod(db::ClusterSortMethod::Name);
 
-                               db::Cluster::find(session, params, [&](const db::Cluster::pointer& cluster) {
-                                   valueModel->add(Wt::WString::fromUTF8(std::string{ cluster->getName() }), cluster->getId());
+                               db::Cluster::find(session, params, [&](const db::Cluster& cluster) {
+                                   valueModel->add(Wt::WString::fromUTF8(std::string{ cluster.getName() }), cluster.getId());
                                });
                            } },
                        type);
@@ -206,7 +206,7 @@ namespace lms::ui
         template<typename Object, typename Id>
         std::optional<StoredValue> findStoredValue(db::ISession& session, std::string_view type, Id id)
         {
-            const typename Object::pointer object{ Object::find(session, id) };
+            const auto object{ Object::find(session, id) };
             if (!object)
                 return std::nullopt;
 
@@ -218,11 +218,11 @@ namespace lms::ui
         {
             return std::visit(core::utils::overloads{
                                   [&](db::ClusterId id) -> std::optional<StoredValue> {
-                                      const db::Cluster::pointer cluster{ db::Cluster::find(session, id) };
+                                      const std::optional<db::Cluster> cluster{ db::Cluster::find(session, id) };
                                       if (!cluster)
                                           return std::nullopt;
 
-                                      return StoredValue{ "cluster", std::string{ cluster->getType()->getName() }, std::string{ cluster->getName() } };
+                                      return StoredValue{ "cluster", std::string{ db::ClusterType::find(session, cluster->getTypeId())->getName() }, std::string{ cluster->getName() } };
                                   },
                                   [&](db::MediaLibraryId id) { return findStoredValue<db::MediaLibrary>(session, "mediaLibrary", id); },
                                   [&](db::LabelId id) { return findStoredValue<db::Label>(session, "label", id); },
@@ -264,7 +264,7 @@ namespace lms::ui
         template<typename Object>
         std::optional<Filters::Value> findValue(db::ISession& session, std::string_view name)
         {
-            const typename Object::pointer object{ Object::find(session, name) };
+            const auto object{ Object::find(session, name) };
             if (!object)
                 return std::nullopt;
 
@@ -276,11 +276,11 @@ namespace lms::ui
         {
             if (storedValue.type == "cluster")
             {
-                const db::ClusterType::pointer clusterType{ db::ClusterType::find(session, storedValue.clusterType) };
+                const std::optional<db::ClusterType> clusterType{ db::ClusterType::find(session, storedValue.clusterType) };
                 if (!clusterType)
                     return std::nullopt;
 
-                const db::Cluster::pointer cluster{ clusterType->getCluster(storedValue.name) };
+                const std::optional<db::Cluster> cluster{ db::Cluster::find(session, clusterType->getId(), storedValue.name) };
                 if (!cluster)
                     return std::nullopt;
 

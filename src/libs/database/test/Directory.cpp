@@ -35,8 +35,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Directory::getCount(session), 1);
 
-            Directory::pointer dir{ Directory::find(session, directory.getId()) };
-            ASSERT_NE(dir, Directory::pointer{});
+            std::optional<Directory> dir{ Directory::find(session, directory.getId()) };
+            ASSERT_TRUE(dir);
             EXPECT_EQ(dir->getAbsolutePath(), "/path/to/dir");
             EXPECT_EQ(dir->getName(), "dir");
         }
@@ -44,16 +44,17 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            Directory::pointer dir{ Directory::find(session, directory.getId()) };
-            ASSERT_NE(dir, Directory::pointer{});
-            dir.modify()->setAbsolutePath("/path/to/another/dir2");
+            std::optional<Directory> dir{ Directory::find(session, directory.getId()) };
+            ASSERT_TRUE(dir);
+            dir->setAbsolutePath("/path/to/another/dir2");
+            Directory::update(session, *dir);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            Directory::pointer dir{ Directory::find(session, directory.getId()) };
-            ASSERT_NE(dir, Directory::pointer{});
+            std::optional<Directory> dir{ Directory::find(session, directory.getId()) };
+            ASSERT_TRUE(dir);
             EXPECT_EQ(dir->getAbsolutePath(), "/path/to/another/dir2");
             EXPECT_EQ(dir->getName(), "dir2");
         }
@@ -61,16 +62,17 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            Directory::pointer dir{ Directory::find(session, directory.getId()) };
-            ASSERT_NE(dir, Directory::pointer{});
-            dir.modify()->setAbsolutePath("/foo/");
+            std::optional<Directory> dir{ Directory::find(session, directory.getId()) };
+            ASSERT_TRUE(dir);
+            dir->setAbsolutePath("/foo/");
+            Directory::update(session, *dir);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            Directory::pointer dir{ Directory::find(session, directory.getId()) };
-            ASSERT_NE(dir, Directory::pointer{});
+            std::optional<Directory> dir{ Directory::find(session, directory.getId()) };
+            ASSERT_TRUE(dir);
             EXPECT_EQ(dir->getAbsolutePath(), "/foo");
             EXPECT_EQ(dir->getName(), "foo");
         }
@@ -78,16 +80,17 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            Directory::pointer dir{ Directory::find(session, directory.getId()) };
-            ASSERT_NE(dir, Directory::pointer{});
-            dir.modify()->setAbsolutePath("/");
+            std::optional<Directory> dir{ Directory::find(session, directory.getId()) };
+            ASSERT_TRUE(dir);
+            dir->setAbsolutePath("/");
+            Directory::update(session, *dir);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            Directory::pointer dir{ Directory::find(session, directory.getId()) };
-            ASSERT_NE(dir, Directory::pointer{});
+            std::optional<Directory> dir{ Directory::find(session, directory.getId()) };
+            ASSERT_TRUE(dir);
             EXPECT_EQ(dir->getAbsolutePath(), "/");
             EXPECT_EQ(dir->getName(), "");
         }
@@ -95,8 +98,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            Directory::pointer dir{ Directory::find(session, "/") };
-            ASSERT_NE(dir, Directory::pointer{});
+            std::optional<Directory> dir{ Directory::find(session, "/") };
+            ASSERT_TRUE(dir);
             EXPECT_EQ(dir->getId(), directory.getId());
         }
     }
@@ -109,33 +112,32 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto dir{ child->getParentDirectory() };
-            EXPECT_EQ(dir, Directory::pointer{});
+            EXPECT_FALSE(child->getParentDirectoryId().isValid());
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            child.get().modify()->setParent(parent.get());
+            std::optional<Directory> updatedChild{ child.get() };
+            updatedChild->setParent(parent.getId());
+            Directory::update(session, *updatedChild);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto dir{ child->getParentDirectory() };
-            ASSERT_NE(dir, Directory::pointer{});
-            EXPECT_EQ(dir->getId(), parent.getId());
+            EXPECT_EQ(child->getParentDirectoryId(), parent.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            Directory::pointer foundDir;
-            Directory::find(session, Directory::FindParameters{}.setParentDirectory(parent->getId()), [&](const Directory::pointer& dir) {
-                ASSERT_EQ(foundDir, Directory::pointer{});
+            std::optional<Directory> foundDir;
+            Directory::find(session, Directory::FindParameters{}.setParentDirectory(parent->getId()), [&](const Directory& dir) {
+                ASSERT_FALSE(foundDir);
                 foundDir = dir;
             });
-            ASSERT_NE(foundDir, Directory::pointer{});
+            ASSERT_TRUE(foundDir);
             EXPECT_EQ(foundDir->getId(), child.getId());
         }
     }
@@ -155,7 +157,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            child.get().modify()->setParent(parent.get());
+            std::optional<Directory> updatedChild{ child.get() };
+            updatedChild->setParent(parent.getId());
+            Directory::update(session, *updatedChild);
         }
 
         {
@@ -176,7 +180,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            child.get().modify()->setParent(parent1.get());
+            std::optional<Directory> updatedChild{ child.get() };
+            updatedChild->setParent(parent1.getId());
+            Directory::update(session, *updatedChild);
         }
 
         {
@@ -184,8 +190,8 @@ namespace lms::db::tests
 
             const auto directories{ Directory::findRootDirectories(session) };
             ASSERT_EQ(directories.size(), 2);
-            EXPECT_EQ(directories[0]->getId(), parent1.getId());
-            EXPECT_EQ(directories[1]->getId(), parent2.getId());
+            EXPECT_EQ(directories[0].getId(), parent1.getId());
+            EXPECT_EQ(directories[1].getId(), parent2.getId());
         }
     }
 
@@ -199,8 +205,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            child1.get().modify()->setParent(parent.get());
-            child2.get().modify()->setParent(parent.get());
+            std::optional<Directory> updatedChild1{ child1.get() };
+            updatedChild1->setParent(parent.getId());
+            Directory::update(session, *updatedChild1);
+            std::optional<Directory> updatedChild2{ child2.get() };
+            updatedChild2->setParent(parent.getId());
+            Directory::update(session, *updatedChild2);
         }
 
         {
@@ -212,14 +222,16 @@ namespace lms::db::tests
             auto res{ Directory::find(session, params) };
 
             ASSERT_EQ(res.size(), 3);
-            EXPECT_EQ(res[0]->getId(), parent.getId());
-            EXPECT_EQ(res[1]->getId(), child1.getId());
-            EXPECT_EQ(res[2]->getId(), child2.getId());
+            EXPECT_EQ(res[0].getId(), parent.getId());
+            EXPECT_EQ(res[1].getId(), child1.getId());
+            EXPECT_EQ(res[2].getId(), child2.getId());
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setDirectory(child2.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setDirectory(child2.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -230,8 +242,8 @@ namespace lms::db::tests
 
             auto res{ Directory::find(session, params) };
             ASSERT_EQ(res.size(), 2);
-            EXPECT_EQ(res[0]->getId(), parent.getId());
-            EXPECT_EQ(res[1]->getId(), child1.getId());
+            EXPECT_EQ(res[0].getId(), parent.getId());
+            EXPECT_EQ(res[1].getId(), child1.getId());
         }
     }
 
@@ -250,8 +262,8 @@ namespace lms::db::tests
             auto res{ Directory::find(session, params) };
 
             ASSERT_EQ(res.size(), 2);
-            EXPECT_EQ(res[0]->getId(), child1.getId());
-            EXPECT_EQ(res[1]->getId(), child2.getId());
+            EXPECT_EQ(res[0].getId(), child1.getId());
+            EXPECT_EQ(res[1].getId(), child2.getId());
         }
     }
 
@@ -276,8 +288,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            parent1.get().modify()->setMediaLibrary(library.get());
-            child1.get().modify()->setMediaLibrary(library.get());
+            std::optional<Directory> updatedParent1{ parent1.get() };
+            updatedParent1->setMediaLibrary(library.getId());
+            Directory::update(session, *updatedParent1);
+            std::optional<Directory> updatedChild1{ child1.get() };
+            updatedChild1->setMediaLibrary(library.getId());
+            Directory::update(session, *updatedChild1);
         }
 
         {
@@ -297,10 +313,10 @@ namespace lms::db::tests
         ScopedTrack track2{ session };
 
         ScopedRelease release1{ session, "Release1" };
-        ScopedMedium medium1{ session, release1.lockAndGet() };
+        ScopedMedium medium1{ session, release1.getId() };
 
         ScopedRelease release2{ session, "Release2" };
-        ScopedMedium medium2{ session, release1.lockAndGet() };
+        ScopedMedium medium2{ session, release1.getId() };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -309,7 +325,7 @@ namespace lms::db::tests
             params.setMedium(medium1.getId());
 
             bool visited{};
-            Directory::find(session, params, [&](const Directory::pointer&) {
+            Directory::find(session, params, [&](const Directory&) {
                 visited = true;
             });
             EXPECT_FALSE(visited);
@@ -317,13 +333,17 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setMedium(medium1.get());
-            track1.get().modify()->setRelease(release1.get());
-            track1.get().modify()->setDirectory(dir1.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setMedium(medium1.getId());
+            updatedTrack1->setRelease(release1.getId());
+            updatedTrack1->setDirectory(dir1.getId());
+            Track::update(session, *updatedTrack1);
 
-            track2.get().modify()->setMedium(medium2.get());
-            track2.get().modify()->setRelease(release2.get());
-            track2.get().modify()->setDirectory(dir2.get());
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setMedium(medium2.getId());
+            updatedTrack2->setRelease(release2.getId());
+            updatedTrack2->setDirectory(dir2.getId());
+            Track::update(session, *updatedTrack2);
         }
 
         {
@@ -333,8 +353,8 @@ namespace lms::db::tests
             params.setMedium(medium1.getId());
 
             std::vector<DirectoryId> visitedDirectories;
-            Directory::find(session, params, [&](const Directory::pointer& dir) {
-                visitedDirectories.push_back(dir->getId());
+            Directory::find(session, params, [&](const Directory& dir) {
+                visitedDirectories.push_back(dir.getId());
             });
             ASSERT_EQ(visitedDirectories.size(), 1);
             EXPECT_EQ(visitedDirectories[0], dir1.getId());

@@ -78,8 +78,8 @@ namespace lms::api::subsonic
                 auto transaction{ context.getDbSession().createReadTransaction() };
                 for (const db::TrackId trackId : jukeboxService.getTracks())
                 {
-                    if (const db::Track::pointer track{ db::Track::find(context.getDbSession(), trackId) })
-                        jukeboxPlaylistNode.addArrayChild("entry", createSongNode(context, track, true));
+                    if (const std::optional<db::Track> track{ db::Track::find(context.getDbSession(), trackId) })
+                        jukeboxPlaylistNode.addArrayChild("entry", createSongNode(context, *track, true));
                 }
             }
 

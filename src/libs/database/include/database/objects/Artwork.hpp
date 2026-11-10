@@ -20,39 +20,42 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
+#include <span>
 #include <variant>
 
-#include "database/Object.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/ImageId.hpp"
 #include "database/objects/TrackEmbeddedImageId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class Image;
-    class TrackEmbeddedImage;
 
-    class Artwork : public Object<Artwork, ArtworkId>
+    class Artwork : public detail::Object<Artwork, ArtworkId>
     {
     public:
-        static pointer create(ISession& session, const ObjectPtr<TrackEmbeddedImage>& trackEmbeddedImage);
-        static pointer create(ISession& session, const ObjectPtr<Image>& image);
+        static Artwork create(ISession& session, TrackEmbeddedImageId trackEmbeddedImage);
+        static Artwork create(ISession& session, ImageId image);
+        static void destroy(ISession& session, std::span<const ArtworkId> ids);
 
         // find
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, ArtworkId id);
-        static pointer find(ISession& session, TrackEmbeddedImageId id);
-        static pointer find(ISession& session, ImageId id);
+        static std::optional<Artwork> find(ISession& session, ArtworkId id);
+        static std::optional<Artwork> find(ISession& session, TrackEmbeddedImageId id);
+        static std::optional<Artwork> find(ISession& session, ImageId id);
+        static std::filesystem::path getAbsoluteFilePath(ISession& session, ArtworkId id);
 
         // getters
         using UnderlyingId = std::variant<std::monostate, TrackEmbeddedImageId, ImageId>;
         UnderlyingId getUnderlyingId() const;
-        std::filesystem::path getAbsoluteFilePath() const;
-        ObjectPtr<Image> getImage() const;
-        ImageId getImageId() const;
+        ImageId getImageId() const { return _imageId; }
 
     protected:
         Artwork() = default;
+
+        TrackEmbeddedImageId _trackEmbeddedImageId;
+        ImageId _imageId;
     };
 } // namespace lms::db

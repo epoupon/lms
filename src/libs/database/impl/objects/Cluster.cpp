@@ -26,6 +26,7 @@
 #include "ArtistDbo.hpp"
 #include "ArtworkDbo.hpp"
 #include "ClusterDbo.hpp"
+#include "DboAccess.hpp"
 #include "DirectoryDbo.hpp"
 #include "GenreDbo.hpp"
 #include "GroupingDbo.hpp"
@@ -34,7 +35,6 @@
 #include "MediumDbo.hpp"
 #include "MoodDbo.hpp"
 #include "MovementDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "ReleaseDbo.hpp"
 #include "Session.hpp"
 #include "TrackArtistLinkDbo.hpp"
@@ -135,15 +135,15 @@ namespace lms::db
             throw Exception{ "Cluster name is too long: " + std::string{ name } + "'" };
     }
 
-    dbo::Cluster::Cluster(const ObjectPtr<db::ClusterType>& type, std::string_view name)
+    dbo::Cluster::Cluster(Wt::Dbo::ptr<ClusterType> type, std::string_view name)
         : db::Cluster{ name }
-        , _clusterType{ getDboPtr(type) }
+        , _clusterType{ std::move(type) }
     {
     }
 
-    Cluster::pointer Cluster::create(ISession& session, const ObjectPtr<ClusterType>& type, std::string_view name)
+    Cluster Cluster::create(ISession& session, ClusterTypeId type, std::string_view name)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::Cluster>{ new dbo::Cluster{ type, name } });
+        return utils::addObject(session, std::unique_ptr<dbo::Cluster>{ new dbo::Cluster{ getDboSession(session)->loadLazy<dbo::ClusterType>(type.getValue()), name } });
     }
 
     void Cluster::destroy(ISession& session, std::span<const ClusterId> ids)
@@ -166,7 +166,7 @@ namespace lms::db
         return utils::execRangeQuery<ClusterId>(query, params.range);
     }
 
-    std::vector<Cluster::pointer> Cluster::find(ISession& session, const FindParameters& params)
+    std::vector<Cluster> Cluster::find(ISession& session, const FindParameters& params)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Cluster>>(session, params) };
@@ -174,7 +174,7 @@ namespace lms::db
         return utils::execRangeObjectQuery(query, params.range);
     }
 
-    void Cluster::find(ISession& session, const FindParameters& params, std::function<void(const pointer& cluster)> _func)
+    void Cluster::find(ISession& session, const FindParameters& params, const std::function<void(const Cluster& cluster)>& _func)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Cluster>>(session, params) };
@@ -190,9 +190,21 @@ namespace lms::db
         return utils::execRangeQuery<ClusterId>(query, range);
     }
 
-    Cluster::pointer Cluster::find(ISession& session, ClusterId id)
+    std::optional<Cluster> Cluster::find(ISession& session, ClusterTypeId type, std::string_view name)
     {
         checkReadTransaction(session);
+
+        if (name.size() > maxNameLength)
+            throw Exception{ "Requested Cluster name is too long: " + std::string{ name } + "'" };
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Cluster>>("SELECT c FROM cluster c").where("c.name = ?").bind(name).where("c.cluster_type_id = ?").bind(type));
+    }
+
+    std::optional<Cluster> Cluster::find(ISession& session, ClusterId id)
+    {
+        checkReadTransaction(session);
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Cluster>().where("id = ?").bind(id));
     }
@@ -211,19 +223,9 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(DISTINCT t.release_id) FROM track t INNER JOIN track_cluster t_c ON t_c.track_id = t.id").where("t_c.cluster_id = ?").bind(id));
     }
 
-    void Cluster::addTrack(const ObjectPtr<Track>& track)
+    void Cluster::addTrack(ISession& session, ClusterId id, TrackId track)
     {
-        getDbo(*this)._tracks.insert(getDboPtr(track));
-    }
-
-    std::vector<TrackId> Cluster::getTracks(std::optional<Range> range) const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        auto query{ dbo.session()->query<TrackId>("SELECT t.id FROM track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id").where("c.id = ?").bind(getId()) };
-
-        return utils::execRangeQuery<TrackId>(query, range);
+        utils::modifyObject<dbo::Cluster>(session, id)._tracks.insert(getDboSession(session)->loadLazy<dbo::Track>(track.getValue()));
     }
 
     ClusterType::ClusterType(std::string_view name)
@@ -234,7 +236,7 @@ namespace lms::db
             throw Exception{ "ClusterType name is too long: " + std::string{ name } + "'" };
     }
 
-    ClusterType::pointer ClusterType::create(ISession& session, std::string_view name)
+    ClusterType ClusterType::create(ISession& session, std::string_view name)
     {
         return utils::addObject(session, std::unique_ptr<dbo::ClusterType>{ new dbo::ClusterType{ name } });
     }
@@ -274,7 +276,7 @@ namespace lms::db
         return utils::execRangeQuery<ClusterTypeId>(query, range);
     }
 
-    void ClusterType::find(ISession& session, const std::function<void(const pointer&)>& func)
+    void ClusterType::find(ISession& session, const std::function<void(const ClusterType&)>& func)
     {
         checkReadTransaction(session);
 
@@ -282,7 +284,7 @@ namespace lms::db
         return utils::forEachQueryObject(query, func);
     }
 
-    ClusterType::pointer ClusterType::find(ISession& session, std::string_view name)
+    std::optional<ClusterType> ClusterType::find(ISession& session, std::string_view name)
     {
         checkReadTransaction(session);
 
@@ -292,9 +294,11 @@ namespace lms::db
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ClusterType>().where("name = ?").bind(name));
     }
 
-    ClusterType::pointer ClusterType::find(ISession& session, ClusterTypeId id)
+    std::optional<ClusterType> ClusterType::find(ISession& session, ClusterTypeId id)
     {
         checkReadTransaction(session);
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ClusterType>().where("id = ?").bind(id));
     }
@@ -308,29 +312,4 @@ namespace lms::db
         return utils::execRangeQuery<ClusterTypeId>(query, range);
     }
 
-    Cluster::pointer ClusterType::getCluster(const std::string& name) const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.self());
-        assert(dbo.session());
-
-        if (name.size() > Cluster::maxNameLength)
-            throw Exception{ "Requested Cluster name is too long: " + std::string{ name } + "'" };
-
-        return utils::fetchQuerySingleObject(dbo.session()->find<dbo::Cluster>().where("name = ?").bind(name).where("cluster_type_id = ?").bind(getId()));
-    }
-
-    std::vector<Cluster::pointer> ClusterType::getClusters() const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.self());
-        assert(dbo.session());
-
-        return utils::fetchQueryObjects(dbo.session()->find<dbo::Cluster>().where("cluster_type_id = ?").bind(getId()).orderBy("name"));
-    }
-
-    ObjectPtr<ClusterType> Cluster::getType() const
-    {
-        return toObjectPtr(getDbo(*this)._clusterType);
-    }
 } // namespace lms::db

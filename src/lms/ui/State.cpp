@@ -19,6 +19,8 @@
 
 #include "State.hpp"
 
+#include <array>
+
 #include "database/ISession.hpp"
 #include "database/objects/UIState.hpp"
 #include "database/objects/User.hpp"
@@ -36,15 +38,18 @@ namespace lms::ui::state::detail
         {
             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-            db::UIState::pointer state{ db::UIState::find(LmsApp->getDbSession(), item, LmsApp->getUserId()) };
+            std::optional<db::UIState> state{ db::UIState::find(LmsApp->getDbSession(), item, LmsApp->getUserId()) };
             if (!state)
             {
-                if (db::User::pointer user{ LmsApp->getUser() })
-                    state = db::UIState::create(LmsApp->getDbSession(), item, user);
+                if (LmsApp->getUserId().isValid())
+                    state = db::UIState::create(LmsApp->getDbSession(), item, LmsApp->getUserId());
             }
 
             if (state)
-                state.modify()->setValue(value);
+            {
+                state->setValue(value);
+                db::UIState::update(LmsApp->getDbSession(), *state);
+            }
         }
     }
 
@@ -59,7 +64,7 @@ namespace lms::ui::state::detail
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const db::UIState::pointer state{ db::UIState::find(LmsApp->getDbSession(), item, LmsApp->getUserId()) };
+            const std::optional<db::UIState> state{ db::UIState::find(LmsApp->getDbSession(), item, LmsApp->getUserId()) };
             if (state)
                 res = state->getValue();
         }
@@ -76,9 +81,8 @@ namespace lms::ui::state::detail
         {
             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-            db::UIState::pointer state{ db::UIState::find(LmsApp->getDbSession(), item, LmsApp->getUserId()) };
-            if (state)
-                state.remove();
+            if (const std::optional<db::UIState> state{ db::UIState::find(LmsApp->getDbSession(), item, LmsApp->getUserId()) })
+                db::UIState::destroy(LmsApp->getDbSession(), std::array{ state->getId() });
         }
     }
 } // namespace lms::ui::state::detail

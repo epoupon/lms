@@ -25,7 +25,7 @@
 
 #include "database/objects/TrackEmbeddedImage.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,6 +36,11 @@ namespace lms::db::dbo
     public:
         TrackEmbeddedImage() = default;
         using db::TrackEmbeddedImage::TrackEmbeddedImage;
+
+        void syncIds()
+        {
+            _id = id();
+        }
 
         template<class Action>
         void persist(Action& a)

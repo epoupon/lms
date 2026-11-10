@@ -21,7 +21,7 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "Session.hpp"
 #include "TrackBookmarkDbo.hpp"
 #include "TrackDbo.hpp"
@@ -33,15 +33,20 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackBookmark)
 
 namespace lms::db
 {
-    dbo::TrackBookmark::TrackBookmark(const ObjectPtr<db::User>& user, const ObjectPtr<db::Track>& track)
-        : _user{ getDboPtr(user) }
-        , _track{ getDboPtr(track) }
+    dbo::TrackBookmark::TrackBookmark(Wt::Dbo::ptr<User> user, Wt::Dbo::ptr<Track> track)
+        : _user{ std::move(user) }
+        , _track{ std::move(track) }
     {
     }
 
-    TrackBookmark::pointer TrackBookmark::create(ISession& session, const ObjectPtr<User>& user, const ObjectPtr<Track>& track)
+    TrackBookmark TrackBookmark::create(ISession& session, UserId user, TrackId track)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::TrackBookmark>{ new dbo::TrackBookmark{ user, track } });
+        return utils::addObject(session, std::unique_ptr<dbo::TrackBookmark>{ new dbo::TrackBookmark{ getDboSession(session)->loadLazy<dbo::User>(user.getValue()), getDboSession(session)->loadLazy<dbo::Track>(track.getValue()) } });
+    }
+
+    void TrackBookmark::destroy(ISession& session, std::span<const TrackBookmarkId> ids)
+    {
+        utils::destroyObjects<dbo::TrackBookmark>(session, ids);
     }
 
     std::size_t TrackBookmark::getCount(ISession& session)
@@ -60,27 +65,25 @@ namespace lms::db
         return utils::execRangeQuery<TrackBookmarkId>(query, range);
     }
 
-    TrackBookmark::pointer TrackBookmark::find(ISession& session, UserId userId, TrackId trackId)
+    std::optional<TrackBookmark> TrackBookmark::find(ISession& session, UserId userId, TrackId trackId)
     {
         checkReadTransaction(session);
 
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackBookmark>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId));
     }
 
-    TrackBookmark::pointer TrackBookmark::find(ISession& session, TrackBookmarkId id)
+    std::optional<TrackBookmark> TrackBookmark::find(ISession& session, TrackBookmarkId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackBookmark>().where("id = ?").bind(id));
     }
 
-    ObjectPtr<Track> TrackBookmark::getTrack() const
+    void TrackBookmark::update(ISession& session, const TrackBookmark& trackBookmark)
     {
-        return toObjectPtr(getDbo(*this)._track);
-    }
-
-    ObjectPtr<User> TrackBookmark::getUser() const
-    {
-        return toObjectPtr(getDbo(*this)._user);
+        utils::updateObject<dbo::TrackBookmark>(session, trackBookmark);
     }
 } // namespace lms::db

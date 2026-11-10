@@ -42,7 +42,7 @@ namespace lms::db::tests
             EXPECT_EQ(artists.size(), 1);
         }
 
-        ScopedArtistFeedback artistFeedback{ session, artist.lockAndGet(), user.lockAndGet() };
+        ScopedArtistFeedback artistFeedback{ session, artist.getId(), user.getId() };
         {
             auto transaction{ session.createWriteTransaction() };
 
@@ -51,7 +51,9 @@ namespace lms::db::tests
             EXPECT_EQ(ArtistFeedback::getCount(session), 1);
             EXPECT_EQ(gotArtist->getValue(), FeedbackValue::None);
 
-            artistFeedback.get().modify()->setValue(FeedbackValue::Loved);
+            std::optional<ArtistFeedback> updatedArtistFeedback{ artistFeedback.get() };
+            updatedArtistFeedback->setValue(FeedbackValue::Loved);
+            ArtistFeedback::update(session, *updatedArtistFeedback);
         }
 
         {
@@ -72,16 +74,20 @@ namespace lms::db::tests
     {
         ScopedArtist artist{ session, "MyArtist" };
         ScopedUser user{ session, "MyUser" };
-        ScopedArtistFeedback artistFeedback{ session, artist.lockAndGet(), user.lockAndGet() };
+        ScopedArtistFeedback artistFeedback{ session, artist.getId(), user.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            artistFeedback.get().modify()->setValue(FeedbackValue::Loved);
+            std::optional<ArtistFeedback> updatedArtistFeedback{ artistFeedback.get() };
+            updatedArtistFeedback->setValue(FeedbackValue::Loved);
+            ArtistFeedback::update(session, *updatedArtistFeedback);
             auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved)) };
             EXPECT_EQ(artists.size(), 1);
 
-            artistFeedback.get().modify()->setValue(FeedbackValue::None);
+            updatedArtistFeedback = artistFeedback.get();
+            updatedArtistFeedback->setValue(FeedbackValue::None);
+            ArtistFeedback::update(session, *updatedArtistFeedback);
             artists = Artist::findIds(session, Artist::FindParameters{}.setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved));
             EXPECT_EQ(artists.size(), 0);
         }
@@ -91,12 +97,14 @@ namespace lms::db::tests
     {
         ScopedArtist artist{ session, "MyArtist" };
         ScopedUser user{ session, "MyUser" };
-        ScopedArtistFeedback artistFeedback{ session, artist.lockAndGet(), user.lockAndGet() };
+        ScopedArtistFeedback artistFeedback{ session, artist.getId(), user.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            artistFeedback.get().modify()->setValue(FeedbackValue::Hated);
+            std::optional<ArtistFeedback> updatedArtistFeedback{ artistFeedback.get() };
+            updatedArtistFeedback->setValue(FeedbackValue::Hated);
+            ArtistFeedback::update(session, *updatedArtistFeedback);
             auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved)) };
             EXPECT_EQ(artists.size(), 0);
         }
@@ -106,12 +114,14 @@ namespace lms::db::tests
     {
         ScopedArtist artist{ session, "MyArtist" };
         ScopedUser user{ session, "MyUser" };
-        ScopedArtistFeedback artistFeedback{ session, artist.lockAndGet(), user.lockAndGet() };
+        ScopedArtistFeedback artistFeedback{ session, artist.getId(), user.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            artistFeedback.get().modify()->setValue(FeedbackValue::Hated);
+            std::optional<ArtistFeedback> updatedArtistFeedback{ artistFeedback.get() };
+            updatedArtistFeedback->setValue(FeedbackValue::Hated);
+            ArtistFeedback::update(session, *updatedArtistFeedback);
             auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFeedbackUser(user.getId())) };
             EXPECT_EQ(artists.size(), 1);
         }
@@ -123,14 +133,18 @@ namespace lms::db::tests
         ScopedArtist artist2{ session, "MyArtist2" };
         ScopedUser user1{ session, "MyUser1" };
         ScopedUser user2{ session, "MyUser2" };
-        ScopedArtistFeedback artistFeedback1{ session, artist1.lockAndGet(), user1.lockAndGet() };
-        ScopedArtistFeedback artistFeedback2{ session, artist2.lockAndGet(), user2.lockAndGet() };
+        ScopedArtistFeedback artistFeedback1{ session, artist1.getId(), user1.getId() };
+        ScopedArtistFeedback artistFeedback2{ session, artist2.getId(), user2.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            artistFeedback1.get().modify()->setValue(FeedbackValue::Loved);
-            artistFeedback2.get().modify()->setValue(FeedbackValue::Hated);
+            std::optional<ArtistFeedback> updatedArtistFeedback1{ artistFeedback1.get() };
+            updatedArtistFeedback1->setValue(FeedbackValue::Loved);
+            ArtistFeedback::update(session, *updatedArtistFeedback1);
+            std::optional<ArtistFeedback> updatedArtistFeedback2{ artistFeedback2.get() };
+            updatedArtistFeedback2->setValue(FeedbackValue::Hated);
+            ArtistFeedback::update(session, *updatedArtistFeedback2);
 
             auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFeedbackValue(FeedbackValue::Loved)) };
             ASSERT_EQ(artists.size(), 1);
@@ -144,16 +158,20 @@ namespace lms::db::tests
         ScopedArtist artist2{ session, "MyArtist2" };
         ScopedUser user{ session, "MyUser" };
 
-        ScopedArtistFeedback artistFeedback1{ session, artist1.lockAndGet(), user.lockAndGet() };
-        ScopedArtistFeedback artistFeedback2{ session, artist2.lockAndGet(), user.lockAndGet() };
+        ScopedArtistFeedback artistFeedback1{ session, artist1.getId(), user.getId() };
+        ScopedArtistFeedback artistFeedback2{ session, artist2.getId(), user.getId() };
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 1950, 1, 2 }, Wt::WTime{ 12, 30, 1 } };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            artistFeedback1.get().modify()->setValue(FeedbackValue::Loved);
-            artistFeedback2.get().modify()->setValue(FeedbackValue::Loved);
+            std::optional<ArtistFeedback> updatedArtistFeedback1{ artistFeedback1.get() };
+            updatedArtistFeedback1->setValue(FeedbackValue::Loved);
+            ArtistFeedback::update(session, *updatedArtistFeedback1);
+            std::optional<ArtistFeedback> updatedArtistFeedback2{ artistFeedback2.get() };
+            updatedArtistFeedback2->setValue(FeedbackValue::Loved);
+            ArtistFeedback::update(session, *updatedArtistFeedback2);
 
             auto artists{ Artist::find(session, Artist::FindParameters{}.setFeedbackUser(user.getId())) };
             EXPECT_EQ(artists.size(), 2);
@@ -162,24 +180,32 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            artistFeedback1.get().modify()->setDateTime(dateTime);
-            artistFeedback2.get().modify()->setDateTime(dateTime.addSecs(-1));
+            std::optional<ArtistFeedback> updatedArtistFeedback1{ artistFeedback1.get() };
+            updatedArtistFeedback1->setDateTime(dateTime);
+            ArtistFeedback::update(session, *updatedArtistFeedback1);
+            std::optional<ArtistFeedback> updatedArtistFeedback2{ artistFeedback2.get() };
+            updatedArtistFeedback2->setDateTime(dateTime.addSecs(-1));
+            ArtistFeedback::update(session, *updatedArtistFeedback2);
 
             auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFeedbackUser(user.getId()).setSortMethod(ArtistSortMethod::FeedbackDateDesc)) };
             ASSERT_EQ(artists.size(), 2);
-            EXPECT_EQ(artists[0], artistFeedback1->getArtist()->getId());
-            EXPECT_EQ(artists[1], artistFeedback2->getArtist()->getId());
+            EXPECT_EQ(artists[0], artistFeedback1->getArtistId());
+            EXPECT_EQ(artists[1], artistFeedback2->getArtistId());
         }
         {
             auto transaction{ session.createWriteTransaction() };
 
-            artistFeedback1.get().modify()->setDateTime(dateTime);
-            artistFeedback2.get().modify()->setDateTime(dateTime.addSecs(1));
+            std::optional<ArtistFeedback> updatedArtistFeedback1{ artistFeedback1.get() };
+            updatedArtistFeedback1->setDateTime(dateTime);
+            ArtistFeedback::update(session, *updatedArtistFeedback1);
+            std::optional<ArtistFeedback> updatedArtistFeedback2{ artistFeedback2.get() };
+            updatedArtistFeedback2->setDateTime(dateTime.addSecs(1));
+            ArtistFeedback::update(session, *updatedArtistFeedback2);
 
             auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFeedbackUser(user.getId()).setSortMethod(ArtistSortMethod::FeedbackDateDesc)) };
             ASSERT_EQ(artists.size(), 2);
-            EXPECT_EQ(artists[0], artistFeedback2->getArtist()->getId());
-            EXPECT_EQ(artists[1], artistFeedback1->getArtist()->getId());
+            EXPECT_EQ(artists[0], artistFeedback2->getArtistId());
+            EXPECT_EQ(artists[1], artistFeedback1->getArtistId());
         }
     }
 } // namespace lms::db::tests

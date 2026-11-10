@@ -26,7 +26,7 @@
 
 namespace lms::ui::ArtistListHelpers
 {
-    std::unique_ptr<Wt::WTemplate> createEntry(const db::Artist::pointer& artist)
+    std::unique_ptr<Wt::WTemplate> createEntry(const db::Artist& artist)
     {
         auto entry{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry")) };
         entry->bindWidget("name", utils::createArtistAnchor(artist));
@@ -34,8 +34,8 @@ namespace lms::ui::ArtistListHelpers
         Wt::WAnchor* anchor{ entry->bindWidget("image", utils::createArtistAnchor(artist, false)) };
 
         std::unique_ptr<Wt::WImage> image;
-        if (artist->getPreferredArtworkId().isValid())
-            image = utils::createArtworkImage(artist->getPreferredArtworkId(), ArtworkResource::DefaultArtworkType::Artist, ArtworkResource::Size::Large);
+        if (artist.getPreferredArtworkId().isValid())
+            image = utils::createArtworkImage(artist.getPreferredArtworkId(), ArtworkResource::DefaultArtworkType::Artist, ArtworkResource::Size::Large);
         else
             image = utils::createDefaultArtworkImage(ArtworkResource::DefaultArtworkType::Artist);
 

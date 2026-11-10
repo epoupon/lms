@@ -25,7 +25,7 @@
 
 #include "database/objects/User.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -37,6 +37,8 @@ namespace lms::db::dbo
     public:
         User() = default;
         using db::User::User;
+
+        void syncIds() { _id = id(); }
 
         template<class Action>
         void persist(Action& a)

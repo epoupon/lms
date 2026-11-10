@@ -42,7 +42,7 @@ namespace lms::db::tests
             EXPECT_EQ(tracks.size(), 1);
         }
 
-        ScopedTrackFeedback trackFeedback{ session, track.lockAndGet(), user.lockAndGet() };
+        ScopedTrackFeedback trackFeedback{ session, track.getId(), user.getId() };
         {
             auto transaction{ session.createWriteTransaction() };
 
@@ -51,7 +51,9 @@ namespace lms::db::tests
             EXPECT_EQ(TrackFeedback::getCount(session), 1);
             EXPECT_EQ(gotTrack->getValue(), FeedbackValue::None);
 
-            trackFeedback.get().modify()->setValue(FeedbackValue::Loved);
+            std::optional<TrackFeedback> updatedTrackFeedback{ trackFeedback.get() };
+            updatedTrackFeedback->setValue(FeedbackValue::Loved);
+            TrackFeedback::update(session, *updatedTrackFeedback);
         }
 
         {
@@ -72,16 +74,20 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        ScopedTrackFeedback trackFeedback{ session, track.lockAndGet(), user.lockAndGet() };
+        ScopedTrackFeedback trackFeedback{ session, track.getId(), user.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            trackFeedback.get().modify()->setValue(FeedbackValue::Loved);
+            std::optional<TrackFeedback> updatedTrackFeedback{ trackFeedback.get() };
+            updatedTrackFeedback->setValue(FeedbackValue::Loved);
+            TrackFeedback::update(session, *updatedTrackFeedback);
             auto tracks{ Track::findIds(session, Track::FindParameters{}.setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved)) };
             EXPECT_EQ(tracks.size(), 1);
 
-            trackFeedback.get().modify()->setValue(FeedbackValue::None);
+            updatedTrackFeedback = trackFeedback.get();
+            updatedTrackFeedback->setValue(FeedbackValue::None);
+            TrackFeedback::update(session, *updatedTrackFeedback);
             tracks = Track::findIds(session, Track::FindParameters{}.setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved));
             EXPECT_EQ(tracks.size(), 0);
         }
@@ -91,12 +97,14 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        ScopedTrackFeedback trackFeedback{ session, track.lockAndGet(), user.lockAndGet() };
+        ScopedTrackFeedback trackFeedback{ session, track.getId(), user.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            trackFeedback.get().modify()->setValue(FeedbackValue::Hated);
+            std::optional<TrackFeedback> updatedTrackFeedback{ trackFeedback.get() };
+            updatedTrackFeedback->setValue(FeedbackValue::Hated);
+            TrackFeedback::update(session, *updatedTrackFeedback);
             auto tracks{ Track::findIds(session, Track::FindParameters{}.setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved)) };
             EXPECT_EQ(tracks.size(), 0);
         }
@@ -106,12 +114,14 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        ScopedTrackFeedback trackFeedback{ session, track.lockAndGet(), user.lockAndGet() };
+        ScopedTrackFeedback trackFeedback{ session, track.getId(), user.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            trackFeedback.get().modify()->setValue(FeedbackValue::Hated);
+            std::optional<TrackFeedback> updatedTrackFeedback{ trackFeedback.get() };
+            updatedTrackFeedback->setValue(FeedbackValue::Hated);
+            TrackFeedback::update(session, *updatedTrackFeedback);
             auto tracks{ Track::findIds(session, Track::FindParameters{}.setFeedbackUser(user.getId())) };
             EXPECT_EQ(tracks.size(), 1);
         }
@@ -123,14 +133,18 @@ namespace lms::db::tests
         ScopedTrack track2{ session };
         ScopedUser user1{ session, "MyUser1" };
         ScopedUser user2{ session, "MyUser2" };
-        ScopedTrackFeedback trackFeedback1{ session, track1.lockAndGet(), user1.lockAndGet() };
-        ScopedTrackFeedback trackFeedback2{ session, track2.lockAndGet(), user2.lockAndGet() };
+        ScopedTrackFeedback trackFeedback1{ session, track1.getId(), user1.getId() };
+        ScopedTrackFeedback trackFeedback2{ session, track2.getId(), user2.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            trackFeedback1.get().modify()->setValue(FeedbackValue::Loved);
-            trackFeedback2.get().modify()->setValue(FeedbackValue::Hated);
+            std::optional<TrackFeedback> updatedTrackFeedback1{ trackFeedback1.get() };
+            updatedTrackFeedback1->setValue(FeedbackValue::Loved);
+            TrackFeedback::update(session, *updatedTrackFeedback1);
+            std::optional<TrackFeedback> updatedTrackFeedback2{ trackFeedback2.get() };
+            updatedTrackFeedback2->setValue(FeedbackValue::Hated);
+            TrackFeedback::update(session, *updatedTrackFeedback2);
 
             auto tracks{ Track::findIds(session, Track::FindParameters{}.setFeedbackValue(FeedbackValue::Loved)) };
             ASSERT_EQ(tracks.size(), 1);
@@ -144,23 +158,27 @@ namespace lms::db::tests
         ScopedTrack track2{ session };
         ScopedTrack track3{ session };
         ScopedUser user{ session, "MyUser" };
-        ScopedTrackFeedback trackFeedback1{ session, track1.lockAndGet(), user.lockAndGet() };
-        ScopedTrackFeedback trackFeedback2{ session, track2.lockAndGet(), user.lockAndGet() };
-        ScopedTrackFeedback trackFeedback3{ session, track3.lockAndGet(), user.lockAndGet() };
+        ScopedTrackFeedback trackFeedback1{ session, track1.getId(), user.getId() };
+        ScopedTrackFeedback trackFeedback2{ session, track2.getId(), user.getId() };
+        ScopedTrackFeedback trackFeedback3{ session, track3.getId(), user.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            trackFeedback1.get().modify()->setValue(FeedbackValue::Loved);
-            trackFeedback2.get().modify()->setValue(FeedbackValue::Hated);
+            std::optional<TrackFeedback> updatedTrackFeedback1{ trackFeedback1.get() };
+            updatedTrackFeedback1->setValue(FeedbackValue::Loved);
+            TrackFeedback::update(session, *updatedTrackFeedback1);
+            std::optional<TrackFeedback> updatedTrackFeedback2{ trackFeedback2.get() };
+            updatedTrackFeedback2->setValue(FeedbackValue::Hated);
+            TrackFeedback::update(session, *updatedTrackFeedback2);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             std::vector<TrackFeedbackId> ids;
-            TrackFeedback::find(session, TrackFeedback::FindParameters{}.setUser(user.getId()).setSortMethod(TrackFeedbackSortMethod::Id), [&](const TrackFeedback::pointer& feedback) {
-                ids.push_back(feedback->getId());
+            TrackFeedback::find(session, TrackFeedback::FindParameters{}.setUser(user.getId()).setSortMethod(TrackFeedbackSortMethod::Id), [&](const TrackFeedback& feedback) {
+                ids.push_back(feedback.getId());
             });
 
             ASSERT_EQ(ids.size(), 3);
@@ -176,22 +194,26 @@ namespace lms::db::tests
         ScopedTrack track2{ session };
         ScopedUser user1{ session, "MyUser1" };
         ScopedUser user2{ session, "MyUser2" };
-        ScopedTrackFeedback trackFeedback1{ session, track1.lockAndGet(), user1.lockAndGet() };
-        ScopedTrackFeedback trackFeedback2{ session, track2.lockAndGet(), user2.lockAndGet() };
+        ScopedTrackFeedback trackFeedback1{ session, track1.getId(), user1.getId() };
+        ScopedTrackFeedback trackFeedback2{ session, track2.getId(), user2.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            trackFeedback1.get().modify()->setValue(FeedbackValue::Loved);
-            trackFeedback2.get().modify()->setValue(FeedbackValue::Loved);
+            std::optional<TrackFeedback> updatedTrackFeedback1{ trackFeedback1.get() };
+            updatedTrackFeedback1->setValue(FeedbackValue::Loved);
+            TrackFeedback::update(session, *updatedTrackFeedback1);
+            std::optional<TrackFeedback> updatedTrackFeedback2{ trackFeedback2.get() };
+            updatedTrackFeedback2->setValue(FeedbackValue::Loved);
+            TrackFeedback::update(session, *updatedTrackFeedback2);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             std::vector<TrackFeedbackId> ids;
-            TrackFeedback::find(session, TrackFeedback::FindParameters{}.setUser(user1.getId()), [&](const TrackFeedback::pointer& feedback) {
-                ids.push_back(feedback->getId());
+            TrackFeedback::find(session, TrackFeedback::FindParameters{}.setUser(user1.getId()), [&](const TrackFeedback& feedback) {
+                ids.push_back(feedback.getId());
             });
 
             ASSERT_EQ(ids.size(), 1);
@@ -205,16 +227,22 @@ namespace lms::db::tests
         ScopedTrack track2{ session };
         ScopedTrack track3{ session };
         ScopedUser user{ session, "MyUser" };
-        ScopedTrackFeedback trackFeedback1{ session, track1.lockAndGet(), user.lockAndGet() };
-        ScopedTrackFeedback trackFeedback2{ session, track2.lockAndGet(), user.lockAndGet() };
-        ScopedTrackFeedback trackFeedback3{ session, track3.lockAndGet(), user.lockAndGet() };
+        ScopedTrackFeedback trackFeedback1{ session, track1.getId(), user.getId() };
+        ScopedTrackFeedback trackFeedback2{ session, track2.getId(), user.getId() };
+        ScopedTrackFeedback trackFeedback3{ session, track3.getId(), user.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            trackFeedback1.get().modify()->setValue(FeedbackValue::Loved);
-            trackFeedback2.get().modify()->setValue(FeedbackValue::Loved);
-            trackFeedback3.get().modify()->setValue(FeedbackValue::Loved);
+            std::optional<TrackFeedback> updatedTrackFeedback1{ trackFeedback1.get() };
+            updatedTrackFeedback1->setValue(FeedbackValue::Loved);
+            TrackFeedback::update(session, *updatedTrackFeedback1);
+            std::optional<TrackFeedback> updatedTrackFeedback2{ trackFeedback2.get() };
+            updatedTrackFeedback2->setValue(FeedbackValue::Loved);
+            TrackFeedback::update(session, *updatedTrackFeedback2);
+            std::optional<TrackFeedback> updatedTrackFeedback3{ trackFeedback3.get() };
+            updatedTrackFeedback3->setValue(FeedbackValue::Loved);
+            TrackFeedback::update(session, *updatedTrackFeedback3);
         }
 
         {
@@ -223,18 +251,18 @@ namespace lms::db::tests
             TrackFeedbackId lastRetrievedId;
 
             std::vector<TrackFeedbackId> firstPage;
-            TrackFeedback::find(session, TrackFeedback::FindParameters{}.setUser(user.getId()).setLastRetrievedId(lastRetrievedId).setRange(Range{ 0, 2 }).setSortMethod(TrackFeedbackSortMethod::Id), [&](const TrackFeedback::pointer& feedback) {
-                lastRetrievedId = feedback->getId();
-                firstPage.push_back(feedback->getId());
+            TrackFeedback::find(session, TrackFeedback::FindParameters{}.setUser(user.getId()).setLastRetrievedId(lastRetrievedId).setRange(Range{ 0, 2 }).setSortMethod(TrackFeedbackSortMethod::Id), [&](const TrackFeedback& feedback) {
+                lastRetrievedId = feedback.getId();
+                firstPage.push_back(feedback.getId());
             });
             ASSERT_EQ(firstPage.size(), 2);
             EXPECT_EQ(firstPage[0], trackFeedback1->getId());
             EXPECT_EQ(firstPage[1], trackFeedback2->getId());
 
             std::vector<TrackFeedbackId> secondPage;
-            TrackFeedback::find(session, TrackFeedback::FindParameters{}.setUser(user.getId()).setLastRetrievedId(lastRetrievedId).setRange(Range{ 0, 2 }).setSortMethod(TrackFeedbackSortMethod::Id), [&](const TrackFeedback::pointer& feedback) {
-                lastRetrievedId = feedback->getId();
-                secondPage.push_back(feedback->getId());
+            TrackFeedback::find(session, TrackFeedback::FindParameters{}.setUser(user.getId()).setLastRetrievedId(lastRetrievedId).setRange(Range{ 0, 2 }).setSortMethod(TrackFeedbackSortMethod::Id), [&](const TrackFeedback& feedback) {
+                lastRetrievedId = feedback.getId();
+                secondPage.push_back(feedback.getId());
             });
             ASSERT_EQ(secondPage.size(), 1);
             EXPECT_EQ(secondPage[0], trackFeedback3->getId());
@@ -247,16 +275,20 @@ namespace lms::db::tests
         ScopedTrack track2{ session };
         ScopedUser user{ session, "MyUser" };
 
-        ScopedTrackFeedback trackFeedback1{ session, track1.lockAndGet(), user.lockAndGet() };
-        ScopedTrackFeedback trackFeedback2{ session, track2.lockAndGet(), user.lockAndGet() };
+        ScopedTrackFeedback trackFeedback1{ session, track1.getId(), user.getId() };
+        ScopedTrackFeedback trackFeedback2{ session, track2.getId(), user.getId() };
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 1950, 1, 2 }, Wt::WTime{ 12, 30, 1 } };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            trackFeedback1.get().modify()->setValue(FeedbackValue::Loved);
-            trackFeedback2.get().modify()->setValue(FeedbackValue::Loved);
+            std::optional<TrackFeedback> updatedTrackFeedback1{ trackFeedback1.get() };
+            updatedTrackFeedback1->setValue(FeedbackValue::Loved);
+            TrackFeedback::update(session, *updatedTrackFeedback1);
+            std::optional<TrackFeedback> updatedTrackFeedback2{ trackFeedback2.get() };
+            updatedTrackFeedback2->setValue(FeedbackValue::Loved);
+            TrackFeedback::update(session, *updatedTrackFeedback2);
 
             auto tracks{ Track::findIds(session, Track::FindParameters{}.setFeedbackUser(user.getId())) };
             EXPECT_EQ(tracks.size(), 2);
@@ -265,24 +297,32 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            trackFeedback1.get().modify()->setDateTime(dateTime);
-            trackFeedback2.get().modify()->setDateTime(dateTime.addSecs(-1));
+            std::optional<TrackFeedback> updatedTrackFeedback1{ trackFeedback1.get() };
+            updatedTrackFeedback1->setDateTime(dateTime);
+            TrackFeedback::update(session, *updatedTrackFeedback1);
+            std::optional<TrackFeedback> updatedTrackFeedback2{ trackFeedback2.get() };
+            updatedTrackFeedback2->setDateTime(dateTime.addSecs(-1));
+            TrackFeedback::update(session, *updatedTrackFeedback2);
 
             auto tracks{ Track::findIds(session, Track::FindParameters{}.setFeedbackUser(user.getId()).setSortMethod(TrackSortMethod::FeedbackDateDesc)) };
             ASSERT_EQ(tracks.size(), 2);
-            EXPECT_EQ(tracks[0], trackFeedback1->getTrack()->getId());
-            EXPECT_EQ(tracks[1], trackFeedback2->getTrack()->getId());
+            EXPECT_EQ(tracks[0], trackFeedback1->getTrackId());
+            EXPECT_EQ(tracks[1], trackFeedback2->getTrackId());
         }
         {
             auto transaction{ session.createWriteTransaction() };
 
-            trackFeedback1.get().modify()->setDateTime(dateTime);
-            trackFeedback2.get().modify()->setDateTime(dateTime.addSecs(1));
+            std::optional<TrackFeedback> updatedTrackFeedback1{ trackFeedback1.get() };
+            updatedTrackFeedback1->setDateTime(dateTime);
+            TrackFeedback::update(session, *updatedTrackFeedback1);
+            std::optional<TrackFeedback> updatedTrackFeedback2{ trackFeedback2.get() };
+            updatedTrackFeedback2->setDateTime(dateTime.addSecs(1));
+            TrackFeedback::update(session, *updatedTrackFeedback2);
 
             auto tracks{ Track::findIds(session, Track::FindParameters{}.setFeedbackUser(user.getId()).setSortMethod(TrackSortMethod::FeedbackDateDesc)) };
             ASSERT_EQ(tracks.size(), 2);
-            EXPECT_EQ(tracks[0], trackFeedback2->getTrack()->getId());
-            EXPECT_EQ(tracks[1], trackFeedback1->getTrack()->getId());
+            EXPECT_EQ(tracks[0], trackFeedback2->getTrackId());
+            EXPECT_EQ(tracks[1], trackFeedback1->getTrackId());
         }
     }
 } // namespace lms::db::tests

@@ -40,17 +40,17 @@ namespace lms::api::subsonic
 
     namespace utils
     {
-        std::string joinArtistNames(const std::vector<TrackArtistLink::pointer>& links)
+        std::string joinArtistNames(const std::vector<TrackArtistLink>& links)
         {
             if (links.size() == 1)
-                return std::string{ links.front()->getArtistName() };
+                return std::string{ links.front().getArtistName() };
 
             std::vector<std::string> names;
             names.resize(links.size());
 
             std::transform(std::cbegin(links), std::cend(links), std::begin(names),
-                           [](const TrackArtistLink::pointer& link) {
-                               return std::string{ link->getArtistName() };
+                           [](const TrackArtistLink& link) {
+                               return std::string{ link.getArtistName() };
                            });
 
             return core::stringUtils::joinStrings(names, ", ");
@@ -62,33 +62,33 @@ namespace lms::api::subsonic
         }
     } // namespace utils
 
-    Response::Node createArtistNode(RequestContext& context, const Artist::pointer& artist)
+    Response::Node createArtistNode(RequestContext& context, const Artist& artist)
     {
         LMS_SCOPED_TRACE_DETAILED("Subsonic", "CreateArtist");
 
         Response::Node artistNode{ createMinimalArtistNode(artist) };
 
-        if (const db::ArtworkId artworkId{ artist->getPreferredArtworkId() }; artworkId.isValid())
+        if (const db::ArtworkId artworkId{ artist.getPreferredArtworkId() }; artworkId.isValid())
             artistNode.setAttribute("coverArt", idToString(artworkId));
 
         bool hasAlbums{};
         {
-            std::size_t count{ Release::getCount(context.getDbSession(), Release::FindParameters{}.setArtist(artist->getId())) };
+            std::size_t count{ Release::getCount(context.getDbSession(), Release::FindParameters{}.setArtist(artist.getId())) };
             hasAlbums = count > 0;
 
             // TODO: not very efficient
-            Release::find(context.getDbSession(), Release::FindParameters{}.setTrackArtist(artist->getId()), [&](const db::Release::pointer& release) {
-                if (!release->hasArtist(artist->getId()))
+            Release::find(context.getDbSession(), Release::FindParameters{}.setTrackArtist(artist.getId()), [&](const db::Release& release) {
+                if (!Release::hasArtist(context.getDbSession(), release.getId(), artist.getId()))
                     count++;
             });
 
             artistNode.setAttribute("albumCount", count);
         }
 
-        if (const ArtistFeedback::pointer feedback{ ArtistFeedback::find(context.getDbSession(), artist->getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == FeedbackValue::Loved)
+        if (const std::optional<ArtistFeedback> feedback{ ArtistFeedback::find(context.getDbSession(), artist.getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == FeedbackValue::Loved)
             artistNode.setAttribute("starred", core::stringUtils::toISO8601String(feedback->getDateTime()));
 
-        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.getUser()->getId(), artist->getId()) })
+        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.getUser()->getId(), artist.getId()) })
             artistNode.setAttribute("userRating", *rating);
 
         // OpenSubsonic specific fields (must always be set)
@@ -97,15 +97,15 @@ namespace lms::api::subsonic
             artistNode.setAttribute("mediaType", "artist");
 
             {
-                std::optional<core::UUID> mbid{ artist->getMBID() };
+                std::optional<core::UUID> mbid{ artist.getMBID() };
                 artistNode.setAttribute("musicBrainzId", mbid ? mbid->toString() : "");
             }
 
-            artistNode.setAttribute("sortName", artist->getSortName());
+            artistNode.setAttribute("sortName", artist.getSortName());
 
             Response::Node roles;
             artistNode.createEmptyArrayValue("roles");
-            for (const TrackArtistLinkType linkType : TrackArtistLink::findUsedTypes(context.getDbSession(), artist->getId()))
+            for (const TrackArtistLinkType linkType : TrackArtistLink::findUsedTypes(context.getDbSession(), artist.getId()))
                 artistNode.addArrayValue("roles", utils::toString(linkType));
 
             if (hasAlbums)
@@ -115,32 +115,32 @@ namespace lms::api::subsonic
         return artistNode;
     }
 
-    Response::Node createMinimalArtistNode(const Artist::pointer& artist)
+    Response::Node createMinimalArtistNode(const Artist& artist)
     {
         Response::Node artistNode;
 
-        artistNode.setAttribute("id", idToString(artist->getId()));
-        artistNode.setAttribute("name", artist->getName());
+        artistNode.setAttribute("id", idToString(artist.getId()));
+        artistNode.setAttribute("name", artist.getName());
 
         return artistNode;
     }
 
-    Response::Node createMinimalArtistNode(const db::ObjectPtr<db::ReleaseArtistLink>& artistLink)
+    Response::Node createMinimalArtistNode(const db::ReleaseArtistLink& artistLink)
     {
         Response::Node artistNode;
 
-        artistNode.setAttribute("id", idToString(artistLink->getArtistId()));
-        artistNode.setAttribute("name", artistLink->getArtistName());
+        artistNode.setAttribute("id", idToString(artistLink.getArtistId()));
+        artistNode.setAttribute("name", artistLink.getArtistName());
 
         return artistNode;
     }
 
-    Response::Node createMinimalArtistNode(const db::ObjectPtr<db::TrackArtistLink>& artistLink)
+    Response::Node createMinimalArtistNode(const db::TrackArtistLink& artistLink)
     {
         Response::Node artistNode;
 
-        artistNode.setAttribute("id", idToString(artistLink->getArtistId()));
-        artistNode.setAttribute("name", artistLink->getArtistName());
+        artistNode.setAttribute("id", idToString(artistLink.getArtistId()));
+        artistNode.setAttribute("name", artistLink.getArtistName());
 
         return artistNode;
     }

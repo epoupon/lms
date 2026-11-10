@@ -149,16 +149,16 @@ namespace lms::ui
         const auto trackListIds{ db::TrackList::find(session, params) };
         for (const db::TrackListId trackListId : trackListIds)
         {
-            if (const db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), trackListId) })
-                addTracklist(trackList);
+            if (const std::optional<db::TrackList> trackList{ db::TrackList::find(LmsApp->getDbSession(), trackListId) })
+                addTracklist(*trackList);
         }
 
         _container->setHasMore(trackListIds.size() == _batchSize);
     }
 
-    void TrackLists::addTracklist(const db::ObjectPtr<db::TrackList>& trackList)
+    void TrackLists::addTracklist(const db::TrackList& trackList)
     {
-        const db::TrackListId trackListId{ trackList->getId() };
+        const db::TrackListId trackListId{ trackList.getId() };
 
         WTemplate* entry{ _container->addNew<Template>(Wt::WString::tr("Lms.Explore.TrackLists.template.entry")) };
         entry->bindWidget("name", utils::createTrackListAnchor(trackList));

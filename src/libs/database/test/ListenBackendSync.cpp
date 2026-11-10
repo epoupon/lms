@@ -33,7 +33,7 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
+        ScopedListen listen{ session, user.getId(), track.getId(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -42,7 +42,7 @@ namespace lms::db::tests
             EXPECT_FALSE(ListenBackendSync::find(session, listen.getId(), ScrobblingBackend::ListenBrainz));
         }
 
-        ScopedListenBackendSync sync{ session, listen.lockAndGet(), ScrobblingBackend::ListenBrainz };
+        ScopedListenBackendSync sync{ session, listen.getId(), ScrobblingBackend::ListenBrainz };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -54,7 +54,7 @@ namespace lms::db::tests
             EXPECT_EQ(found->getId(), sync.getId());
             EXPECT_EQ(found->getBackend(), ScrobblingBackend::ListenBrainz);
             EXPECT_EQ(found->getSyncState(), SyncState::PendingAdd);
-            EXPECT_EQ(found->getListen()->getId(), listen.getId());
+            EXPECT_EQ(found->getListenId(), listen.getId());
 
             // no sync row exists for a backend that was never enqueued
             EXPECT_FALSE(ListenBackendSync::find(session, listen.getId(), ScrobblingBackend::LastFm));
@@ -65,16 +65,18 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
-        ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 13, 0, 1 } } };
+        ScopedListen listen1{ session, user.getId(), track.getId(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
+        ScopedListen listen2{ session, user.getId(), track.getId(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 13, 0, 1 } } };
 
-        ScopedListenBackendSync sync1{ session, listen1.lockAndGet(), ScrobblingBackend::ListenBrainz };
-        ScopedListenBackendSync sync2{ session, listen2.lockAndGet(), ScrobblingBackend::ListenBrainz };
+        ScopedListenBackendSync sync1{ session, listen1.getId(), ScrobblingBackend::ListenBrainz };
+        ScopedListenBackendSync sync2{ session, listen2.getId(), ScrobblingBackend::ListenBrainz };
         {
             auto transaction{ session.createWriteTransaction() };
-            sync2.get().modify()->setSyncState(SyncState::Synchronized);
+            std::optional<ListenBackendSync> updatedSync2{ sync2.get() };
+            updatedSync2->setSyncState(SyncState::Synchronized);
+            ListenBackendSync::update(session, *updatedSync2);
         }
-        ScopedListenBackendSync sync3{ session, listen1.lockAndGet(), ScrobblingBackend::LastFm };
+        ScopedListenBackendSync sync3{ session, listen1.getId(), ScrobblingBackend::LastFm };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -97,8 +99,8 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
 
-        std::optional<ScopedListen> listen{ std::in_place, session, user.lockAndGet(), track.lockAndGet(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
-        ScopedListenBackendSync sync{ session, listen->lockAndGet(), ScrobblingBackend::ListenBrainz };
+        std::optional<ScopedListen> listen{ std::in_place, session, user.getId(), track.getId(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
+        ScopedListenBackendSync sync{ session, listen->getId(), ScrobblingBackend::ListenBrainz };
 
         {
             auto transaction{ session.createReadTransaction() };

@@ -19,6 +19,7 @@
 
 #include "ListensSynchronizer.hpp"
 
+#include <array>
 #include <unordered_map>
 
 #include <Wt/Json/Array.h>
@@ -58,18 +59,14 @@ namespace lms::scrobbling::listenBrainz
             std::string name;
             std::optional<core::UUID> mbid;
         };
-        std::vector<Artist> getTrackArtists(const db::Track::pointer& track)
+        std::vector<Artist> getTrackArtists(db::ISession& session, db::TrackId trackId)
         {
             std::vector<Artist> artists;
 
-            for (const db::TrackArtistLink::pointer& trackArtistLink : track->getArtistLinks(db::TrackArtistLinkType::Artist))
-            {
-                const auto trackArtist{ trackArtistLink->getArtist() };
-                if (!trackArtist)
-                    continue;
-
-                artists.emplace_back(Artist{ std::string{ trackArtistLink->getArtistName() }, trackArtist->getMBID() });
-            }
+            db::TrackArtistLink::find(session, db::TrackArtistLink::FindParameters{}.setTrack(trackId).setLinkType(db::TrackArtistLinkType::Artist), [&](const db::TrackArtistLink& trackArtistLink) {
+                if (const std::optional<db::Artist> trackArtist{ db::Artist::find(session, trackArtistLink.getArtistId()) })
+                    artists.emplace_back(Artist{ std::string{ trackArtistLink.getArtistName() }, trackArtist->getMBID() });
+            });
 
             return artists;
         }
@@ -78,11 +75,11 @@ namespace lms::scrobbling::listenBrainz
         {
             auto transaction{ session.createReadTransaction() };
 
-            const db::Track::pointer track{ db::Track::find(session, listen.trackId) };
+            const std::optional<db::Track> track{ db::Track::find(session, listen.trackId) };
             if (!track)
                 return std::nullopt;
 
-            const std::vector<Artist> artists{ getTrackArtists(track) };
+            const std::vector<Artist> artists{ getTrackArtists(session, track->getId()) };
             if (artists.empty())
             {
                 LMS_LOG_LISTENBRAINZ(DEBUG, "Track cannot be scrobbled since it does not have any artist");
@@ -92,7 +89,8 @@ namespace lms::scrobbling::listenBrainz
             Wt::Json::Object additionalInfo;
             additionalInfo["listening_from"] = "LMS";
             additionalInfo["duration_ms"] = std::chrono::duration_cast<std::chrono::milliseconds>(track->getDuration()).count();
-            if (const auto release{ track->getRelease() })
+            const std::optional<db::Release> release{ db::Release::find(session, track->getReleaseId()) };
+            if (release)
             {
                 if (auto MBID{ release->getMBID() })
                     additionalInfo["release_mbid"] = Wt::Json::Value{ MBID->toString() };
@@ -125,8 +123,8 @@ namespace lms::scrobbling::listenBrainz
             trackMetadata["additional_info"] = std::move(additionalInfo);
             trackMetadata["artist_name"] = Wt::Json::Value{ std::string{ track->getArtistDisplayName() } };
             trackMetadata["track_name"] = Wt::Json::Value{ std::string{ track->getName() } };
-            if (track->getRelease())
-                trackMetadata["release_name"] = Wt::Json::Value{ std::string{ track->getRelease()->getName() } };
+            if (release)
+                trackMetadata["release_name"] = Wt::Json::Value{ std::string{ release->getName() } };
 
             Wt::Json::Object payload;
             payload["track_metadata"] = std::move(trackMetadata);
@@ -219,7 +217,7 @@ namespace lms::scrobbling::listenBrainz
                 if (tracks.size() == 1)
                 {
                     LMS_LOG_LISTENBRAINZ(DEBUG, "Matched listen '" << listen << "' using track MBID");
-                    return tracks.front()->getId();
+                    return tracks.front().getId();
                 }
                 else if (tracks.size() > 1)
                 {
@@ -235,7 +233,7 @@ namespace lms::scrobbling::listenBrainz
                 if (tracks.size() == 1)
                 {
                     LMS_LOG_LISTENBRAINZ(DEBUG, "Matched listen '" << listen << "' using recording MBID");
-                    return tracks.front()->getId();
+                    return tracks.front().getId();
                 }
                 else if (tracks.size() > 1)
                 {
@@ -376,33 +374,29 @@ namespace lms::scrobbling::listenBrainz
         db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() }; // TODO: unique only if needed
 
-        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
+        std::optional<db::Listen> dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
         if (!dbListen)
         {
-            const db::User::pointer user{ db::User::find(session, listen.userId) };
+            const std::optional<db::User> user{ db::User::find(session, listen.userId) };
             if (!user)
                 return false;
 
-            const db::Track::pointer track{ db::Track::find(session, listen.trackId) };
+            const std::optional<db::Track> track{ db::Track::find(session, listen.trackId) };
             if (!track)
                 return false;
 
-            dbListen = db::Listen::create(session, user, track, listen.listenedAt);
+            dbListen = db::Listen::create(session, user->getId(), track->getId(), listen.listenedAt);
             LMS_LOG_LISTENBRAINZ(DEBUG, "Listen created for user " << user->getLoginName() << ", track '" << track->getName() << "' at " << listen.listenedAt.toString());
         }
 
-        db::ListenBackendSync::pointer sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::ListenBrainz) };
+        std::optional<db::ListenBackendSync> sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::ListenBrainz) };
         if (!sync)
-        {
-            sync = db::ListenBackendSync::create(session, dbListen, db::ScrobblingBackend::ListenBrainz);
-            sync.modify()->setSyncState(scrobblingState);
-            return true;
-        }
-
-        if (sync->getSyncState() == scrobblingState)
+            sync = db::ListenBackendSync::create(session, dbListen->getId(), db::ScrobblingBackend::ListenBrainz);
+        else if (sync->getSyncState() == scrobblingState)
             return false;
 
-        sync.modify()->setSyncState(scrobblingState);
+        sync->setSyncState(scrobblingState);
+        db::ListenBackendSync::update(session, *sync);
         return true;
     }
 
@@ -411,14 +405,14 @@ namespace lms::scrobbling::listenBrainz
         db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
+        std::optional<db::Listen> dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
         if (!dbListen)
             return;
 
-        if (db::ListenBackendSync::pointer sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::ListenBrainz) })
+        if (std::optional<db::ListenBackendSync> sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::ListenBrainz) })
         {
             LMS_LOG_LISTENBRAINZ(DEBUG, "Listen cannot be scrobbled (no match / no artist tag): dropping sync entry");
-            sync.remove();
+            db::ListenBackendSync::destroy(session, std::array{ sync->getId() });
         }
     }
 
@@ -435,13 +429,13 @@ namespace lms::scrobbling::listenBrainz
                 .setSyncState(db::SyncState::PendingAdd)
                 .setRange(db::Range{ 0, listenBrainzMaxListensPerRequest });
 
-            db::ListenBackendSync::find(session, params, [&](const db::ListenBackendSync::pointer& sync) {
-                const db::Listen::pointer listen{ sync->getListen() };
+            db::ListenBackendSync::find(session, params, [&](const db::ListenBackendSync& sync) {
+                const std::optional<db::Listen> listen{ db::Listen::find(session, sync.getListenId()) };
 
                 TimedListen timedListen;
                 timedListen.listenedAt = listen->getDateTime();
-                timedListen.userId = listen->getUser()->getId();
-                timedListen.trackId = listen->getTrack()->getId();
+                timedListen.userId = listen->getUserId();
+                timedListen.trackId = listen->getTrackId();
 
                 pendingByUser[timedListen.userId].push_back(timedListen);
             });

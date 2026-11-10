@@ -70,12 +70,12 @@ namespace lms::api::subsonic
             params.setDirectory(directory);
             params.setRange(Range{ 0, 1 }); // consider one directory <-> one release
 
-            Release::pointer res;
-            Release::find(session, params, [&](const Release::pointer& release) {
-                res = release;
+            ReleaseId res;
+            Release::find(session, params, [&](const Release& release) {
+                res = release.getId();
             });
 
-            return res ? res->getId() : ReleaseId{};
+            return res;
         }
 
         struct RatingParameters

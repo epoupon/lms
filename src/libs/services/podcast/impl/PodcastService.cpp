@@ -100,7 +100,7 @@ namespace lms::podcast
             db::ISession& session{ _refreshContext.db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            db::Podcast::pointer podcast{ db::Podcast::find(session, url) };
+            std::optional<db::Podcast> podcast{ db::Podcast::find(session, url) };
             if (!podcast)
                 podcast = db::Podcast::create(session, url);
 
@@ -124,10 +124,11 @@ namespace lms::podcast
             db::ISession& session{ _refreshContext.db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            db::Podcast::pointer podcast{ db::Podcast::find(session, podcastId) };
+            std::optional<db::Podcast> podcast{ db::Podcast::find(session, podcastId) };
             if (podcast)
             {
-                podcast.modify()->setDeleteRequested(true);
+                podcast->setDeleteRequested(true);
+                db::Podcast::update(session, *podcast);
                 res = true;
             }
         }
@@ -158,10 +159,11 @@ namespace lms::podcast
             db::ISession& session{ _refreshContext.db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, episodeId) };
+            std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(session, episodeId) };
             if (episode)
             {
-                episode.modify()->setManualDownloadState(db::PodcastEpisode::ManualDownloadState::DownloadRequested);
+                episode->setManualDownloadState(db::PodcastEpisode::ManualDownloadState::DownloadRequested);
+                db::PodcastEpisode::update(session, *episode);
                 res = true;
             }
         }
@@ -183,10 +185,11 @@ namespace lms::podcast
             db::ISession& session{ _refreshContext.db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, episodeId) };
+            std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(session, episodeId) };
             if (episode)
             {
-                episode.modify()->setManualDownloadState(db::PodcastEpisode::ManualDownloadState::DeleteRequested);
+                episode->setManualDownloadState(db::PodcastEpisode::ManualDownloadState::DeleteRequested);
+                db::PodcastEpisode::update(session, *episode);
                 res = true;
             }
         }

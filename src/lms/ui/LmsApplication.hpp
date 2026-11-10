@@ -28,7 +28,6 @@
 
 #include "core/UUID.hpp"
 
-#include "database/Object.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
 #include "services/scanner/ScannerEvents.hpp"
@@ -68,7 +67,7 @@ namespace lms::ui
         db::IDb& getDb();
         db::ISession& getDbSession(); // always thread safe
 
-        db::ObjectPtr<db::User> getUser();
+        db::User getUser(); // user must be logged in prior this call
         db::UserId getUserId() const;
         bool isUserAuthStrong() const;             // user must be logged in prior this call
         db::UserType getUserType() const;          // user must be logged in prior this call

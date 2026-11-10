@@ -24,7 +24,7 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "ClusterDbo.hpp"
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "PlayListFileDbo.hpp"
 #include "Session.hpp"
 #include "TrackDbo.hpp"
@@ -108,9 +108,14 @@ namespace lms::db
     {
     }
 
-    TrackList::pointer TrackList::create(ISession& session, std::string_view name, TrackListType type)
+    TrackList TrackList::create(ISession& session, std::string_view name, TrackListType type)
     {
         return utils::addObject(session, std::unique_ptr<dbo::TrackList>{ new dbo::TrackList{ name, type } });
+    }
+
+    void TrackList::destroy(ISession& session, std::span<const TrackListId> ids)
+    {
+        utils::destroyObjects<dbo::TrackList>(session, ids);
     }
 
     std::size_t TrackList::getCount(ISession& session)
@@ -120,7 +125,7 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM tracklist"));
     }
 
-    TrackList::pointer TrackList::find(ISession& session, std::string_view name, TrackListType type, UserId userId)
+    std::optional<TrackList> TrackList::find(ISession& session, std::string_view name, TrackListType type, UserId userId)
     {
         checkReadTransaction(session);
         assert(userId.isValid());
@@ -135,120 +140,64 @@ namespace lms::db
         return utils::execRangeQuery<TrackListId>(query, params.range);
     }
 
-    void TrackList::find(ISession& session, const FindParameters& params, const std::function<void(const TrackList::pointer&)>& func)
+    void TrackList::find(ISession& session, const FindParameters& params, const std::function<void(const TrackList&)>& func)
     {
         checkReadTransaction(session);
         auto query{ createListQuery<Wt::Dbo::ptr<dbo::TrackList>>(session, "t_l", params) };
         utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    TrackList::pointer TrackList::find(ISession& session, TrackListId id)
+    std::optional<TrackList> TrackList::find(ISession& session, TrackListId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackList>>("select t_l from tracklist t_l").where("t_l.id = ?").bind(id));
     }
 
-    bool TrackList::isEmpty() const
+    std::optional<TrackList> TrackList::find(ISession& session, PlayListFileId playListFileId)
     {
-        return getDbo(*this)._entries.empty();
+        checkReadTransaction(session);
+
+        if (!playListFileId.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackList>>("select t_l from tracklist t_l").where("t_l.playlist_file_id = ?").bind(playListFileId));
     }
 
-    std::size_t TrackList::getCount() const
+    bool TrackList::isEmpty(ISession& session, TrackListId id)
     {
-        return getDbo(*this)._entries.size();
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT EXISTS (SELECT 1 FROM tracklist_entry WHERE tracklist_id = ?)").bind(id)) == 0;
     }
 
-    TrackListEntry::pointer TrackList::getEntry(std::size_t pos) const
+    std::size_t TrackList::getTrackCount(ISession& session, TrackListId id)
     {
-        TrackListEntry::pointer res;
+        checkReadTransaction(session);
 
-        auto entries = getEntries(Range{ pos, 1 });
-        if (!entries.empty())
-            res = entries.front();
-
-        return res;
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM tracklist_entry").where("tracklist_id = ?").bind(id));
     }
 
-    std::vector<ObjectPtr<TrackListEntry>> TrackList::getEntries(std::optional<Range> range) const
+    std::chrono::milliseconds TrackList::getDuration(ISession& session, TrackListId id)
     {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        auto query{ dbo.session()->find<dbo::TrackListEntry>().where("tracklist_id = ?").bind(getId()).orderBy("id") };
-
-        return utils::execRangeObjectQuery(query, range);
-    }
-
-    TrackListEntry::pointer TrackList::getEntryByTrackAndDateTime(const ObjectPtr<Track>& track, const Wt::WDateTime& dateTime) const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        return utils::fetchQuerySingleObject(dbo.session()->find<dbo::TrackListEntry>().where("tracklist_id = ?").bind(getId()).where("track_id = ?").bind(track->getId()).where("date_time = ?").bind(utils::normalizeDateTime(dateTime)));
-    }
-
-    std::vector<Cluster::pointer> TrackList::getClusters() const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        const auto query{ dbo.session()->query<Wt::Dbo::ptr<dbo::Cluster>>("SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN tracklist_entry p_e ON p_e.track_id = t.id INNER JOIN tracklist p ON p.id = p_e.tracklist_id").where("p.id = ?").bind(getId()).groupBy("c.id").orderBy("COUNT(c.id) DESC") };
-
-        return utils::fetchQueryObjects(query);
-    }
-
-    std::vector<Track::pointer> TrackList::getSimilarTracks(std::optional<std::size_t> offset, std::optional<std::size_t> size) const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        auto query{ dbo.session()->query<Wt::Dbo::ptr<dbo::Track>>(
-                                     "SELECT t FROM track t"
-                                     " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-                                     " WHERE "
-                                     " (t_c.cluster_id IN (SELECT DISTINCT c.id from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN tracklist_entry p_e ON p_e.track_id = t.id INNER JOIN tracklist p ON p.id = p_e.tracklist_id WHERE p.id = ?)"
-                                     " AND t.id NOT IN (SELECT tracklist_t.id FROM track tracklist_t INNER JOIN tracklist_entry t_e ON t_e.track_id = tracklist_t.id WHERE t_e.tracklist_id = ?))")
-                        .bind(getId())
-                        .bind(getId())
-                        .groupBy("t.id")
-                        .orderBy("COUNT(*) DESC, RANDOM()")
-                        .limit(size ? static_cast<int>(*size) : -1)
-                        .offset(offset ? static_cast<int>(*offset) : -1) };
-
-        return utils::fetchQueryObjects(query);
-    }
-
-    std::vector<TrackId> TrackList::getTrackIds(std::optional<Range> range) const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        auto query{ dbo.session()->query<TrackId>("SELECT track_id FROM tracklist_entry").where("tracklist_id = ?").bind(getId()).orderBy("id") };
-
-        return utils::execRangeQuery<TrackId>(query, range);
-    }
-
-    void TrackList::visitTracks(const std::function<void(const ObjectPtr<Track>&)>& func) const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
-
-        auto query{ dbo.session()->query<Wt::Dbo::ptr<dbo::Track>>("SELECT t FROM track t").join("tracklist_entry t_l_e ON t_l_e.track_id = t.id").where("t_l_e.tracklist_id = ?").bind(getId()).orderBy("t_l_e.id") };
-
-        utils::forEachQueryObject(query, [&](const Track::pointer& track) {
-            func(track);
-        });
-    }
-
-    std::chrono::milliseconds TrackList::getDuration() const
-    {
-        const auto& dbo{ getDbo(*this) };
-        assert(dbo.session());
+        checkReadTransaction(session);
 
         using milli = std::chrono::duration<int, std::milli>;
 
-        return utils::fetchQuerySingleResult(dbo.session()->query<milli>("SELECT COALESCE(SUM(duration), 0) FROM track t INNER JOIN tracklist_entry p_e ON t.id = p_e.track_id").where("p_e.tracklist_id = ?").bind(getId()));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<milli>("SELECT COALESCE(SUM(duration), 0) FROM track t INNER JOIN tracklist_entry p_e ON t.id = p_e.track_id").where("p_e.tracklist_id = ?").bind(id));
+    }
+
+    void TrackList::update(ISession& session, const TrackList& trackList)
+    {
+        utils::updateObject<dbo::TrackList>(session, trackList);
+    }
+
+    void TrackList::clear(ISession& session, TrackListId id)
+    {
+        utils::modifyObject<dbo::TrackList>(session, id)._entries.clear();
     }
 
     void TrackList::setLastModifiedDateTime(const Wt::WDateTime& dateTime)
@@ -256,9 +205,11 @@ namespace lms::db
         _lastModifiedDateTime = utils::normalizeDateTime(dateTime);
     }
 
-    void TrackList::setUser(const ObjectPtr<User>& user)
+    void dbo::TrackList::applyIds()
     {
-        getDbo(*this)._user = getDboPtr(user);
+        Wt::Dbo::Session& dboSession{ *session() };
+        setRelation(dboSession, _user, _userId);
+        setRelation(dboSession, _playListFile, _playListFileId);
     }
 
     TrackListEntry::TrackListEntry(const Wt::WDateTime& dateTime)
@@ -266,28 +217,34 @@ namespace lms::db
     {
     }
 
-    dbo::TrackListEntry::TrackListEntry(const ObjectPtr<db::Track>& track, const ObjectPtr<db::TrackList>& tracklist, const Wt::WDateTime& dateTime)
+    dbo::TrackListEntry::TrackListEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist, const Wt::WDateTime& dateTime)
         : db::TrackListEntry{ dateTime }
-        , _track{ getDboPtr(track) }
-        , _tracklist{ getDboPtr(tracklist) }
+        , _track{ std::move(track) }
+        , _tracklist{ std::move(tracklist) }
     {
-        assert(track);
-        assert(tracklist);
+        assert(_track);
+        assert(_tracklist);
     }
 
-    TrackListEntry::pointer TrackListEntry::create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<TrackList>& tracklist, const Wt::WDateTime& dateTime)
+    TrackListEntry TrackListEntry::create(ISession& session, TrackId track, TrackListId tracklist, const Wt::WDateTime& dateTime)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::TrackListEntry>{ new dbo::TrackListEntry{ track, tracklist, dateTime } });
+        Wt::Dbo::Session& dboSession{ *getDboSession(session) };
+        return utils::addObject(session, std::unique_ptr<dbo::TrackListEntry>{ new dbo::TrackListEntry{ dboSession.loadLazy<dbo::Track>(track.getValue()), dboSession.loadLazy<dbo::TrackList>(tracklist.getValue()), dateTime } });
     }
 
-    TrackListEntry::pointer TrackListEntry::getById(ISession& session, TrackListEntryId id)
+    void TrackListEntry::destroy(ISession& session, std::span<const TrackListEntryId> ids)
+    {
+        utils::destroyObjects<dbo::TrackListEntry>(session, ids);
+    }
+
+    std::optional<TrackListEntry> TrackListEntry::getById(ISession& session, TrackListEntryId id)
     {
         checkReadTransaction(session);
 
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackListEntry>().where("id = ?").bind(id));
     }
 
-    void TrackListEntry::find(ISession& session, const FindParameters& params, const std::function<void(const TrackListEntry::pointer&)>& func)
+    void TrackListEntry::find(ISession& session, const FindParameters& params, const std::function<void(const TrackListEntry&)>& func)
     {
         checkReadTransaction(session);
 
@@ -298,35 +255,5 @@ namespace lms::db
         query.orderBy("t_l_e.id");
 
         utils::forEachQueryRangeObject(query, params.range, func);
-    }
-
-    ObjectPtr<User> TrackList::getUser() const
-    {
-        return toObjectPtr(getDbo(*this)._user);
-    }
-
-    UserId TrackList::getUserId() const
-    {
-        return getDbo(*this)._user.id();
-    }
-
-    ObjectPtr<PlayListFile> TrackList::getPlayListFile() const
-    {
-        return toObjectPtr(getDbo(*this)._playListFile);
-    }
-
-    void TrackList::clear()
-    {
-        getDbo(*this)._entries.clear();
-    }
-
-    TrackId TrackListEntry::getTrackId() const
-    {
-        return getDbo(*this)._track.id();
-    }
-
-    ObjectPtr<Track> TrackListEntry::getTrack() const
-    {
-        return toObjectPtr(getDbo(*this)._track);
     }
 } // namespace lms::db

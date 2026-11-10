@@ -27,23 +27,23 @@
 #include <string>
 
 #include "database/IdType.hpp"
-#include "database/Object.hpp"
 #include "database/Types.hpp"
+#include "database/objects/DirectoryId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 LMS_DECLARE_IDTYPE(TrackLyricsId)
 
 namespace lms::db
 {
-    class Directory;
     class ISession;
     class Track;
 
-    class TrackLyrics : public Object<TrackLyrics, TrackLyricsId>
+    class TrackLyrics : public detail::Object<TrackLyrics, TrackLyricsId>
     {
     public:
-        static pointer create(ISession& session);
+        static TrackLyrics create(ISession& session);
         static void destroy(ISession& session, std::span<const TrackLyricsId> ids);
 
         struct FindParameters
@@ -78,12 +78,14 @@ namespace lms::db
         // Find utilities
         static std::size_t getCount(ISession& session);
         static std::size_t getExternalLyricsCount(ISession& session);
-        static pointer find(ISession& session, TrackLyricsId id);
-        static pointer find(ISession& session, const std::filesystem::path& file);
-        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackLyrics::pointer&)>& func);
-        static void find(ISession& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(const TrackLyrics::pointer&)>& func);
+        static std::optional<TrackLyrics> find(ISession& session, TrackLyricsId id);
+        static std::optional<TrackLyrics> find(ISession& session, const std::filesystem::path& file);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackLyrics&)>& func);
+        static void find(ISession& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(const TrackLyrics&)>& func);
         static std::vector<TrackLyricsId> findOrphanIds(ISession& session, std::optional<Range> range);
         static void findAbsoluteFilePath(ISession& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(TrackLyricsId trackLyricsId, const std::filesystem::path& absoluteFilePath)>& func);
+
+        static void update(ISession& session, const TrackLyrics& trackLyrics);
 
         using SynchronizedLines = std::map<std::chrono::milliseconds, std::string>;
 
@@ -99,8 +101,8 @@ namespace lms::db
         bool isSynchronized() const { return _synchronized; }
         SynchronizedLines getSynchronizedLines() const;
         std::vector<std::string> getUnsynchronizedLines() const;
-        ObjectPtr<Track> getTrack() const;
-        ObjectPtr<Directory> getDirectory() const;
+        TrackId getTrackId() const { return _trackId; }
+        DirectoryId getDirectoryId() const { return _directoryId; }
 
         // Writers
         void setAbsoluteFilePath(const std::filesystem::path& path);
@@ -112,8 +114,8 @@ namespace lms::db
         void setDisplayTitle(std::string_view displayTitle) { _displayTitle = displayTitle; }
         void setSynchronizedLines(const SynchronizedLines& lines);
         void setUnsynchronizedLines(std::span<const std::string> lines);
-        void setTrack(const ObjectPtr<Track>& track);
-        void setDirectory(const ObjectPtr<Directory>& directory);
+        void setTrack(TrackId track) { _trackId = track; }
+        void setDirectory(DirectoryId directory) { _directoryId = directory; }
 
     protected:
         TrackLyrics() = default;
@@ -127,5 +129,7 @@ namespace lms::db
         std::string _displayArtist;
         std::string _displayTitle;
         bool _synchronized{};
+        TrackId _trackId;
+        DirectoryId _directoryId;
     };
 } // namespace lms::db

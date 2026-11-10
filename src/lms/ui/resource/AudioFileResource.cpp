@@ -40,7 +40,7 @@ namespace lms::ui
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) };
+            const std::optional<db::Track> track{ db::Track::find(LmsApp->getDbSession(), trackId) };
             if (!track)
             {
                 AUDIO_RESOURCE_LOG(ERROR, "Missing track");

@@ -22,7 +22,7 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "Session.hpp"
 #include "TrackFeedbackBackendSyncDbo.hpp"
 #include "TrackFeedbackDbo.hpp"
@@ -38,15 +38,20 @@ namespace lms::db
     {
     }
 
-    dbo::TrackFeedbackBackendSync::TrackFeedbackBackendSync(const ObjectPtr<db::TrackFeedback>& trackFeedback, FeedbackBackend backend)
+    dbo::TrackFeedbackBackendSync::TrackFeedbackBackendSync(Wt::Dbo::ptr<TrackFeedback> trackFeedback, FeedbackBackend backend)
         : db::TrackFeedbackBackendSync{ backend }
-        , _trackFeedback{ getDboPtr(trackFeedback) }
+        , _trackFeedback{ std::move(trackFeedback) }
     {
     }
 
-    TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::create(ISession& session, const ObjectPtr<TrackFeedback>& trackFeedback, FeedbackBackend backend)
+    TrackFeedbackBackendSync TrackFeedbackBackendSync::create(ISession& session, TrackFeedbackId trackFeedback, FeedbackBackend backend)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::TrackFeedbackBackendSync>{ new dbo::TrackFeedbackBackendSync{ trackFeedback, backend } });
+        return utils::addObject(session, std::unique_ptr<dbo::TrackFeedbackBackendSync>{ new dbo::TrackFeedbackBackendSync{ getDboSession(session)->loadLazy<dbo::TrackFeedback>(trackFeedback.getValue()), backend } });
+    }
+
+    void TrackFeedbackBackendSync::destroy(ISession& session, std::span<const TrackFeedbackBackendSyncId> ids)
+    {
+        utils::destroyObjects<dbo::TrackFeedbackBackendSync>(session, ids);
     }
 
     std::size_t TrackFeedbackBackendSync::getCount(ISession& session)
@@ -55,13 +60,17 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_feedback_backend_sync"));
     }
 
-    TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::find(ISession& session, TrackFeedbackBackendSyncId id)
+    std::optional<TrackFeedbackBackendSync> TrackFeedbackBackendSync::find(ISession& session, TrackFeedbackBackendSyncId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackFeedbackBackendSync>().where("id = ?").bind(id));
     }
 
-    TrackFeedbackBackendSync::pointer TrackFeedbackBackendSync::find(ISession& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend)
+    std::optional<TrackFeedbackBackendSync> TrackFeedbackBackendSync::find(ISession& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend)
     {
         checkReadTransaction(session);
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackFeedbackBackendSync>().where("track_feedback_id = ?").bind(trackFeedbackId).where("backend = ?").bind(backend));
@@ -82,7 +91,7 @@ namespace lms::db
         return utils::execRangeQuery<TrackFeedbackBackendSyncId>(query, params.range);
     }
 
-    void TrackFeedbackBackendSync::find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
+    void TrackFeedbackBackendSync::find(ISession& session, const FindParameters& params, const std::function<void(const TrackFeedbackBackendSync&)>& func)
     {
         checkReadTransaction(session);
 
@@ -97,8 +106,8 @@ namespace lms::db
         utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    ObjectPtr<TrackFeedback> TrackFeedbackBackendSync::getTrackFeedback() const
+    void TrackFeedbackBackendSync::update(ISession& session, const TrackFeedbackBackendSync& trackFeedbackBackendSync)
     {
-        return toObjectPtr(getDbo(*this)._trackFeedback);
+        utils::updateObject<dbo::TrackFeedbackBackendSync>(session, trackFeedbackBackendSync);
     }
 } // namespace lms::db

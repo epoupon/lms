@@ -23,7 +23,7 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "ArtworkDbo.hpp"
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "PodcastDbo.hpp"
 #include "PodcastEpisodeDbo.hpp"
 #include "Session.hpp"
@@ -40,7 +40,7 @@ namespace lms::db
     {
     }
 
-    Podcast::pointer Podcast::create(ISession& session, std::string_view url)
+    Podcast Podcast::create(ISession& session, std::string_view url)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Podcast>{ new dbo::Podcast{ url } });
     }
@@ -56,19 +56,23 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM podcast"));
     }
 
-    Podcast::pointer Podcast::find(ISession& session, PodcastId id)
+    std::optional<Podcast> Podcast::find(ISession& session, PodcastId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Podcast>>("SELECT p from podcast p").where("p.id = ?").bind(id));
     }
 
-    Podcast::pointer Podcast::find(ISession& session, std::string_view url)
+    std::optional<Podcast> Podcast::find(ISession& session, std::string_view url)
     {
         checkReadTransaction(session);
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Podcast>>("SELECT p from podcast p").where("p.url = ?").bind(url));
     }
 
-    void Podcast::find(ISession& session, std::function<void(const pointer&)> func)
+    void Podcast::find(ISession& session, const std::function<void(const Podcast&)>& func)
     {
         checkReadTransaction(session);
 
@@ -76,18 +80,13 @@ namespace lms::db
         utils::forEachQueryObject(query, func);
     }
 
-    ObjectPtr<Artwork> Podcast::getArtwork() const
+    void dbo::Podcast::applyIds()
     {
-        return toObjectPtr(getDbo(*this)._artwork);
+        setRelation(*session(), _artwork, _artworkId);
     }
 
-    ArtworkId Podcast::getArtworkId() const
+    void Podcast::update(ISession& session, const Podcast& podcast)
     {
-        return getDbo(*this)._artwork.id();
-    }
-
-    void Podcast::setArtwork(const ObjectPtr<Artwork>& artwork)
-    {
-        getDbo(*this)._artwork = getDboPtr(artwork);
+        utils::updateObject<dbo::Podcast>(session, podcast);
     }
 } // namespace lms::db

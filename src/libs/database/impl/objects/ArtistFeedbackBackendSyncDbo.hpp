@@ -24,7 +24,7 @@
 
 #include "database/objects/ArtistFeedbackBackendSync.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,7 +36,13 @@ namespace lms::db::dbo
         ArtistFeedbackBackendSync() = default;
         using db::ArtistFeedbackBackendSync::ArtistFeedbackBackendSync;
 
-        ArtistFeedbackBackendSync(const ObjectPtr<db::ArtistFeedback>& artistFeedback, FeedbackBackend backend);
+        ArtistFeedbackBackendSync(Wt::Dbo::ptr<ArtistFeedback> artistFeedback, FeedbackBackend backend);
+
+        void syncIds()
+        {
+            _id = id();
+            _artistFeedbackId = _artistFeedback.id();
+        }
 
         template<class Action>
         void persist(Action& a)

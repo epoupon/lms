@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
@@ -27,32 +28,35 @@
 
 #include "core/UUID.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/WorkId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
 
-    class Work : public Object<Work, WorkId>
+    class Work : public detail::Object<Work, WorkId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
 
-        static pointer create(ISession& session, std::string_view name, const std::optional<core::UUID>& mbid);
+        static Work create(ISession& session, std::string_view name, const std::optional<core::UUID>& mbid);
         static void destroy(ISession& session, std::span<const WorkId> ids);
 
-        static pointer find(ISession& session, WorkId id);
+        static std::optional<Work> find(ISession& session, WorkId id);
         // Global lookup: MusicBrainz Work Id is a strong, unambiguous identity shared across the whole library
-        static pointer find(ISession& session, const core::UUID& mbid);
+        static std::optional<Work> find(ISession& session, const core::UUID& mbid);
         // Name-only lookup, scoped to works already linked to a track of the given release: work titles are
         // often generic (e.g. "Symphony No. 5") and collide across unrelated works, so without an mbid we only
         // ever match within the same release instead of matching globally by name
-        static pointer find(ISession& session, ReleaseId releaseId, std::string_view name);
+        static std::optional<Work> find(ISession& session, ReleaseId releaseId, std::string_view name);
+        static void find(ISession& session, TrackId trackId, const std::function<void(const Work&)>& func); // in creation order
         static std::vector<WorkId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
+
+        static void update(ISession& session, const Work& work);
 
         void setName(std::string_view name);
 

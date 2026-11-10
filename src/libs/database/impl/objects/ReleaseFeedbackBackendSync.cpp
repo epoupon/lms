@@ -22,7 +22,7 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "ReleaseFeedbackBackendSyncDbo.hpp"
 #include "ReleaseFeedbackDbo.hpp"
 #include "Session.hpp"
@@ -38,15 +38,20 @@ namespace lms::db
     {
     }
 
-    dbo::ReleaseFeedbackBackendSync::ReleaseFeedbackBackendSync(const ObjectPtr<db::ReleaseFeedback>& releaseFeedback, FeedbackBackend backend)
+    dbo::ReleaseFeedbackBackendSync::ReleaseFeedbackBackendSync(Wt::Dbo::ptr<ReleaseFeedback> releaseFeedback, FeedbackBackend backend)
         : db::ReleaseFeedbackBackendSync{ backend }
-        , _releaseFeedback{ getDboPtr(releaseFeedback) }
+        , _releaseFeedback{ std::move(releaseFeedback) }
     {
     }
 
-    ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::create(ISession& session, const ObjectPtr<ReleaseFeedback>& releaseFeedback, FeedbackBackend backend)
+    ReleaseFeedbackBackendSync ReleaseFeedbackBackendSync::create(ISession& session, ReleaseFeedbackId releaseFeedback, FeedbackBackend backend)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::ReleaseFeedbackBackendSync>{ new dbo::ReleaseFeedbackBackendSync{ releaseFeedback, backend } });
+        return utils::addObject(session, std::unique_ptr<dbo::ReleaseFeedbackBackendSync>{ new dbo::ReleaseFeedbackBackendSync{ getDboSession(session)->loadLazy<dbo::ReleaseFeedback>(releaseFeedback.getValue()), backend } });
+    }
+
+    void ReleaseFeedbackBackendSync::destroy(ISession& session, std::span<const ReleaseFeedbackBackendSyncId> ids)
+    {
+        utils::destroyObjects<dbo::ReleaseFeedbackBackendSync>(session, ids);
     }
 
     std::size_t ReleaseFeedbackBackendSync::getCount(ISession& session)
@@ -55,13 +60,17 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM release_feedback_backend_sync"));
     }
 
-    ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::find(ISession& session, ReleaseFeedbackBackendSyncId id)
+    std::optional<ReleaseFeedbackBackendSync> ReleaseFeedbackBackendSync::find(ISession& session, ReleaseFeedbackBackendSyncId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ReleaseFeedbackBackendSync>().where("id = ?").bind(id));
     }
 
-    ReleaseFeedbackBackendSync::pointer ReleaseFeedbackBackendSync::find(ISession& session, ReleaseFeedbackId releaseFeedbackId, FeedbackBackend backend)
+    std::optional<ReleaseFeedbackBackendSync> ReleaseFeedbackBackendSync::find(ISession& session, ReleaseFeedbackId releaseFeedbackId, FeedbackBackend backend)
     {
         checkReadTransaction(session);
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ReleaseFeedbackBackendSync>().where("release_feedback_id = ?").bind(releaseFeedbackId).where("backend = ?").bind(backend));
@@ -82,7 +91,7 @@ namespace lms::db
         return utils::execRangeQuery<ReleaseFeedbackBackendSyncId>(query, params.range);
     }
 
-    void ReleaseFeedbackBackendSync::find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
+    void ReleaseFeedbackBackendSync::find(ISession& session, const FindParameters& params, const std::function<void(const ReleaseFeedbackBackendSync&)>& func)
     {
         checkReadTransaction(session);
 
@@ -97,8 +106,8 @@ namespace lms::db
         utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    ObjectPtr<ReleaseFeedback> ReleaseFeedbackBackendSync::getReleaseFeedback() const
+    void ReleaseFeedbackBackendSync::update(ISession& session, const ReleaseFeedbackBackendSync& releaseFeedbackBackendSync)
     {
-        return toObjectPtr(getDbo(*this)._releaseFeedback);
+        utils::updateObject<dbo::ReleaseFeedbackBackendSync>(session, releaseFeedbackBackendSync);
     }
 } // namespace lms::db

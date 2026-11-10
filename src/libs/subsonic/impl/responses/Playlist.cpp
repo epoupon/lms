@@ -30,29 +30,29 @@
 
 namespace lms::api::subsonic
 {
-    Response::Node createPlaylistNode(RequestContext& context, const db::TrackList::pointer& tracklist)
+    Response::Node createPlaylistNode(RequestContext& context, const db::TrackList& tracklist)
     {
         Response::Node playlistNode;
 
-        playlistNode.setAttribute("id", idToString(tracklist->getId()));
-        playlistNode.setAttribute("name", tracklist->getName());
-        playlistNode.setAttribute("songCount", tracklist->getCount());
-        playlistNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(tracklist->getDuration()).count());
-        playlistNode.setAttribute("public", tracklist->getVisibility() == db::TrackList::Visibility::Public);
-        playlistNode.setAttribute("changed", core::stringUtils::toISO8601String(tracklist->getLastModifiedDateTime()));
-        playlistNode.setAttribute("created", core::stringUtils::toISO8601String(tracklist->getCreationDateTime()));
+        playlistNode.setAttribute("id", idToString(tracklist.getId()));
+        playlistNode.setAttribute("name", tracklist.getName());
+        playlistNode.setAttribute("songCount", db::TrackList::getTrackCount(context.getDbSession(), tracklist.getId()));
+        playlistNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(db::TrackList::getDuration(context.getDbSession(), tracklist.getId())).count());
+        playlistNode.setAttribute("public", tracklist.getVisibility() == db::TrackList::Visibility::Public);
+        playlistNode.setAttribute("changed", core::stringUtils::toISO8601String(tracklist.getLastModifiedDateTime()));
+        playlistNode.setAttribute("created", core::stringUtils::toISO8601String(tracklist.getCreationDateTime()));
 
-        const db::User::pointer trackListUser{ tracklist->getUser() };
+        const std::optional<db::User> trackListUser{ tracklist.getUserId().isValid() ? db::User::find(context.getDbSession(), tracklist.getUserId()) : std::nullopt };
         if (trackListUser)
             playlistNode.setAttribute("owner", trackListUser->getLoginName());
 
-        if (const db::ArtworkId artworkId{ core::Service<artwork::IArtworkService>::get()->findTrackListImage(tracklist->getId()) }; artworkId.isValid())
+        if (const db::ArtworkId artworkId{ core::Service<artwork::IArtworkService>::get()->findTrackListImage(tracklist.getId()) }; artworkId.isValid())
             playlistNode.setAttribute("coverArt", idToString(artworkId));
 
         if (context.isOpenSubsonicEnabled())
         {
             // A playlist with no owner is always read only, and only the owner of a tracklist can modify it
-            playlistNode.setAttribute("readonly", !trackListUser || trackListUser != context.getUser());
+            playlistNode.setAttribute("readonly", !trackListUser || trackListUser->getId() != context.getUser()->getId());
         }
 
         return playlistNode;

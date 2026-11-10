@@ -24,7 +24,7 @@
 
 #include "database/objects/Directory.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -35,6 +35,14 @@ namespace lms::db::dbo
     public:
         Directory() = default;
         using db::Directory::Directory;
+
+        void syncIds()
+        {
+            _id = id();
+            _parentDirectoryId = _parent.id();
+            _mediaLibraryId = _mediaLibrary.id();
+        }
+        void applyIds();
 
         template<class Action>
         void persist(Action& a)

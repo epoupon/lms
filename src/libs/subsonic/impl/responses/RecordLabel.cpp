@@ -23,11 +23,11 @@
 
 namespace lms::api::subsonic
 {
-    Response::Node createRecordLabel(const db::ObjectPtr<db::Label>& label)
+    Response::Node createRecordLabel(const db::Label& label)
     {
         Response::Node recordLabelNode;
 
-        recordLabelNode.setAttribute("name", label->getName());
+        recordLabelNode.setAttribute("name", label.getName());
 
         return recordLabelNode;
     }

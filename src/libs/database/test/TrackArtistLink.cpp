@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <array>
+
 #include "Common.hpp"
 
 #include "database/Types.hpp"
@@ -31,15 +33,16 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            auto link{ TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist, false) };
-            link.modify()->setArtistName("MyArtist");
+            TrackArtistLink link{ TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist, false) };
+            link.setArtistName("MyArtist");
+            TrackArtistLink::update(session, link);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            TrackArtistLink::findArtistNameNoLongerMatch(session, std::nullopt, [&](const TrackArtistLink::pointer&) {
+            TrackArtistLink::findArtistNameNoLongerMatch(session, std::nullopt, [&](const TrackArtistLink&) {
                 visited = true;
             });
             ASSERT_FALSE(visited);
@@ -47,14 +50,16 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            artist.get().modify()->setName("MyArtist2");
+            std::optional<Artist> updatedArtist{ artist.get() };
+            updatedArtist->setName("MyArtist2");
+            Artist::update(session, *updatedArtist);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            TrackArtistLink::findArtistNameNoLongerMatch(session, std::nullopt, [&](const TrackArtistLink::pointer&) {
+            TrackArtistLink::findArtistNameNoLongerMatch(session, std::nullopt, [&](const TrackArtistLink&) {
                 visited = true;
             });
             ASSERT_TRUE(visited);
@@ -68,15 +73,16 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            auto link{ TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist, false) };
-            link.modify()->setArtistName("MyArtist");
+            TrackArtistLink link{ TrackArtistLink::create(session, track.getId(), artist1.getId(), TrackArtistLinkType::Artist, false) };
+            link.setArtistName("MyArtist");
+            TrackArtistLink::update(session, link);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const TrackArtistLink::pointer&) {
+            TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const TrackArtistLink&) {
                 visited = true;
             });
             ASSERT_FALSE(visited);
@@ -86,7 +92,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const TrackArtistLink::pointer&) {
+            TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const TrackArtistLink&) {
                 visited = true;
             });
             ASSERT_TRUE(visited);
@@ -97,7 +103,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const TrackArtistLink::pointer&) {
+            TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const TrackArtistLink&) {
                 visited = true;
             });
             ASSERT_TRUE(visited);
@@ -106,7 +112,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const TrackArtistLink::pointer&) {
+            TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const TrackArtistLink&) {
                 visited = true;
             });
             ASSERT_TRUE(visited);
@@ -120,8 +126,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            auto link{ TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist, false) };
-            link.modify()->setArtistName("MyArtist");
+            TrackArtistLink link{ TrackArtistLink::create(session, track.getId(), artist1.getId(), TrackArtistLinkType::Artist, false) };
+            link.setArtistName("MyArtist");
+            TrackArtistLink::update(session, link);
         }
 
         {
@@ -129,14 +136,14 @@ namespace lms::db::tests
 
             {
                 bool visited{};
-                TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const TrackArtistLink::pointer&) {
+                TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const TrackArtistLink&) {
                     visited = false;
                 });
                 ASSERT_FALSE(visited);
             }
             {
                 bool visited{};
-                TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const TrackArtistLink::pointer&) {
+                TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const TrackArtistLink&) {
                     visited = true;
                 });
                 ASSERT_FALSE(visited);
@@ -149,14 +156,14 @@ namespace lms::db::tests
 
             {
                 bool visited{};
-                TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const TrackArtistLink::pointer&) {
+                TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const TrackArtistLink&) {
                     visited = true;
                 });
                 ASSERT_TRUE(visited);
             }
             {
                 bool visited{};
-                TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const TrackArtistLink::pointer&) {
+                TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const TrackArtistLink&) {
                     visited = true;
                 });
                 ASSERT_FALSE(visited);
@@ -169,14 +176,14 @@ namespace lms::db::tests
 
             {
                 bool visited{};
-                TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const TrackArtistLink::pointer&) {
+                TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const TrackArtistLink&) {
                     visited = true;
                 });
                 ASSERT_FALSE(visited);
             }
             {
                 bool visited{};
-                TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const TrackArtistLink::pointer&) {
+                TrackArtistLink::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const TrackArtistLink&) {
                     visited = true;
                 });
                 ASSERT_FALSE(visited);
@@ -192,24 +199,24 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist, false);
-            TrackArtistLink::create(session, track.get(), artist2.get(), TrackArtistLinkType::Artist, false);
-            TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Mixer, false);
+            TrackArtistLink::create(session, track.getId(), artist1.getId(), TrackArtistLinkType::Artist, false);
+            TrackArtistLink::create(session, track.getId(), artist2.getId(), TrackArtistLinkType::Artist, false);
+            TrackArtistLink::create(session, track.getId(), artist1.getId(), TrackArtistLinkType::Mixer, false);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto artistLinks{ track->getArtists({ TrackArtistLinkType::Artist }) };
+            const auto artistLinks{ Artist::find(session, Artist::FindParameters{}.setTrack(track.getId()).setTrackArtistLinkType(TrackArtistLinkType::Artist)) };
             ASSERT_EQ(artistLinks.size(), 2);
-            EXPECT_EQ(artistLinks[0]->getId(), artist1.getId());
-            EXPECT_EQ(artistLinks[1]->getId(), artist2.getId());
+            EXPECT_EQ(artistLinks[0].getId(), artist1.getId());
+            EXPECT_EQ(artistLinks[1].getId(), artist2.getId());
 
-            const auto mixerLinks{ track->getArtists({ TrackArtistLinkType::Mixer }) };
+            const auto mixerLinks{ Artist::find(session, Artist::FindParameters{}.setTrack(track.getId()).setTrackArtistLinkType(TrackArtistLinkType::Mixer)) };
             ASSERT_EQ(mixerLinks.size(), 1);
-            EXPECT_EQ(mixerLinks[0]->getId(), artist1.getId());
+            EXPECT_EQ(mixerLinks[0].getId(), artist1.getId());
 
-            const auto noFilter{ track->getArtists({}) };
+            const auto noFilter{ Artist::find(session, Artist::FindParameters{}.setTrack(track.getId())) };
             EXPECT_EQ(noFilter.size(), 2);
         }
     }
@@ -222,24 +229,24 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist, false);
-            TrackArtistLink::create(session, track.get(), artist2.get(), TrackArtistLinkType::Artist, false);
-            TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Mixer, false);
+            TrackArtistLink::create(session, track.getId(), artist1.getId(), TrackArtistLinkType::Artist, false);
+            TrackArtistLink::create(session, track.getId(), artist2.getId(), TrackArtistLinkType::Artist, false);
+            TrackArtistLink::create(session, track.getId(), artist1.getId(), TrackArtistLinkType::Mixer, false);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto artistIds{ track->getArtistIds({ TrackArtistLinkType::Artist }) };
+            const auto artistIds{ Artist::findIds(session, Artist::FindParameters{}.setTrack(track.getId()).setTrackArtistLinkType(TrackArtistLinkType::Artist)) };
             ASSERT_EQ(artistIds.size(), 2);
             EXPECT_EQ(artistIds[0], artist1.getId());
             EXPECT_EQ(artistIds[1], artist2.getId());
 
-            const auto mixerIds{ track->getArtistIds({ TrackArtistLinkType::Mixer }) };
+            const auto mixerIds{ Artist::findIds(session, Artist::FindParameters{}.setTrack(track.getId()).setTrackArtistLinkType(TrackArtistLinkType::Mixer)) };
             ASSERT_EQ(mixerIds.size(), 1);
             EXPECT_EQ(mixerIds[0], artist1.getId());
 
-            const auto noFilter{ track->getArtistIds({}) };
+            const auto noFilter{ Artist::findIds(session, Artist::FindParameters{}.setTrack(track.getId())) };
             EXPECT_EQ(noFilter.size(), 2);
         }
     }
@@ -254,46 +261,46 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            auto link1{ TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist, false) };
-            link1Id = link1->getId();
-            TrackArtistLink::create(session, track.get(), artist2.get(), TrackArtistLinkType::Artist, false);
+            auto link1{ TrackArtistLink::create(session, track.getId(), artist1.getId(), TrackArtistLinkType::Artist, false) };
+            link1Id = link1.getId();
+            TrackArtistLink::create(session, track.getId(), artist2.getId(), TrackArtistLinkType::Artist, false);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            std::vector<db::TrackArtistLink::pointer> links;
-            track->visitArtistLinks([&](const db::TrackArtistLink::pointer& link) {
+            std::vector<db::TrackArtistLink> links;
+            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const db::TrackArtistLink& link) {
                 links.push_back(link);
             });
 
             ASSERT_EQ(links.size(), 2);
-            EXPECT_EQ(links[0]->getArtistId(), artist1.getId());
-            EXPECT_EQ(links[1]->getArtistId(), artist2.getId());
+            EXPECT_EQ(links[0].getArtistId(), artist1.getId());
+            EXPECT_EQ(links[1].getArtistId(), artist2.getId());
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::find(session, link1Id).remove();
+            TrackArtistLink::destroy(session, std::array{ link1Id });
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist, false);
+            TrackArtistLink::create(session, track.getId(), artist1.getId(), TrackArtistLinkType::Artist, false);
         }
 
         // artist2's link has lower id, artist1's re-created link has higher id.
         {
             auto transaction{ session.createReadTransaction() };
 
-            std::vector<db::TrackArtistLink::pointer> links;
-            track->visitArtistLinks([&](const db::TrackArtistLink::pointer& link) {
+            std::vector<db::TrackArtistLink> links;
+            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const db::TrackArtistLink& link) {
                 links.push_back(link);
             });
 
             ASSERT_EQ(links.size(), 2);
-            EXPECT_EQ(links[0]->getArtistId(), artist2.getId());
-            EXPECT_EQ(links[1]->getArtistId(), artist1.getId());
+            EXPECT_EQ(links[0].getArtistId(), artist2.getId());
+            EXPECT_EQ(links[1].getArtistId(), artist1.getId());
         }
     }
 

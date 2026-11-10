@@ -34,7 +34,7 @@ namespace lms::scrobbling::listenBrainz::utils
         {
             auto transaction{ session.createReadTransaction() };
 
-            if (const db::User::pointer user{ db::User::find(session, userId) })
+            if (const std::optional<db::User> user{ db::User::find(session, userId) })
                 res = user->getListenBrainzToken();
         }
 

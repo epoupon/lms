@@ -82,7 +82,7 @@ namespace lms::ui
             if (_userId)
             {
                 // Update user
-                db::User::pointer user{ db::User::find(LmsApp->getDbSession(), *_userId) };
+                std::optional<db::User> user{ db::User::find(LmsApp->getDbSession(), *_userId) };
                 if (!user)
                     throw UserNotFoundException{};
 
@@ -95,7 +95,7 @@ namespace lms::ui
             else
             {
                 // Check races with other endpoints (subsonic API...)
-                db::User::pointer user{ db::User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8()) };
+                std::optional<db::User> user{ db::User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8()) };
                 if (user)
                     throw UserNotAllowedException{};
 
@@ -104,7 +104,8 @@ namespace lms::ui
 
                 if (Wt::asNumber(value(DemoField)))
                 {
-                    user.modify()->setType(db::UserType::DEMO);
+                    user->setType(db::UserType::DEMO);
+                    db::User::update(LmsApp->getDbSession(), *user);
 
                     // For demo user, we create the subsonic API auth token now as we have no other mean to create it later
                     core::Service<auth::IAuthTokenService>::get()->createAuthToken("subsonic", user->getId(), core::UUID::generate().toString());
@@ -123,10 +124,10 @@ namespace lms::ui
 
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const db::User::pointer user{ db::User::find(LmsApp->getDbSession(), *_userId) };
+            const std::optional<db::User> user{ db::User::find(LmsApp->getDbSession(), *_userId) };
             if (!user)
                 throw UserNotFoundException{};
-            if (user == LmsApp->getUser())
+            if (user->getId() == LmsApp->getUserId())
                 throw UserNotAllowedException{};
         }
 
@@ -136,7 +137,7 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                const db::User::pointer user{ db::User::find(LmsApp->getDbSession(), *_userId) };
+                const std::optional<db::User> user{ db::User::find(LmsApp->getDbSession(), *_userId) };
                 return user->getType();
             }
 
@@ -149,7 +150,7 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                const db::User::pointer user{ db::User::find(LmsApp->getDbSession(), *_userId) };
+                const std::optional<db::User> user{ db::User::find(LmsApp->getDbSession(), *_userId) };
                 return user->getLoginName();
             }
 
@@ -164,7 +165,7 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                const db::User::pointer user{ db::User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8()) };
+                const std::optional<db::User> user{ db::User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8()) };
                 if (user)
                     error = Wt::WString::tr("Lms.Admin.User.user-already-exists");
             }
@@ -221,7 +222,7 @@ namespace lms::ui
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const db::User::pointer user{ db::User::find(LmsApp->getDbSession(), *userId) };
+            const std::optional<db::User> user{ db::User::find(LmsApp->getDbSession(), *userId) };
             if (!user)
                 throw UserNotFoundException{};
 

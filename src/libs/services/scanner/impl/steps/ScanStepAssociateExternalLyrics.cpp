@@ -48,33 +48,33 @@ namespace lms::scanner
             std::size_t processedLyricsCount{};
         };
 
-        db::Track::pointer getMatchingTrack(db::ISession& session, const db::TrackLyrics::pointer& lyrics)
+        std::optional<db::Track> getMatchingTrack(db::ISession& session, const db::TrackLyrics& lyrics)
         {
-            db::Track::pointer matchingTrack;
+            std::optional<db::Track> matchingTrack;
 
             auto tryMatch = [&](std::string_view stem) {
                 db::Track::FindParameters params;
-                assert(lyrics->getDirectory()->getId().isValid());
-                assert(!lyrics->getFileStem().empty());
+                assert(lyrics.getDirectoryId().isValid());
+                assert(!lyrics.getFileStem().empty());
 
-                params.setDirectory(lyrics->getDirectory()->getId());
+                params.setDirectory(lyrics.getDirectoryId());
 
-                db::Track::find(session, params, [&](const db::Track::pointer& track) {
-                    if (track->getAbsoluteFilePath().filename().stem() != stem)
+                db::Track::find(session, params, [&](const db::Track& track) {
+                    if (track.getAbsoluteFilePath().filename().stem() != stem)
                         return;
 
                     if (matchingTrack)
-                        LMS_LOG(DBUPDATER, DEBUG, "External lyrics '" << lyrics->getAbsoluteFilePath() << "' already matched with '" << matchingTrack->getAbsoluteFilePath() << "', replaced by '" << track->getAbsoluteFilePath() << "'");
+                        LMS_LOG(DBUPDATER, DEBUG, "External lyrics '" << lyrics.getAbsoluteFilePath() << "' already matched with '" << matchingTrack->getAbsoluteFilePath() << "', replaced by '" << track.getAbsoluteFilePath() << "'");
 
                     matchingTrack = track;
                 });
             };
 
             // First try with the stem. If it does not match, try again with the parent steam, if it exists, to handle the file.languagecode.lrc case
-            tryMatch(lyrics->getFileStem());
+            tryMatch(lyrics.getFileStem());
             if (!matchingTrack)
             {
-                std::filesystem::path stem{ lyrics->getFileStem() };
+                std::filesystem::path stem{ lyrics.getFileStem() };
                 if (stem.has_extension())
                     tryMatch(stem.stem().string());
             }
@@ -91,20 +91,20 @@ namespace lms::scanner
             {
                 auto transaction{ searchContext.session.createReadTransaction() };
 
-                db::TrackLyrics::find(searchContext.session, searchContext.lastRetrievedTrackLyricsId, readBatchSize, [&](const db::TrackLyrics::pointer& trackLyrics) {
+                db::TrackLyrics::find(searchContext.session, searchContext.lastRetrievedTrackLyricsId, readBatchSize, [&](const db::TrackLyrics& trackLyrics) {
                     // Only iterate over external lyrics
-                    if (trackLyrics->getAbsoluteFilePath().empty())
+                    if (trackLyrics.getAbsoluteFilePath().empty())
                         return;
 
-                    db::Track::pointer track{ getMatchingTrack(searchContext.session, trackLyrics) };
-                    if (track != trackLyrics->getTrack())
+                    const std::optional<db::Track> track{ getMatchingTrack(searchContext.session, trackLyrics) };
+                    if ((track ? track->getId() : db::TrackId{}) != trackLyrics.getTrackId())
                     {
-                        LMS_LOG(DBUPDATER, DEBUG, "Updating track for external lyrics " << trackLyrics->getAbsoluteFilePath() << ", using " << (track ? track->getAbsoluteFilePath() : "<none>"));
-                        trackLyricsAssociations.push_back(TrackLyricsAssociation{ .trackLyricsId = trackLyrics->getId(), .trackId = (track ? track->getId() : db::TrackId{}) });
+                        LMS_LOG(DBUPDATER, DEBUG, "Updating track for external lyrics " << trackLyrics.getAbsoluteFilePath() << ", using " << (track ? track->getAbsoluteFilePath() : "<none>"));
+                        trackLyricsAssociations.push_back(TrackLyricsAssociation{ .trackLyricsId = trackLyrics.getId(), .trackId = (track ? track->getId() : db::TrackId{}) });
                     }
                     else if (!track)
                     {
-                        LMS_LOG(DBUPDATER, DEBUG, "No track found for external lyrics " << trackLyrics->getAbsoluteFilePath() << "'");
+                        LMS_LOG(DBUPDATER, DEBUG, "No track found for external lyrics " << trackLyrics.getAbsoluteFilePath() << "'");
                     }
 
                     searchContext.processedLyricsCount++;
@@ -116,14 +116,12 @@ namespace lms::scanner
 
         void updateTrackLyrics(db::ISession& session, const TrackLyricsAssociation& trackLyricsAssociation)
         {
-            db::TrackLyrics::pointer lyrics{ db::TrackLyrics::find(session, trackLyricsAssociation.trackLyricsId) };
+            std::optional<db::TrackLyrics> lyrics{ db::TrackLyrics::find(session, trackLyricsAssociation.trackLyricsId) };
             assert(lyrics);
 
-            db::Track::pointer track;
-            if (trackLyricsAssociation.trackId.isValid())
-                track = db::Track::find(session, trackLyricsAssociation.trackId);
-
-            lyrics.modify()->setTrack(track);
+            const db::TrackId trackId{ trackLyricsAssociation.trackId };
+            lyrics->setTrack(trackId.isValid() && db::Track::exists(session, trackId) ? trackId : db::TrackId{});
+            db::TrackLyrics::update(session, *lyrics);
         }
 
         void updateTrackLyrics(db::ISession& session, TrackLyricsAssociationContainer& lyricsAssociations)

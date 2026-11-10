@@ -24,7 +24,7 @@
 
 #include "database/objects/Artwork.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -37,8 +37,15 @@ namespace lms::db::dbo
         Artwork() = default;
         using db::Artwork::Artwork;
 
-        explicit Artwork(const ObjectPtr<db::TrackEmbeddedImage>& trackEmbeddedImage);
-        explicit Artwork(const ObjectPtr<db::Image>& image);
+        explicit Artwork(Wt::Dbo::ptr<TrackEmbeddedImage> trackEmbeddedImage);
+        explicit Artwork(Wt::Dbo::ptr<Image> image);
+
+        void syncIds()
+        {
+            _id = id();
+            _trackEmbeddedImageId = _trackEmbeddedImage.id();
+            _imageId = _image.id();
+        }
 
         template<class Action>
         void persist(Action& a)

@@ -23,7 +23,6 @@
 
 #include <Wt/WTemplate.h>
 
-#include "database/Object.hpp"
 #include "database/objects/Types.hpp"
 
 #include "common/ValueStringModel.hpp"
@@ -39,6 +38,6 @@ namespace lms::ui
 
     namespace ArtistListHelpers
     {
-        std::unique_ptr<Wt::WTemplate> createEntry(const db::ObjectPtr<db::Artist>& artist);
+        std::unique_ptr<Wt::WTemplate> createEntry(const db::Artist& artist);
     }
 } // namespace lms::ui

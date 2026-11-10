@@ -27,27 +27,27 @@
 
 namespace lms::api::subsonic
 {
-    Response::Node createUserNode(RequestContext& context, const db::User::pointer& user)
+    Response::Node createUserNode(RequestContext& context, const db::User& user)
     {
         Response::Node userNode;
 
-        userNode.setAttribute("username", user->getLoginName());
+        userNode.setAttribute("username", user.getLoginName());
         userNode.setAttribute("scrobblingEnabled", true);
-        userNode.setAttribute("adminRole", user->isAdmin());   // Whether the user is administrator
-        userNode.setAttribute("settingsRole", true);           // Whether the user is allowed to change personal settings and password
-        userNode.setAttribute("downloadRole", true);           // Whether the user is allowed to download files
-        userNode.setAttribute("uploadRole", false);            // Whether the user is allowed to upload files
-        userNode.setAttribute("playlistRole", true);           // Whether the user is allowed to create and delete playlists
-        userNode.setAttribute("coverArtRole", false);          // Whether the user is allowed to change cover art and tags.
-        userNode.setAttribute("commentRole", false);           // Whether the user is allowed to create and edit comments and ratings
-        userNode.setAttribute("podcastRole", user->isAdmin()); // Whether the user is allowed to administrate Podcasts
-        userNode.setAttribute("streamRole", true);             // Whether the user is allowed to play files
-        userNode.setAttribute("jukeboxRole", user->isAdmin()); // Whether the user is allowed to control the jukebox
-        userNode.setAttribute("shareRole", false);             // not supported
+        userNode.setAttribute("adminRole", user.isAdmin());   // Whether the user is administrator
+        userNode.setAttribute("settingsRole", true);          // Whether the user is allowed to change personal settings and password
+        userNode.setAttribute("downloadRole", true);          // Whether the user is allowed to download files
+        userNode.setAttribute("uploadRole", false);           // Whether the user is allowed to upload files
+        userNode.setAttribute("playlistRole", true);          // Whether the user is allowed to create and delete playlists
+        userNode.setAttribute("coverArtRole", false);         // Whether the user is allowed to change cover art and tags.
+        userNode.setAttribute("commentRole", false);          // Whether the user is allowed to create and edit comments and ratings
+        userNode.setAttribute("podcastRole", user.isAdmin()); // Whether the user is allowed to administrate Podcasts
+        userNode.setAttribute("streamRole", true);            // Whether the user is allowed to play files
+        userNode.setAttribute("jukeboxRole", user.isAdmin()); // Whether the user is allowed to control the jukebox
+        userNode.setAttribute("shareRole", false);            // not supported
 
         // users can access all libraries
-        db::MediaLibrary::find(context.getDbSession(), [&](const db::MediaLibrary::pointer& library) {
-            userNode.addArrayValue("folder", library->getId().getValue());
+        db::MediaLibrary::find(context.getDbSession(), [&](const db::MediaLibrary& library) {
+            userNode.addArrayValue("folder", library.getId().getValue());
         });
 
         return userNode;

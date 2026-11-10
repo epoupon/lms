@@ -27,42 +27,41 @@
 
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ArtistInfoId.hpp"
 #include "database/objects/DirectoryId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artist;
-    class Directory;
     class ISession;
 
-    class ArtistInfo : public Object<ArtistInfo, ArtistInfoId>
+    class ArtistInfo : public detail::Object<ArtistInfo, ArtistInfoId>
     {
     public:
-        static pointer create(ISession& session);
+        static ArtistInfo create(ISession& session);
         static void destroy(ISession& session, std::span<const ArtistInfoId> ids);
 
         // find
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, ArtistInfoId id);
-        static void find(ISession& session, ArtistId id, std::optional<Range> range, const std::function<void(const pointer&)>& func);
-        static void find(ISession& session, ArtistId id, const std::function<void(const pointer&)>& func);
-        static pointer find(ISession& session, const std::filesystem::path& path);
-        static void find(ISession& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func);
-        static void findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const pointer&)>& func);
-        static void findWithArtistNameAmbiguity(ISession& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func);
+        static std::optional<ArtistInfo> find(ISession& session, ArtistInfoId id);
+        static void find(ISession& session, ArtistId id, std::optional<Range> range, const std::function<void(const ArtistInfo&)>& func);
+        static void find(ISession& session, ArtistId id, const std::function<void(const ArtistInfo&)>& func);
+        static std::optional<ArtistInfo> find(ISession& session, const std::filesystem::path& path);
+        static void find(ISession& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(const ArtistInfo&)>& func);
+        static void findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const ArtistInfo&)>& func);
+        static void findWithArtistNameAmbiguity(ISession& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const ArtistInfo&)>& func);
         static void findAbsoluteFilePath(ISession& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(ArtistInfoId artistInfoId, const std::filesystem::path& absoluteFilePath)>& func);
+
+        static void update(ISession& session, const ArtistInfo& artistInfo);
 
         // getters
         std::size_t getScanVersion() const { return _scanVersion; }
         const std::filesystem::path& getAbsoluteFilePath() const { return _absoluteFilePath; }
         const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
-        ObjectPtr<Directory> getDirectory() const;
-        ObjectPtr<Artist> getArtist() const;
-        DirectoryId getDirectoryId() const;
+        ArtistId getArtistId() const { return _artistId; }
+        DirectoryId getDirectoryId() const { return _directoryId; }
         std::string_view getName() const { return _name; }
         std::string_view getSortName() const { return _sortName; }
         std::string_view getType() const { return _type; }
@@ -75,8 +74,8 @@ namespace lms::db
         void setScanVersion(std::size_t version) { _scanVersion = version; }
         void setAbsoluteFilePath(const std::filesystem::path& filePath);
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
-        void setDirectory(const ObjectPtr<Directory>& directory);
-        void setArtist(const ObjectPtr<Artist>& artist);
+        void setDirectory(DirectoryId directory) { _directoryId = directory; }
+        void setArtist(ArtistId artist) { _artistId = artist; }
         void setName(std::string_view name);
         void setSortName(std::string_view sortName);
         void setType(std::string_view type) { _type = type; }
@@ -105,5 +104,7 @@ namespace lms::db
         std::string _biography;
 
         bool _MBIDMatched{};
+        ArtistId _artistId;
+        DirectoryId _directoryId;
     };
 } // namespace lms::db

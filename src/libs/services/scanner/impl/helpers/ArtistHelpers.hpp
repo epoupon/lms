@@ -29,15 +29,15 @@ namespace lms::scanner
 {
     struct Artist;
 
-    std::ostream& operator<<(std::ostream& os, const db::Artist::pointer& artist);
+    std::ostream& operator<<(std::ostream& os, const db::Artist& artist);
 } // namespace lms::scanner
 
 namespace lms::scanner::helpers
 {
     using AllowFallbackOnMBIDEntry = core::TaggedBool<struct AllowFallbackOnMBIDEntryTag>;
 
-    db::Artist::pointer getOrCreateArtistByMBID(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries);
-    db::Artist::pointer getOrCreateArtistByName(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries);
-    db::Artist::pointer getOrCreateArtist(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries);
+    db::Artist getOrCreateArtistByMBID(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries);
+    db::Artist getOrCreateArtistByName(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries);
+    db::Artist getOrCreateArtist(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries);
 
 } // namespace lms::scanner::helpers

@@ -87,38 +87,38 @@ namespace lms::ui
 
     namespace
     {
-        std::string getArtistPathName(const db::Artist::pointer& artist)
+        std::string getArtistPathName(const db::Artist& artist)
         {
-            return core::stringUtils::replaceInString(artist->getName(), "/", "_");
+            return core::stringUtils::replaceInString(artist.getName(), "/", "_");
         }
 
-        std::string getReleaseArtistPathName(const db::Release::pointer& release)
+        std::string getReleaseArtistPathName(const db::Release& release)
         {
             std::string releaseArtistName;
 
-            std::vector<db::ObjectPtr<db::Artist>> artists;
+            std::vector<db::Artist> artists;
 
-            artists = release->getArtists();
+            artists = db::Artist::find(LmsApp->getDbSession(), db::Artist::FindParameters{}.setRelease(release.getId()).setReleaseArtistsOnly(true));
             if (artists.empty())
-                artists = release->getTrackArtists();
+                artists = db::Artist::find(LmsApp->getDbSession(), db::Artist::FindParameters{}.setRelease(release.getId()).setTrackArtistLinkType(db::TrackArtistLinkType::Artist));
 
             if (artists.size() > 1)
                 releaseArtistName = Wt::WString::tr("Lms.Explore.various-artists").toUTF8();
             else if (artists.size() == 1)
-                releaseArtistName = artists.front()->getName();
+                releaseArtistName = artists.front().getName();
 
             releaseArtistName = core::stringUtils::replaceInString(releaseArtistName, "/", "_");
 
             return releaseArtistName;
         }
 
-        std::string getReleasePathName(const db::Release::pointer& release)
+        std::string getReleasePathName(const db::Release& release)
         {
             std::string releaseName;
 
-            if (const auto year{ release->getYear() })
+            if (const auto year{ db::Release::getYear(LmsApp->getDbSession(), release.getId()) })
                 releaseName += std::to_string(*year) + " - ";
-            releaseName += core::stringUtils::replaceInString(release->getName(), "/", "_");
+            releaseName += core::stringUtils::replaceInString(release.getName(), "/", "_");
 
             return releaseName;
         }
@@ -126,40 +126,40 @@ namespace lms::ui
 
     namespace detail
     {
-        std::string getTrackPathName(const db::Track::pointer& track)
+        std::string getTrackPathName(const db::Track& track)
         {
             std::ostringstream fileName;
 
-            const db::Medium::pointer medium{ track->getMedium() };
+            const std::optional<db::Medium> medium{ db::Medium::find(LmsApp->getDbSession(), track.getMediumId()) };
             if (medium && medium->getPosition())
                 fileName << *medium->getPosition() << ".";
-            if (auto trackNumber{ track->getTrackNumber() })
+            if (auto trackNumber{ track.getTrackNumber() })
                 fileName << std::setw(2) << std::setfill('0') << *trackNumber << " - ";
 
-            fileName << core::stringUtils::replaceInString(track->getName(), "/", "_") << track->getAbsoluteFilePath().extension().string();
+            fileName << core::stringUtils::replaceInString(track.getName(), "/", "_") << track.getAbsoluteFilePath().extension().string();
 
             return fileName.str();
         }
 
-        std::string getTrackListPathName(const db::TrackList::pointer& trackList)
+        std::string getTrackListPathName(const db::TrackList& trackList)
         {
-            return core::stringUtils::replaceInString(trackList->getName(), "/", "_");
+            return core::stringUtils::replaceInString(trackList.getName(), "/", "_");
         }
 
-        std::unique_ptr<zip::IZipper> createZipper(const std::vector<db::Track::pointer>& tracks)
+        std::unique_ptr<zip::IZipper> createZipper(const std::vector<db::Track>& tracks)
         {
             if (tracks.empty())
                 return {};
 
             zip::EntryContainer files;
-            for (const db::Track::pointer& track : tracks)
+            for (const db::Track& track : tracks)
             {
                 std::string releaseName;
                 std::string releaseArtistName;
-                if (auto release{ track->getRelease() })
+                if (const std::optional<db::Release> release{ db::Release::find(LmsApp->getDbSession(), track.getReleaseId()) })
                 {
-                    releaseName = getReleasePathName(release);
-                    releaseArtistName = getReleaseArtistPathName(release);
+                    releaseName = getReleasePathName(*release);
+                    releaseArtistName = getReleaseArtistPathName(*release);
                 }
 
                 std::string fileName;
@@ -169,7 +169,7 @@ namespace lms::ui
                     fileName += releaseName + "/";
                 fileName += getTrackPathName(track);
 
-                files.emplace_back(zip::Entry{ fileName, track->getAbsoluteFilePath() });
+                files.emplace_back(zip::Entry{ fileName, track.getAbsoluteFilePath() });
             }
 
             return zip::createArchiveZipper(files);
@@ -181,9 +181,9 @@ namespace lms::ui
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        db::Artist::pointer artist{ db::Artist::find(LmsApp->getDbSession(), artistId) };
+        std::optional<db::Artist> artist{ db::Artist::find(LmsApp->getDbSession(), artistId) };
         if (artist)
-            suggestFileName(getArtistPathName(artist) + ".zip");
+            suggestFileName(getArtistPathName(*artist) + ".zip");
     }
 
     std::unique_ptr<zip::IZipper> DownloadArtistResource::createZipper()
@@ -199,9 +199,8 @@ namespace lms::ui
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseId) };
-        if (release)
-            suggestFileName(getReleasePathName(release) + ".zip");
+        if (const std::optional<db::Release> release{ db::Release::find(LmsApp->getDbSession(), releaseId) })
+            suggestFileName(getReleasePathName(*release) + ".zip");
     }
 
     std::unique_ptr<zip::IZipper> DownloadReleaseResource::createZipper()
@@ -217,23 +216,23 @@ namespace lms::ui
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) };
+        std::optional<db::Track> track{ db::Track::find(LmsApp->getDbSession(), trackId) };
         if (track)
-            suggestFileName(detail::getTrackPathName(track) + ".zip");
+            suggestFileName(detail::getTrackPathName(*track) + ".zip");
     }
 
     std::unique_ptr<zip::IZipper> DownloadTrackResource::createZipper()
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), _trackId) };
+        const std::optional<db::Track> track{ db::Track::find(LmsApp->getDbSession(), _trackId) };
         if (!track)
         {
             LMS_DL_RESOURCE_LOG(DEBUG, "Cannot find track");
             return {};
         }
 
-        return detail::createZipper({ track });
+        return detail::createZipper({ *track });
     }
 
     DownloadTrackListResource::DownloadTrackListResource(db::TrackListId trackListId)
@@ -241,22 +240,16 @@ namespace lms::ui
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), trackListId) };
+        const std::optional<db::TrackList> trackList{ db::TrackList::find(LmsApp->getDbSession(), trackListId) };
         if (trackList)
-            suggestFileName(detail::getTrackListPathName(trackList) + ".zip");
+            suggestFileName(detail::getTrackListPathName(*trackList) + ".zip");
     }
 
     std::unique_ptr<zip::IZipper> DownloadTrackListResource::createZipper()
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        std::vector<db::Track::pointer> tracks;
-        if (const db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), _trackListId) })
-        {
-            trackList->visitTracks([&](const db::Track::pointer& track) {
-                tracks.push_back(track);
-            });
-        }
+        const std::vector<db::Track> tracks{ db::Track::find(LmsApp->getDbSession(), db::Track::FindParameters{}.setTrackList(_trackListId)) };
 
         return detail::createZipper(tracks);
     }

@@ -19,14 +19,14 @@
 
 #pragma once
 
-#include "database/Object.hpp"
+#include <optional>
+
+#include "database/objects/Directory.hpp"
 
 #include "SubsonicResponse.hpp"
 
 namespace lms::db
 {
-    class Directory;
-    class ISession;
     class Release;
     class User;
 } // namespace lms::db
@@ -35,5 +35,5 @@ namespace lms::api::subsonic
 {
     class RequestContext;
 
-    Response::Node createAlbumNode(RequestContext& context, const db::ObjectPtr<db::Release>& release, bool id3, const db::ObjectPtr<db::Directory>& directory = {});
+    Response::Node createAlbumNode(RequestContext& context, const db::Release& release, bool id3, const std::optional<db::Directory>& directory = std::nullopt);
 } // namespace lms::api::subsonic

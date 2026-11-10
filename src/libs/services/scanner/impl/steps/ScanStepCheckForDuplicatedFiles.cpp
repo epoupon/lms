@@ -47,7 +47,7 @@ namespace lms::scanner
             if (_abortScan)
                 break;
 
-            const Track::pointer track{ Track::find(session, trackId) };
+            const std::optional<Track> track{ Track::find(session, trackId) };
             if (auto trackMBID{ track->getTrackMBID() })
             {
                 LMS_LOG(DBUPDATER, INFO, "Found duplicated track MBID [" << trackMBID->toString() << "], file: " << track->getAbsoluteFilePath().string() << " - " << track->getName());

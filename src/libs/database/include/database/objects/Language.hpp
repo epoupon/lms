@@ -24,19 +24,19 @@
 #include <string>
 #include <string_view>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/LanguageId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
 
-    class Language : public Object<Language, LanguageId>
+    class Language : public detail::Object<Language, LanguageId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -76,15 +76,15 @@ namespace lms::db
             }
         };
 
-        static pointer create(ISession& session, std::string_view name);
+        static Language create(ISession& session, std::string_view name);
         static void destroy(ISession& session, std::span<const LanguageId> ids);
 
         static std::size_t getCount(ISession& session);
         static std::vector<LanguageId> findIds(ISession& session, const FindParameters& params);
-        static std::vector<pointer> find(ISession& session, const FindParameters& params);
-        static void find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func);
-        static pointer find(ISession& session, LanguageId id);
-        static pointer find(ISession& session, std::string_view name);
+        static std::vector<Language> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Language&)>& func);
+        static std::optional<Language> find(ISession& session, LanguageId id);
+        static std::optional<Language> find(ISession& session, std::string_view name);
         static std::vector<LanguageId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         std::string_view getName() const { return _name; }

@@ -69,9 +69,10 @@ namespace lms::ui
             if (db::User::getCount(LmsApp->getDbSession()) > 0)
                 throw core::LmsException{ "Admin user already created" };
 
-            db::User::pointer user{ db::User::create(LmsApp->getDbSession(), valueText(AdminLoginField).toUTF8()) };
-            user.modify()->setType(db::UserType::ADMIN);
-            _passwordService.setPassword(user->getId(), valueText(PasswordField).toUTF8());
+            db::User user{ db::User::create(LmsApp->getDbSession(), valueText(AdminLoginField).toUTF8()) };
+            user.setType(db::UserType::ADMIN);
+            db::User::update(LmsApp->getDbSession(), user);
+            _passwordService.setPassword(user.getId(), valueText(PasswordField).toUTF8());
         }
 
         bool validateField(Field field)

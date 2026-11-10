@@ -81,33 +81,34 @@ namespace lms::ui
 
                 {
                     auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-                    db::User::pointer user{ LmsApp->getUser() };
-                    userId = user->getId();
+                    db::User user{ LmsApp->getUser() };
+                    userId = user.getId();
 
-                    const bool wasScrobblingEnabled{ user->getScrobblingBackends().contains(db::ScrobblingBackend::ListenBrainz) };
-                    const bool wasFeedbackEnabled{ user->getFeedbackBackends().contains(db::FeedbackBackend::ListenBrainz) };
+                    const bool wasScrobblingEnabled{ user.getScrobblingBackends().contains(db::ScrobblingBackend::ListenBrainz) };
+                    const bool wasFeedbackEnabled{ user.getFeedbackBackends().contains(db::FeedbackBackend::ListenBrainz) };
 
                     const bool scrobblingEnabled{ Wt::asNumber(value(EnableScrobblingField)) != 0 };
                     const bool feedbackEnabled{ Wt::asNumber(value(EnableFeedbackField)) != 0 };
 
-                    core::EnumSet<db::ScrobblingBackend> scrobblingBackends{ user->getScrobblingBackends() };
+                    core::EnumSet<db::ScrobblingBackend> scrobblingBackends{ user.getScrobblingBackends() };
                     if (scrobblingEnabled)
                         scrobblingBackends.insert(db::ScrobblingBackend::ListenBrainz);
                     else
                         scrobblingBackends.erase(db::ScrobblingBackend::ListenBrainz);
 
-                    user.modify()->setScrobblingBackends(scrobblingBackends);
+                    user.setScrobblingBackends(scrobblingBackends);
 
-                    core::EnumSet<db::FeedbackBackend> feedbackBackends{ user->getFeedbackBackends() };
+                    core::EnumSet<db::FeedbackBackend> feedbackBackends{ user.getFeedbackBackends() };
                     if (feedbackEnabled)
                         feedbackBackends.insert(db::FeedbackBackend::ListenBrainz);
                     else
                         feedbackBackends.erase(db::FeedbackBackend::ListenBrainz);
 
-                    user.modify()->setFeedbackBackends(feedbackBackends);
+                    user.setFeedbackBackends(feedbackBackends);
 
                     const std::string token{ Wt::asString(value(TokenField)).toUTF8() };
-                    user.modify()->setListenBrainzToken(token);
+                    user.setListenBrainzToken(token);
+                    db::User::update(LmsApp->getDbSession(), user);
 
                     scrobblingTurnedOn = !wasScrobblingEnabled && scrobblingEnabled && !token.empty();
                     feedbackTurnedOn = !wasFeedbackEnabled && feedbackEnabled && !token.empty();
@@ -125,15 +126,15 @@ namespace lms::ui
             void loadData()
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                const db::User::pointer user{ LmsApp->getUser() };
+                const db::User user{ LmsApp->getUser() };
 
-                const bool enableScrobbling{ user->getScrobblingBackends().contains(db::ScrobblingBackend::ListenBrainz) };
-                const bool enableFeedback{ user->getFeedbackBackends().contains(db::FeedbackBackend::ListenBrainz) };
+                const bool enableScrobbling{ user.getScrobblingBackends().contains(db::ScrobblingBackend::ListenBrainz) };
+                const bool enableFeedback{ user.getFeedbackBackends().contains(db::FeedbackBackend::ListenBrainz) };
 
                 setValue(EnableScrobblingField, enableScrobbling);
                 setValue(EnableFeedbackField, enableFeedback);
 
-                if (const auto token{ user->getListenBrainzToken() }; !token.empty())
+                if (const auto token{ user.getListenBrainzToken() }; !token.empty())
                     setValue(TokenField, Wt::WString::fromUTF8(std::string{ token }));
 
                 updateFieldStates(enableScrobbling, enableFeedback);
@@ -221,10 +222,10 @@ namespace lms::ui
     void ListenBrainzSettingsView::updateImportCardVisibility()
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-        const db::User::pointer user{ LmsApp->getUser() };
+        const db::User user{ LmsApp->getUser() };
 
-        const bool scrobblingEnabled{ user->getScrobblingBackends().contains(db::ScrobblingBackend::ListenBrainz) };
-        const bool feedbackEnabled{ user->getFeedbackBackends().contains(db::FeedbackBackend::ListenBrainz) };
+        const bool scrobblingEnabled{ user.getScrobblingBackends().contains(db::ScrobblingBackend::ListenBrainz) };
+        const bool feedbackEnabled{ user.getFeedbackBackends().contains(db::FeedbackBackend::ListenBrainz) };
 
         _importListensBtn->setHidden(!scrobblingEnabled);
         _importFeedbackBtn->setHidden(!feedbackEnabled);

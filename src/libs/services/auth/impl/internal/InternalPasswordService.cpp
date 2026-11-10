@@ -54,7 +54,7 @@ namespace lms::auth
             db::ISession& session{ getDbSession() };
             auto transaction{ session.createReadTransaction() };
 
-            const db::User::pointer user{ db::User::find(session, loginName) };
+            const std::optional<db::User> user{ db::User::find(session, loginName) };
             if (!user)
             {
                 LMS_LOG(AUTH, DEBUG, "hashing random stuff");
@@ -84,8 +84,11 @@ namespace lms::auth
                 db::ISession& session{ getDbSession() };
                 auto transaction{ session.createWriteTransaction() };
 
-                if (db::User::pointer user{ db::User::find(session, loginName) })
-                    user.modify()->setPasswordHash(updatedPasswordHash);
+                if (std::optional<db::User> user{ db::User::find(session, loginName) })
+                {
+                    user->setPasswordHash(updatedPasswordHash);
+                    db::User::update(session, *user);
+                }
             }
         }
 
@@ -119,7 +122,7 @@ namespace lms::auth
             db::ISession& session{ getDbSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            db::User::pointer user{ db::User::find(session, userId) };
+            std::optional<db::User> user{ db::User::find(session, userId) };
             if (!user)
                 throw Exception{ "User not found!" };
 
@@ -133,7 +136,8 @@ namespace lms::auth
                 throw PasswordMustMatchLoginNameException{};
             }
 
-            user.modify()->setPasswordHash(passwordHash);
+            user->setPasswordHash(passwordHash);
+            db::User::update(session, *user);
         }
     }
 

@@ -26,25 +26,23 @@
 #include <string_view>
 
 #include "database/IdRange.hpp"
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/MediumId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artwork;
     class ISession;
-    class Release;
 
-    class Medium : public Object<Medium, MediumId>
+    class Medium : public detail::Object<Medium, MediumId>
     {
     public:
         static const std::size_t maxMediaLength{ 64 };
 
-        static pointer create(ISession& session, const ObjectPtr<Release>& release);
+        static Medium create(ISession& session, ReleaseId release);
         static void destroy(ISession& session, std::span<const MediumId> ids);
 
         // find
@@ -72,13 +70,15 @@ namespace lms::db
         };
 
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, MediumId id);
-        static pointer find(ISession& session, ReleaseId id, std::optional<std::size_t> position);
-        static void find(ISession& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium::pointer&)>& func);
+        static std::optional<Medium> find(ISession& session, MediumId id);
+        static std::optional<Medium> find(ISession& session, ReleaseId id, std::optional<std::size_t> position);
+        static void find(ISession& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium&)>& func);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Medium&)>& func);
         static IdRange<MediumId> findNextIdRange(ISession& session, MediumId lastRetrievedId, std::size_t count);
         static std::vector<MediumId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         // Updates
+        static void update(ISession& session, const Medium& medium);
         static void updatePreferredArtwork(ISession& session, MediumId mediumId, ArtworkId artworkId);
 
         // getters
@@ -87,10 +87,8 @@ namespace lms::db
         std::optional<std::size_t> getTrackCount() const { return _trackCount; } // not necessarily the number of tracks in the medium, but the number of tracks that should be in the medium
         std::string_view getMedia() const { return _media; }
         std::optional<float> getReplayGain() const { return _replayGain; }
-        ReleaseId getReleaseId() const;
-        ObjectPtr<Release> getRelease() const;
-        ObjectPtr<Artwork> getPreferredArtwork() const;
-        ArtworkId getPreferredArtworkId() const;
+        ReleaseId getReleaseId() const { return _releaseId; }
+        ArtworkId getPreferredArtworkId() const { return _preferredArtworkId; }
 
         // setters
         void setName(std::string_view name) { _name = name; }
@@ -107,5 +105,8 @@ namespace lms::db
         std::optional<int> _trackCount;
         std::string _media; // CD, etc.
         std::optional<float> _replayGain;
+
+        ReleaseId _releaseId;
+        ArtworkId _preferredArtworkId;
     };
 } // namespace lms::db

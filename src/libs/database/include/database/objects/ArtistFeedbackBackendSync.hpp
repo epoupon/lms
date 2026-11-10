@@ -21,12 +21,13 @@
 
 #include <functional>
 #include <optional>
+#include <span>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistFeedbackBackendSyncId.hpp"
 #include "database/objects/ArtistFeedbackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
@@ -34,10 +35,11 @@ namespace lms::db
     class ISession;
 
     // Tracks the delivery of a single ArtistFeedback to a given external feedback backend.
-    class ArtistFeedbackBackendSync : public Object<ArtistFeedbackBackendSync, ArtistFeedbackBackendSyncId>
+    class ArtistFeedbackBackendSync : public detail::Object<ArtistFeedbackBackendSync, ArtistFeedbackBackendSyncId>
     {
     public:
-        static pointer create(ISession& session, const ObjectPtr<ArtistFeedback>& artistFeedback, FeedbackBackend backend);
+        static ArtistFeedbackBackendSync create(ISession& session, ArtistFeedbackId artistFeedback, FeedbackBackend backend);
+        static void destroy(ISession& session, std::span<const ArtistFeedbackBackendSyncId> ids);
 
         struct FindParameters
         {
@@ -63,12 +65,14 @@ namespace lms::db
         };
 
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, ArtistFeedbackBackendSyncId id);
-        static pointer find(ISession& session, ArtistFeedbackId artistFeedbackId, FeedbackBackend backend);
+        static std::optional<ArtistFeedbackBackendSync> find(ISession& session, ArtistFeedbackBackendSyncId id);
+        static std::optional<ArtistFeedbackBackendSync> find(ISession& session, ArtistFeedbackId artistFeedbackId, FeedbackBackend backend);
         static std::vector<ArtistFeedbackBackendSyncId> find(ISession& session, const FindParameters& params);
-        static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const ArtistFeedbackBackendSync&)>& func);
 
-        ObjectPtr<ArtistFeedback> getArtistFeedback() const;
+        static void update(ISession& session, const ArtistFeedbackBackendSync& artistFeedbackBackendSync);
+
+        ArtistFeedbackId getArtistFeedbackId() const { return _artistFeedbackId; }
         FeedbackBackend getBackend() const { return _backend; }
         SyncState getSyncState() const { return _syncState; }
 
@@ -80,5 +84,6 @@ namespace lms::db
 
         FeedbackBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };
+        ArtistFeedbackId _artistFeedbackId;
     };
 } // namespace lms::db

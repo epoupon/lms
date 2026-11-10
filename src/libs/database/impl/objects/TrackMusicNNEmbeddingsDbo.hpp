@@ -24,7 +24,7 @@
 
 #include "database/objects/TrackMusicNNEmbeddings.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,7 +36,13 @@ namespace lms::db::dbo
         TrackMusicNNEmbeddings() = default;
         using db::TrackMusicNNEmbeddings::TrackMusicNNEmbeddings;
 
-        explicit TrackMusicNNEmbeddings(const ObjectPtr<db::Track>& track);
+        explicit TrackMusicNNEmbeddings(Wt::Dbo::ptr<Track> track);
+
+        void syncIds()
+        {
+            _id = id();
+            _trackId = _track.id();
+        }
 
         template<class Action>
         void persist(Action& a)

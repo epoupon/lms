@@ -43,29 +43,31 @@ namespace lms::scanner
 {
     namespace
     {
-        void recomputeArtist(db::ISession& session, db::TrackArtistLink::pointer link, bool allowArtistMBIDFallback)
+        void recomputeArtist(db::ISession& session, db::TrackArtistLink link, bool allowArtistMBIDFallback)
         {
-            assert(!link->isArtistMBIDMatched());
+            assert(!link.isArtistMBIDMatched());
 
-            Artist artistInfo{ std::nullopt, link->getArtistName(), link->getArtistSortName().empty() ? std::nullopt : std::make_optional<std::string>(link->getArtistSortName()) };
+            Artist artistInfo{ std::nullopt, link.getArtistName(), link.getArtistSortName().empty() ? std::nullopt : std::make_optional<std::string>(link.getArtistSortName()) };
 
-            db::Artist::pointer newArtist{ helpers::getOrCreateArtistByName(session, artistInfo, helpers::AllowFallbackOnMBIDEntry{ allowArtistMBIDFallback }) };
-            LMS_LOG(DB, DEBUG, "Reconcile artist link for track " << link->getTrack()->getAbsoluteFilePath() << ", type " << static_cast<int>(link->getType()) << " from " << link->getArtist() << " to " << newArtist);
+            const db::Artist newArtist{ helpers::getOrCreateArtistByName(session, artistInfo, helpers::AllowFallbackOnMBIDEntry{ allowArtistMBIDFallback }) };
+            LMS_LOG(DB, DEBUG, "Reconcile artist link for track " << db::Track::find(session, link.getTrackId())->getAbsoluteFilePath() << ", type " << static_cast<int>(link.getType()) << " from artist " << link.getArtistId().toString() << " to " << newArtist.getId().toString());
 
-            assert(newArtist != link->getArtist());
-            link.modify()->setArtist(newArtist);
+            assert(newArtist.getId() != link.getArtistId());
+            link.setArtist(newArtist.getId());
+            db::TrackArtistLink::update(session, link);
         }
 
-        void recomputeArtist(db::ISession& session, db::ArtistInfo::pointer artistInfo, bool allowArtistMBIDFallback)
+        void recomputeArtist(db::ISession& session, db::ArtistInfo artistInfo, bool allowArtistMBIDFallback)
         {
-            assert(!artistInfo->isMBIDMatched());
+            assert(!artistInfo.isMBIDMatched());
 
-            Artist artistMetadata{ std::nullopt, artistInfo->getName(), artistInfo->getSortName().empty() ? std::nullopt : std::make_optional<std::string>(artistInfo->getSortName()) };
-            db::Artist::pointer newArtist{ helpers::getOrCreateArtistByName(session, artistMetadata, helpers::AllowFallbackOnMBIDEntry{ allowArtistMBIDFallback }) };
-            LMS_LOG(DB, DEBUG, "Reconcile artist link for artist info " << artistInfo->getAbsoluteFilePath() << " from " << artistInfo->getArtist() << " to " << newArtist);
+            Artist artistMetadata{ std::nullopt, artistInfo.getName(), artistInfo.getSortName().empty() ? std::nullopt : std::make_optional<std::string>(artistInfo.getSortName()) };
+            const db::Artist newArtist{ helpers::getOrCreateArtistByName(session, artistMetadata, helpers::AllowFallbackOnMBIDEntry{ allowArtistMBIDFallback }) };
+            LMS_LOG(DB, DEBUG, "Reconcile artist link for artist info " << artistInfo.getAbsoluteFilePath() << " from artist " << artistInfo.getArtistId().toString() << " to " << newArtist.getId().toString());
 
-            assert(newArtist != artistInfo->getArtist());
-            artistInfo.modify()->setArtist(newArtist);
+            assert(newArtist.getId() != artistInfo.getArtistId());
+            artistInfo.setArtist(newArtist.getId());
+            db::ArtistInfo::update(session, artistInfo);
         }
     } // namespace
 
@@ -107,7 +109,7 @@ namespace lms::scanner
         // The file scan only sets artist names/sort names on creation: this is the single place where they follow their sources
         struct ArtistToUpdate
         {
-            db::Artist::pointer artist;
+            std::optional<db::Artist> artist;
             std::string name;
             std::string sortName;
         };
@@ -115,7 +117,7 @@ namespace lms::scanner
         {
             auto transaction{ session.createReadTransaction() };
 
-            db::Artist::findNameUpdates(session, [&](const db::Artist::pointer& artist, std::string_view newName, std::string_view newSortName) {
+            db::Artist::findNameUpdates(session, [&](const db::Artist& artist, std::string_view newName, std::string_view newSortName) {
                 artistsToUpdate.push_back(ArtistToUpdate{ .artist = artist, .name = std::string{ newName }, .sortName = std::string{ newSortName } });
             });
         }
@@ -128,9 +130,10 @@ namespace lms::scanner
             for (const std::size_t batchEnd{ std::min(index + batchSize, artistsToUpdate.size()) }; index < batchEnd; ++index)
             {
                 ArtistToUpdate& artistToUpdate{ artistsToUpdate[index] };
-                LMS_LOG(DBUPDATER, DEBUG, "Updating artist " << artistToUpdate.artist << " name to '" << artistToUpdate.name << "', sort name to '" << artistToUpdate.sortName << "'");
-                artistToUpdate.artist.modify()->setName(artistToUpdate.name);
-                artistToUpdate.artist.modify()->setSortName(artistToUpdate.sortName);
+                LMS_LOG(DBUPDATER, DEBUG, "Updating artist " << artistToUpdate.artist->getId().toString() << " name to '" << artistToUpdate.name << "', sort name to '" << artistToUpdate.sortName << "'");
+                artistToUpdate.artist->setName(artistToUpdate.name);
+                artistToUpdate.artist->setSortName(artistToUpdate.sortName);
+                db::Artist::update(session, *artistToUpdate.artist);
             }
         }
 
@@ -144,13 +147,13 @@ namespace lms::scanner
         const bool allowArtistMBIDFallback{ _settings.allowArtistMBIDFallback };
         db::ISession& session{ _db.getTLSSession() };
 
-        std::vector<db::ArtistInfo::pointer> artistInfo;
+        std::vector<db::ArtistInfo> artistInfo;
         while (!_abortScan)
         {
             artistInfo.clear();
             {
                 auto transaction{ session.createReadTransaction() };
-                db::ArtistInfo::findArtistNameNoLongerMatch(session, db::Range{ .offset = 0, .size = batchSize }, [&](const db::ArtistInfo::pointer& link) {
+                db::ArtistInfo::findArtistNameNoLongerMatch(session, db::Range{ .offset = 0, .size = batchSize }, [&](const db::ArtistInfo& link) {
                     artistInfo.push_back(link);
                 });
             }
@@ -160,7 +163,7 @@ namespace lms::scanner
 
             {
                 auto transaction{ session.createWriteTransaction() };
-                for (db::ArtistInfo::pointer& info : artistInfo)
+                for (const db::ArtistInfo& info : artistInfo)
                 {
                     recomputeArtist(session, info, allowArtistMBIDFallback);
                     context.currentStepStats.processedElems++;
@@ -178,13 +181,13 @@ namespace lms::scanner
         const bool allowArtistMBIDFallback{ _settings.allowArtistMBIDFallback };
         db::ISession& session{ _db.getTLSSession() };
 
-        std::vector<db::ArtistInfo::pointer> artistInfo;
+        std::vector<db::ArtistInfo> artistInfo;
         while (!_abortScan)
         {
             artistInfo.clear();
             {
                 auto transaction{ session.createReadTransaction() };
-                db::ArtistInfo::findWithArtistNameAmbiguity(session, db::Range{ .offset = 0, .size = batchSize }, allowArtistMBIDFallback, [&](const db::ArtistInfo::pointer& info) {
+                db::ArtistInfo::findWithArtistNameAmbiguity(session, db::Range{ .offset = 0, .size = batchSize }, allowArtistMBIDFallback, [&](const db::ArtistInfo& info) {
                     artistInfo.push_back(info);
                 });
             }
@@ -194,7 +197,7 @@ namespace lms::scanner
 
             {
                 auto transaction{ session.createWriteTransaction() };
-                for (db::ArtistInfo::pointer& info : artistInfo)
+                for (const db::ArtistInfo& info : artistInfo)
                 {
                     recomputeArtist(session, info, allowArtistMBIDFallback);
                     context.currentStepStats.processedElems++;
@@ -211,13 +214,13 @@ namespace lms::scanner
         const bool allowArtistMBIDFallback{ _settings.allowArtistMBIDFallback };
         db::ISession& session{ _db.getTLSSession() };
 
-        std::vector<db::TrackArtistLink::pointer> links;
+        std::vector<db::TrackArtistLink> links;
         while (!_abortScan)
         {
             links.clear();
             {
                 auto transaction{ session.createReadTransaction() };
-                db::TrackArtistLink::findArtistNameNoLongerMatch(session, db::Range{ .offset = 0, .size = batchSize }, [&](const db::TrackArtistLink::pointer& link) {
+                db::TrackArtistLink::findArtistNameNoLongerMatch(session, db::Range{ .offset = 0, .size = batchSize }, [&](const db::TrackArtistLink& link) {
                     links.push_back(link);
                 });
             }
@@ -227,7 +230,7 @@ namespace lms::scanner
 
             {
                 auto transaction{ session.createWriteTransaction() };
-                for (db::TrackArtistLink::pointer& link : links)
+                for (const db::TrackArtistLink& link : links)
                 {
                     recomputeArtist(session, link, allowArtistMBIDFallback);
                     context.currentStepStats.processedElems++;
@@ -245,13 +248,13 @@ namespace lms::scanner
         const bool allowArtistMBIDFallback{ _settings.allowArtistMBIDFallback };
         db::ISession& session{ _db.getTLSSession() };
 
-        std::vector<db::TrackArtistLink::pointer> links;
+        std::vector<db::TrackArtistLink> links;
         while (!_abortScan)
         {
             links.clear();
             {
                 auto transaction{ session.createReadTransaction() };
-                db::TrackArtistLink::findWithArtistNameAmbiguity(session, db::Range{ .offset = 0, .size = batchSize }, allowArtistMBIDFallback, [&](const db::TrackArtistLink::pointer& link) {
+                db::TrackArtistLink::findWithArtistNameAmbiguity(session, db::Range{ .offset = 0, .size = batchSize }, allowArtistMBIDFallback, [&](const db::TrackArtistLink& link) {
                     links.push_back(link);
                 });
             }
@@ -261,7 +264,7 @@ namespace lms::scanner
 
             {
                 auto transaction{ session.createWriteTransaction() };
-                for (db::TrackArtistLink::pointer& link : links)
+                for (const db::TrackArtistLink& link : links)
                 {
                     recomputeArtist(session, link, allowArtistMBIDFallback);
                     context.currentStepStats.processedElems++;

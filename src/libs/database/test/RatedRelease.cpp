@@ -42,7 +42,7 @@ namespace lms::db::tests
             EXPECT_EQ(releases.size(), 1);
         }
 
-        ScopedRatedRelease ratedRelease{ session, release.lockAndGet(), user.lockAndGet() };
+        ScopedRatedRelease ratedRelease{ session, release.getId(), user.getId() };
         {
             auto transaction{ session.createReadTransaction() };
 

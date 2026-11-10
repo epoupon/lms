@@ -22,8 +22,8 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
+#include "DboAccess.hpp"
 #include "DirectoryDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "TrackDbo.hpp"
 #include "TrackLyricsDbo.hpp"
@@ -63,7 +63,7 @@ namespace lms::db
         }
     } // namespace
 
-    TrackLyrics::pointer TrackLyrics::create(ISession& session)
+    TrackLyrics TrackLyrics::create(ISession& session)
     {
         return utils::addObject(session, std::unique_ptr<dbo::TrackLyrics>{ new dbo::TrackLyrics{} });
     }
@@ -87,21 +87,24 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(t_lrc.id) FROM track_lyrics t_lrc").where("t_lrc.absolute_file_path <> ''"));
     }
 
-    TrackLyrics::pointer TrackLyrics::find(ISession& session, TrackLyricsId id)
+    std::optional<TrackLyrics> TrackLyrics::find(ISession& session, TrackLyricsId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.id = ?").bind(id));
     }
 
-    TrackLyrics::pointer TrackLyrics::find(ISession& session, const std::filesystem::path& path)
+    std::optional<TrackLyrics> TrackLyrics::find(ISession& session, const std::filesystem::path& path)
     {
         checkReadTransaction(session);
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.absolute_file_path = ?").bind(path));
     }
 
-    void TrackLyrics::find(ISession& session, const FindParameters& params, const std::function<void(const TrackLyrics::pointer&)>& func)
+    void TrackLyrics::find(ISession& session, const FindParameters& params, const std::function<void(const TrackLyrics&)>& func)
     {
         checkReadTransaction(session);
 
@@ -109,15 +112,15 @@ namespace lms::db
         utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    void TrackLyrics::find(ISession& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(const TrackLyrics::pointer&)>& func)
+    void TrackLyrics::find(ISession& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(const TrackLyrics&)>& func)
     {
         checkReadTransaction(session);
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").orderBy("t_lrc.id").where("t_lrc.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
-        utils::forEachQueryObject(query, [&](const TrackLyrics::pointer& lyrics) {
+        utils::forEachQueryObject(query, [&](const TrackLyrics& lyrics) {
             func(lyrics);
-            lastRetrievedId = lyrics->getId();
+            lastRetrievedId = lyrics.getId();
         });
     }
 
@@ -193,16 +196,6 @@ namespace lms::db
         _fileStem = p.stem().string();
     }
 
-    void TrackLyrics::setTrack(const ObjectPtr<Track>& track)
-    {
-        getDbo(*this)._track = getDboPtr(track);
-    }
-
-    void TrackLyrics::setDirectory(const ObjectPtr<Directory>& directory)
-    {
-        getDbo(*this)._directory = getDboPtr(directory);
-    }
-
     void TrackLyrics::setSynchronizedLines(const SynchronizedLines& synchronizedLines)
     {
         Wt::Json::Object root;
@@ -237,13 +230,14 @@ namespace lms::db
         _lines = Wt::Json::serialize(root);
     }
 
-    ObjectPtr<Track> TrackLyrics::getTrack() const
+    void dbo::TrackLyrics::applyIds()
     {
-        return toObjectPtr(getDbo(*this)._track);
+        setRelation(*session(), _track, _trackId);
+        setRelation(*session(), _directory, _directoryId);
     }
 
-    ObjectPtr<Directory> TrackLyrics::getDirectory() const
+    void TrackLyrics::update(ISession& session, const TrackLyrics& trackLyrics)
     {
-        return toObjectPtr(getDbo(*this)._directory);
+        utils::updateObject<dbo::TrackLyrics>(session, trackLyrics);
     }
 } // namespace lms::db

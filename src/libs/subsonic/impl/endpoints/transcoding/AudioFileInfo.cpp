@@ -72,7 +72,7 @@ namespace lms::api::subsonic
 
         if (const db::TrackId * trackId{ std::get_if<db::TrackId>(&audioFileId) })
         {
-            const db::Track::pointer track{ db::Track::find(session, *trackId) };
+            const std::optional<db::Track> track{ db::Track::find(session, *trackId) };
             if (!track)
                 throw RequestedDataNotFoundError{};
 
@@ -94,7 +94,7 @@ namespace lms::api::subsonic
         }
         else if (const db::PodcastEpisodeId * episodeId{ std::get_if<db::PodcastEpisodeId>(&audioFileId) })
         {
-            const db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, *episodeId) };
+            const std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(session, *episodeId) };
             if (!episode)
                 throw RequestedDataNotFoundError{};
 

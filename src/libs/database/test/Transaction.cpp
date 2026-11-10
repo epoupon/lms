@@ -17,6 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <array>
 #include <stdexcept>
 #include <string_view>
 
@@ -127,7 +128,7 @@ namespace lms::db::tests
         EXPECT_EQ(Genre::getCount(session), 3);
 
         for (const std::string_view name : { "Rock", "Jazz", "Folk" })
-            Genre::find(session, name).remove();
+            Genre::destroy(session, std::array{ Genre::find(session, name)->getId() });
     }
 
     TEST_F(DatabaseFixture, Transaction_writeAfterFailedCommit)
@@ -154,7 +155,9 @@ namespace lms::db::tests
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                genre.get().modify()->setTrackCount(42);
+                std::optional<Genre> updatedGenre{ genre.get() };
+                updatedGenre->setTrackCount(42);
+                Genre::update(session, *updatedGenre);
                 throw std::runtime_error{ "error" };
             },
             std::runtime_error);
@@ -171,7 +174,9 @@ namespace lms::db::tests
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                genre.get().modify()->setTrackCount(42);
+                std::optional<Genre> updatedGenre{ genre.get() };
+                updatedGenre->setTrackCount(42);
+                Genre::update(session, *updatedGenre);
                 getDboSession(session)->flush();
                 throw std::runtime_error{ "error" };
             },
@@ -189,7 +194,7 @@ namespace lms::db::tests
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                genre.get().remove();
+                Genre::destroy(session, std::array{ genre.getId() });
                 throw std::runtime_error{ "error" };
             },
             std::runtime_error);
@@ -206,7 +211,9 @@ namespace lms::db::tests
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                genre.get().modify()->setTrackCount(42);
+                std::optional<Genre> updatedGenre{ genre.get() };
+                updatedGenre->setTrackCount(42);
+                Genre::update(session, *updatedGenre);
                 addDeferredForeignKeyViolation(session);
             },
             Wt::Dbo::Exception);
@@ -223,7 +230,9 @@ namespace lms::db::tests
             {
                 auto writeTransaction{ session.createWriteTransaction() };
 
-                genre.get().modify()->setTrackCount(42);
+                std::optional<Genre> updatedGenre{ genre.get() };
+                updatedGenre->setTrackCount(42);
+                Genre::update(session, *updatedGenre);
 
                 auto readTransaction{ session.createReadTransaction() };
                 throw std::runtime_error{ "error" };

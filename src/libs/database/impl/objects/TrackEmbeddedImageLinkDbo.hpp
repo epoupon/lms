@@ -24,7 +24,7 @@
 
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -37,7 +37,14 @@ namespace lms::db::dbo
         TrackEmbeddedImageLink() = default;
         using db::TrackEmbeddedImageLink::TrackEmbeddedImageLink;
 
-        TrackEmbeddedImageLink(const ObjectPtr<db::Track>& track, const ObjectPtr<db::TrackEmbeddedImage>& image);
+        TrackEmbeddedImageLink(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackEmbeddedImage> image);
+
+        void syncIds()
+        {
+            _id = id();
+            _trackId = _track.id();
+            _imageId = _image.id();
+        }
 
         template<class Action>
         void persist(Action& a)

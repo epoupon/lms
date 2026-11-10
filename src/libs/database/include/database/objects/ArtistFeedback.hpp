@@ -20,33 +20,37 @@
 #pragma once
 
 #include <Wt/WDateTime.h>
+#include <optional>
+#include <span>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistFeedbackId.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artist;
     class ISession;
     class User;
 
-    class ArtistFeedback : public Object<ArtistFeedback, ArtistFeedbackId>
+    class ArtistFeedback : public detail::Object<ArtistFeedback, ArtistFeedbackId>
     {
     public:
-        static pointer create(ISession& session, const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user);
+        static ArtistFeedback create(ISession& session, ArtistId artist, UserId user);
+        static void destroy(ISession& session, std::span<const ArtistFeedbackId> ids);
 
         // Search utility
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, ArtistFeedbackId id);
-        static pointer find(ISession& session, ArtistId artistId, UserId userId);
+        static std::optional<ArtistFeedback> find(ISession& session, ArtistFeedbackId id);
+        static std::optional<ArtistFeedback> find(ISession& session, ArtistId artistId, UserId userId);
+
+        static void update(ISession& session, const ArtistFeedback& artistFeedback);
 
         // Accessors
-        ObjectPtr<Artist> getArtist() const;
-        ObjectPtr<User> getUser() const;
+        ArtistId getArtistId() const { return _artistId; }
+        UserId getUserId() const { return _userId; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
         FeedbackValue getValue() const { return _value; }
 
@@ -59,5 +63,7 @@ namespace lms::db
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };
+        ArtistId _artistId;
+        UserId _userId;
     };
 } // namespace lms::db

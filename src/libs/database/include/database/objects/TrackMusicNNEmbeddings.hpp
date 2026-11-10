@@ -23,34 +23,35 @@
 #include <span>
 
 #include "database/IdType.hpp"
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/TrackId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 LMS_DECLARE_IDTYPE(TrackMusicNNEmbeddingsId)
 
 namespace lms::db
 {
     class ISession;
-    class Track;
 
-    class TrackMusicNNEmbeddings : public Object<TrackMusicNNEmbeddings, TrackMusicNNEmbeddingsId>
+    class TrackMusicNNEmbeddings : public detail::Object<TrackMusicNNEmbeddings, TrackMusicNNEmbeddingsId>
     {
     public:
-        static pointer create(ISession& session, const ObjectPtr<Track>& track);
+        static TrackMusicNNEmbeddings create(ISession& session, TrackId track);
+        static void destroy(ISession& session, std::span<const TrackMusicNNEmbeddingsId> ids);
 
         // Find utilities
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, TrackMusicNNEmbeddingsId id);
-        static pointer find(ISession& session, TrackId trackId);
+        static std::optional<TrackMusicNNEmbeddings> find(ISession& session, TrackMusicNNEmbeddingsId id);
+        static std::optional<TrackMusicNNEmbeddings> find(ISession& session, TrackId trackId);
         static std::vector<TrackMusicNNEmbeddingsId> find(ISession& session, std::optional<Range> range = std::nullopt);
-        static void find(ISession& session, std::function<void(const pointer&)> func);
+        static void find(ISession& session, const std::function<void(const TrackMusicNNEmbeddings&)>& func);
         static void removeAll(ISession& session);
+
+        static void update(ISession& session, const TrackMusicNNEmbeddings& trackMusicNNEmbeddings);
 
         // Accessors
         std::span<const std::byte> getData() const;
-        TrackId getTrackId() const;
-        ObjectPtr<Track> getTrack() const;
+        TrackId getTrackId() const { return _trackId; }
 
         void setData(std::span<const std::byte> data);
 
@@ -58,5 +59,6 @@ namespace lms::db
         TrackMusicNNEmbeddings() = default;
 
         std::vector<unsigned char> _data;
+        TrackId _trackId;
     };
 } // namespace lms::db

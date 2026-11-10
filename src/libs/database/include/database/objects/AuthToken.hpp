@@ -20,35 +20,38 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string_view>
 
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/objects/AuthTokenId.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class User;
 
-    class AuthToken : public Object<AuthToken, AuthTokenId>
+    class AuthToken : public detail::Object<AuthToken, AuthTokenId>
     {
     public:
-        static pointer create(ISession& session, std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, const ObjectPtr<User>& user);
+        static AuthToken create(ISession& session, std::string_view domain, std::string_view value, const Wt::WDateTime& expiry, std::optional<long> maxUseCount, UserId user);
+        static void destroy(ISession& session, std::span<const AuthTokenId> ids);
 
         // Utility
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, AuthTokenId tokenId);
-        static pointer find(ISession& session, std::string_view domain, std::string_view value);
-        static void find(ISession& session, std::string_view domain, UserId userId, std::function<void(const AuthToken::pointer&)> visitor);
+        static std::optional<AuthToken> find(ISession& session, AuthTokenId tokenId);
+        static std::optional<AuthToken> find(ISession& session, std::string_view domain, std::string_view value);
+        static void find(ISession& session, std::string_view domain, UserId userId, const std::function<void(const AuthToken&)>& visitor);
         static void removeExpiredTokens(ISession& session, std::string_view domain, const Wt::WDateTime& now);
         static void clearUserTokens(ISession& session, std::string_view domain, UserId user);
 
+        static void update(ISession& session, const AuthToken& authToken);
+
         // Accessors
         const Wt::WDateTime& getExpiry() const { return _expiry; }
-        ObjectPtr<User> getUser() const;
+        UserId getUserId() const { return _userId; }
         const std::string& getValue() const { return _value; }
         std::size_t getUseCount() const { return _useCount; }
         Wt::WDateTime getLastUsed() const { return _lastUsed; }
@@ -68,5 +71,6 @@ namespace lms::db
         long _useCount{};
         Wt::WDateTime _lastUsed;
         std::optional<long> _maxUseCount;
+        UserId _userId;
     };
 } // namespace lms::db

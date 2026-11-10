@@ -88,39 +88,41 @@ namespace lms::ui
             void saveData()
             {
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-                db::User::pointer user{ LmsApp->getUser() };
+                db::User user{ LmsApp->getUser() };
 
-                user.modify()->setSubsonicEnableTranscodingByDefault(Wt::asNumber(value(SubsonicEnableTranscodingByDefault)) != 0);
+                user.setSubsonicEnableTranscodingByDefault(Wt::asNumber(value(SubsonicEnableTranscodingByDefault)) != 0);
 
                 auto subsonicTranscodingOutputBitrateRow{ _transcodingOutputBitrateModel->getRowFromString(valueText(SubsonicTranscodingOutputBitrateField)) };
                 if (subsonicTranscodingOutputBitrateRow)
-                    user.modify()->setSubsonicDefaultTranscodingOutputBitrate(_transcodingOutputBitrateModel->getValue(*subsonicTranscodingOutputBitrateRow));
+                    user.setSubsonicDefaultTranscodingOutputBitrate(_transcodingOutputBitrateModel->getValue(*subsonicTranscodingOutputBitrateRow));
 
                 auto subsonicTranscodingOutputFormatRow{ _transcodingOutputFormatModel->getRowFromString(valueText(SubsonicTranscodingOutputFormatField)) };
                 if (subsonicTranscodingOutputFormatRow)
-                    user.modify()->setSubsonicDefaultTranscodintOutputFormat(_transcodingOutputFormatModel->getValue(*subsonicTranscodingOutputFormatRow));
+                    user.setSubsonicDefaultTranscodintOutputFormat(_transcodingOutputFormatModel->getValue(*subsonicTranscodingOutputFormatRow));
 
                 auto subsonicArtistListModeRow{ _subsonicArtistListModeModel->getRowFromString(valueText(SubsonicArtistListModeField)) };
                 if (subsonicArtistListModeRow)
-                    user.modify()->setSubsonicArtistListMode(_subsonicArtistListModeModel->getValue(*subsonicArtistListModeRow));
+                    user.setSubsonicArtistListMode(_subsonicArtistListModeModel->getValue(*subsonicArtistListModeRow));
+
+                db::User::update(LmsApp->getDbSession(), user);
             }
 
             void loadData()
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                const db::User::pointer user{ LmsApp->getUser() };
+                const db::User user{ LmsApp->getUser() };
 
-                setValue(SubsonicEnableTranscodingByDefault, user->getSubsonicEnableTranscodingByDefault());
+                setValue(SubsonicEnableTranscodingByDefault, user.getSubsonicEnableTranscodingByDefault());
 
-                auto subsonicTranscodingOutputBitrateRow{ _transcodingOutputBitrateModel->getRowFromValue(user->getSubsonicDefaultTranscodingOutputBitrate()) };
+                auto subsonicTranscodingOutputBitrateRow{ _transcodingOutputBitrateModel->getRowFromValue(user.getSubsonicDefaultTranscodingOutputBitrate()) };
                 if (subsonicTranscodingOutputBitrateRow)
                     setValue(SubsonicTranscodingOutputBitrateField, _transcodingOutputBitrateModel->getString(*subsonicTranscodingOutputBitrateRow));
 
-                auto subsonicTranscodingOutputFormatRow{ _transcodingOutputFormatModel->getRowFromValue(user->getSubsonicDefaultTranscodingOutputFormat()) };
+                auto subsonicTranscodingOutputFormatRow{ _transcodingOutputFormatModel->getRowFromValue(user.getSubsonicDefaultTranscodingOutputFormat()) };
                 if (subsonicTranscodingOutputFormatRow)
                     setValue(SubsonicTranscodingOutputFormatField, _transcodingOutputFormatModel->getString(*subsonicTranscodingOutputFormatRow));
 
-                auto subsonicArtistListModeRow{ _subsonicArtistListModeModel->getRowFromValue(user->getSubsonicArtistListMode()) };
+                auto subsonicArtistListModeRow{ _subsonicArtistListModeModel->getRowFromValue(user.getSubsonicArtistListMode()) };
                 if (subsonicArtistListModeRow)
                     setValue(SubsonicArtistListModeField, _subsonicArtistListModeModel->getString(*subsonicArtistListModeRow));
             }
@@ -185,7 +187,7 @@ namespace lms::ui
         std::string currentToken;
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            core::Service<auth::IAuthTokenService>::get()->visitAuthTokens("subsonic", LmsApp->getUser()->getId(),
+            core::Service<auth::IAuthTokenService>::get()->visitAuthTokens("subsonic", LmsApp->getUser().getId(),
                                                                            [&](const auth::IAuthTokenService::AuthTokenInfo&, std::string_view storedToken) {
                                                                                currentToken = std::string{ storedToken };
                                                                            });
@@ -224,8 +226,8 @@ namespace lms::ui
                 {
                     auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
                     auto& authService{ *core::Service<auth::IAuthTokenService>::get() };
-                    authService.clearAuthTokens("subsonic", LmsApp->getUser()->getId());
-                    authService.createAuthToken("subsonic", LmsApp->getUser()->getId(), newToken);
+                    authService.clearAuthTokens("subsonic", LmsApp->getUser().getId());
+                    authService.createAuthToken("subsonic", LmsApp->getUser().getId(), newToken);
                 }
                 subsonicTokenPtr->setValueText(Wt::WString::fromUTF8(newToken));
                 updateKeyButtonStates();
@@ -272,7 +274,7 @@ namespace lms::ui
                 .connect(t, [subsonicTokenPtr, updateKeyButtonStates, modalPtr] {
                     {
                         auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-                        core::Service<auth::IAuthTokenService>::get()->clearAuthTokens("subsonic", LmsApp->getUser()->getId());
+                        core::Service<auth::IAuthTokenService>::get()->clearAuthTokens("subsonic", LmsApp->getUser().getId());
                     }
                     subsonicTokenPtr->setValueText("");
                     updateKeyButtonStates();

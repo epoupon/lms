@@ -20,33 +20,37 @@
 #pragma once
 
 #include <Wt/WDateTime.h>
+#include <optional>
+#include <span>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ReleaseFeedbackId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class Release;
     class User;
 
-    class ReleaseFeedback : public Object<ReleaseFeedback, ReleaseFeedbackId>
+    class ReleaseFeedback : public detail::Object<ReleaseFeedback, ReleaseFeedbackId>
     {
     public:
-        static pointer create(ISession& session, const ObjectPtr<Release>& release, const ObjectPtr<User>& user);
+        static ReleaseFeedback create(ISession& session, ReleaseId release, UserId user);
+        static void destroy(ISession& session, std::span<const ReleaseFeedbackId> ids);
 
         // Search utility
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, ReleaseFeedbackId id);
-        static pointer find(ISession& session, ReleaseId releaseId, UserId userId);
+        static std::optional<ReleaseFeedback> find(ISession& session, ReleaseFeedbackId id);
+        static std::optional<ReleaseFeedback> find(ISession& session, ReleaseId releaseId, UserId userId);
+
+        static void update(ISession& session, const ReleaseFeedback& releaseFeedback);
 
         // Accessors
-        ObjectPtr<Release> getRelease() const;
-        ObjectPtr<User> getUser() const;
+        ReleaseId getReleaseId() const { return _releaseId; }
+        UserId getUserId() const { return _userId; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
         FeedbackValue getValue() const { return _value; }
 
@@ -59,5 +63,7 @@ namespace lms::db
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };
+        ReleaseId _releaseId;
+        UserId _userId;
     };
 } // namespace lms::db

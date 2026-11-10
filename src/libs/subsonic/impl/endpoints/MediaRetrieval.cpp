@@ -247,7 +247,7 @@ namespace lms::api::subsonic
             lyricsParams.setSortMethod(db::TrackLyricsSortMethod::ExternalFirst);
             lyricsParams.setRange(db::Range{ 0, 1 });
 
-            db::TrackLyrics::find(context.getDbSession(), lyricsParams, [&](const db::TrackLyrics::pointer& lyrics) {
+            db::TrackLyrics::find(context.getDbSession(), lyricsParams, [&](const db::TrackLyrics& lyrics) {
                 response.addNode("lyrics", createLyricsNode(context, lyrics));
             });
         }
@@ -265,7 +265,7 @@ namespace lms::api::subsonic
         lyricsList.createEmptyArrayChild("structuredLyrics");
 
         auto transaction{ context.getDbSession().createReadTransaction() };
-        const db::Track::pointer track{ db::Track::find(context.getDbSession(), id) };
+        const std::optional<db::Track> track{ db::Track::find(context.getDbSession(), id) };
         if (track)
         {
             db::TrackLyrics::FindParameters params;
@@ -273,7 +273,7 @@ namespace lms::api::subsonic
             params.setExternal(true); // First try to only report external lyrics as they are often duplicate of embedded lyrics and support more features
 
             bool hasExternalLyrics{};
-            db::TrackLyrics::find(context.getDbSession(), params, [&](const db::TrackLyrics::pointer& lyrics) {
+            db::TrackLyrics::find(context.getDbSession(), params, [&](const db::TrackLyrics& lyrics) {
                 lyricsList.addArrayChild("structuredLyrics", createStructuredLyricsNode(context, lyrics));
                 hasExternalLyrics = true;
             });
@@ -281,7 +281,7 @@ namespace lms::api::subsonic
             if (!hasExternalLyrics)
             {
                 params.setExternal(false);
-                db::TrackLyrics::find(context.getDbSession(), params, [&](const db::TrackLyrics::pointer& lyrics) {
+                db::TrackLyrics::find(context.getDbSession(), params, [&](const db::TrackLyrics& lyrics) {
                     lyricsList.addArrayChild("structuredLyrics", createStructuredLyricsNode(context, lyrics));
                 });
             }

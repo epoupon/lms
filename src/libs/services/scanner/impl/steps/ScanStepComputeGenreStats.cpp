@@ -68,9 +68,10 @@ namespace lms::scanner
 
                 {
                     auto transaction{ dbSession.createWriteTransaction() };
-                    auto genre{ Genre::find(dbSession, genreId) };
-                    genre.modify()->setTrackCount(trackCount);
-                    genre.modify()->setReleaseCount(releaseCount);
+                    std::optional<Genre> genre{ Genre::find(dbSession, genreId) };
+                    genre->setTrackCount(trackCount);
+                    genre->setReleaseCount(releaseCount);
+                    Genre::update(dbSession, *genre);
                 }
 
                 context.currentStepStats.processedElems++;

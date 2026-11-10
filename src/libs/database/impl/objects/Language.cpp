@@ -28,6 +28,7 @@
 #include "ArtistDbo.hpp"
 #include "ArtworkDbo.hpp"
 #include "ClusterDbo.hpp"
+#include "DboAccess.hpp"
 #include "DirectoryDbo.hpp"
 #include "GenreDbo.hpp"
 #include "GroupingDbo.hpp"
@@ -36,7 +37,6 @@
 #include "MediumDbo.hpp"
 #include "MoodDbo.hpp"
 #include "MovementDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "ReleaseDbo.hpp"
 #include "Session.hpp"
 #include "TrackArtistLinkDbo.hpp"
@@ -122,7 +122,7 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Language name too long, truncated to '" << _name << "'");
     }
 
-    Language::pointer Language::create(ISession& session, std::string_view name)
+    Language Language::create(ISession& session, std::string_view name)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Language>{ new dbo::Language{ name } });
     }
@@ -145,27 +145,31 @@ namespace lms::db
         return utils::execRangeQuery<LanguageId>(query, params.range);
     }
 
-    std::vector<Language::pointer> Language::find(ISession& session, const FindParameters& params)
+    std::vector<Language> Language::find(ISession& session, const FindParameters& params)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Language>>(session, params) };
         return utils::execRangeObjectQuery(query, params.range);
     }
 
-    void Language::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    void Language::find(ISession& session, const FindParameters& params, const std::function<void(const Language&)>& func)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Language>>(session, params) };
         utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    Language::pointer Language::find(ISession& session, LanguageId id)
+    std::optional<Language> Language::find(ISession& session, LanguageId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Language>().where("id = ?").bind(id));
     }
 
-    Language::pointer Language::find(ISession& session, std::string_view name)
+    std::optional<Language> Language::find(ISession& session, std::string_view name)
     {
         checkReadTransaction(session);
 

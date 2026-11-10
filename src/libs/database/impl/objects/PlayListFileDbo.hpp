@@ -26,7 +26,7 @@
 
 #include "database/objects/PlayListFile.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -40,6 +40,15 @@ namespace lms::db::dbo
     public:
         PlayListFile() = default;
         using db::PlayListFile::PlayListFile;
+
+        void syncIds()
+        {
+            _id = id();
+            _preferredArtworkId = _preferredArtwork.id();
+            _directoryId = _directory.id();
+            _mediaLibraryId = _mediaLibrary.id();
+        }
+        void applyIds();
 
         template<class Action>
         void persist(Action& a)

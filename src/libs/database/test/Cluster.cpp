@@ -40,13 +40,13 @@ namespace lms::db::tests
         }
 
         {
-            ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+            ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
 
             {
                 auto transaction{ session.createReadTransaction() };
 
                 EXPECT_EQ(Cluster::getCount(session), 1);
-                EXPECT_EQ(cluster->getType()->getId(), clusterType.getId());
+                EXPECT_EQ(cluster->getTypeId(), clusterType.getId());
 
                 {
                     const auto clusters{ Cluster::findIds(session, Cluster::FindParameters{}) };
@@ -87,30 +87,30 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Cluster_find)
     {
         ScopedClusterType clusterType{ session, "MyType" };
-        ScopedCluster cluster1{ session, clusterType.lockAndGet(), "MyCluster" };
-        ScopedCluster cluster2{ session, clusterType.lockAndGet(), "Mycluster" };
-        ScopedCluster cluster3{ session, clusterType.lockAndGet(), "MyOtherCluster" };
+        ScopedCluster cluster1{ session, clusterType.getId(), "MyCluster" };
+        ScopedCluster cluster2{ session, clusterType.getId(), "Mycluster" };
+        ScopedCluster cluster3{ session, clusterType.getId(), "MyOtherCluster" };
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            EXPECT_EQ(clusterType->getCluster("MyCluster"), cluster1.get());
-            EXPECT_EQ(clusterType->getCluster("Mycluster"), cluster2.get());
+            EXPECT_EQ(Cluster::find(session, clusterType.getId(), "MyCluster")->getId(), cluster1.getId());
+            EXPECT_EQ(Cluster::find(session, clusterType.getId(), "Mycluster")->getId(), cluster2.getId());
 
-            EXPECT_EQ(clusterType->getCluster(" Mycluster"), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster("Mycluster "), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster("mycluster"), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster("My"), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster("Cluster"), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster("MyCluster1"), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster("MyCluster2"), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster(""), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster(" "), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster("*"), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster(R"(%)"), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster(R"(%%)"), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster(R"(")"), Cluster::pointer{});
-            EXPECT_EQ(clusterType->getCluster(R"("")"), Cluster::pointer{});
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), " Mycluster"));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), "Mycluster "));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), "mycluster"));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), "My"));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), "Cluster"));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), "MyCluster1"));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), "MyCluster2"));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), ""));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), " "));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), "*"));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), R"(%)"));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), R"(%%)"));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), R"(")"));
+            EXPECT_FALSE(Cluster::find(session, clusterType.getId(), R"("")"));
         }
     }
 
@@ -121,17 +121,19 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto createdCluster{ Cluster::create(session, clusterType.get(), "Foo") };
-            auto foundCluster{ clusterType->getCluster("Foo") };
-            EXPECT_EQ(createdCluster, foundCluster);
+            const Cluster createdCluster{ Cluster::create(session, clusterType.getId(), "Foo") };
+            const std::optional<Cluster> foundCluster{ Cluster::find(session, clusterType.getId(), "Foo") };
+            ASSERT_TRUE(foundCluster);
+            EXPECT_EQ(createdCluster.getId(), foundCluster->getId());
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto createdCluster{ Cluster::create(session, clusterType.get(), "") };
-            auto foundCluster{ clusterType->getCluster("") };
-            EXPECT_EQ(createdCluster, foundCluster);
+            const Cluster createdCluster{ Cluster::create(session, clusterType.getId(), "") };
+            const std::optional<Cluster> foundCluster{ Cluster::find(session, clusterType.getId(), "") };
+            ASSERT_TRUE(foundCluster);
+            EXPECT_EQ(createdCluster.getId(), foundCluster->getId());
         }
     }
 
@@ -142,9 +144,10 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto createdCluster{ Cluster::create(session, clusterType.get(), "Alternative Rock; Art Pop; Art Rock; Britpop; Chamber Pop; Electronic Rock; Electronica; Experimental Rock; Neo-Progressive Rock; Foo") };
-            auto foundCluster{ clusterType->getCluster("Alternative Rock; Art Pop; Art Rock; Britpop; Chamber Pop; Electronic Rock; Electronica; Experimental Rock; Neo-Progressive Rock; Foo") };
-            EXPECT_EQ(createdCluster, foundCluster);
+            const Cluster createdCluster{ Cluster::create(session, clusterType.getId(), "Alternative Rock; Art Pop; Art Rock; Britpop; Chamber Pop; Electronic Rock; Electronica; Experimental Rock; Neo-Progressive Rock; Foo") };
+            const std::optional<Cluster> foundCluster{ Cluster::find(session, clusterType.getId(), "Alternative Rock; Art Pop; Art Rock; Britpop; Chamber Pop; Electronic Rock; Electronica; Experimental Rock; Neo-Progressive Rock; Foo") };
+            ASSERT_TRUE(foundCluster);
+            EXPECT_EQ(createdCluster.getId(), foundCluster->getId());
         }
     }
 
@@ -161,15 +164,15 @@ namespace lms::db::tests
             EXPECT_EQ(clusterTypes.front(), clusterType.getId());
         }
 
-        ScopedCluster cluster1{ session, clusterType.lockAndGet(), "MyCluster1" };
-        ScopedCluster cluster2{ session, clusterType.lockAndGet(), "MyCluster2" };
+        ScopedCluster cluster1{ session, clusterType.getId(), "MyCluster1" };
+        ScopedCluster cluster2{ session, clusterType.getId(), "MyCluster2" };
 
         {
             auto transaction{ session.createReadTransaction() };
             auto clusters{ Cluster::findOrphanIds(session) };
             EXPECT_EQ(clusters.size(), 2);
-            EXPECT_EQ(track->getClusters().size(), 0);
-            EXPECT_EQ(track->getClusterIds().size(), 0);
+            EXPECT_EQ(Cluster::find(session, Cluster::FindParameters{}.setTrack(track.getId())).size(), 0);
+            EXPECT_EQ(Cluster::findIds(session, Cluster::FindParameters{}.setTrack(track.getId())).size(), 0);
             EXPECT_EQ(Cluster::computeTrackCount(session, cluster1.getId()), 0);
             EXPECT_EQ(Cluster::computeTrackCount(session, cluster2.getId()), 0);
         }
@@ -177,7 +180,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            cluster1.get().modify()->addTrack(track.get());
+            Cluster::addTrack(session, cluster1.getId(), track.getId());
         }
 
         {
@@ -212,11 +215,11 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto clusters{ track->getClusters() };
+            auto clusters{ Cluster::find(session, Cluster::FindParameters{}.setTrack(track.getId())) };
             ASSERT_EQ(clusters.size(), 1);
-            EXPECT_EQ(clusters.front()->getId(), cluster1.getId());
+            EXPECT_EQ(clusters.front().getId(), cluster1.getId());
 
-            auto clusterIds{ track->getClusterIds() };
+            auto clusterIds{ Cluster::findIds(session, Cluster::FindParameters{}.setTrack(track.getId())) };
             ASSERT_EQ(clusterIds.size(), 1);
             EXPECT_EQ(clusterIds.front(), cluster1.getId());
         }
@@ -227,8 +230,8 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedClusterType clusterType{ session, "MyClusterType" };
 
-        ScopedCluster cluster1{ session, clusterType.lockAndGet(), "MyCluster1" };
-        ScopedCluster cluster2{ session, clusterType.lockAndGet(), "MyCluster2" };
+        ScopedCluster cluster1{ session, clusterType.getId(), "MyCluster1" };
+        ScopedCluster cluster2{ session, clusterType.getId(), "MyCluster2" };
 
         const FilterExpr clusterFilter{ FilterExpr::And({ FilterExpr::equal(cluster1.getId()), FilterExpr::equal(cluster2.getId()) }) };
 
@@ -242,7 +245,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            cluster1.get().modify()->addTrack(track.get());
+            Cluster::addTrack(session, cluster1.getId(), track.getId());
         }
 
         {
@@ -257,7 +260,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            cluster2.get().modify()->addTrack(track.get());
+            Cluster::addTrack(session, cluster2.getId(), track.getId());
         }
 
         {
@@ -275,7 +278,7 @@ namespace lms::db::tests
     {
         std::list<ScopedTrack> tracks;
         ScopedClusterType clusterType{ session, "MyClusterType" };
-        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+        ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
 
         for (std::size_t i{}; i < 10; ++i)
         {
@@ -283,7 +286,7 @@ namespace lms::db::tests
 
             {
                 auto transaction{ session.createWriteTransaction() };
-                cluster.get().modify()->addTrack(tracks.back().get());
+                Cluster::addTrack(session, cluster.getId(), tracks.back().getId());
             }
         }
 
@@ -293,7 +296,7 @@ namespace lms::db::tests
 
             EXPECT_EQ(Cluster::computeTrackCount(session, cluster.getId()), tracks.size());
 
-            for (TrackId trackId : cluster->getTracks())
+            for (TrackId trackId : Track::findIds(session, Track::FindParameters{}.setFilter(FilterExpr::equal(cluster.getId()))))
             {
                 auto it{ std::find_if(std::cbegin(tracks), std::cend(tracks), [&](const ScopedTrack& track) { return trackId == track.getId(); }) };
                 EXPECT_TRUE(it != std::cend(tracks));
@@ -307,7 +310,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            ClusterType::find(session, [&](const ClusterType::pointer&) {
+            ClusterType::find(session, [&](const ClusterType&) {
                 visited = true;
             });
             EXPECT_FALSE(visited);
@@ -320,8 +323,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             std::vector<ClusterTypeId> visitedClusterTypes;
-            ClusterType::find(session, [&](const ClusterType::pointer& clusterType) {
-                visitedClusterTypes.push_back(clusterType->getId());
+            ClusterType::find(session, [&](const ClusterType& clusterType) {
+                visitedClusterTypes.push_back(clusterType.getId());
             });
             ASSERT_EQ(visitedClusterTypes.size(), 2);
             EXPECT_EQ(visitedClusterTypes[0], clusterType1->getId());
@@ -338,7 +341,7 @@ namespace lms::db::tests
         }
 
         ScopedClusterType clusterType{ session, "MyClusterType" };
-        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+        ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -370,8 +373,8 @@ namespace lms::db::tests
         }
 
         ScopedClusterType clusterType{ session, "MyClusterType" };
-        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
-        ScopedCluster unusedCluster{ session, clusterType.lockAndGet(), "MyClusterUnused" };
+        ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
+        ScopedCluster unusedCluster{ session, clusterType.getId(), "MyClusterUnused" };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -385,8 +388,10 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track.get().modify()->setRelease(release.get());
-            cluster.get().modify()->addTrack(track.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
+            Cluster::addTrack(session, cluster.getId(), track.getId());
         }
 
         {
@@ -439,14 +444,14 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedClusterType clusterType{ session, "MyType" };
-        ScopedCluster cluster1{ session, clusterType.lockAndGet(), "Cluster1" };
-        ScopedCluster cluster2{ session, clusterType.lockAndGet(), "Cluster2" };
-        ScopedCluster cluster3{ session, clusterType.lockAndGet(), "Cluster3" };
+        ScopedCluster cluster1{ session, clusterType.getId(), "Cluster1" };
+        ScopedCluster cluster2{ session, clusterType.getId(), "Cluster2" };
+        ScopedCluster cluster3{ session, clusterType.getId(), "Cluster3" };
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto trackArtistLink{ TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist) };
-            cluster1.get().modify()->addTrack(track.get());
+            auto trackArtistLink{ TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist) };
+            Cluster::addTrack(session, cluster1.getId(), track.getId());
         }
 
         {
@@ -459,8 +464,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(track->getClusters().size(), 1);
-            EXPECT_EQ(track->getClusterIds().size(), 1);
+            EXPECT_EQ(Cluster::find(session, Cluster::FindParameters{}.setTrack(track.getId())).size(), 1);
+            EXPECT_EQ(Cluster::findIds(session, Cluster::FindParameters{}.setTrack(track.getId())).size(), 1);
         }
 
         {
@@ -473,7 +478,7 @@ namespace lms::db::tests
             EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setFilter(FilterExpr::equal(cluster2.getId()))).size(), 0);
             EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setFilter(FilterExpr::equal(cluster3.getId()))).size(), 0);
 
-            cluster2.get().modify()->addTrack(track.get());
+            Cluster::addTrack(session, cluster2.getId(), track.getId());
         }
 
         {
@@ -500,14 +505,14 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedClusterType clusterType{ session, "MyType" };
-        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+        ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Mixer);
-            cluster.get().modify()->addTrack(track.get());
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Mixer);
+            Cluster::addTrack(session, cluster.getId(), track.getId());
         }
 
         {
@@ -537,17 +542,17 @@ namespace lms::db::tests
         ScopedClusterType clusterType{ session, "MyType" };
 
         for (std::size_t i{}; i < nbClusters; ++i)
-            clusters.emplace_back(session, clusterType.lockAndGet(), "MyCluster" + std::to_string(i));
+            clusters.emplace_back(session, clusterType.getId(), "MyCluster" + std::to_string(i));
 
         for (std::size_t i{}; i < nbTracks; ++i)
         {
             tracks.emplace_back(session);
 
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, tracks.back().get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, tracks.back().getId(), artist.getId(), TrackArtistLinkType::Artist);
 
             for (auto& cluster : clusters)
-                cluster.get().modify()->addTrack(tracks.back().get());
+                Cluster::addTrack(session, cluster.getId(), tracks.back().getId());
         }
 
         {
@@ -574,14 +579,16 @@ namespace lms::db::tests
         ScopedRelease release{ session, "MyRelease" };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedClusterType clusterType{ session, "MyType" };
-        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+        ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
-            track.get().modify()->setRelease(release.get());
-            cluster.get().modify()->addTrack(track.get());
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
+            Cluster::addTrack(session, cluster.getId(), track.getId());
         }
 
         {
@@ -616,16 +623,18 @@ namespace lms::db::tests
         ScopedRelease release{ session, "MyRelease" };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedClusterType clusterType{ session, "MyClusterType" };
-        ScopedCluster cluster1{ session, clusterType.lockAndGet(), "MyCluster1" };
-        ScopedCluster cluster2{ session, clusterType.lockAndGet(), "MyCluster2" };
+        ScopedCluster cluster1{ session, clusterType.getId(), "MyCluster1" };
+        ScopedCluster cluster2{ session, clusterType.getId(), "MyCluster2" };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto trackArtistLink{ TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist) };
-            track.get().modify()->setRelease(release.get());
-            cluster1.get().modify()->addTrack(track.get());
-            cluster2.get().modify()->addTrack(track.get());
+            auto trackArtistLink{ TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist) };
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
+            Cluster::addTrack(session, cluster1.getId(), track.getId());
+            Cluster::addTrack(session, cluster2.getId(), track.getId());
         }
 
         {
@@ -641,102 +650,20 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, SingleTrackListMultipleTrackSingleCluster)
-    {
-        ScopedTrackList trackList{ session, "MyTrackList", TrackListType::PlayList };
-        ScopedClusterType clusterType{ session, "MyClusterType" };
-        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
-        std::list<ScopedTrack> tracks;
-
-        for (std::size_t i{}; i < 20; ++i)
-        {
-            tracks.emplace_back(session);
-
-            auto transaction{ session.createWriteTransaction() };
-
-            if (i < 5)
-                TrackListEntry::create(session, tracks.back().get(), trackList.get());
-
-            if (i < 10)
-                cluster.get().modify()->addTrack(tracks.back().get());
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            const auto similarTracks{ trackList->getSimilarTracks() };
-            EXPECT_EQ(similarTracks.size(), 5);
-
-            for (const auto& similarTrack : similarTracks)
-                EXPECT_TRUE(std::any_of(std::next(std::cbegin(tracks), 5), std::cend(tracks), [similarTrack](const ScopedTrack& track) { return track.getId() == similarTrack->getId(); }));
-        }
-    }
-
-    TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClusters)
-    {
-        ScopedTrackList trackList{ session, "MyTrackList", TrackListType::PlayList };
-        ScopedClusterType clusterType{ session, "MyClusterType" };
-        ScopedCluster cluster1{ session, clusterType.lockAndGet(), "MyCluster1" };
-        ScopedCluster cluster2{ session, clusterType.lockAndGet(), "MyCluster2" };
-        std::list<ScopedTrack> tracks;
-
-        for (std::size_t i{}; i < 20; ++i)
-        {
-            tracks.emplace_back(session);
-
-            auto transaction{ session.createWriteTransaction() };
-
-            if (i < 5)
-                TrackListEntry::create(session, tracks.back().get(), trackList.get());
-
-            if (i < 10)
-            {
-                cluster1.get().modify()->addTrack(tracks.back().get());
-                cluster2.get().modify()->addTrack(tracks.back().get());
-            }
-            else if (i < 15)
-            {
-                cluster1.get().modify()->addTrack(tracks.back().get());
-            }
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            {
-                const auto similarTracks{ trackList->getSimilarTracks(0, 5) };
-                ASSERT_EQ(similarTracks.size(), 5);
-
-                for (auto similarTrack : similarTracks)
-                    EXPECT_TRUE(std::any_of(std::next(std::cbegin(tracks), 5), std::next(std::cbegin(tracks), 10), [similarTrack](const ScopedTrack& track) { return track.getId() == similarTrack->getId(); }));
-            }
-
-            {
-                const auto similarTracks{ trackList->getSimilarTracks(5, 10) };
-                ASSERT_EQ(similarTracks.size(), 5);
-
-                for (auto similarTrack : similarTracks)
-                    EXPECT_TRUE(std::any_of(std::next(std::cbegin(tracks), 10), std::next(std::cbegin(tracks), 15), [similarTrack](const ScopedTrack& track) { return track.getId() == similarTrack->getId(); }));
-            }
-
-            EXPECT_EQ(trackList->getSimilarTracks(10, 10).size(), 0);
-        }
-    }
-
     TEST_F(DatabaseFixture, Cluster_findByTrackAndTypeName)
     {
         ScopedTrack track{ session };
         ScopedClusterType genreType{ session, "GENRE" };
         ScopedClusterType moodType{ session, "MOOD" };
-        ScopedCluster genre1{ session, genreType.lockAndGet(), "Rock" };
-        ScopedCluster genre2{ session, genreType.lockAndGet(), "Pop" };
-        ScopedCluster mood{ session, moodType.lockAndGet(), "Happy" };
+        ScopedCluster genre1{ session, genreType.getId(), "Rock" };
+        ScopedCluster genre2{ session, genreType.getId(), "Pop" };
+        ScopedCluster mood{ session, moodType.getId(), "Happy" };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            genre1.get().modify()->addTrack(track.get());
-            genre2.get().modify()->addTrack(track.get());
-            mood.get().modify()->addTrack(track.get());
+            Cluster::addTrack(session, genre1.getId(), track.getId());
+            Cluster::addTrack(session, genre2.getId(), track.getId());
+            Cluster::addTrack(session, mood.getId(), track.getId());
         }
 
         {
@@ -747,7 +674,7 @@ namespace lms::db::tests
 
             const auto moods{ Cluster::find(session, Cluster::FindParameters{}.setTrack(track.getId()).setClusterTypeName("MOOD")) };
             ASSERT_EQ(moods.size(), 1);
-            EXPECT_EQ(moods.front()->getId(), mood.getId());
+            EXPECT_EQ(moods.front().getId(), mood.getId());
 
             const auto all{ Cluster::find(session, Cluster::FindParameters{}.setTrack(track.getId())) };
             EXPECT_EQ(all.size(), 3);
@@ -777,21 +704,21 @@ namespace lms::db::tests
     {
         ScopedClusterType typeA{ session, "TypeA" };
         ScopedClusterType typeB{ session, "TypeB" };
-        ScopedCluster a1{ session, typeA.lockAndGet(), "A1" };
-        ScopedCluster a2{ session, typeA.lockAndGet(), "A2" };
-        ScopedCluster a3{ session, typeA.lockAndGet(), "A3" };
-        ScopedCluster a4{ session, typeA.lockAndGet(), "A4" };
-        ScopedCluster b1{ session, typeB.lockAndGet(), "B1" };
-        ScopedCluster b2{ session, typeB.lockAndGet(), "B2" };
+        ScopedCluster a1{ session, typeA.getId(), "A1" };
+        ScopedCluster a2{ session, typeA.getId(), "A2" };
+        ScopedCluster a3{ session, typeA.getId(), "A3" };
+        ScopedCluster a4{ session, typeA.getId(), "A4" };
+        ScopedCluster b1{ session, typeB.getId(), "B1" };
+        ScopedCluster b2{ session, typeB.getId(), "B2" };
         ScopedTrack track{ session };
         ScopedTrack otherTrack{ session };
 
         {
             auto transaction{ session.createWriteTransaction() };
             for (ScopedCluster* cluster : { &a1, &a2, &a3, &b1 })
-                cluster->get().modify()->addTrack(track.get());
+                Cluster::addTrack(session, cluster->getId(), track.getId());
             for (ScopedCluster* cluster : { &a4, &b2 })
-                cluster->get().modify()->addTrack(otherTrack.get());
+                Cluster::addTrack(session, cluster->getId(), otherTrack.getId());
         }
 
         const Cluster::FindParameters params{ Cluster::FindParameters{}.setTrack(track.getId()).setSortMethod(ClusterSortMethod::Name) };
@@ -806,11 +733,11 @@ namespace lms::db::tests
         ScopedClusterType typeA{ session, "TypeA" };
         ScopedClusterType typeB{ session, "TypeB" };
         // created from the most to the least frequent: the order of the result is not the order of the ids
-        ScopedCluster popular{ session, typeA.lockAndGet(), "Popular" };
-        ScopedCluster common{ session, typeA.lockAndGet(), "Common" };
-        ScopedCluster rare{ session, typeA.lockAndGet(), "Rare" };
-        ScopedCluster otherReleaseOnly{ session, typeA.lockAndGet(), "OtherReleaseOnly" };
-        ScopedCluster b1{ session, typeB.lockAndGet(), "B1" };
+        ScopedCluster popular{ session, typeA.getId(), "Popular" };
+        ScopedCluster common{ session, typeA.getId(), "Common" };
+        ScopedCluster rare{ session, typeA.getId(), "Rare" };
+        ScopedCluster otherReleaseOnly{ session, typeA.getId(), "OtherReleaseOnly" };
+        ScopedCluster b1{ session, typeB.getId(), "B1" };
         ScopedRelease release{ session, "MyRelease" };
         ScopedRelease otherRelease{ session, "MyOtherRelease" };
         ScopedTrack track1{ session };
@@ -821,20 +748,26 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
             for (ScopedTrack* track : { &track1, &track2, &track3 })
-                track->get().modify()->setRelease(release.get());
-            otherTrack.get().modify()->setRelease(otherRelease.get());
+            {
+                std::optional<Track> updatedTrack{ track->get() };
+                updatedTrack->setRelease(release.getId());
+                Track::update(session, *updatedTrack);
+            }
+            std::optional<Track> updatedOtherTrack{ otherTrack.get() };
+            updatedOtherTrack->setRelease(otherRelease.getId());
+            Track::update(session, *updatedOtherTrack);
 
-            popular.get().modify()->addTrack(track1.get());
-            popular.get().modify()->addTrack(track2.get());
-            popular.get().modify()->addTrack(track3.get());
-            common.get().modify()->addTrack(track1.get());
-            common.get().modify()->addTrack(track2.get());
-            rare.get().modify()->addTrack(track1.get());
-            b1.get().modify()->addTrack(track2.get());
+            Cluster::addTrack(session, popular.getId(), track1.getId());
+            Cluster::addTrack(session, popular.getId(), track2.getId());
+            Cluster::addTrack(session, popular.getId(), track3.getId());
+            Cluster::addTrack(session, common.getId(), track1.getId());
+            Cluster::addTrack(session, common.getId(), track2.getId());
+            Cluster::addTrack(session, rare.getId(), track1.getId());
+            Cluster::addTrack(session, b1.getId(), track2.getId());
 
             // the tracks of the other release are not counted
-            otherReleaseOnly.get().modify()->addTrack(otherTrack.get());
-            popular.get().modify()->addTrack(otherTrack.get());
+            Cluster::addTrack(session, otherReleaseOnly.getId(), otherTrack.getId());
+            Cluster::addTrack(session, popular.getId(), otherTrack.getId());
         }
 
         const Cluster::FindParameters params{ Cluster::FindParameters{}.setSortMethod(ClusterSortMethod::TrackCountDesc) };
@@ -848,10 +781,10 @@ namespace lms::db::tests
     {
         ScopedClusterType typeA{ session, "TypeA" };
         ScopedClusterType typeB{ session, "TypeB" };
-        ScopedCluster twoTracks{ session, typeA.lockAndGet(), "TwoTracks" };
-        ScopedCluster oneTrack{ session, typeA.lockAndGet(), "OneTrack" };
-        ScopedCluster otherArtistOnly{ session, typeA.lockAndGet(), "OtherArtistOnly" };
-        ScopedCluster b1{ session, typeB.lockAndGet(), "B1" };
+        ScopedCluster twoTracks{ session, typeA.getId(), "TwoTracks" };
+        ScopedCluster oneTrack{ session, typeA.getId(), "OneTrack" };
+        ScopedCluster otherArtistOnly{ session, typeA.getId(), "OtherArtistOnly" };
+        ScopedCluster b1{ session, typeB.getId(), "B1" };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedArtist otherArtist{ session, "MyOtherArtist" };
         ScopedTrack track1{ session };
@@ -862,18 +795,18 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
             // linked three times to the same track: it still is a single track, counted per link it would come first
-            TrackArtistLink::create(session, track1.get(), artist.get(), TrackArtistLinkType::Artist);
-            TrackArtistLink::create(session, track1.get(), artist.get(), TrackArtistLinkType::Composer);
-            TrackArtistLink::create(session, track1.get(), artist.get(), TrackArtistLinkType::Lyricist);
-            TrackArtistLink::create(session, track2.get(), artist.get(), TrackArtistLinkType::Artist);
-            TrackArtistLink::create(session, track3.get(), artist.get(), TrackArtistLinkType::Artist);
-            TrackArtistLink::create(session, otherTrack.get(), otherArtist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Composer);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Lyricist);
+            TrackArtistLink::create(session, track2.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track3.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, otherTrack.getId(), otherArtist.getId(), TrackArtistLinkType::Artist);
 
-            oneTrack.get().modify()->addTrack(track1.get());
-            twoTracks.get().modify()->addTrack(track2.get());
-            twoTracks.get().modify()->addTrack(track3.get());
-            b1.get().modify()->addTrack(track1.get());
-            otherArtistOnly.get().modify()->addTrack(otherTrack.get());
+            Cluster::addTrack(session, oneTrack.getId(), track1.getId());
+            Cluster::addTrack(session, twoTracks.getId(), track2.getId());
+            Cluster::addTrack(session, twoTracks.getId(), track3.getId());
+            Cluster::addTrack(session, b1.getId(), track1.getId());
+            Cluster::addTrack(session, otherArtistOnly.getId(), otherTrack.getId());
         }
 
         const Cluster::FindParameters params{ Cluster::FindParameters{}.setSortMethod(ClusterSortMethod::TrackCountDesc) };
@@ -887,10 +820,10 @@ namespace lms::db::tests
     {
         ScopedClusterType typeA{ session, "TypeA" };
         ScopedClusterType typeB{ session, "TypeB" };
-        ScopedCluster onTwoTracks{ session, typeA.lockAndGet(), "OnTwoTracks" };
-        ScopedCluster onListedThrice{ session, typeA.lockAndGet(), "OnListedThrice" };
-        ScopedCluster notInTrackList{ session, typeA.lockAndGet(), "NotInTrackList" };
-        ScopedCluster b1{ session, typeB.lockAndGet(), "B1" };
+        ScopedCluster onTwoTracks{ session, typeA.getId(), "OnTwoTracks" };
+        ScopedCluster onListedThrice{ session, typeA.getId(), "OnListedThrice" };
+        ScopedCluster notInTrackList{ session, typeA.getId(), "NotInTrackList" };
+        ScopedCluster b1{ session, typeB.getId(), "B1" };
         ScopedTrackList trackList{ session, "MyTrackList", TrackListType::PlayList };
         ScopedTrackList otherTrackList{ session, "MyOtherTrackList", TrackListType::PlayList };
         ScopedTrack track1{ session };
@@ -902,16 +835,16 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
             // a track listed three times is still a single track, counted per entry it would come first
             for (int i{}; i < 3; ++i)
-                TrackListEntry::create(session, track1.get(), trackList.get());
-            TrackListEntry::create(session, track2.get(), trackList.get());
-            TrackListEntry::create(session, track3.get(), trackList.get());
-            TrackListEntry::create(session, otherTrack.get(), otherTrackList.get());
+                TrackListEntry::create(session, track1.getId(), trackList.getId());
+            TrackListEntry::create(session, track2.getId(), trackList.getId());
+            TrackListEntry::create(session, track3.getId(), trackList.getId());
+            TrackListEntry::create(session, otherTrack.getId(), otherTrackList.getId());
 
-            onTwoTracks.get().modify()->addTrack(track2.get());
-            onTwoTracks.get().modify()->addTrack(track3.get());
-            onListedThrice.get().modify()->addTrack(track1.get());
-            b1.get().modify()->addTrack(track2.get());
-            notInTrackList.get().modify()->addTrack(otherTrack.get());
+            Cluster::addTrack(session, onTwoTracks.getId(), track2.getId());
+            Cluster::addTrack(session, onTwoTracks.getId(), track3.getId());
+            Cluster::addTrack(session, onListedThrice.getId(), track1.getId());
+            Cluster::addTrack(session, b1.getId(), track2.getId());
+            Cluster::addTrack(session, notInTrackList.getId(), otherTrack.getId());
         }
 
         const Cluster::FindParameters params{ Cluster::FindParameters{}.setSortMethod(ClusterSortMethod::TrackCountDesc) };

@@ -24,7 +24,7 @@
 
 #include "database/objects/Image.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -35,6 +35,13 @@ namespace lms::db::dbo
     public:
         Image() = default;
         using db::Image::Image;
+
+        void syncIds()
+        {
+            _id = id();
+            _directoryId = _directory.id();
+        }
+        void applyIds();
 
         template<class Action>
         void persist(Action& a)

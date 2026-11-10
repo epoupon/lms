@@ -24,7 +24,7 @@
 
 #include "database/objects/TrackLyrics.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,6 +36,14 @@ namespace lms::db::dbo
     public:
         TrackLyrics() = default;
         using db::TrackLyrics::TrackLyrics;
+
+        void syncIds()
+        {
+            _id = id();
+            _trackId = _track.id();
+            _directoryId = _directory.id();
+        }
+        void applyIds();
 
         template<class Action>
         void persist(Action& a)

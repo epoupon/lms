@@ -268,13 +268,13 @@ namespace lms::ui
             if (!track)
                 return;
 
-            const auto release{ track->getRelease() };
+            const std::optional<db::Release> release{ db::Release::find(LmsApp->getDbSession(), track->getReleaseId()) };
 
             const std::string transcodingResource{ _audioTranscodingResource->getUrl(trackId) };
             const std::string nativeResource{ _audioFileResource->getUrl(trackId) };
 
-            const auto artistDisplayInfo{ utils::computeArtistDisplayInfo(track, db::TrackArtistLinkType::Artist) };
-            const std::string displayTitle{ utils::computeTrackDisplayInfo(track).title };
+            const auto artistDisplayInfo{ utils::computeArtistDisplayInfo(*track, db::TrackArtistLinkType::Artist) };
+            const std::string displayTitle{ utils::computeTrackDisplayInfo(*track).title };
 
             oss
                 << "var params = {"
@@ -324,7 +324,7 @@ namespace lms::ui
             {
                 _release->setTextFormat(Wt::TextFormat::Plain);
                 _release->setText(Wt::WString::fromUTF8(std::string{ release->getName() }));
-                _release->setLink(utils::createReleaseLink(release));
+                _release->setLink(utils::createReleaseLink(*release));
             }
             else
             {

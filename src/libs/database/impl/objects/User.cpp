@@ -25,7 +25,7 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "AuthTokenDbo.hpp"
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "Session.hpp"
 #include "UIStateDbo.hpp"
 #include "UserDbo.hpp"
@@ -43,7 +43,12 @@ namespace lms::db
     {
     }
 
-    User::pointer User::create(ISession& session, std::string_view loginName)
+    void User::destroy(ISession& session, std::span<const UserId> ids)
+    {
+        utils::destroyObjects<dbo::User>(session, ids);
+    }
+
+    User User::create(ISession& session, std::string_view loginName)
     {
         return utils::addObject(session, std::unique_ptr<dbo::User>{ new dbo::User{ loginName } });
     }
@@ -64,7 +69,7 @@ namespace lms::db
         return utils::execRangeQuery<UserId>(query, params.range);
     }
 
-    void User::find(ISession& session, const FindParameters& params, const std::function<void(const User::pointer&)>& func)
+    void User::find(ISession& session, const FindParameters& params, const std::function<void(const User&)>& func)
     {
         checkReadTransaction(session);
 
@@ -73,21 +78,24 @@ namespace lms::db
         return utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    User::pointer User::findDemoUser(ISession& session)
+    std::optional<User> User::findDemoUser(ISession& session)
     {
         checkReadTransaction(session);
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::User>>("SELECT u from user u").where("u.type = ?").bind(UserType::DEMO));
     }
 
-    User::pointer User::find(ISession& session, UserId id)
+    std::optional<User> User::find(ISession& session, UserId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::User>>("SELECT u from user u").where("u.id = ?").bind(id));
     }
 
-    User::pointer User::find(ISession& session, std::string_view name)
+    std::optional<User> User::find(ISession& session, std::string_view name)
     {
         checkReadTransaction(session);
 
@@ -110,8 +118,14 @@ namespace lms::db
         _feedbackBackends = backends;
     }
 
-    std::size_t User::getAuthTokensCount() const
+    std::size_t User::getAuthTokensCount(ISession& session, UserId id)
     {
-        return getDbo(*this)._authTokens.size();
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM auth_token").where("user_id = ?").bind(id));
+    }
+
+    void User::update(ISession& session, const User& user)
+    {
+        utils::updateObject<dbo::User>(session, user);
     }
 } // namespace lms::db

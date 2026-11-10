@@ -20,20 +20,20 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <string>
 
-#include "database/Object.hpp"
+#include "database/objects/Artwork.hpp"
 #include "image/Types.hpp"
 
 namespace lms::db
 {
-    class Artwork;
     class ISession;
 } // namespace lms::db
 
 namespace lms::podcast::utils
 {
-    db::ObjectPtr<db::Artwork> createArtworkFromImage(db::ISession& session, const std::filesystem::path& filePath, const image::ImageProperties& probedImage);
+    std::optional<db::Artwork> createArtworkFromImage(db::ISession& session, const std::filesystem::path& filePath, const image::ImageProperties& probedImage);
     std::string generateRandomFileName();
     void removeFile(const std::filesystem::path& filePath);
 } // namespace lms::podcast::utils

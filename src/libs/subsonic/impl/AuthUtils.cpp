@@ -52,7 +52,7 @@ namespace lms::api::subsonic::utils
         }
 
         // Returns null if no such user exists
-        db::User::pointer getUserFromLoginName(db::ISession& session, std::string_view loginName)
+        std::optional<db::User> getUserFromLoginName(db::ISession& session, std::string_view loginName)
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -114,12 +114,12 @@ namespace lms::api::subsonic::utils
         return core::stringUtils::stringCaseInsensitiveEqual(core::stringUtils::bufferToHexString(core::md5(payload)), token);
     }
 
-    db::User::pointer getUserFromUserId(db::ISession& session, db::UserId userId)
+    db::User getUserFromUserId(db::ISession& session, db::UserId userId)
     {
         auto transaction{ session.createReadTransaction() };
 
-        if (db::User::pointer user{ db::User::find(session, userId) })
-            return user;
+        if (std::optional<db::User> user{ db::User::find(session, userId) })
+            return *user;
 
         throw UserNotAuthorizedError{};
     }
@@ -143,7 +143,7 @@ namespace lms::api::subsonic::utils
                                if (authTokenService.isClientThrottled(clientAddress))
                                    throw LoginThrottledGenericError{};
 
-                               const db::User::pointer authUser{ getUserFromLoginName(session, auth.user) };
+                               const std::optional<db::User> authUser{ getUserFromLoginName(session, auth.user) };
                                return authUser ? findMatchingApiKeyForAuthToken(authUser->getId(), auth.salt, auth.token) : std::string{};
                            },
                        },
@@ -159,8 +159,8 @@ namespace lms::api::subsonic::utils
             // Only the password mechanism needs this check as the token mechanism already used the user name
             if (const auto* passwordAuth{ std::get_if<PasswordAuthentication>(&authRequest) })
             {
-                const auto authenticatedUser{ getUserFromUserId(session, authResult.authTokenInfo->userId) };
-                if (!authenticatedUser || authenticatedUser->getLoginName() != passwordAuth->user)
+                const db::User authenticatedUser{ getUserFromUserId(session, authResult.authTokenInfo->userId) };
+                if (authenticatedUser.getLoginName() != passwordAuth->user)
                     throw WrongUsernameOrPasswordError{};
             }
             return authResult.authTokenInfo->userId;

@@ -65,22 +65,22 @@ namespace lms::ui
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const db::UserId currentUserId{ LmsApp->getUserId() };
-        db::User::find(LmsApp->getDbSession(), db::User::FindParameters{}, [&](const db::User::pointer& user) {
-            const db::UserId userId{ user->getId() };
+        db::User::find(LmsApp->getDbSession(), db::User::FindParameters{}, [&](const db::User& user) {
+            const db::UserId userId{ user.getId() };
 
             Wt::WTemplate* entry{ _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry")) };
 
-            entry->bindString("name", user->getLoginName(), Wt::TextFormat::Plain);
+            entry->bindString("name", user.getLoginName(), Wt::TextFormat::Plain);
 
             // Create tag
-            if (user->isAdmin() || user->isDemo())
+            if (user.isAdmin() || user.isDemo())
             {
                 entry->setCondition("if-tag", true);
-                entry->bindString("tag", Wt::WString::tr(user->isAdmin() ? "Lms.Admin.Users.admin" : "Lms.Admin.Users.demo"));
+                entry->bindString("tag", Wt::WString::tr(user.isAdmin() ? "Lms.Admin.Users.admin" : "Lms.Admin.Users.demo"));
             }
 
             // Don't edit ourself this way
-            if (user->getId() == currentUserId)
+            if (user.getId() == currentUserId)
                 return;
 
             entry->setCondition("if-edit", true);
@@ -102,9 +102,7 @@ namespace lms::ui
                     {
                         auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                        db::User::pointer user{ db::User::find(LmsApp->getDbSession(), userId) };
-                        if (user)
-                            user.remove();
+                        db::User::destroy(LmsApp->getDbSession(), std::array{ userId });
                     }
 
                     _container->removeWidget(entry);

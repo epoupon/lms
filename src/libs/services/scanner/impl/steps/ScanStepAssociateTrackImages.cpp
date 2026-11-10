@@ -54,22 +54,22 @@ namespace lms::scanner
         };
         using TrackArtworksAssociationContainer = std::deque<TrackArtworksAssociation>;
 
-        db::Artwork::pointer computePreferredTrackArtwork(db::ISession& session, const db::Track::pointer& track, const db::Artwork::pointer& preferredMediaArtwork)
+        std::optional<db::Artwork> computePreferredTrackArtwork(db::ISession& session, const db::Track& track, const std::optional<db::Artwork>& preferredMediaArtwork)
         {
-            db::Artwork::pointer res{ preferredMediaArtwork };
+            std::optional<db::Artwork> res{ preferredMediaArtwork };
             if (res)
                 return res;
 
             // Fallback on front cover for this track
             {
                 db::TrackEmbeddedImage::FindParameters params;
-                params.setTrack(track->getId());
+                params.setTrack(track.getId());
                 params.setImageType(core::media::ImageType::FrontCover);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
 
-                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage& image) {
                     if (!res)
-                        res = db::Artwork::find(session, image->getId());
+                        res = db::Artwork::find(session, image.getId());
                 });
             }
 
@@ -77,29 +77,29 @@ namespace lms::scanner
                 return res;
 
             // Fallback on the artwork already resolved for the release
-            const db::ReleaseId releaseId{ track->getReleaseId() };
+            const db::ReleaseId releaseId{ track.getReleaseId() };
             if (!releaseId.isValid())
                 return res;
 
-            if (const db::Release::pointer release{ db::Release::find(session, releaseId) })
-                res = release->getPreferredArtwork();
+            if (const std::optional<db::Release> release{ db::Release::find(session, releaseId) }; release && release->getPreferredArtworkId().isValid())
+                res = db::Artwork::find(session, release->getPreferredArtworkId());
 
             return res;
         }
 
-        db::Artwork::pointer computePreferredTrackMediaArtwork(db::ISession& session, const db::Track::pointer& track)
+        std::optional<db::Artwork> computePreferredTrackMediaArtwork(db::ISession& session, const db::Track& track)
         {
-            db::Artwork::pointer res;
+            std::optional<db::Artwork> res;
 
             {
                 db::TrackEmbeddedImage::FindParameters params;
-                params.setTrack(track->getId());
+                params.setTrack(track.getId());
                 params.setImageType(core::media::ImageType::Media);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
 
-                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage& image) {
                     if (!res)
-                        res = db::Artwork::find(session, image->getId());
+                        res = db::Artwork::find(session, image.getId());
                 });
             }
 
@@ -107,8 +107,12 @@ namespace lms::scanner
                 return res;
 
             // fallback on the medium's preferred artwork
-            if (const auto medium{ track->getMedium() })
-                res = medium->getPreferredArtwork();
+            const db::MediumId mediumId{ track.getMediumId() };
+            if (!mediumId.isValid())
+                return res;
+
+            if (const std::optional<db::Medium> medium{ db::Medium::find(session, mediumId) }; medium && medium->getPreferredArtworkId().isValid())
+                res = db::Artwork::find(session, medium->getPreferredArtworkId());
 
             return res;
         }
@@ -171,30 +175,32 @@ namespace lms::scanner
                 auto& session{ _db.getTLSSession() };
                 auto transaction{ session.createReadTransaction() };
 
-                db::Track::find(session, _trackIdRange, [&](const db::Track::pointer& track) {
-                    const db::Artwork::pointer preferredMediaArtwork{ computePreferredTrackMediaArtwork(session, track) };
-                    const db::Artwork::pointer preferredArtwork{ computePreferredTrackArtwork(session, track, preferredMediaArtwork) };
+                db::Track::find(session, _trackIdRange, [&](const db::Track& track) {
+                    const std::optional<db::Artwork> preferredMediaArtwork{ computePreferredTrackMediaArtwork(session, track) };
+                    const std::optional<db::Artwork> preferredArtwork{ computePreferredTrackArtwork(session, track, preferredMediaArtwork) };
 
-                    TrackArtworksAssociation artworksAssociation{ .trackId = track->getId(), .preferredArtworkId = std::nullopt, .preferredMediaArtworkId = std::nullopt };
+                    TrackArtworksAssociation artworksAssociation{ .trackId = track.getId(), .preferredArtworkId = std::nullopt, .preferredMediaArtworkId = std::nullopt };
 
-                    if (track->getPreferredArtwork() != preferredArtwork)
+                    const db::ArtworkId preferredArtworkId{ preferredArtwork ? preferredArtwork->getId() : db::ArtworkId{} };
+                    if (track.getPreferredArtworkId() != preferredArtworkId)
                     {
-                        artworksAssociation.preferredArtworkId = preferredArtwork ? preferredArtwork->getId() : db::ArtworkId{};
+                        artworksAssociation.preferredArtworkId = preferredArtworkId;
 
                         if (preferredArtwork)
-                            LMS_LOG(DBUPDATER, DEBUG, "Updating preferred artwork in track " << track->getAbsoluteFilePath() << " with image in " << preferredArtwork->getAbsoluteFilePath());
+                            LMS_LOG(DBUPDATER, DEBUG, "Updating preferred artwork in track " << track.getAbsoluteFilePath() << " with image in " << db::Artwork::getAbsoluteFilePath(session, preferredArtwork->getId()));
                         else
-                            LMS_LOG(DBUPDATER, DEBUG, "Removing preferred artwork from track " << track->getAbsoluteFilePath());
+                            LMS_LOG(DBUPDATER, DEBUG, "Removing preferred artwork from track " << track.getAbsoluteFilePath());
                     }
 
-                    if (track->getPreferredMediaArtwork() != preferredMediaArtwork)
+                    const db::ArtworkId preferredMediaArtworkId{ preferredMediaArtwork ? preferredMediaArtwork->getId() : db::ArtworkId{} };
+                    if (track.getPreferredMediaArtworkId() != preferredMediaArtworkId)
                     {
-                        artworksAssociation.preferredMediaArtworkId = preferredMediaArtwork ? preferredMediaArtwork->getId() : db::ArtworkId{};
+                        artworksAssociation.preferredMediaArtworkId = preferredMediaArtworkId;
 
                         if (preferredMediaArtwork)
-                            LMS_LOG(DBUPDATER, DEBUG, "Updating preferred media artwork in track " << track->getAbsoluteFilePath() << " with image in " << preferredMediaArtwork->getAbsoluteFilePath());
+                            LMS_LOG(DBUPDATER, DEBUG, "Updating preferred media artwork in track " << track.getAbsoluteFilePath() << " with image in " << db::Artwork::getAbsoluteFilePath(session, preferredMediaArtwork->getId()));
                         else
-                            LMS_LOG(DBUPDATER, DEBUG, "Removing preferred media artwork from track " << track->getAbsoluteFilePath());
+                            LMS_LOG(DBUPDATER, DEBUG, "Removing preferred media artwork from track " << track.getAbsoluteFilePath());
                     }
 
                     if (artworksAssociation.preferredArtworkId || artworksAssociation.preferredMediaArtworkId)

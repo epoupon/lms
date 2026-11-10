@@ -19,6 +19,8 @@
 
 #include "PlayQueue.hpp"
 
+#include <array>
+
 #include <Wt/WCheckBox.h>
 #include <Wt/WComboBox.h>
 #include <Wt/WFormModel.h>
@@ -102,8 +104,8 @@ namespace lms::ui
                 params.setUser(LmsApp->getUserId());
                 params.setSortMethod(TrackListSortMethod::Name);
 
-                TrackList::find(LmsApp->getDbSession(), params, [&](const TrackList::pointer& trackList) {
-                    model->add(Wt::WString::fromUTF8(std::string{ trackList->getName() }), trackList->getId());
+                TrackList::find(LmsApp->getDbSession(), params, [&](const TrackList& trackList) {
+                    model->add(Wt::WString::fromUTF8(std::string{ trackList.getName() }), trackList.getId());
                 });
 
                 return model;
@@ -146,13 +148,12 @@ namespace lms::ui
                 // TODO write scope could be reduced
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                db::TrackList::pointer queue{ getQueue() };
-                auto entries{ queue->getEntries() };
-                core::random::shuffleContainer(entries);
+                std::vector<db::TrackId> trackIds{ db::Track::findIds(LmsApp->getDbSession(), db::Track::FindParameters{}.setTrackList(_queueId)) };
+                core::random::shuffleContainer(trackIds);
 
-                queue.modify()->clear();
-                for (const db::TrackListEntry::pointer& entry : entries)
-                    db::TrackListEntry::create(LmsApp->getDbSession(), entry->getTrack(), queue);
+                db::TrackList::clear(LmsApp->getDbSession(), _queueId);
+                for (const db::TrackId trackId : trackIds)
+                    db::TrackListEntry::create(LmsApp->getDbSession(), trackId, _queueId);
             }
             _entriesContainer->reset();
             _nextPlayPos.reset();
@@ -200,8 +201,7 @@ namespace lms::ui
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                 LMS_LOG(UI, DEBUG, "Removing queue (tracklist id " << _queueId.toString() << ")");
-                if (db::TrackList::pointer queue{ getQueue() })
-                    queue.remove();
+                db::TrackList::destroy(LmsApp->getDbSession(), std::span{ &_queueId, 1 });
             }
         });
 
@@ -218,22 +218,32 @@ namespace lms::ui
         return _radioBtn->checkState() == Wt::CheckState::Checked;
     }
 
-    db::TrackList::pointer PlayQueue::getQueue() const
+    std::vector<db::TrackListEntry> PlayQueue::getEntries(db::Range range) const
     {
-        return db::TrackList::find(LmsApp->getDbSession(), _queueId);
+        std::vector<db::TrackListEntry> entries;
+        db::TrackListEntry::find(LmsApp->getDbSession(), db::TrackListEntry::FindParameters{}.setTrackList(_queueId).setRange(range), [&](const db::TrackListEntry& entry) {
+            entries.push_back(entry);
+        });
+        return entries;
+    }
+
+    std::optional<db::TrackListEntry> PlayQueue::getEntry(std::size_t pos) const
+    {
+        const auto entries{ getEntries(db::Range{ pos, 1 }) };
+        return entries.empty() ? std::nullopt : std::make_optional(entries.front());
     }
 
     bool PlayQueue::isFull() const
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-        return getQueue()->getCount() == getCapacity();
+        return db::TrackList::getTrackCount(LmsApp->getDbSession(), _queueId) == getCapacity();
     }
 
     void PlayQueue::clearTracks()
     {
         {
             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-            getQueue().modify()->clear();
+            db::TrackList::clear(LmsApp->getDbSession(), _queueId);
         }
 
         _entriesContainer->reset();
@@ -260,12 +270,12 @@ namespace lms::ui
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const db::TrackList::pointer queue{ getQueue() };
+            const std::size_t queueSize{ db::TrackList::getTrackCount(LmsApp->getDbSession(), _queueId) };
 
             // If out of range, stop playing
-            if (pos >= queue->getCount())
+            if (pos >= queueSize)
             {
-                if (!isRepeatAllSet() || queue->getCount() == 0)
+                if (!isRepeatAllSet() || queueSize == 0)
                 {
                     stop();
                     return;
@@ -278,9 +288,9 @@ namespace lms::ui
             if (resetNextPlayPos.value())
                 _nextPlayPos.reset();
 
-            const db::Track::pointer track{ queue->getEntry(*_trackPos)->getTrack() };
+            const std::optional<db::Track> track{ db::Track::find(LmsApp->getDbSession(), getEntry(*_trackPos)->getTrackId()) };
             trackId = track->getId();
-            replayGain = getReplayGain(pos, track);
+            replayGain = getReplayGain(pos, *track);
         }
 
         state::writeValue<size_t>("player_cur_playing_track_pos", pos);
@@ -326,15 +336,15 @@ namespace lms::ui
     std::size_t PlayQueue::getCount()
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-        return getQueue()->getCount();
+        return db::TrackList::getTrackCount(LmsApp->getDbSession(), _queueId);
     }
 
     void PlayQueue::initTrackLists()
     {
         auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-        db::TrackList::pointer queue;
-        db::TrackList::pointer radioStartingTracks;
+        std::optional<db::TrackList> queue;
+        std::optional<db::TrackList> radioStartingTracks;
 
         if (LmsApp->getUserType() != db::UserType::DEMO)
         {
@@ -343,16 +353,18 @@ namespace lms::ui
             if (!queue)
             {
                 queue = db::TrackList::create(LmsApp->getDbSession(), queueName, db::TrackListType::Internal);
-                queue.modify()->setVisibility(db::TrackList::Visibility::Private);
-                queue.modify()->setUser(LmsApp->getUser());
+                queue->setVisibility(db::TrackList::Visibility::Private);
+                queue->setUser(LmsApp->getUserId());
+                db::TrackList::update(LmsApp->getDbSession(), *queue);
             }
         }
         else
         {
             static const std::string queueName{ "__temp_queue__" };
             queue = db::TrackList::create(LmsApp->getDbSession(), queueName, db::TrackListType::Internal);
-            queue.modify()->setVisibility(db::TrackList::Visibility::Private);
-            queue.modify()->setUser(LmsApp->getUser());
+            queue->setVisibility(db::TrackList::Visibility::Private);
+            queue->setUser(LmsApp->getUserId());
+            db::TrackList::update(LmsApp->getDbSession(), *queue);
         }
 
         _queueId = queue->getId();
@@ -362,10 +374,9 @@ namespace lms::ui
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const db::TrackList::pointer queue{ getQueue() };
-        const std::size_t trackCount{ queue->getCount() };
+        const std::size_t trackCount{ db::TrackList::getTrackCount(LmsApp->getDbSession(), _queueId) };
         _nbTracks->setText(Wt::WString::trn("Lms.track-count", trackCount).arg(trackCount));
-        _duration->setText(utils::durationToString(queue->getDuration()));
+        _duration->setText(utils::durationToString(db::TrackList::getDuration(LmsApp->getDbSession(), _queueId)));
         trackCountChanged.emit(trackCount);
     }
 
@@ -386,8 +397,7 @@ namespace lms::ui
         {
             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-            db::TrackList::pointer queue{ getQueue() };
-            const std::size_t queueSize{ queue->getCount() };
+            const std::size_t queueSize{ db::TrackList::getTrackCount(LmsApp->getDbSession(), _queueId) };
 
             std::size_t nbTracksToEnqueue{ queueSize + trackIds.size() > getCapacity() ? getCapacity() - queueSize : trackIds.size() };
             for (const db::TrackId trackId : trackIds)
@@ -395,11 +405,11 @@ namespace lms::ui
                 if (nbTracksToEnqueue == 0)
                     break;
 
-                db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) };
+                std::optional<db::Track> track{ db::Track::find(LmsApp->getDbSession(), trackId) };
                 if (!track)
                     continue;
 
-                db::TrackListEntry::create(LmsApp->getDbSession(), track, queue);
+                db::TrackListEntry::create(LmsApp->getDbSession(), track->getId(), _queueId);
                 nbTracksToEnqueue--;
             }
         }
@@ -415,14 +425,16 @@ namespace lms::ui
 
         auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-        db::TrackList::pointer queue{ getQueue() };
-        auto entries{ queue->getEntries(db::Range{ pos, getCapacity() }) };
+        const auto entries{ getEntries(db::Range{ pos, getCapacity() }) };
         tracks.reserve(entries.size());
-        for (db::TrackListEntry::pointer& entry : entries)
+        std::vector<db::TrackListEntryId> entryIds;
+        entryIds.reserve(entries.size());
+        for (const db::TrackListEntry& entry : entries)
         {
-            tracks.push_back(entry->getTrack()->getId());
-            entry.remove();
+            tracks.push_back(entry.getTrackId());
+            entryIds.push_back(entry.getId());
         }
+        db::TrackListEntry::destroy(LmsApp->getDbSession(), entryIds);
 
         if (pos == 0)
         {
@@ -486,21 +498,20 @@ namespace lms::ui
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const db::TrackList::pointer queue{ getQueue() };
-        const auto entries{ queue->getEntries(db::Range{ _entriesContainer->getCount(), _batchSize }) };
-        for (const db::TrackListEntry::pointer& tracklistEntry : entries)
+        const auto entries{ getEntries(db::Range{ static_cast<std::size_t>(_entriesContainer->getCount()), _batchSize }) };
+        for (const db::TrackListEntry& tracklistEntry : entries)
             addEntry(tracklistEntry);
 
         _entriesContainer->setHasMore(entries.size() == _batchSize);
     }
 
-    void PlayQueue::addEntry(const db::TrackListEntry::pointer& tracklistEntry)
+    void PlayQueue::addEntry(const db::TrackListEntry& tracklistEntry)
     {
-        const db::TrackListEntryId tracklistEntryId{ tracklistEntry->getId() };
-        const auto track{ tracklistEntry->getTrack() };
+        const db::TrackListEntryId tracklistEntryId{ tracklistEntry.getId() };
+        const std::optional<db::Track> track{ db::Track::find(LmsApp->getDbSession(), tracklistEntry.getTrackId()) };
         const db::TrackId trackId{ track->getId() };
 
-        const utils::TrackDisplayInfo displayInfo{ utils::computeTrackDisplayInfo(track) };
+        const utils::TrackDisplayInfo displayInfo{ utils::computeTrackDisplayInfo(*track) };
 
         Template* entry{ _entriesContainer->addNew<Template>(Wt::WString::tr("Lms.PlayQueue.template.entry")) };
         entry->addFunction("id", &Wt::WTemplate::Functions::id);
@@ -512,12 +523,12 @@ namespace lms::ui
             entry->bindString("work", Wt::WString::fromUTF8(*displayInfo.workName), Wt::TextFormat::Plain);
         }
 
-        const auto artists{ track->getArtistIds({ db::TrackArtistLinkType::Artist }) };
+        const auto artists{ db::Artist::findIds(LmsApp->getDbSession(), db::Artist::FindParameters{}.setTrack(trackId).setTrackArtistLinkType(db::TrackArtistLinkType::Artist)) };
         if (!artists.empty())
         {
             entry->setCondition("if-has-artists", true);
-            entry->bindWidget("artists", utils::createArtistsAnchors(track, db::TrackArtistLinkType::Artist));
-            entry->bindWidget("artists-md", utils::createArtistsAnchors(track, db::TrackArtistLinkType::Artist));
+            entry->bindWidget("artists", utils::createArtistsAnchors(*track, db::TrackArtistLinkType::Artist));
+            entry->bindWidget("artists-md", utils::createArtistsAnchors(*track, db::TrackArtistLinkType::Artist));
         }
 
         db::ArtworkId artworkId{ track->getPreferredMediaArtworkId() };
@@ -532,12 +543,12 @@ namespace lms::ui
 
         image->addStyleClass("Lms-cover-track rounded"); // HACK
 
-        if (const auto release{ track->getRelease() })
+        if (const std::optional<db::Release> release{ db::Release::find(LmsApp->getDbSession(), track->getReleaseId()) })
         {
             entry->setCondition("if-has-release", true);
-            entry->bindWidget("release", utils::createReleaseAnchor(release));
+            entry->bindWidget("release", utils::createReleaseAnchor(*release));
 
-            Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(release, false)) };
+            Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(*release, false)) };
             image->addStyleClass("Lms-cover-anchor"); // HACK
             anchor->setImage(std::move(image));
         }
@@ -564,8 +575,7 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                db::TrackListEntry::pointer entryToRemove{ db::TrackListEntry::getById(LmsApp->getDbSession(), tracklistEntryId) };
-                entryToRemove.remove();
+                db::TrackListEntry::destroy(LmsApp->getDbSession(), std::array{ tracklistEntryId });
             }
 
             if (_trackPos)
@@ -633,10 +643,8 @@ namespace lms::ui
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const db::TrackList::pointer queue{ getQueue() };
-
             // If out of range, stop playing
-            if (_trackPos >= queue->getCount() - 1)
+            if (_trackPos >= db::TrackList::getTrackCount(LmsApp->getDbSession(), _queueId) - 1)
                 addTracks = true;
         }
 
@@ -656,7 +664,7 @@ namespace lms::ui
         enqueueTracks(trackIds);
     }
 
-    std::optional<float> PlayQueue::getReplayGain(std::size_t pos, const db::Track::pointer& track) const
+    std::optional<float> PlayQueue::getReplayGain(std::size_t pos, const db::Track& track) const
     {
         const auto& settings{ LmsApp->getMediaPlayer().getSettings() };
         if (!settings)
@@ -670,41 +678,42 @@ namespace lms::ui
             return std::nullopt;
 
         case MediaPlayer::Settings::ReplayGain::Mode::Track:
-            gain = track->getReplayGain();
+            gain = track.getReplayGain();
             break;
 
         case MediaPlayer::Settings::ReplayGain::Mode::Release:
             {
-                const auto medium{ track->getMedium() };
+                const auto medium{ db::Medium::find(LmsApp->getDbSession(), track.getMediumId()) };
                 if (medium && medium->getReplayGain())
                     gain = medium->getReplayGain();
 
                 if (!gain)
-                    gain = track->getReplayGain();
+                    gain = track.getReplayGain();
 
                 break;
             }
 
         case MediaPlayer::Settings::ReplayGain::Mode::Auto:
             {
-                const db::TrackList::pointer queue{ getQueue() };
-                const db::TrackListEntry::pointer prevEntry{ pos > 0 ? queue->getEntry(pos - 1) : db::TrackListEntry::pointer{} };
-                const db::TrackListEntry::pointer nextEntry{ queue->getEntry(pos + 1) };
-                const db::Track::pointer prevTrack{ prevEntry ? prevEntry->getTrack() : db::Track::pointer{} };
-                const db::Track::pointer nextTrack{ nextEntry ? nextEntry->getTrack() : db::Track::pointer{} };
+                const auto getReleaseIdOfEntry{ [&](const std::optional<db::TrackListEntry>& entry) {
+                    const std::optional<db::Track> entryTrack{ entry ? db::Track::find(LmsApp->getDbSession(), entry->getTrackId()) : std::nullopt };
+                    return entryTrack ? entryTrack->getReleaseId() : db::ReleaseId{};
+                } };
+                const db::ReleaseId prevReleaseId{ getReleaseIdOfEntry(pos > 0 ? getEntry(pos - 1) : std::nullopt) };
+                const db::ReleaseId nextReleaseId{ getReleaseIdOfEntry(getEntry(pos + 1)) };
 
-                if ((prevTrack && prevTrack->getRelease() && prevTrack->getRelease() == track->getRelease())
-                    || (nextTrack && nextTrack->getRelease() && nextTrack->getRelease() == track->getRelease()))
+                if ((prevReleaseId.isValid() && prevReleaseId == track.getReleaseId())
+                    || (nextReleaseId.isValid() && nextReleaseId == track.getReleaseId()))
                 {
-                    const auto medium{ track->getMedium() };
+                    const auto medium{ db::Medium::find(LmsApp->getDbSession(), track.getMediumId()) };
                     if (medium && medium->getReplayGain())
                         gain = medium->getReplayGain();
                     if (!gain)
-                        gain = track->getReplayGain();
+                        gain = track.getReplayGain();
                 }
                 else
                 {
-                    gain = track->getReplayGain();
+                    gain = track.getReplayGain();
                 }
                 break;
             }
@@ -808,10 +817,11 @@ namespace lms::ui
         {
             ISession& session{ LmsApp->getDbSession() };
             auto transaction{ session.createWriteTransaction() };
-            TrackList::pointer trackList{ TrackList::create(session, name.toUTF8(), TrackListType::PlayList) };
-            trackList.modify()->setVisibility(TrackList::Visibility::Private);
-            trackList.modify()->setUser(LmsApp->getUser());
-            trackListId = trackList->getId();
+            TrackList trackList{ TrackList::create(session, name.toUTF8(), TrackListType::PlayList) };
+            trackList.setVisibility(TrackList::Visibility::Private);
+            trackList.setUser(LmsApp->getUserId());
+            TrackList::update(session, trackList);
+            trackListId = trackList.getId();
         }
 
         exportToTrackList(trackListId);
@@ -824,15 +834,12 @@ namespace lms::ui
         ISession& session{ LmsApp->getDbSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        TrackList::pointer trackList{ TrackList::find(LmsApp->getDbSession(), trackListId) };
-        trackList.modify()->clear();
-        trackList.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+        std::optional<TrackList> trackList{ TrackList::find(session, trackListId) };
+        TrackList::clear(session, trackListId);
+        trackList->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+        TrackList::update(session, *trackList);
 
-        if (const TrackList::pointer queue{ TrackList::find(session, _queueId) })
-        {
-            queue->visitTracks([&](const Track::pointer& track) {
-                TrackListEntry::create(session, track, trackList);
-            });
-        }
+        for (const TrackId trackId : Track::findIds(session, Track::FindParameters{}.setTrackList(_queueId)))
+            TrackListEntry::create(session, trackId, trackListId);
     }
 } // namespace lms::ui

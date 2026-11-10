@@ -58,7 +58,7 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
 
             EXPECT_THROW(utils::fetchQueryResults(getDboSession(session)->query<int>("SELECT 1 FROM not_a_table")), Wt::Dbo::Exception);
-            genreId = Genre::create(session, "Rock")->getId();
+            genreId = Genre::create(session, "Rock").getId();
         }
 
         std::size_t recordedQueryCount{};

@@ -24,7 +24,6 @@
 
 #include "core/EnumSet.hpp"
 
-#include "database/Object.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/ReleaseId.hpp"
@@ -38,7 +37,6 @@
 namespace lms::db
 {
     class Artist;
-    class Release;
 } // namespace lms::db
 
 namespace lms::ui
@@ -60,7 +58,7 @@ namespace lms::ui
         void refreshAppearsOnReleases();
         void refreshNonReleaseTracks();
         void refreshRelatedArtists(const std::vector<db::ArtistId>& similarArtistsId);
-        void refreshLinks(const db::ObjectPtr<db::Artist>& artist);
+        void refreshLinks(const db::Artist& artist);
 
         struct ReleaseContainer;
         void addSomeReleases(ReleaseContainer& releaseContainer, core::EnumSet<releaseListHelpers::DisplayOptions> displayOptions);

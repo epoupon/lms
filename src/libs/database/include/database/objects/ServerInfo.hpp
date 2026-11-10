@@ -20,19 +20,19 @@
 #pragma once
 
 #include "core/UUID.hpp"
-#include "database/Object.hpp"
 #include "database/objects/ServerInfoId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
 
     // Singleton row holding server-level metadata (not tied to any particular schema version)
-    class ServerInfo : public Object<ServerInfo, ServerInfoId>
+    class ServerInfo : public detail::Object<ServerInfo, ServerInfoId>
     {
     public:
-        static pointer getOrCreate(ISession& session);
-        static pointer get(ISession& session);
+        static ServerInfo getOrCreate(ISession& session);
+        static std::optional<ServerInfo> get(ISession& session);
 
         core::UUID getInstanceId() const { return _instanceId; }
 

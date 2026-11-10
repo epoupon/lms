@@ -29,7 +29,6 @@
 
 #include "core/EnumSet.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/DirectoryId.hpp"
@@ -37,16 +36,16 @@
 #include "database/objects/MediumId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class MediaLibrary;
 
-    class Directory : public Object<Directory, DirectoryId>
+    class Directory : public detail::Object<Directory, DirectoryId>
     {
     public:
-        static pointer create(ISession& session, const std::filesystem::path& p);
+        static Directory create(ISession& session, const std::filesystem::path& p);
         static void destroy(ISession& session, std::span<const DirectoryId> ids);
 
         struct FindParameters
@@ -119,26 +118,27 @@ namespace lms::db
 
         // find
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, DirectoryId id);
-        static pointer find(ISession& session, const std::filesystem::path& path);
-        static void find(ISession& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory::pointer&)>& func);
-        static std::vector<Directory::pointer> find(ISession& session, const FindParameters& params);
-        static void find(ISession& session, const FindParameters& params, const std::function<void(const Directory::pointer&)>& func);
+        static std::optional<Directory> find(ISession& session, DirectoryId id);
+        static std::optional<Directory> find(ISession& session, const std::filesystem::path& path);
+        static void find(ISession& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory&)>& func);
+        static std::vector<Directory> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Directory&)>& func);
         static std::vector<DirectoryId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
         static std::vector<DirectoryId> findMismatchedLibrary(ISession& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId);
-        static std::vector<pointer> findRootDirectories(ISession& session, std::optional<Range> range = std::nullopt);
+        static std::vector<Directory> findRootDirectories(ISession& session, std::optional<Range> range = std::nullopt);
+
+        static void update(ISession& session, const Directory& directory);
 
         // getters
         const std::filesystem::path& getAbsolutePath() const { return _absolutePath; }
         std::string_view getName() const { return _name; }
-        ObjectPtr<Directory> getParentDirectory() const;
-        DirectoryId getParentDirectoryId() const;
-        ObjectPtr<MediaLibrary> getMediaLibrary() const;
+        DirectoryId getParentDirectoryId() const { return _parentDirectoryId; }
+        MediaLibraryId getMediaLibraryId() const { return _mediaLibraryId; }
 
         // setters
         void setAbsolutePath(const std::filesystem::path& p);
-        void setParent(const ObjectPtr<Directory>& parent);
-        void setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary);
+        void setParent(DirectoryId parent) { _parentDirectoryId = parent; }
+        void setMediaLibrary(MediaLibraryId mediaLibrary) { _mediaLibraryId = mediaLibrary; }
 
     protected:
         Directory() = default;
@@ -146,5 +146,7 @@ namespace lms::db
 
         std::filesystem::path _absolutePath;
         std::string _name;
+        DirectoryId _parentDirectoryId;
+        MediaLibraryId _mediaLibraryId;
     };
 } // namespace lms::db

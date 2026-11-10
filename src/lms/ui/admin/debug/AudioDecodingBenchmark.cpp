@@ -81,12 +81,12 @@ namespace lms::ui
             const auto results{ db::Track::find(session, params) };
 
             std::vector<TrackEntry> entries;
-            for (const db::Track::pointer& track : results)
+            for (const db::Track& track : results)
             {
-                const auto trackDuration{ track->getDuration() };
+                const auto trackDuration{ track.getDuration() };
                 if (trackDuration >= minTrackDuration && trackDuration <= maxTrackDuration)
                 {
-                    entries.push_back({ track->getAbsoluteFilePath(), trackDuration, static_cast<std::size_t>(track->getFileSize()), track->getBitrate() });
+                    entries.push_back({ track.getAbsoluteFilePath(), trackDuration, static_cast<std::size_t>(track.getFileSize()), track.getBitrate() });
                     if (entries.size() == maxTracksPerCodec)
                         break;
                 }

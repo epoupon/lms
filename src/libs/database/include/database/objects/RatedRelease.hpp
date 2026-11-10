@@ -20,26 +20,27 @@
 #pragma once
 
 #include <optional>
+#include <span>
 
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/RatedReleaseId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class Release;
     class User;
 
-    class RatedRelease : public Object<RatedRelease, RatedReleaseId>
+    class RatedRelease : public detail::Object<RatedRelease, RatedReleaseId>
     {
     public:
-        static pointer create(ISession& session, const ObjectPtr<Release>& release, const ObjectPtr<User>& user);
+        static RatedRelease create(ISession& session, ReleaseId release, UserId user);
+        static void destroy(ISession& session, std::span<const RatedReleaseId> ids);
 
         struct FindParameters
         {
@@ -60,13 +61,15 @@ namespace lms::db
 
         // Search utility
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, RatedReleaseId id);
-        static pointer find(ISession& session, ReleaseId releaseId, UserId userId);
-        static void find(ISession& session, const FindParameters& findParams, std::function<void(const pointer&)> func);
+        static std::optional<RatedRelease> find(ISession& session, RatedReleaseId id);
+        static std::optional<RatedRelease> find(ISession& session, ReleaseId releaseId, UserId userId);
+        static void find(ISession& session, const FindParameters& findParams, const std::function<void(const RatedRelease&)>& func);
+
+        static void update(ISession& session, const RatedRelease& ratedRelease);
 
         // Accessors
-        ObjectPtr<Release> getRelease() const;
-        ObjectPtr<User> getUser() const;
+        ReleaseId getReleaseId() const { return _releaseId; }
+        UserId getUserId() const { return _userId; }
         Rating getRating() const { return _rating; }
         const Wt::WDateTime& getLastUpdated() const { return _lastUpdated; }
 
@@ -79,5 +82,7 @@ namespace lms::db
 
         Rating _rating{};
         Wt::WDateTime _lastUpdated; // when it was rated for the last time
+        ReleaseId _releaseId;
+        UserId _userId;
     };
 } // namespace lms::db

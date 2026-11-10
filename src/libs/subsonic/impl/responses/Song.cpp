@@ -74,47 +74,48 @@ namespace lms::api::subsonic
         }
     } // namespace
 
-    Response::Node createSongNode(RequestContext& context, const db::Track::pointer& track, bool id3)
+    Response::Node createSongNode(RequestContext& context, const db::Track& track, bool id3)
     {
         LMS_SCOPED_TRACE_DETAILED("Subsonic", "CreateSong");
 
-        const auto medium{ track->getMedium() };
+        db::ISession& session{ context.getDbSession() };
+        const std::optional<db::Medium> medium{ db::Medium::find(session, track.getMediumId()) };
 
         Response::Node trackResponse;
 
         if (!id3)
         {
-            if (const auto directory{ track->getDirectory() })
-                trackResponse.setAttribute("parent", idToString(directory->getId()));
+            if (const db::DirectoryId directoryId{ track.getDirectoryId() }; directoryId.isValid())
+                trackResponse.setAttribute("parent", idToString(directoryId));
         }
 
         trackResponse.setAttribute("isDir", false);
-        trackResponse.setAttribute("id", idToString(track->getId()));
-        trackResponse.setAttribute("title", track->getName());
-        if (track->getTrackNumber())
-            trackResponse.setAttribute("track", *track->getTrackNumber());
+        trackResponse.setAttribute("id", idToString(track.getId()));
+        trackResponse.setAttribute("title", track.getName());
+        if (track.getTrackNumber())
+            trackResponse.setAttribute("track", *track.getTrackNumber());
         if (medium && medium->getPosition())
             trackResponse.setAttribute("discNumber", *medium->getPosition());
-        if (const auto originalYear{ track->getOriginalYear() })
+        if (const auto originalYear{ track.getOriginalYear() })
             trackResponse.setAttribute("year", *originalYear);
-        else if (const auto year{ track->getYear() })
+        else if (const auto year{ track.getYear() })
             trackResponse.setAttribute("year", *year);
-        trackResponse.setAttribute("playCount", db::Listen::getCount(context.getDbSession(), context.getUser()->getId(), track->getId()));
+        trackResponse.setAttribute("playCount", db::Listen::getCount(context.getDbSession(), context.getUser()->getId(), track.getId()));
 
         // maybe not available if user just removed the library without rescanning
-        if (const db::MediaLibrary::pointer library{ track->getMediaLibrary() })
+        if (const std::optional<db::MediaLibrary> library{ db::MediaLibrary::find(session, track.getMediaLibraryId()) })
         {
             std::error_code ec;
-            const std::filesystem::path relativeTrackPath{ std::filesystem::relative(track->getAbsoluteFilePath(), library->getPath(), ec) };
+            const std::filesystem::path relativeTrackPath{ std::filesystem::relative(track.getAbsoluteFilePath(), library->getPath(), ec) };
             if (!ec && !relativeTrackPath.empty())
                 trackResponse.setAttribute("path", relativeTrackPath.c_str());
         }
 
-        trackResponse.setAttribute("size", track->getFileSize());
+        trackResponse.setAttribute("size", track.getFileSize());
 
-        if (track->getAbsoluteFilePath().has_extension())
+        if (track.getAbsoluteFilePath().has_extension())
         {
-            auto extension{ track->getAbsoluteFilePath().extension() };
+            auto extension{ track.getAbsoluteFilePath().extension() };
             trackResponse.setAttribute("suffix", extension.string().substr(1) /* skip leading .*/);
         }
 
@@ -125,71 +126,71 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("transcodedContentType", core::getMimeType(std::filesystem::path{ "." + fileSuffix }));
         }
 
-        const db::ArtworkId artworkId{ track->getPreferredMediaArtworkId().isValid() ? track->getPreferredMediaArtworkId() : track->getPreferredArtworkId() };
+        const db::ArtworkId artworkId{ track.getPreferredMediaArtworkId().isValid() ? track.getPreferredMediaArtworkId() : track.getPreferredArtworkId() };
         if (artworkId.isValid())
             trackResponse.setAttribute("coverArt", idToString(artworkId));
 
-        std::vector<db::TrackArtistLink::pointer> artistLinks;
-        std::vector<db::TrackArtistLink::pointer> trackArtistLinks;
-        track->visitArtistLinks([&](const db::TrackArtistLink::pointer& link) {
+        std::vector<db::TrackArtistLink> artistLinks;
+        std::vector<db::TrackArtistLink> trackArtistLinks;
+        db::TrackArtistLink::find(session, db::TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const db::TrackArtistLink& link) {
             artistLinks.push_back(link);
 
-            if (link->getType() == db::TrackArtistLinkType::Artist)
+            if (link.getType() == db::TrackArtistLinkType::Artist)
                 trackArtistLinks.push_back(link);
         });
 
         if (!trackArtistLinks.empty())
         {
-            if (!track->getArtistDisplayName().empty())
-                trackResponse.setAttribute("artist", track->getArtistDisplayName());
+            if (!track.getArtistDisplayName().empty())
+                trackResponse.setAttribute("artist", track.getArtistDisplayName());
             else
                 trackResponse.setAttribute("artist", utils::joinArtistNames(trackArtistLinks));
 
             if (trackArtistLinks.size() == 1)
-                trackResponse.setAttribute("artistId", idToString(trackArtistLinks.front()->getArtistId()));
+                trackResponse.setAttribute("artistId", idToString(trackArtistLinks.front().getArtistId()));
         }
 
-        const db::Release::pointer release{ track->getRelease() };
+        const std::optional<db::Release> release{ db::Release::find(context.getDbSession(), track.getReleaseId()) };
         if (release)
         {
             trackResponse.setAttribute("album", release->getName());
             trackResponse.setAttribute("albumId", idToString(release->getId()));
         }
 
-        trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count());
-        trackResponse.setAttribute("bitRate", (track->getBitrate() / 1000));
+        trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track.getDuration()).count());
+        trackResponse.setAttribute("bitRate", (track.getBitrate() / 1000));
         trackResponse.setAttribute("type", "music");
-        trackResponse.setAttribute("created", core::stringUtils::toISO8601String(track->getAddedTime()));
-        trackResponse.setAttribute("contentType", core::getMimeType(track->getAbsoluteFilePath().extension()));
-        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.getUser()->getId(), track->getId()) })
+        trackResponse.setAttribute("created", core::stringUtils::toISO8601String(track.getAddedTime()));
+        trackResponse.setAttribute("contentType", core::getMimeType(track.getAbsoluteFilePath().extension()));
+        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.getUser()->getId(), track.getId()) })
             trackResponse.setAttribute("userRating", *rating);
 
-        if (const db::TrackFeedback::pointer feedback{ db::TrackFeedback::find(context.getDbSession(), track->getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == db::FeedbackValue::Loved)
+        if (const std::optional<db::TrackFeedback> feedback{ db::TrackFeedback::find(context.getDbSession(), track.getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == db::FeedbackValue::Loved)
             trackResponse.setAttribute("starred", core::stringUtils::toISO8601String(feedback->getDateTime()));
 
         // Report the first genre for this track
-        const auto genres{ track->getGenres() };
+        const auto genres{ db::Genre::find(session, db::Genre::FindParameters{}.setTrack(track.getId())) };
         if (!genres.empty())
-            trackResponse.setAttribute("genre", genres.front()->getName());
+            trackResponse.setAttribute("genre", genres.front().getName());
 
         // OpenSubsonic specific fields (must always be set)
         if (!context.isOpenSubsonicEnabled())
             return trackResponse;
 
-        trackResponse.setAttribute("comment", track->getComment());
-        trackResponse.setAttribute("bitDepth", track->getBitsPerSample() ? *track->getBitsPerSample() : 0);
-        trackResponse.setAttribute("samplingRate", track->getSampleRate());
-        trackResponse.setAttribute("channelCount", track->getChannelCount());
+        trackResponse.setAttribute("comment", track.getComment());
+        trackResponse.setAttribute("bitDepth", track.getBitsPerSample() ? *track.getBitsPerSample() : 0);
+        trackResponse.setAttribute("samplingRate", track.getSampleRate());
+        trackResponse.setAttribute("channelCount", track.getChannelCount());
 
         trackResponse.setAttribute("mediaType", "song");
 
         {
-            const db::Listen::pointer listen{ db::Listen::getMostRecentListen(context.getDbSession(), context.getUser()->getId(), track->getId()) };
+            const std::optional<db::Listen> listen{ db::Listen::getMostRecentListen(context.getDbSession(), context.getUser()->getId(), track.getId()) };
             trackResponse.setAttribute("played", listen ? core::stringUtils::toISO8601String(listen->getDateTime()) : "");
         }
 
         {
-            std::optional<core::UUID> mbid{ track->getRecordingMBID() };
+            std::optional<core::UUID> mbid{ track.getRecordingMBID() };
             trackResponse.setAttribute("musicBrainzId", mbid ? mbid->toString() : "");
         }
 
@@ -200,7 +201,7 @@ namespace lms::api::subsonic
 
             for (const auto& artistLink : artistLinks)
             {
-                switch (artistLink->getType())
+                switch (artistLink.getType())
                 {
                 case db::TrackArtistLinkType::Artist:
                     trackResponse.addArrayChild("artists", createMinimalArtistNode(artistLink));
@@ -212,28 +213,30 @@ namespace lms::api::subsonic
 
             if (release)
             {
-                release->visitArtistLinks([&](const db::ReleaseArtistLink::pointer& artistLink) {
+                db::ReleaseArtistLink::find(context.getDbSession(), release->getId(), [&](const db::ReleaseArtistLink& artistLink) {
                     trackResponse.addArrayChild("albumArtists", createMinimalArtistNode(artistLink));
                 });
             }
         }
 
-        trackResponse.setAttribute("displayArtist", track->getArtistDisplayName());
+        trackResponse.setAttribute("displayArtist", track.getArtistDisplayName());
         if (release)
             trackResponse.setAttribute("displayAlbumArtist", release->getArtistDisplayName());
 
         trackResponse.createEmptyArrayValue("moods");
-        for (const auto& mood : track->getMoods())
-            trackResponse.addArrayValue("moods", mood->getName());
+        db::Mood::find(session, db::Mood::FindParameters{}.setTrack(track.getId()), [&](const db::Mood& mood) {
+            trackResponse.addArrayValue("moods", mood.getName());
+        });
 
         trackResponse.createEmptyArrayValue("groupings");
-        for (const auto& grouping : track->getGroupings())
-            trackResponse.addArrayValue("groupings", grouping->getName());
+        db::Grouping::find(session, db::Grouping::FindParameters{}.setTrack(track.getId()), [&](const db::Grouping& grouping) {
+            trackResponse.addArrayValue("groupings", grouping.getName());
+        });
 
         // Genres
         trackResponse.createEmptyArrayChild("genres");
         for (const auto& genre : genres)
-            trackResponse.addArrayChild("genres", createItemGenreNode(genre->getName()));
+            trackResponse.addArrayChild("genres", createItemGenreNode(genre.getName()));
 
         auto advisoryToExplicitStatus = [](db::Advisory advisory) -> std::string_view {
             switch (advisory)
@@ -249,31 +252,29 @@ namespace lms::api::subsonic
 
             return "";
         };
-        trackResponse.setAttribute("explicitStatus", advisoryToExplicitStatus(track->getAdvisory()));
+        trackResponse.setAttribute("explicitStatus", advisoryToExplicitStatus(track.getAdvisory()));
 
         trackResponse.addChild("replayGain", createReplayGainNode(track, medium));
 
         trackResponse.createEmptyArrayChild("works");
-        for (const auto& work : track->getWorks())
-        {
+        db::Work::find(session, track.getId(), [&](const db::Work& work) {
             Response::Node workNode;
-            workNode.setAttribute("name", work->getName());
-            if (const auto mbid{ work->getMBID() })
+            workNode.setAttribute("name", work.getName());
+            if (const auto mbid{ work.getMBID() })
                 workNode.setAttribute("musicBrainzId", mbid->toString());
             trackResponse.addArrayChild("works", std::move(workNode));
-        }
+        });
 
         trackResponse.createEmptyArrayChild("movements");
-        for (const auto& movement : track->getMovements())
-        {
+        db::Movement::find(session, track.getId(), [&](const db::Movement& movement) {
             Response::Node movementNode;
-            movementNode.setAttribute("name", movement->getName());
-            if (const auto n{ movement->getNumber() })
+            movementNode.setAttribute("name", movement.getName());
+            if (const auto n{ movement.getNumber() })
                 movementNode.setAttribute("number", *n);
-            if (const auto c{ movement->getCount() })
+            if (const auto c{ movement.getCount() })
                 movementNode.setAttribute("count", *c);
             trackResponse.addArrayChild("movements", std::move(movementNode));
-        }
+        });
 
         return trackResponse;
     }

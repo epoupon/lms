@@ -25,15 +25,15 @@
 
 namespace lms::api::subsonic
 {
-    Response::Node createLyricsNode(RequestContext& context, const db::TrackLyrics::pointer& lyrics)
+    Response::Node createLyricsNode(RequestContext& context, const db::TrackLyrics& lyrics)
     {
         Response::Node lyricsNode;
 
-        if (!lyrics->getDisplayArtist().empty())
-            lyricsNode.setAttribute("artist", lyrics->getDisplayArtist());
+        if (!lyrics.getDisplayArtist().empty())
+            lyricsNode.setAttribute("artist", lyrics.getDisplayArtist());
 
-        if (!lyrics->getDisplayTitle().empty())
-            lyricsNode.setAttribute("title", lyrics->getDisplayTitle());
+        if (!lyrics.getDisplayTitle().empty())
+            lyricsNode.setAttribute("title", lyrics.getDisplayTitle());
 
         std::string lyricsText;
         auto addLine{ [&](std::string&& line) {
@@ -41,16 +41,16 @@ namespace lms::api::subsonic
                 lyricsText += "\n";
             lyricsText += std::move(line);
         } };
-        if (!lyrics->isSynchronized())
+        if (!lyrics.isSynchronized())
         {
-            std::vector<std::string> lines{ lyrics->getUnsynchronizedLines() };
+            std::vector<std::string> lines{ lyrics.getUnsynchronizedLines() };
             for (std::string& line : lines)
                 addLine(std::move(line));
         }
         else
         {
             // Reconstruct the lyrics without timestamp if needed
-            db::TrackLyrics::SynchronizedLines lines{ lyrics->getSynchronizedLines() };
+            db::TrackLyrics::SynchronizedLines lines{ lyrics.getSynchronizedLines() };
             for (auto& [timestamp, line] : lines)
                 addLine(std::move(line));
         }
@@ -68,20 +68,20 @@ namespace lms::api::subsonic
         return lyricsNode;
     }
 
-    Response::Node createStructuredLyricsNode(RequestContext& context, const db::ObjectPtr<db::TrackLyrics>& lyrics)
+    Response::Node createStructuredLyricsNode(RequestContext& context, const db::TrackLyrics& lyrics)
     {
         Response::Node lyricsNode;
 
-        if (!lyrics->getDisplayArtist().empty())
-            lyricsNode.setAttribute("artist", lyrics->getDisplayArtist());
+        if (!lyrics.getDisplayArtist().empty())
+            lyricsNode.setAttribute("artist", lyrics.getDisplayArtist());
 
-        if (!lyrics->getDisplayTitle().empty())
-            lyricsNode.setAttribute("title", lyrics->getDisplayTitle());
+        if (!lyrics.getDisplayTitle().empty())
+            lyricsNode.setAttribute("title", lyrics.getDisplayTitle());
 
-        lyricsNode.setAttribute("lang", lyrics->getLanguage());
-        lyricsNode.setAttribute("synced", lyrics->isSynchronized());
-        if (lyrics->getOffset() != std::chrono::milliseconds{})
-            lyricsNode.setAttribute("offset", lyrics->getOffset().count());
+        lyricsNode.setAttribute("lang", lyrics.getLanguage());
+        lyricsNode.setAttribute("synced", lyrics.isSynchronized());
+        if (lyrics.getOffset() != std::chrono::milliseconds{})
+            lyricsNode.setAttribute("offset", lyrics.getOffset().count());
 
         lyricsNode.createEmptyArrayChild("line");
         auto addLine{ [&](std::string&& line, std::optional<std::chrono::milliseconds> timestamp = std::nullopt) {
@@ -101,16 +101,16 @@ namespace lms::api::subsonic
             lyricsNode.addArrayChild("line", std::move(lineNode));
         } };
 
-        if (!lyrics->isSynchronized())
+        if (!lyrics.isSynchronized())
         {
-            std::vector<std::string> lines{ lyrics->getUnsynchronizedLines() };
+            std::vector<std::string> lines{ lyrics.getUnsynchronizedLines() };
 
             for (std::string& line : lines)
                 addLine(std::move(line));
         }
         else
         {
-            db::TrackLyrics::SynchronizedLines lines{ lyrics->getSynchronizedLines() };
+            db::TrackLyrics::SynchronizedLines lines{ lyrics.getSynchronizedLines() };
             for (auto& [timestamp, line] : lines)
                 addLine(std::move(line), timestamp);
         }

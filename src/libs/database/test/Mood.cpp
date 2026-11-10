@@ -36,7 +36,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Mood::getCount(session), 1);
 
-            const Mood::pointer found{ Mood::find(session, mood.getId()) };
+            const std::optional<Mood> found{ Mood::find(session, mood.getId()) };
             ASSERT_TRUE(found);
             EXPECT_EQ(found->getName(), "Happy");
         }
@@ -77,13 +77,13 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Mood::findOrphanIds(session).size(), 2);
-            EXPECT_EQ(track->getMoods().size(), 0);
-            EXPECT_EQ(track->getMoodIds().size(), 0);
+            EXPECT_EQ(Mood::find(session, Mood::FindParameters{}.setTrack(track.getId())).size(), 0);
+            EXPECT_EQ(Mood::findIds(session, Mood::FindParameters{}.setTrack(track.getId())).size(), 0);
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setMoods(std::array{ mood1.get() });
+            Track::setMoods(session, track.getId(), std::array{ mood1.getId() });
         }
 
         {
@@ -97,11 +97,11 @@ namespace lms::db::tests
             ASSERT_EQ(orphans.size(), 1);
             EXPECT_EQ(orphans.front(), mood2.getId());
 
-            const auto trackMoods{ track->getMoods() };
+            const auto trackMoods{ Mood::find(session, Mood::FindParameters{}.setTrack(track.getId())) };
             ASSERT_EQ(trackMoods.size(), 1);
-            EXPECT_EQ(trackMoods.front()->getId(), mood1.getId());
+            EXPECT_EQ(trackMoods.front().getId(), mood1.getId());
 
-            const auto trackMoodIds{ track->getMoodIds() };
+            const auto trackMoodIds{ Mood::findIds(session, Mood::FindParameters{}.setTrack(track.getId())) };
             ASSERT_EQ(trackMoodIds.size(), 1);
             EXPECT_EQ(trackMoodIds.front(), mood1.getId());
         }
@@ -125,14 +125,14 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setMoods(std::array{ mood1.get(), mood2.get() });
+            Track::setMoods(session, track.getId(), std::array{ mood1.getId(), mood2.getId() });
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Mood::findOrphanIds(session).size(), 0);
 
-            const auto trackMoods{ track->getMoods() };
+            const auto trackMoods{ Mood::find(session, Mood::FindParameters{}.setTrack(track.getId())) };
             EXPECT_EQ(trackMoods.size(), 2);
         }
 
@@ -174,9 +174,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setMoods(std::array{ m1.get() });
-            track2.get().modify()->setMoods(std::array{ m1.get() });
-            track3.get().modify()->setMoods(std::array{ m2.get() });
+            Track::setMoods(session, track1.getId(), std::array{ m1.getId() });
+            Track::setMoods(session, track2.getId(), std::array{ m1.getId() });
+            Track::setMoods(session, track3.getId(), std::array{ m2.getId() });
         }
 
         {

@@ -37,7 +37,7 @@ namespace lms::db::tests
             EXPECT_EQ(Listen::getCount(session), 0);
         }
 
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
+        ScopedListen listen{ session, user.getId(), track.getId(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -47,7 +47,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            ScopedListen listen2{ session, user.get(), track.get(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 13, 0, 1 } } };
+            ScopedListen listen2{ session, user.getId(), track.getId(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 13, 0, 1 } } };
 
             EXPECT_EQ(Listen::getCount(session), 2);
         }
@@ -65,7 +65,7 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
         ScopedUser otherUser{ session, "OtherUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -87,9 +87,9 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 3 } } };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
-        ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 2 } } };
+        ScopedListen listen3{ session, user.getId(), track.getId(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 3 } } };
+        ScopedListen listen1{ session, user.getId(), track.getId(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
+        ScopedListen listen2{ session, user.getId(), track.getId(), Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 2 } } };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -110,26 +110,26 @@ namespace lms::db::tests
         const Wt::WDateTime dateTime2{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 2 } };
         ASSERT_GT(dateTime2, dateTime1);
 
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), dateTime1 };
-        ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), dateTime2 };
+        ScopedListen listen1{ session, user.getId(), track.getId(), dateTime1 };
+        ScopedListen listen2{ session, user.getId(), track.getId(), dateTime2 };
 
         {
             auto transaction{ session.createReadTransaction() };
 
             {
-                Listen::pointer listen{ Listen::find(session, user.getId(), track.getId(), dateTime1) };
+                std::optional<Listen> listen{ Listen::find(session, user.getId(), track.getId(), dateTime1) };
                 ASSERT_TRUE(listen);
                 EXPECT_EQ(listen->getId(), listen1.getId());
             }
 
             {
-                Listen::pointer listen{ Listen::find(session, user.getId(), track.getId(), dateTime2) };
+                std::optional<Listen> listen{ Listen::find(session, user.getId(), track.getId(), dateTime2) };
                 ASSERT_TRUE(listen);
                 EXPECT_EQ(listen->getId(), listen2.getId());
             }
 
             {
-                Listen::pointer listen{ Listen::find(session, user.getId(), track.getId(), dateTime2.addSecs(56)) };
+                std::optional<Listen> listen{ Listen::find(session, user.getId(), track.getId(), dateTime2.addSecs(56)) };
                 EXPECT_FALSE(listen);
             }
         }
@@ -140,7 +140,7 @@ namespace lms::db::tests
         ScopedTrack track1{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), dateTime1 };
+        ScopedListen listen1{ session, user.getId(), track1.getId(), dateTime1 };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -154,12 +154,12 @@ namespace lms::db::tests
 
         ScopedTrack track2{ session };
         ScopedArtist artist1{ session, "MyArtist1" };
-        ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), dateTime1.addSecs(1) };
+        ScopedListen listen2{ session, user.getId(), track2.getId(), dateTime1.addSecs(1) };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            TrackArtistLink::create(session, track2.get(), artist1.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2.getId(), artist1.getId(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -185,7 +185,7 @@ namespace lms::db::tests
 
         {
             ScopedClusterType clusterType{ session, "MyType" };
-            ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+            ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
 
             {
                 auto transaction{ session.createReadTransaction() };
@@ -211,8 +211,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLinkType::Artist);
-            TrackArtistLink::create(session, track2.get(), artist2.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.getId(), artist1.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2.getId(), artist2.getId(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -225,7 +225,7 @@ namespace lms::db::tests
             EXPECT_EQ(artists.size(), 0);
         }
 
-        ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), dateTime.addSecs(1) };
+        ScopedListen listen1{ session, user.getId(), track1.getId(), dateTime.addSecs(1) };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -237,8 +237,8 @@ namespace lms::db::tests
             EXPECT_EQ(artists[0], artist1->getId());
         }
 
-        ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), dateTime.addSecs(2) };
-        ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), dateTime.addSecs(3) };
+        ScopedListen listen2{ session, user.getId(), track2.getId(), dateTime.addSecs(2) };
+        ScopedListen listen3{ session, user.getId(), track2.getId(), dateTime.addSecs(3) };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -269,13 +269,13 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
         ScopedClusterType clusterType{ session, "MyType" };
-        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+        ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -290,7 +290,7 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createWriteTransaction() };
-            cluster.get().modify()->addTrack(track.get());
+            Cluster::addTrack(session, cluster.getId(), track.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
@@ -311,7 +311,7 @@ namespace lms::db::tests
         ScopedArtist artist{ session, "MyArtist" };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime1 };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime1 };
         ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
         ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
@@ -329,8 +329,10 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
-            track.get().modify()->setMediaLibrary(library.get());
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setMediaLibrary(library.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -374,7 +376,9 @@ namespace lms::db::tests
         ScopedRelease release{ session, "MyRelease" };
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -387,7 +391,7 @@ namespace lms::db::tests
             EXPECT_EQ(releases.size(), 0);
         }
 
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -407,14 +411,18 @@ namespace lms::db::tests
         ScopedTrack track2{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), dateTime };
+        ScopedListen listen1{ session, user.getId(), track1.getId(), dateTime };
         ScopedRelease release1{ session, "MyRelease1" };
         ScopedRelease release2{ session, "MyRelease2" };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setRelease(release1.get());
-            track2.get().modify()->setRelease(release2.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1);
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2);
         }
 
         {
@@ -427,8 +435,8 @@ namespace lms::db::tests
             ASSERT_EQ(releases.size(), 1);
             EXPECT_EQ(releases[0], release1.getId());
         }
-        ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), dateTime };
-        ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), dateTime };
+        ScopedListen listen2{ session, user.getId(), track2.getId(), dateTime };
+        ScopedListen listen3{ session, user.getId(), track2.getId(), dateTime };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -440,8 +448,8 @@ namespace lms::db::tests
             EXPECT_EQ(releases[0], release2.getId());
             EXPECT_EQ(releases[1], release1.getId());
         }
-        ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), dateTime };
-        ScopedListen listen5{ session, user.lockAndGet(), track1.lockAndGet(), dateTime };
+        ScopedListen listen4{ session, user.getId(), track1.getId(), dateTime };
+        ScopedListen listen5{ session, user.getId(), track1.getId(), dateTime };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -460,14 +468,16 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
         ScopedClusterType clusterType{ session, "MyType" };
-        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+        ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
         ScopedRelease release{ session, "MyRelease" };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -482,7 +492,7 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createWriteTransaction() };
-            cluster.get().modify()->addTrack(track.get());
+            Cluster::addTrack(session, cluster.getId(), track.getId());
         }
 
         {
@@ -509,8 +519,10 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
-            track.get().modify()->setMediaLibrary(library.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            updatedTrack->setMediaLibrary(library.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -524,7 +536,7 @@ namespace lms::db::tests
             EXPECT_EQ(releases.size(), 0);
         }
 
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -565,7 +577,7 @@ namespace lms::db::tests
             ASSERT_EQ(tracks.size(), 0);
         }
 
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -597,7 +609,7 @@ namespace lms::db::tests
             ASSERT_EQ(tracks.size(), 0);
         }
 
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -612,7 +624,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -634,7 +646,7 @@ namespace lms::db::tests
         ScopedTrack track2{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), dateTime };
+        ScopedListen listen1{ session, user.getId(), track1.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -646,8 +658,8 @@ namespace lms::db::tests
             ASSERT_EQ(tracks.size(), 1);
             EXPECT_EQ(tracks[0], track1.getId());
         }
-        ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), dateTime };
-        ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), dateTime };
+        ScopedListen listen2{ session, user.getId(), track2.getId(), dateTime };
+        ScopedListen listen3{ session, user.getId(), track2.getId(), dateTime };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -659,8 +671,8 @@ namespace lms::db::tests
             EXPECT_EQ(tracks[0], track2.getId());
             EXPECT_EQ(tracks[1], track1.getId());
         }
-        ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), dateTime };
-        ScopedListen listen5{ session, user.lockAndGet(), track1.lockAndGet(), dateTime };
+        ScopedListen listen4{ session, user.getId(), track1.getId(), dateTime };
+        ScopedListen listen5{ session, user.getId(), track1.getId(), dateTime };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -679,9 +691,9 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
         ScopedClusterType clusterType{ session, "MyType" };
-        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+        ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -695,7 +707,7 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createWriteTransaction() };
-            cluster.get().modify()->addTrack(track.get());
+            Cluster::addTrack(session, cluster.getId(), track.getId());
         }
 
         {
@@ -732,10 +744,12 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setMediaLibrary(library.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setMediaLibrary(library.getId());
+            Track::update(session, *updatedTrack);
         }
 
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -769,8 +783,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
-            ReleaseArtistLink::create(session, release.get(), artist.get(), false);
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            ReleaseArtistLink::create(session, release.getId(), artist.getId(), false);
         }
 
         {
@@ -785,7 +799,7 @@ namespace lms::db::tests
         }
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen1{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -808,7 +822,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -822,7 +836,7 @@ namespace lms::db::tests
         }
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen1{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -858,7 +872,7 @@ namespace lms::db::tests
         }
         {
             ScopedClusterType clusterType{ session, "MyType" };
-            ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+            ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
 
             {
                 auto transaction{ session.createReadTransaction() };
@@ -884,8 +898,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLinkType::Artist);
-            TrackArtistLink::create(session, track2.get(), artist2.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.getId(), artist1.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2.getId(), artist2.getId(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -898,7 +912,7 @@ namespace lms::db::tests
             EXPECT_EQ(artists.size(), 0);
         }
 
-        ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), dateTime.addSecs(1) };
+        ScopedListen listen1{ session, user.getId(), track1.getId(), dateTime.addSecs(1) };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -909,7 +923,7 @@ namespace lms::db::tests
             ASSERT_EQ(artists.size(), 1);
             EXPECT_EQ(artists[0], artist1->getId());
         }
-        ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), dateTime.addSecs(2) };
+        ScopedListen listen2{ session, user.getId(), track2.getId(), dateTime.addSecs(2) };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -921,7 +935,7 @@ namespace lms::db::tests
             EXPECT_EQ(artists[0], artist2->getId());
             EXPECT_EQ(artists[1], artist1->getId());
         }
-        ScopedListen listen3{ session, user.lockAndGet(), track1.lockAndGet(), dateTime.addSecs(-1) };
+        ScopedListen listen3{ session, user.getId(), track1.getId(), dateTime.addSecs(-1) };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -941,13 +955,13 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
         ScopedClusterType clusterType{ session, "MyType" };
-        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+        ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -962,7 +976,7 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createWriteTransaction() };
-            cluster.get().modify()->addTrack(track.get());
+            Cluster::addTrack(session, cluster.getId(), track.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
@@ -987,12 +1001,14 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
-            track.get().modify()->setMediaLibrary(library.get());
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setMediaLibrary(library.getId());
+            Track::update(session, *updatedTrack);
         }
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen1{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1023,7 +1039,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -1037,7 +1055,7 @@ namespace lms::db::tests
         }
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen1{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1059,7 +1077,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -1070,7 +1090,7 @@ namespace lms::db::tests
         }
 
         const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), dateTime1 };
+        ScopedListen listen1{ session, user.getId(), track.getId(), dateTime1 };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1081,7 +1101,7 @@ namespace lms::db::tests
         }
 
         const Wt::WDateTime dateTime2{ Wt::WDate{ 1999, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), dateTime2 };
+        ScopedListen listen2{ session, user.getId(), track.getId(), dateTime2 };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1092,7 +1112,7 @@ namespace lms::db::tests
         }
 
         const Wt::WDateTime dateTime3{ Wt::WDate{ 2001, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), dateTime3 };
+        ScopedListen listen3{ session, user.getId(), track.getId(), dateTime3 };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1113,12 +1133,16 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setRelease(release1.get());
-            track2.get().modify()->setRelease(release2.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1);
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2);
         }
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track2.lockAndGet(), dateTime };
+        ScopedListen listen1{ session, user.getId(), track2.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1131,7 +1155,7 @@ namespace lms::db::tests
             EXPECT_EQ(releases[0], release2.getId());
         }
 
-        ScopedListen listen2{ session, user.lockAndGet(), track1.lockAndGet(), dateTime.addSecs(1) };
+        ScopedListen listen2{ session, user.getId(), track1.getId(), dateTime.addSecs(1) };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -1144,7 +1168,7 @@ namespace lms::db::tests
             EXPECT_EQ(releases[1], release2.getId());
         }
 
-        ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), dateTime.addSecs(2) };
+        ScopedListen listen3{ session, user.getId(), track2.getId(), dateTime.addSecs(2) };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -1157,7 +1181,7 @@ namespace lms::db::tests
             EXPECT_EQ(releases[1], release1.getId());
         }
 
-        ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), dateTime.addSecs(-1) };
+        ScopedListen listen4{ session, user.getId(), track1.getId(), dateTime.addSecs(-1) };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -1176,12 +1200,14 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedClusterType clusterType{ session, "MyType" };
-        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+        ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
         ScopedRelease release{ session, "MyRelease" };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
         }
         {
             auto transaction{ session.createReadTransaction() };
@@ -1195,7 +1221,7 @@ namespace lms::db::tests
         }
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1210,7 +1236,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            cluster.get().modify()->addTrack(track.get());
+            Cluster::addTrack(session, cluster.getId(), track.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
@@ -1235,12 +1261,14 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
-            track.get().modify()->setMediaLibrary(library.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            updatedTrack->setMediaLibrary(library.getId());
+            Track::update(session, *updatedTrack);
         }
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen1{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1279,7 +1307,7 @@ namespace lms::db::tests
         }
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen1{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1301,11 +1329,13 @@ namespace lms::db::tests
         ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen1{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setMediaLibrary(library.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setMediaLibrary(library.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -1343,7 +1373,7 @@ namespace lms::db::tests
         }
 
         const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), dateTime1 };
+        ScopedListen listen1{ session, user.getId(), track.getId(), dateTime1 };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1368,29 +1398,33 @@ namespace lms::db::tests
         EXPECT_EQ(getReleaseListenCount(), 0);
 
         const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), dateTime1 };
+        ScopedListen listen1{ session, user.getId(), track1.getId(), dateTime1 };
 
         EXPECT_EQ(getReleaseListenCount(), 0);
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setRelease(release.getId());
+            Track::update(session, *updatedTrack1);
         }
 
         EXPECT_EQ(getReleaseListenCount(), 1);
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track2.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setRelease(release.getId());
+            Track::update(session, *updatedTrack2);
         }
 
         EXPECT_EQ(getReleaseListenCount(), 0);
-        ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), dateTime1 };
+        ScopedListen listen2{ session, user.getId(), track2.getId(), dateTime1 };
         EXPECT_EQ(getReleaseListenCount(), 1);
-        ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), dateTime1 };
+        ScopedListen listen3{ session, user.getId(), track2.getId(), dateTime1 };
         EXPECT_EQ(getReleaseListenCount(), 1);
 
-        ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), dateTime1 };
+        ScopedListen listen4{ session, user.getId(), track1.getId(), dateTime1 };
         EXPECT_EQ(getReleaseListenCount(), 2);
     }
 
@@ -1407,7 +1441,7 @@ namespace lms::db::tests
         }
 
         const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), dateTime1 };
+        ScopedListen listen1{ session, user.getId(), track.getId(), dateTime1 };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1418,7 +1452,7 @@ namespace lms::db::tests
         }
 
         const Wt::WDateTime dateTime2{ Wt::WDate{ 1999, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), dateTime2 };
+        ScopedListen listen2{ session, user.getId(), track.getId(), dateTime2 };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1429,7 +1463,7 @@ namespace lms::db::tests
         }
 
         const Wt::WDateTime dateTime3{ Wt::WDate{ 2001, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), dateTime3 };
+        ScopedListen listen3{ session, user.getId(), track.getId(), dateTime3 };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1447,7 +1481,7 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen1{ session, user.lockAndGet(), track2.lockAndGet(), dateTime };
+        ScopedListen listen1{ session, user.getId(), track2.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1460,7 +1494,7 @@ namespace lms::db::tests
             EXPECT_EQ(tracks[0], track2.getId());
         }
 
-        ScopedListen listen2{ session, user.lockAndGet(), track1.lockAndGet(), dateTime.addSecs(1) };
+        ScopedListen listen2{ session, user.getId(), track1.getId(), dateTime.addSecs(1) };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -1473,7 +1507,7 @@ namespace lms::db::tests
             EXPECT_EQ(tracks[1], track2.getId());
         }
 
-        ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), dateTime.addSecs(2) };
+        ScopedListen listen3{ session, user.getId(), track2.getId(), dateTime.addSecs(2) };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -1486,7 +1520,7 @@ namespace lms::db::tests
             EXPECT_EQ(tracks[1], track1.getId());
         }
 
-        ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), dateTime.addSecs(-1) };
+        ScopedListen listen4{ session, user.getId(), track1.getId(), dateTime.addSecs(-1) };
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -1505,9 +1539,9 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
         ScopedClusterType clusterType{ session, "MyType" };
-        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+        ScopedCluster cluster{ session, clusterType.getId(), "MyCluster" };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1521,7 +1555,7 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createWriteTransaction() };
-            cluster.get().modify()->addTrack(track.get());
+            Cluster::addTrack(session, cluster.getId(), track.getId());
         }
 
         {
@@ -1543,11 +1577,11 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -1556,8 +1590,8 @@ namespace lms::db::tests
             std::vector<ArtistId> ids;
             Listen::ArtistStatsFindParameters params;
             params.setUser(user->getId());
-            Listen::getTopArtists(session, params, [&](const Artist::pointer& a) {
-                ids.push_back(a->getId());
+            Listen::getTopArtists(session, params, [&](const Artist& a) {
+                ids.push_back(a.getId());
             });
             ASSERT_EQ(ids.size(), 1);
             EXPECT_EQ(ids[0], artist->getId());
@@ -1570,11 +1604,13 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
         ScopedRelease release{ session, "MyRelease" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -1583,8 +1619,8 @@ namespace lms::db::tests
             std::vector<ReleaseId> ids;
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            Listen::getTopReleases(session, params, [&](const Release::pointer& r) {
-                ids.push_back(r->getId());
+            Listen::getTopReleases(session, params, [&](const Release& r) {
+                ids.push_back(r.getId());
             });
             ASSERT_EQ(ids.size(), 1);
             EXPECT_EQ(ids[0], release->getId());
@@ -1596,7 +1632,7 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1604,8 +1640,8 @@ namespace lms::db::tests
             std::vector<TrackId> ids;
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            Listen::getTopTracks(session, params, [&](const Track::pointer& t) {
-                ids.push_back(t->getId());
+            Listen::getTopTracks(session, params, [&](const Track& t) {
+                ids.push_back(t.getId());
             });
             ASSERT_EQ(ids.size(), 1);
             EXPECT_EQ(ids[0], track->getId());
@@ -1618,11 +1654,11 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -1631,8 +1667,8 @@ namespace lms::db::tests
             std::vector<ArtistId> ids;
             Listen::ArtistStatsFindParameters params;
             params.setUser(user->getId());
-            Listen::getRecentArtists(session, params, [&](const Artist::pointer& a) {
-                ids.push_back(a->getId());
+            Listen::getRecentArtists(session, params, [&](const Artist& a) {
+                ids.push_back(a.getId());
             });
             ASSERT_EQ(ids.size(), 1);
             EXPECT_EQ(ids[0], artist->getId());
@@ -1645,11 +1681,13 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
         ScopedRelease release{ session, "MyRelease" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -1658,8 +1696,8 @@ namespace lms::db::tests
             std::vector<ReleaseId> ids;
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            Listen::getRecentReleases(session, params, [&](const Release::pointer& r) {
-                ids.push_back(r->getId());
+            Listen::getRecentReleases(session, params, [&](const Release& r) {
+                ids.push_back(r.getId());
             });
             ASSERT_EQ(ids.size(), 1);
             EXPECT_EQ(ids[0], release->getId());
@@ -1671,7 +1709,7 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), dateTime };
+        ScopedListen listen{ session, user.getId(), track.getId(), dateTime };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1679,8 +1717,8 @@ namespace lms::db::tests
             std::vector<TrackId> ids;
             Listen::StatsFindParameters params;
             params.setUser(user->getId());
-            Listen::getRecentTracks(session, params, [&](const Track::pointer& t) {
-                ids.push_back(t->getId());
+            Listen::getRecentTracks(session, params, [&](const Track& t) {
+                ids.push_back(t.getId());
             });
             ASSERT_EQ(ids.size(), 1);
             EXPECT_EQ(ids[0], track->getId());

@@ -23,9 +23,9 @@
 
 #include "database/Types.hpp"
 
+#include "DboAccess.hpp"
 #include "DirectoryDbo.hpp"
 #include "MediaLibraryDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
@@ -137,7 +137,7 @@ namespace lms::db
         setAbsolutePath(p);
     }
 
-    Directory::pointer Directory::create(ISession& session, const std::filesystem::path& p)
+    Directory Directory::create(ISession& session, const std::filesystem::path& p)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Directory>{ new dbo::Directory{ p } });
     }
@@ -154,44 +154,45 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM directory"));
     }
 
-    Directory::pointer Directory::find(ISession& session, DirectoryId id)
+    std::optional<Directory> Directory::find(ISession& session, DirectoryId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.id = ?").bind(id));
     }
 
-    Directory::pointer Directory::find(ISession& session, const std::filesystem::path& path)
+    std::optional<Directory> Directory::find(ISession& session, const std::filesystem::path& path)
     {
         checkReadTransaction(session);
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.absolute_path = ?").bind(path));
     }
 
-    void Directory::find(ISession& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory::pointer&)>& func)
+    void Directory::find(ISession& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory&)>& func)
     {
         checkReadTransaction(session);
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").orderBy("d.id").where("d.id > ?").bind(lastRetrievedDirectory).limit(static_cast<int>(count)) };
 
-        utils::forEachQueryObject(query, [&](const Directory::pointer& image) {
+        utils::forEachQueryObject(query, [&](const Directory& image) {
             func(image);
-            lastRetrievedDirectory = image->getId();
+            lastRetrievedDirectory = image.getId();
         });
     }
 
-    std::vector<Directory::pointer> Directory::find(ISession& session, const FindParameters& params)
+    std::vector<Directory> Directory::find(ISession& session, const FindParameters& params)
     {
         auto query{ createQuery(session, params) };
         return utils::execRangeObjectQuery(query, params.range);
     }
 
-    void Directory::find(ISession& session, const FindParameters& params, const std::function<void(const Directory::pointer&)>& func)
+    void Directory::find(ISession& session, const FindParameters& params, const std::function<void(const Directory&)>& func)
     {
         auto query{ createQuery(session, params) };
-        utils::forEachQueryRangeObject(query, params.range, [&func](const Directory::pointer& dir) {
-            func(dir);
-        });
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     std::vector<DirectoryId> Directory::findOrphanIds(ISession& session, std::optional<Range> range)
@@ -226,7 +227,7 @@ namespace lms::db
         return utils::execRangeQuery<DirectoryId>(query, range);
     }
 
-    std::vector<Directory::pointer> Directory::findRootDirectories(ISession& session, std::optional<Range> range)
+    std::vector<Directory> Directory::findRootDirectories(ISession& session, std::optional<Range> range)
     {
         checkReadTransaction(session);
 
@@ -250,36 +251,15 @@ namespace lms::db
         }
     }
 
-    void Directory::setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary)
+    void dbo::Directory::applyIds()
     {
-        getDbo(*this)._mediaLibrary = getDboPtr(mediaLibrary);
+        setRelation(*session(), _mediaLibrary, _mediaLibraryId);
+        setRelation(*session(), _parent, _parentDirectoryId);
+        assert(!_parent || (_absolutePath.has_parent_path() && _parent->getAbsolutePath() == _absolutePath.parent_path()));
     }
 
-    void Directory::setParent(const ObjectPtr<Directory>& parent)
+    void Directory::update(ISession& session, const Directory& directory)
     {
-#ifndef NDEBUG
-        if (parent)
-        {
-            assert(_absolutePath.has_parent_path());
-            assert(parent->getAbsolutePath() == _absolutePath.parent_path());
-        }
-#endif
-
-        getDbo(*this)._parent = getDboPtr(parent);
-    }
-
-    ObjectPtr<Directory> Directory::getParentDirectory() const
-    {
-        return toObjectPtr(getDbo(*this)._parent);
-    }
-
-    DirectoryId Directory::getParentDirectoryId() const
-    {
-        return getDbo(*this)._parent.id();
-    }
-
-    ObjectPtr<MediaLibrary> Directory::getMediaLibrary() const
-    {
-        return toObjectPtr(getDbo(*this)._mediaLibrary);
+        utils::updateObject<dbo::Directory>(session, directory);
     }
 } // namespace lms::db

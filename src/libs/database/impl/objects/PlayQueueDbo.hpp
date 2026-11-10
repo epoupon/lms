@@ -25,7 +25,7 @@
 
 #include "database/objects/PlayQueue.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -38,7 +38,13 @@ namespace lms::db::dbo
         PlayQueue() = default;
         using db::PlayQueue::PlayQueue;
 
-        PlayQueue(const ObjectPtr<db::User>& user, std::string_view name);
+        PlayQueue(Wt::Dbo::ptr<User> user, std::string_view name);
+
+        void syncIds()
+        {
+            _id = id();
+            _userId = _user.id();
+        }
 
         template<class Action>
         void persist(Action& a)

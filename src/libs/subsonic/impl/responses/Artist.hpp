@@ -22,7 +22,6 @@
 #include <string>
 #include <vector>
 
-#include "database/Object.hpp"
 #include "database/objects/Types.hpp"
 
 #include "SubsonicResponse.hpp"
@@ -30,10 +29,8 @@
 namespace lms::db
 {
     class Artist;
-    class ISession;
     class ReleaseArtistLink;
     class TrackArtistLink;
-    class User;
 } // namespace lms::db
 
 namespace lms::api::subsonic
@@ -42,12 +39,12 @@ namespace lms::api::subsonic
 
     namespace utils
     {
-        std::string joinArtistNames(const std::vector<db::ObjectPtr<db::TrackArtistLink>>& links);
+        std::string joinArtistNames(const std::vector<db::TrackArtistLink>& links);
         std::string_view toString(db::TrackArtistLinkType type);
     } // namespace utils
 
-    Response::Node createArtistNode(RequestContext& context, const db::ObjectPtr<db::Artist>& artist);
-    Response::Node createMinimalArtistNode(const db::ObjectPtr<db::Artist>& artist);                // only minimal info
-    Response::Node createMinimalArtistNode(const db::ObjectPtr<db::ReleaseArtistLink>& artistLink); // only minimal info
-    Response::Node createMinimalArtistNode(const db::ObjectPtr<db::TrackArtistLink>& artistLink);   // only minimal info
+    Response::Node createArtistNode(RequestContext& context, const db::Artist& artist);
+    Response::Node createMinimalArtistNode(const db::Artist& artist);                // only minimal info
+    Response::Node createMinimalArtistNode(const db::ReleaseArtistLink& artistLink); // only minimal info
+    Response::Node createMinimalArtistNode(const db::TrackArtistLink& artistLink);   // only minimal info
 } // namespace lms::api::subsonic

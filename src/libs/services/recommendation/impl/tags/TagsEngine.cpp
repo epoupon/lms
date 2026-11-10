@@ -148,17 +148,17 @@ namespace lms::recommendation
         for (const auto& [trackId, tags] : _trackTags)
             _trackMetadata.try_emplace(trackId);
 
-        db::Track::find(session, db::Track::FindParameters{}, [&](const db::Track::pointer& track) {
-            const auto it{ _trackMetadata.find(track->getId()) };
+        db::Track::find(session, db::Track::FindParameters{}, [&](const db::Track& track) {
+            const auto it{ _trackMetadata.find(track.getId()) };
             if (it != _trackMetadata.cend())
             {
-                it->second.releaseId = track->getReleaseId();
-                it->second.recordingMBID = track->getRecordingMBID();
+                it->second.releaseId = track.getReleaseId();
+                it->second.recordingMBID = track.getRecordingMBID();
             }
         });
 
-        db::Artist::find(session, db::Artist::FindParameters{}, [&](const db::Artist::pointer& artist) {
-            const auto mbid{ artist->getMBID() };
+        db::Artist::find(session, db::Artist::FindParameters{}, [&](const db::Artist& artist) {
+            const auto mbid{ artist.getMBID() };
             // skip "Various Artists" to avoid false artist matches
             if (mbid && mbid->toString() == "89ad4ac3-39f7-470e-963a-56509c546377")
                 return;
@@ -167,7 +167,7 @@ namespace lms::recommendation
 
             {
                 db::Release::FindParameters params;
-                params.setArtist(artist->getId());
+                params.setArtist(artist.getId());
 
                 for (const db::ReleaseId releaseId : db::Release::findIds(session, params))
                 {
@@ -179,7 +179,7 @@ namespace lms::recommendation
             }
 
             for (const db::TrackId trackId : artistTrackIds)
-                _trackMetadata[trackId].artistIds.push_back(artist->getId());
+                _trackMetadata[trackId].artistIds.push_back(artist.getId());
         });
 
         for (auto& [trackId, metadata] : _trackMetadata)
@@ -190,47 +190,47 @@ namespace lms::recommendation
     {
         LOG(DEBUG, "building track tags...");
 
-        db::Genre::find(session, db::Genre::FindParameters{}, [&](const db::Genre::pointer& genre) {
-            const TagId tagId{ .type = TagId::Type::Genre, .id = genre->getId() };
+        db::Genre::find(session, db::Genre::FindParameters{}, [&](const db::Genre& genre) {
+            const TagId tagId{ .type = TagId::Type::Genre, .id = genre.getId() };
 
             db::Track::FindParameters params;
-            params.setFilter(db::FilterExpr::equal(genre->getId()));
+            params.setFilter(db::FilterExpr::equal(genre.getId()));
 
-            db::Track::find(session, params, [&](const db::Track::pointer& track) {
-                _trackTags[track->getId()].push_back(tagId);
+            db::Track::find(session, params, [&](const db::Track& track) {
+                _trackTags[track.getId()].push_back(tagId);
             });
         });
 
-        db::Mood::find(session, db::Mood::FindParameters{}, [&](const db::Mood::pointer& mood) {
-            const TagId tagId{ .type = TagId::Type::Mood, .id = mood->getId() };
+        db::Mood::find(session, db::Mood::FindParameters{}, [&](const db::Mood& mood) {
+            const TagId tagId{ .type = TagId::Type::Mood, .id = mood.getId() };
 
             db::Track::FindParameters params;
-            params.setFilter(db::FilterExpr::equal(mood->getId()));
+            params.setFilter(db::FilterExpr::equal(mood.getId()));
 
-            db::Track::find(session, params, [&](const db::Track::pointer& track) {
-                _trackTags[track->getId()].push_back(tagId);
+            db::Track::find(session, params, [&](const db::Track& track) {
+                _trackTags[track.getId()].push_back(tagId);
             });
         });
 
-        db::Grouping::find(session, db::Grouping::FindParameters{}, [&](const db::Grouping::pointer& grouping) {
-            const TagId tagId{ .type = TagId::Type::Grouping, .id = grouping->getId() };
+        db::Grouping::find(session, db::Grouping::FindParameters{}, [&](const db::Grouping& grouping) {
+            const TagId tagId{ .type = TagId::Type::Grouping, .id = grouping.getId() };
 
             db::Track::FindParameters params;
-            params.setFilter(db::FilterExpr::equal(grouping->getId()));
+            params.setFilter(db::FilterExpr::equal(grouping.getId()));
 
-            db::Track::find(session, params, [&](const db::Track::pointer& track) {
-                _trackTags[track->getId()].push_back(tagId);
+            db::Track::find(session, params, [&](const db::Track& track) {
+                _trackTags[track.getId()].push_back(tagId);
             });
         });
 
-        db::Language::find(session, db::Language::FindParameters{}, [&](const db::Language::pointer& language) {
-            const TagId tagId{ .type = TagId::Type::Language, .id = language->getId() };
+        db::Language::find(session, db::Language::FindParameters{}, [&](const db::Language& language) {
+            const TagId tagId{ .type = TagId::Type::Language, .id = language.getId() };
 
             db::Track::FindParameters params;
-            params.setFilter(db::FilterExpr::equal(language->getId()));
+            params.setFilter(db::FilterExpr::equal(language.getId()));
 
-            db::Track::find(session, params, [&](const db::Track::pointer& track) {
-                _trackTags[track->getId()].push_back(tagId);
+            db::Track::find(session, params, [&](const db::Track& track) {
+                _trackTags[track.getId()].push_back(tagId);
             });
         });
     }
@@ -376,11 +376,10 @@ namespace lms::recommendation
             db::ISession& dbSession{ _db.getTLSSession() };
             auto transaction{ dbSession.createReadTransaction() };
 
-            const db::TrackList::pointer trackList{ db::TrackList::find(dbSession, tracklistId) };
-            if (!trackList)
+            if (!db::TrackList::find(dbSession, tracklistId))
                 return {};
 
-            trackIds = trackList->getTrackIds();
+            trackIds = db::Track::findIds(dbSession, db::Track::FindParameters{}.setTrackList(tracklistId));
         }
 
         if (trackIds.empty())

@@ -27,19 +27,19 @@
 #include <string_view>
 #include <vector>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/GenreId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
 
-    class Genre : public Object<Genre, GenreId>
+    class Genre : public detail::Object<Genre, GenreId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -79,19 +79,21 @@ namespace lms::db
             }
         };
 
-        static pointer create(ISession& session, std::string_view name);
+        static Genre create(ISession& session, std::string_view name);
         static void destroy(ISession& session, std::span<const GenreId> ids);
 
         static std::size_t getCount(ISession& session);
         static std::vector<GenreId> findIds(ISession& session, const FindParameters& params);
-        static std::vector<pointer> find(ISession& session, const FindParameters& params);
-        static void find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func);
-        static pointer find(ISession& session, GenreId id);
-        static pointer find(ISession& session, std::string_view name);
+        static std::vector<Genre> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Genre&)>& func);
+        static std::optional<Genre> find(ISession& session, GenreId id);
+        static std::optional<Genre> find(ISession& session, std::string_view name);
         static std::vector<GenreId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         static std::size_t computeTrackCount(ISession& session, GenreId id);
         static std::size_t computeReleaseCount(ISession& session, GenreId id);
+
+        static void update(ISession& session, const Genre& genre);
 
         std::string_view getName() const { return _name; }
         std::size_t getTrackCount() const { return _trackCount; }

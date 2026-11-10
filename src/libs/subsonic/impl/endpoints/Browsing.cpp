@@ -55,16 +55,16 @@ namespace lms::api::subsonic
 
     namespace
     {
-        std::vector<Directory::pointer> getRootDirectories(ISession& session, MediaLibraryId libraryId)
+        std::vector<Directory> getRootDirectories(ISession& session, MediaLibraryId libraryId)
         {
-            std::vector<Directory::pointer> res;
+            std::vector<Directory> res;
 
             if (libraryId.isValid())
             {
-                if (const MediaLibrary::pointer library{ MediaLibrary::find(session, libraryId) })
+                if (const std::optional<MediaLibrary> library{ MediaLibrary::find(session, libraryId) })
                 {
-                    if (Directory::pointer rootDirectory{ Directory::find(session, library->getPath()) })
-                        res.push_back(rootDirectory);
+                    if (std::optional<Directory> rootDirectory{ Directory::find(session, library->getPath()) })
+                        res.push_back(*rootDirectory);
                 }
             }
             else
@@ -88,15 +88,15 @@ namespace lms::api::subsonic
             }
         };
 
-        using IndexMap = std::map<char, std::vector<Directory::pointer>, IndexComparator>;
-        void getIndexedChildDirectories(RequestContext& context, const Directory::pointer& parentDirectory, IndexMap& res)
+        using IndexMap = std::map<char, std::vector<Directory>, IndexComparator>;
+        void getIndexedChildDirectories(RequestContext& context, const Directory& parentDirectory, IndexMap& res)
         {
             Directory::FindParameters params;
-            params.setParentDirectory(parentDirectory->getId());
+            params.setParentDirectory(parentDirectory.getId());
             params.setSortMethod(DirectorySortMethod::Name);
 
-            Directory::find(context.getDbSession(), params, [&](const Directory::pointer& directory) {
-                const std::string_view name{ directory->getName() };
+            Directory::find(context.getDbSession(), params, [&](const Directory& directory) {
+                const std::string_view name{ directory.getName() };
                 assert(!name.empty());
 
                 char sortChar;
@@ -218,14 +218,14 @@ namespace lms::api::subsonic
             Response::Node& similarSongsNode{ response.createNode(id3 ? Response::Node::Key{ "similarSongs2" } : Response::Node::Key{ "similarSongs" }) };
             for (const TrackId trackId : tracks)
             {
-                const Track::pointer track{ Track::find(context.getDbSession(), trackId) };
-                similarSongsNode.addArrayChild("song", createSongNode(context, track, context.getUser()));
+                if (const std::optional<Track> track{ Track::find(context.getDbSession(), trackId) })
+                    similarSongsNode.addArrayChild("song", createSongNode(context, *track, true /* id3 */));
             }
 
             return response;
         }
 
-        Release::pointer getReleaseFromDirectory(ISession& session, DirectoryId directoryId)
+        std::optional<Release> getReleaseFromDirectory(ISession& session, DirectoryId directoryId)
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -233,8 +233,8 @@ namespace lms::api::subsonic
             params.setDirectory(directoryId);
             params.setRange(Range{ 0, 1 }); // only support 1 directory <-> 1 release
 
-            Release::pointer res;
-            Release::find(session, params, [&](const Release::pointer& release) {
+            std::optional<Release> res;
+            Release::find(session, params, [&](const Release& release) {
                 res = release;
             });
 
@@ -248,11 +248,11 @@ namespace lms::api::subsonic
         Response::Node& musicFoldersNode{ response.createNode("musicFolders") };
 
         auto transaction{ context.getDbSession().createReadTransaction() };
-        MediaLibrary::find(context.getDbSession(), [&](const MediaLibrary::pointer& library) {
+        MediaLibrary::find(context.getDbSession(), [&](const MediaLibrary& library) {
             Response::Node& musicFolderNode{ musicFoldersNode.createArrayChild("musicFolder") };
 
-            musicFolderNode.setAttribute("id", library->getId().getValue());
-            musicFolderNode.setAttribute("name", library->getName());
+            musicFolderNode.setAttribute("id", library.getId().getValue());
+            musicFolderNode.setAttribute("name", library.getName());
         });
 
         return response;
@@ -270,16 +270,16 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const std::vector<Directory::pointer> rootDirectories{ getRootDirectories(context.getDbSession(), mediaLibrary) };
+        const std::vector<Directory> rootDirectories{ getRootDirectories(context.getDbSession(), mediaLibrary) };
 
         IndexMap indexedDirectories;
-        for (const Directory::pointer& rootdirectory : rootDirectories)
+        for (const Directory& rootdirectory : rootDirectories)
         {
             Track::FindParameters params;
-            params.setDirectory(rootdirectory->getId());
+            params.setDirectory(rootdirectory.getId());
 
-            Track::find(context.getDbSession(), params, [&](const Track::pointer& track) {
-                indexesNode.addArrayChild("child", createSongNode(context, track, context.getUser()));
+            Track::find(context.getDbSession(), params, [&](const Track& track) {
+                indexesNode.addArrayChild("child", createSongNode(context, track, true /* id3 */));
             });
 
             getIndexedChildDirectories(context, rootdirectory, indexedDirectories);
@@ -290,13 +290,13 @@ namespace lms::api::subsonic
             Response::Node& indexNode{ indexesNode.createArrayChild("index") };
             indexNode.setAttribute("name", std::string{ index });
 
-            for (const Directory::pointer& directory : directories)
+            for (const Directory& directory : directories)
             {
                 // Legacy behavior: all sub directories are considered as artists (even if this is just containing an album, or just an intermediary directory)
 
                 Response::Node childNode;
-                childNode.setAttribute("id", idToString(directory->getId()));
-                childNode.setAttribute("name", directory->getName());
+                childNode.setAttribute("id", idToString(directory.getId()));
+                childNode.setAttribute("name", directory.getName());
 
                 indexNode.addArrayChild("artist", std::move(childNode));
             }
@@ -315,22 +315,22 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const Directory::pointer directory{ Directory::find(context.getDbSession(), directoryId) };
+        const std::optional<Directory> directory{ Directory::find(context.getDbSession(), directoryId) };
         if (!directory)
             throw RequestedDataNotFoundError{};
 
-        if (const Release::pointer release{ getReleaseFromDirectory(context.getDbSession(), directoryId) })
+        if (const std::optional<Release> release{ getReleaseFromDirectory(context.getDbSession(), directoryId) })
         {
             directoryNode.setAttribute("playCount", Listen::getCount(context.getDbSession(), context.getUser()->getId(), release->getId()));
-            if (const ReleaseFeedback::pointer feedback{ ReleaseFeedback::find(context.getDbSession(), release->getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == FeedbackValue::Loved)
+            if (const std::optional<ReleaseFeedback> feedback{ ReleaseFeedback::find(context.getDbSession(), release->getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == FeedbackValue::Loved)
                 directoryNode.setAttribute("starred", core::stringUtils::toISO8601String(feedback->getDateTime()));
         }
 
         directoryNode.setAttribute("id", idToString(directory->getId()));
         directoryNode.setAttribute("name", directory->getName());
         // Original Subsonic does not report parent if this the parent directory is the root directory
-        if (const Directory::pointer parentDirectory{ directory->getParentDirectory() })
-            directoryNode.setAttribute("parent", idToString(parentDirectory->getId()));
+        if (const DirectoryId parentDirectoryId{ directory->getParentDirectoryId() }; parentDirectoryId.isValid())
+            directoryNode.setAttribute("parent", idToString(parentDirectoryId));
 
         // list all sub directories
         {
@@ -338,18 +338,18 @@ namespace lms::api::subsonic
             params.setParentDirectory(directory->getId());
             params.setSortMethod(DirectorySortMethod::Name);
 
-            Directory::find(context.getDbSession(), params, [&](const Directory::pointer& subDirectory) {
-                const Release::pointer release{ getReleaseFromDirectory(context.getDbSession(), subDirectory->getId()) };
+            Directory::find(context.getDbSession(), params, [&](const Directory& subDirectory) {
+                const std::optional<Release> release{ getReleaseFromDirectory(context.getDbSession(), subDirectory.getId()) };
 
                 if (release)
                 {
-                    directoryNode.addArrayChild("child", createAlbumNode(context, release, false, subDirectory));
+                    directoryNode.addArrayChild("child", createAlbumNode(context, *release, false, subDirectory));
                 }
                 else
                 {
                     Response::Node childNode;
-                    childNode.setAttribute("id", idToString(subDirectory->getId()));
-                    childNode.setAttribute("title", subDirectory->getName());
+                    childNode.setAttribute("id", idToString(subDirectory.getId()));
+                    childNode.setAttribute("title", subDirectory.getName());
                     childNode.setAttribute("isDir", true);
                     childNode.setAttribute("parent", idToString(directory->getId()));
 
@@ -364,8 +364,8 @@ namespace lms::api::subsonic
             params.setDirectory(directory->getId());
             params.setSortMethod(TrackSortMethod::AbsoluteFilePath);
 
-            Track::find(context.getDbSession(), params, [&](const Track::pointer& track) {
-                directoryNode.addArrayChild("child", createSongNode(context, track, context.getUser()));
+            Track::find(context.getDbSession(), params, [&](const Track& track) {
+                directoryNode.addArrayChild("child", createSongNode(context, track, true /* id3 */));
             });
         }
 
@@ -380,7 +380,7 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        db::Genre::find(context.getDbSession(), db::Genre::FindParameters{}.setSortMethod(db::GenreSortMethod::Name), [&](const db::Genre::pointer& genre) {
+        db::Genre::find(context.getDbSession(), db::Genre::FindParameters{}.setSortMethod(db::GenreSortMethod::Name), [&](const db::Genre& genre) {
             genresNode.addArrayChild("genre", createGenreNode(context, genre));
         });
 
@@ -432,13 +432,13 @@ namespace lms::api::subsonic
 
             parameters.setRange(Range{ currentArtistOffset, batchSize });
             const auto artists{ Artist::find(context.getDbSession(), parameters) };
-            for (const Artist::pointer& artist : artists)
+            for (const Artist& artist : artists)
             {
-                const std::string_view sortName{ artist->getSortName() };
-                const std::string_view effectiveSortName{ sortName.empty() ? artist->getName() : sortName };
+                const std::string_view sortName{ artist.getSortName() };
+                const std::string_view effectiveSortName{ sortName.empty() ? artist.getName() : sortName };
 
                 const char sortChar{ (effectiveSortName.empty() || !std::isalpha(static_cast<unsigned char>(effectiveSortName[0]))) ? '#' : static_cast<char>(std::toupper(static_cast<unsigned char>(effectiveSortName[0]))) };
-                artistsSortedByFirstChar[sortChar].push_back(artist->getId());
+                artistsSortedByFirstChar[sortChar].push_back(artist.getId());
             }
 
             hasMoreArtists = (artists.size() == batchSize);
@@ -456,8 +456,8 @@ namespace lms::api::subsonic
             {
                 auto transaction{ context.getDbSession().createReadTransaction() };
 
-                if (const Artist::pointer artist{ Artist::find(context.getDbSession(), artistId) })
-                    indexNode.addArrayChild("artist", createArtistNode(context, artist));
+                if (const std::optional<Artist> artist{ Artist::find(context.getDbSession(), artistId) })
+                    indexNode.addArrayChild("artist", createArtistNode(context, *artist));
             }
         }
 
@@ -471,23 +471,23 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const Artist::pointer artist{ Artist::find(context.getDbSession(), id) };
+        const std::optional<Artist> artist{ Artist::find(context.getDbSession(), id) };
         if (!artist)
             throw RequestedDataNotFoundError{};
 
         Response response{ Response::createOkResponse() };
-        Response::Node artistNode{ createArtistNode(context, artist) };
+        Response::Node artistNode{ createArtistNode(context, *artist) };
 
-        auto addRelease{ [&](const Release::pointer& release) {
+        auto addRelease{ [&](const Release& release) {
             artistNode.addArrayChild("album", createAlbumNode(context, release, true /* id3 */));
         } };
 
-        Release::find(context.getDbSession(), Release::FindParameters{}.setArtist(artist->getId()), [&](const db::Release::pointer& release) {
+        Release::find(context.getDbSession(), Release::FindParameters{}.setArtist(artist->getId()), [&](const db::Release& release) {
             addRelease(release);
         });
 
-        Release::find(context.getDbSession(), Release::FindParameters{}.setTrackArtist(artist->getId()), [&](const db::Release::pointer& release) {
-            if (!release->hasArtist(id))
+        Release::find(context.getDbSession(), Release::FindParameters{}.setTrackArtist(artist->getId()), [&](const db::Release& release) {
+            if (!Release::hasArtist(context.getDbSession(), release.getId(), id))
                 addRelease(release);
         });
 
@@ -503,15 +503,15 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        Release::pointer release{ Release::find(context.getDbSession(), id) };
+        const std::optional<Release> release{ Release::find(context.getDbSession(), id) };
         if (!release)
             throw RequestedDataNotFoundError{};
 
         Response response{ Response::createOkResponse() };
-        Response::Node albumNode{ createAlbumNode(context, release, true /* id3 */) };
+        Response::Node albumNode{ createAlbumNode(context, *release, true /* id3 */) };
 
         const auto tracks{ Track::find(context.getDbSession(), Track::FindParameters{}.setRelease(id).setSortMethod(TrackSortMethod::Release)) };
-        for (const Track::pointer& track : tracks)
+        for (const Track& track : tracks)
             albumNode.addArrayChild("song", createSongNode(context, track, true /* id3 */));
 
         response.addNode("album", std::move(albumNode));
@@ -526,12 +526,12 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const Track::pointer track{ Track::find(context.getDbSession(), id) };
+        const std::optional<Track> track{ Track::find(context.getDbSession(), id) };
         if (!track)
             throw RequestedDataNotFoundError{};
 
         Response response{ Response::createOkResponse() };
-        response.addNode("song", createSongNode(context, track, context.getUser()));
+        response.addNode("song", createSongNode(context, *track, true /* id3 */));
 
         return response;
     }
@@ -550,7 +550,7 @@ namespace lms::api::subsonic
         {
             auto transaction{ context.getDbSession().createReadTransaction() };
 
-            const Artist::pointer artist{ Artist::find(context.getDbSession(), id) };
+            const std::optional<Artist> artist{ Artist::find(context.getDbSession(), id) };
             if (!artist)
                 throw RequestedDataNotFoundError{};
 
@@ -567,16 +567,16 @@ namespace lms::api::subsonic
                 }
             }
 
-            ArtistInfo::find(context.getDbSession(), id, Range{ .offset = 0, .size = 1 }, [&](const ArtistInfo::pointer& artistInfo) {
-                if (!artistInfo->getBiography().empty())
+            ArtistInfo::find(context.getDbSession(), id, Range{ .offset = 0, .size = 1 }, [&](const ArtistInfo& artistInfo) {
+                if (!artistInfo.getBiography().empty())
                 {
                     switch (context.getResponseFormat())
                     {
                     case ResponseFormat::json:
-                        artistInfoNode.setAttribute("biography", artistInfo->getBiography());
+                        artistInfoNode.setAttribute("biography", artistInfo.getBiography());
                         break;
                     case ResponseFormat::xml:
-                        artistInfoNode.createChild("biography").setValue(artistInfo->getBiography());
+                        artistInfoNode.createChild("biography").setValue(artistInfo.getBiography());
                         break;
                     }
                 }
@@ -590,9 +590,9 @@ namespace lms::api::subsonic
 
             for (const auto& similarArtist : similarArtists)
             {
-                const Artist::pointer artist{ Artist::find(context.getDbSession(), similarArtist.id) };
+                const std::optional<Artist> artist{ Artist::find(context.getDbSession(), similarArtist.id) };
                 if (artist)
-                    artistInfoNode.addArrayChild("similarArtist", createArtistNode(context, artist));
+                    artistInfoNode.addArrayChild("similarArtist", createArtistNode(context, *artist));
             }
         }
 
@@ -608,8 +608,8 @@ namespace lms::api::subsonic
         {
             auto transaction{ context.getDbSession().createReadTransaction() };
 
-            if (db::Release::pointer release{ getReleaseFromDirectory(context.getDbSession(), directoryId) })
-                response.addNode("albumInfo", createAlbumInfoNode(context, release));
+            if (const std::optional<db::Release> release{ getReleaseFromDirectory(context.getDbSession(), directoryId) })
+                response.addNode("albumInfo", createAlbumInfoNode(context, *release));
         }
         return response;
     }
@@ -623,8 +623,8 @@ namespace lms::api::subsonic
         {
             auto transaction{ context.getDbSession().createReadTransaction() };
 
-            if (db::Release::pointer release{ db::Release::find(context.getDbSession(), releaseId) })
-                response.addNode("albumInfo", createAlbumInfoNode(context, release));
+            if (const std::optional<db::Release> release{ db::Release::find(context.getDbSession(), releaseId) })
+                response.addNode("albumInfo", createAlbumInfoNode(context, *release));
         }
 
         return response;
@@ -657,7 +657,7 @@ namespace lms::api::subsonic
         Response response{ Response::createOkResponse() };
         Response::Node& topSongs{ response.createNode("topSongs") };
 
-        Artist::pointer artist;
+        std::optional<Artist> artist;
         if (artistId)
         {
             artist = Artist::find(context.getDbSession(), *artistId);
@@ -679,8 +679,8 @@ namespace lms::api::subsonic
             const auto trackIds{ Listen::getTopTracks(context.getDbSession(), params) };
             for (const TrackId trackId : trackIds)
             {
-                if (Track::pointer track{ Track::find(context.getDbSession(), trackId) })
-                    topSongs.addArrayChild("song", createSongNode(context, track, context.getUser()));
+                if (std::optional<Track> track{ Track::find(context.getDbSession(), trackId) })
+                    topSongs.addArrayChild("song", createSongNode(context, *track, true /* id3 */));
             }
         }
 
@@ -705,12 +705,12 @@ namespace lms::api::subsonic
 
         for (const auto& similarTrack : similarTracks)
         {
-            const Track::pointer track{ Track::find(context.getDbSession(), similarTrack.id) };
+            const std::optional<Track> track{ Track::find(context.getDbSession(), similarTrack.id) };
             if (track)
             {
                 Response::Node& sonicMatchNode{ response.createArrayNode("sonicMatch") };
                 sonicMatchNode.setAttribute("similarity", 1.0F - similarTrack.distanceToFirst);
-                sonicMatchNode.addChild("entry", createSongNode(context, track, context.getUser()));
+                sonicMatchNode.addChild("entry", createSongNode(context, *track, true /* id3 */));
             }
         }
 
@@ -736,12 +736,12 @@ namespace lms::api::subsonic
 
         for (const auto& pathTrack : pathTracks)
         {
-            const Track::pointer track{ Track::find(context.getDbSession(), pathTrack.id) };
+            const std::optional<Track> track{ Track::find(context.getDbSession(), pathTrack.id) };
             if (track)
             {
                 Response::Node& sonicMatchNode{ response.createArrayNode("sonicMatch") };
                 sonicMatchNode.setAttribute("similarity", 1.0F - pathTrack.distanceToFirst);
-                sonicMatchNode.addChild("entry", createSongNode(context, track, context.getUser()));
+                sonicMatchNode.addChild("entry", createSongNode(context, *track, true /* id3 */));
             }
         }
 

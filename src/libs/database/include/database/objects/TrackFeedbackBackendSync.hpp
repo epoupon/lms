@@ -21,12 +21,13 @@
 
 #include <functional>
 #include <optional>
+#include <span>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/TrackFeedbackBackendSyncId.hpp"
 #include "database/objects/TrackFeedbackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
@@ -34,10 +35,11 @@ namespace lms::db
     class TrackFeedback;
 
     // Tracks the delivery of a single TrackFeedback to a given external feedback backend.
-    class TrackFeedbackBackendSync : public Object<TrackFeedbackBackendSync, TrackFeedbackBackendSyncId>
+    class TrackFeedbackBackendSync : public detail::Object<TrackFeedbackBackendSync, TrackFeedbackBackendSyncId>
     {
     public:
-        static pointer create(ISession& session, const ObjectPtr<TrackFeedback>& trackFeedback, FeedbackBackend backend);
+        static TrackFeedbackBackendSync create(ISession& session, TrackFeedbackId trackFeedback, FeedbackBackend backend);
+        static void destroy(ISession& session, std::span<const TrackFeedbackBackendSyncId> ids);
 
         struct FindParameters
         {
@@ -63,12 +65,14 @@ namespace lms::db
         };
 
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, TrackFeedbackBackendSyncId id);
-        static pointer find(ISession& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend);
+        static std::optional<TrackFeedbackBackendSync> find(ISession& session, TrackFeedbackBackendSyncId id);
+        static std::optional<TrackFeedbackBackendSync> find(ISession& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend);
         static std::vector<TrackFeedbackBackendSyncId> find(ISession& session, const FindParameters& params);
-        static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackFeedbackBackendSync&)>& func);
 
-        ObjectPtr<TrackFeedback> getTrackFeedback() const;
+        static void update(ISession& session, const TrackFeedbackBackendSync& trackFeedbackBackendSync);
+
+        TrackFeedbackId getTrackFeedbackId() const { return _trackFeedbackId; }
         FeedbackBackend getBackend() const { return _backend; }
         SyncState getSyncState() const { return _syncState; }
 
@@ -80,5 +84,6 @@ namespace lms::db
 
         FeedbackBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };
+        TrackFeedbackId _trackFeedbackId;
     };
 } // namespace lms::db

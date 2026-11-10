@@ -63,11 +63,11 @@ namespace lms::scanner
             const ScannerSettings& settings;
         };
 
-        db::Image::pointer findImageInDirectory(db::ISession& session, const std::filesystem::path& directoryPath, std::span<const std::string> fileStemsToSearch)
+        std::optional<db::Image> findImageInDirectory(db::ISession& session, const std::filesystem::path& directoryPath, std::span<const std::string> fileStemsToSearch)
         {
-            db::Image::pointer image;
+            std::optional<db::Image> image;
 
-            const db::Directory::pointer directory{ db::Directory::find(session, directoryPath) };
+            const std::optional<db::Directory> directory{ db::Directory::find(session, directoryPath) };
             if (directory) // may not exist for artists that are split on different media libraries
             {
                 for (std::string_view fileStem : fileStemsToSearch)
@@ -76,7 +76,7 @@ namespace lms::scanner
                     params.setDirectory(directory->getId());
                     params.setFileStem(fileStem, db::Image::FindParameters::ProcessWildcards{ true }); // no need to sanitize here, user is responsible for providing sanitized file stems in conf file
 
-                    db::Image::find(session, params, [&](const db::Image::pointer& foundImg) {
+                    db::Image::find(session, params, [&](const db::Image& foundImg) {
                         if (!image)
                             image = foundImg;
                     });
@@ -89,12 +89,12 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer getImageFromMbid(db::ISession& session, const core::UUID& mbid)
+        std::optional<db::Image> getImageFromMbid(db::ISession& session, const core::UUID& mbid)
         {
-            db::Image::pointer image;
+            std::optional<db::Image> image;
 
             // Find anywhere, since it is supposed to be unique!
-            db::Image::find(session, db::Image::FindParameters{}.setFileStem(mbid.toString()), [&](const db::Image::pointer& foundImg) {
+            db::Image::find(session, db::Image::FindParameters{}.setFileStem(mbid.toString()), [&](const db::Image& foundImg) {
                 if (!image)
                     image = foundImg;
             });
@@ -102,16 +102,16 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer searchImageInArtistInfoDirectory(db::ISession& session, const SearchArtistArtworkParams& searchParams, db::ArtistId artistId)
+        std::optional<db::Image> searchImageInArtistInfoDirectory(db::ISession& session, const SearchArtistArtworkParams& searchParams, db::ArtistId artistId)
         {
-            db::Image::pointer image;
+            std::optional<db::Image> image;
 
             std::vector<std::string> fileInfoPaths;
-            db::ArtistInfo::find(session, artistId, [&](const db::ArtistInfo::pointer& artistInfo) {
-                fileInfoPaths.push_back(artistInfo->getAbsoluteFilePath());
+            db::ArtistInfo::find(session, artistId, [&](const db::ArtistInfo& artistInfo) {
+                fileInfoPaths.push_back(artistInfo.getAbsoluteFilePath());
 
                 if (!image)
-                    image = findImageInDirectory(session, artistInfo->getDirectory()->getAbsolutePath(), searchParams.artistInfoFileNames);
+                    image = findImageInDirectory(session, db::Directory::find(session, artistInfo.getDirectoryId())->getAbsolutePath(), searchParams.artistInfoFileNames);
             });
 
             if (fileInfoPaths.size() > 1)
@@ -120,16 +120,16 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer searchImageInDirectories(db::ISession& session, const SearchArtistArtworkParams& searchParams, db::ArtistId artistId)
+        std::optional<db::Image> searchImageInDirectories(db::ISession& session, const SearchArtistArtworkParams& searchParams, db::ArtistId artistId)
         {
-            db::Image::pointer image;
+            std::optional<db::Image> image;
 
             std::set<std::filesystem::path> releasePaths;
             db::Directory::FindParameters params;
             params.setReleaseArtist(artistId);
 
-            db::Directory::find(session, params, [&](const db::Directory::pointer& directory) {
-                releasePaths.insert(directory->getAbsolutePath());
+            db::Directory::find(session, params, [&](const db::Directory& directory) {
+                releasePaths.insert(directory.getAbsolutePath());
             });
 
             if (!releasePaths.empty())
@@ -171,53 +171,53 @@ namespace lms::scanner
             return image;
         }
 
-        db::Artwork::pointer getFirstReleaseArtwork(db::ISession& session, const db::Artist::pointer& artist)
+        std::optional<db::Artwork> getFirstReleaseArtwork(db::ISession& session, const db::Artist& artist)
         {
-            db::Artwork::pointer artwork;
+            std::optional<db::Artwork> artwork;
 
             db::Release::FindParameters params;
-            params.setArtist(artist->getId());
+            params.setArtist(artist.getId());
             params.setSortMethod(db::ReleaseSortMethod::OriginalDate);
 
-            db::Release::find(session, params, [&](const db::Release::pointer& release) {
-                if (artwork)
+            db::Release::find(session, params, [&](const db::Release& release) {
+                if (artwork || !release.getPreferredArtworkId().isValid())
                     return;
 
-                artwork = release->getPreferredArtwork();
+                artwork = db::Artwork::find(session, release.getPreferredArtworkId());
             });
 
             return artwork;
         }
 
-        db::Artwork::pointer computePreferredArtistArtwork(db::ISession& session, const SearchArtistArtworkParams& searchParams, const db::Artist::pointer& artist)
+        std::optional<db::Artwork> computePreferredArtistArtwork(db::ISession& session, const SearchArtistArtworkParams& searchParams, const db::Artist& artist)
         {
-            if (const auto mbid{ artist->getMBID() })
+            if (const auto mbid{ artist.getMBID() })
             {
-                const db::Image::pointer image{ getImageFromMbid(session, *mbid) };
+                const std::optional<db::Image> image{ getImageFromMbid(session, *mbid) };
                 if (image)
                     return db::Artwork::find(session, image->getId());
             }
 
             {
-                const db::Image::pointer image{ searchImageInArtistInfoDirectory(session, searchParams, artist->getId()) };
+                const std::optional<db::Image> image{ searchImageInArtistInfoDirectory(session, searchParams, artist.getId()) };
                 if (image)
                     return db::Artwork::find(session, image->getId());
             }
 
             {
-                const db::Image::pointer image{ searchImageInDirectories(session, searchParams, artist->getId()) };
+                const std::optional<db::Image> image{ searchImageInDirectories(session, searchParams, artist.getId()) };
                 if (image)
                     return db::Artwork::find(session, image->getId());
             }
 
             if (searchParams.settings.artistImageFallbackToRelease)
             {
-                const db::Artwork::pointer artwork{ getFirstReleaseArtwork(session, artist) };
+                const std::optional<db::Artwork> artwork{ getFirstReleaseArtwork(session, artist) };
                 if (artwork)
                     return artwork;
             }
 
-            return db::Artwork::pointer{};
+            return std::nullopt;
         }
 
         void updateArtistPreferredArtwork(db::ISession& session, const ArtistArtworkAssociation& artistArtworkAssociation)
@@ -302,17 +302,18 @@ namespace lms::scanner
                 auto& session{ _db.getTLSSession() };
                 auto transaction{ session.createReadTransaction() };
 
-                db::Artist::find(session, _artistIdRange, [this, &session](const db::Artist::pointer& artist) {
-                    const db::Artwork::pointer preferredArtwork{ computePreferredArtistArtwork(session, _searchParams, artist) };
+                db::Artist::find(session, _artistIdRange, [this, &session](const db::Artist& artist) {
+                    const std::optional<db::Artwork> preferredArtwork{ computePreferredArtistArtwork(session, _searchParams, artist) };
 
-                    if (artist->getPreferredArtwork() != preferredArtwork)
+                    const db::ArtworkId preferredArtworkId{ preferredArtwork ? preferredArtwork->getId() : db::ArtworkId{} };
+                    if (artist.getPreferredArtworkId() != preferredArtworkId)
                     {
-                        _associations.push_back(ArtistArtworkAssociation{ artist->getId(), preferredArtwork ? preferredArtwork->getId() : db::ArtworkId{} });
+                        _associations.push_back(ArtistArtworkAssociation{ artist.getId(), preferredArtworkId });
 
                         if (preferredArtwork)
-                            LMS_LOG(DBUPDATER, DEBUG, "Updating preferred artwork for artist '" << artist->getName() << "' with image in " << preferredArtwork->getAbsoluteFilePath());
+                            LMS_LOG(DBUPDATER, DEBUG, "Updating preferred artwork for artist '" << artist.getName() << "' with image in " << db::Artwork::getAbsoluteFilePath(session, preferredArtwork->getId()));
                         else
-                            LMS_LOG(DBUPDATER, DEBUG, "Removing preferred artwork from artist '" << artist->getName() << "'");
+                            LMS_LOG(DBUPDATER, DEBUG, "Removing preferred artwork from artist '" << artist.getName() << "'");
                     }
 
                     _processedArtistCount++;

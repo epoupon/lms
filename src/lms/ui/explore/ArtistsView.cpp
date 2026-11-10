@@ -116,7 +116,7 @@ namespace lms::ui
         bool moreResults{};
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            _artistCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }, moreResults, [&](const db::Artist::pointer& artist) {
+            _artistCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }, moreResults, [&](const db::Artist& artist) {
                 _container->add(ArtistListHelpers::createEntry(artist));
             });
         }

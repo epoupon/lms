@@ -62,17 +62,17 @@ namespace lms::scanner
             std::span<const std::string_view> mediumFileNames;
         };
 
-        db::Image::pointer findImageInDirectory(db::ISession& session, const db::Directory::pointer& directory, std::span<const std::string_view> fileStemsToSearch, db::Image::FindParameters::ProcessWildcards processWildcards)
+        std::optional<db::Image> findImageInDirectory(db::ISession& session, const db::Directory& directory, std::span<const std::string_view> fileStemsToSearch, db::Image::FindParameters::ProcessWildcards processWildcards)
         {
-            db::Image::pointer image;
+            std::optional<db::Image> image;
 
             for (std::string_view fileStem : fileStemsToSearch)
             {
                 db::Image::FindParameters params;
-                params.setDirectory(directory->getId());
+                params.setDirectory(directory.getId());
                 params.setFileStem(fileStem, processWildcards);
 
-                db::Image::find(session, params, [&](const db::Image::pointer& foundImg) {
+                db::Image::find(session, params, [&](const db::Image& foundImg) {
                     if (!image)
                         image = foundImg;
                 });
@@ -83,13 +83,13 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer searchImageInDirectories(db::ISession& session, const SearchMediumArtworkParams& searchParams, const db::Medium::pointer& medium)
+        std::optional<db::Image> searchImageInDirectories(db::ISession& session, const SearchMediumArtworkParams& searchParams, const db::Medium& medium)
         {
-            db::Image::pointer image;
+            std::optional<db::Image> image;
 
             std::set<std::filesystem::path> mediumPaths;
             db::Directory::FindParameters params;
-            params.setMedium(medium->getId());
+            params.setMedium(medium.getId());
 
             // Expect layout like this:
             // Release/Tracks
@@ -102,11 +102,11 @@ namespace lms::scanner
             //             /someOtherUserConfiguredMediumFile.jpg
             //
             // We don't expect mediums to be split across multiple directories, so we can just search for the first directory that matches the medium.
-            db::Directory::find(session, params, [&](const db::Directory::pointer& directory) {
+            db::Directory::find(session, params, [&](const db::Directory& directory) {
                 if (image)
                     return;
 
-                if (const std::string mediumName{ core::pathUtils::sanitizeFileStem(medium->getName()) }; !mediumName.empty())
+                if (const std::string mediumName{ core::pathUtils::sanitizeFileStem(medium.getName()) }; !mediumName.empty())
                 {
                     std::string_view mediumNameView{ mediumName };
                     image = findImageInDirectory(session, directory, std::span{ &mediumNameView, 1 }, db::Image::FindParameters::ProcessWildcards{ false });
@@ -119,16 +119,16 @@ namespace lms::scanner
             return image;
         }
 
-        db::TrackEmbeddedImage::pointer getArtworkFromTracks(db::ISession& session, const db::Medium::pointer& medium)
+        std::optional<db::TrackEmbeddedImage> getArtworkFromTracks(db::ISession& session, const db::Medium& medium)
         {
-            db::TrackEmbeddedImage::pointer image;
+            std::optional<db::TrackEmbeddedImage> image;
 
             db::TrackEmbeddedImage::FindParameters params;
-            params.setMedium(medium->getId());
+            params.setMedium(medium.getId());
             params.setImageType(core::media::ImageType::Media);
             params.setSortMethod(db::TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc);
 
-            db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& foundImage) {
+            db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage& foundImage) {
                 if (image)
                     return;
 
@@ -138,15 +138,15 @@ namespace lms::scanner
             return image;
         }
 
-        db::Artwork::pointer computePreferredMediumArtwork(db::ISession& session, const SearchMediumArtworkParams& searchParams, const db::Medium::pointer& medium)
+        std::optional<db::Artwork> computePreferredMediumArtwork(db::ISession& session, const SearchMediumArtworkParams& searchParams, const db::Medium& medium)
         {
-            if (const db::Image::pointer image{ searchImageInDirectories(session, searchParams, medium) })
+            if (const std::optional<db::Image> image{ searchImageInDirectories(session, searchParams, medium) })
                 return db::Artwork::find(session, image->getId());
 
-            if (const db::TrackEmbeddedImage::pointer image{ getArtworkFromTracks(session, medium) })
+            if (const std::optional<db::TrackEmbeddedImage> image{ getArtworkFromTracks(session, medium) })
                 return db::Artwork::find(session, image->getId());
 
-            return db::Artwork::pointer{};
+            return std::nullopt;
         }
 
         void updateMediumPreferredArtwork(db::ISession& session, const MediumArtworkAssociation& mediumArtworkAssociation)
@@ -219,17 +219,18 @@ namespace lms::scanner
                 auto& session{ _db.getTLSSession() };
                 auto transaction{ session.createReadTransaction() };
 
-                db::Medium::find(session, _mediumIdRange, [this, &session](const db::Medium::pointer& medium) {
-                    const db::Artwork::pointer preferredArtwork{ computePreferredMediumArtwork(session, _searchParams, medium) };
+                db::Medium::find(session, _mediumIdRange, [this, &session](const db::Medium& medium) {
+                    const std::optional<db::Artwork> preferredArtwork{ computePreferredMediumArtwork(session, _searchParams, medium) };
+                    const db::ArtworkId preferredArtworkId{ preferredArtwork ? preferredArtwork->getId() : db::ArtworkId{} };
 
-                    if (medium->getPreferredArtwork() != preferredArtwork)
+                    if (medium.getPreferredArtworkId() != preferredArtworkId)
                     {
-                        _associations.push_back(MediumArtworkAssociation{ medium->getId(), preferredArtwork ? preferredArtwork->getId() : db::ArtworkId{} });
+                        _associations.push_back(MediumArtworkAssociation{ medium.getId(), preferredArtworkId });
 
                         if (preferredArtwork)
-                            LMS_LOG(DBUPDATER, DEBUG, "Updating preferred artwork for medium '" << medium->getName() << "(from '" << medium->getRelease()->getName() << "') with image in " << preferredArtwork->getAbsoluteFilePath());
+                            LMS_LOG(DBUPDATER, DEBUG, "Updating preferred artwork for medium '" << medium.getName() << "(from '" << db::Release::find(session, medium.getReleaseId())->getName() << "') with image in " << db::Artwork::getAbsoluteFilePath(session, preferredArtwork->getId()));
                         else
-                            LMS_LOG(DBUPDATER, DEBUG, "Removing preferred artwork from medium '" << medium->getName() << "(from '" << medium->getRelease()->getName() << "')");
+                            LMS_LOG(DBUPDATER, DEBUG, "Removing preferred artwork from medium '" << medium.getName() << "(from '" << db::Release::find(session, medium.getReleaseId())->getName() << "')");
                     }
 
                     _processedMediumCount++;

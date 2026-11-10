@@ -23,7 +23,7 @@
 
 #include "database/Types.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "Session.hpp"
 #include "TrackDbo.hpp"
 #include "TrackEmbeddedImageDbo.hpp"
@@ -112,7 +112,7 @@ namespace lms::db
         }
     } // namespace
 
-    TrackEmbeddedImage::pointer TrackEmbeddedImage::create(ISession& session)
+    TrackEmbeddedImage TrackEmbeddedImage::create(ISession& session)
     {
         return utils::addObject(session, std::unique_ptr<dbo::TrackEmbeddedImage>{ new dbo::TrackEmbeddedImage{} });
     }
@@ -129,14 +129,17 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_embedded_image"));
     }
 
-    TrackEmbeddedImage::pointer TrackEmbeddedImage::find(ISession& session, TrackEmbeddedImageId id)
+    std::optional<TrackEmbeddedImage> TrackEmbeddedImage::find(ISession& session, TrackEmbeddedImageId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackEmbeddedImage>().where("id = ?").bind(id));
     }
 
-    void TrackEmbeddedImage::find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
+    void TrackEmbeddedImage::find(ISession& session, const FindParameters& params, const std::function<void(const TrackEmbeddedImage&)>& func)
     {
         checkReadTransaction(session);
 
@@ -144,7 +147,7 @@ namespace lms::db
         utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    TrackEmbeddedImage::pointer TrackEmbeddedImage::find(ISession& session, std::size_t size, ImageHashType hash)
+    std::optional<TrackEmbeddedImage> TrackEmbeddedImage::find(ISession& session, std::size_t size, ImageHashType hash)
     {
         checkReadTransaction(session);
 
@@ -168,6 +171,11 @@ namespace lms::db
     void TrackEmbeddedImage::setFormat(core::media::ImageFormat format)
     {
         _format = detail::getDbImageFormat(format);
+    }
+
+    void TrackEmbeddedImage::update(ISession& session, const TrackEmbeddedImage& trackEmbeddedImage)
+    {
+        utils::updateObject<dbo::TrackEmbeddedImage>(session, trackEmbeddedImage);
     }
 
 } // namespace lms::db

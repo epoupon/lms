@@ -19,26 +19,30 @@
 
 #pragma once
 
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
-#include "database/Object.hpp"
 #include "database/objects/UIStateId.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class User;
 
-    class UIState : public Object<UIState, UIStateId>
+    class UIState : public detail::Object<UIState, UIStateId>
     {
     public:
-        static pointer create(ISession& session, std::string_view item, const ObjectPtr<User>& user);
+        static UIState create(ISession& session, std::string_view item, UserId user);
+        static void destroy(ISession& session, std::span<const UIStateId> ids);
 
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, UIStateId settingId);
-        static pointer find(ISession& session, std::string_view item, UserId userId);
+        static std::optional<UIState> find(ISession& session, UIStateId settingId);
+        static std::optional<UIState> find(ISession& session, std::string_view item, UserId userId);
+
+        static void update(ISession& session, const UIState& uiState);
 
         // Getters
         std::string_view getValue() const { return _value; };

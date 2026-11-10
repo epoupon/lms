@@ -34,10 +34,11 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            TrackLyrics::pointer dbLyrics{ lyrics.get() };
+            std::optional<TrackLyrics> dbLyrics{ lyrics.get() };
 
-            dbLyrics.modify()->setAbsoluteFilePath("/tmp/test.lrc");
-            dbLyrics.modify()->setTrack(track.get());
+            dbLyrics->setAbsoluteFilePath("/tmp/test.lrc");
+            dbLyrics->setTrack(track.getId());
+            TrackLyrics::update(session, *dbLyrics);
         }
         {
             auto transaction{ session.createReadTransaction() };
@@ -70,7 +71,7 @@ namespace lms::db::tests
             EXPECT_EQ(TrackLyrics::getCount(session), 1);
             EXPECT_EQ(TrackLyrics::getExternalLyricsCount(session), 0);
 
-            const TrackLyrics::pointer dbLyrics{ lyrics.get() };
+            const std::optional<TrackLyrics> dbLyrics{ lyrics.get() };
             EXPECT_FALSE(dbLyrics->isSynchronized());
             EXPECT_FALSE(dbLyrics->getLastWriteTime().isValid());
             EXPECT_TRUE(dbLyrics->getLastWriteTime().isNull());
@@ -79,16 +80,17 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            TrackLyrics::pointer dbLyrics{ lyrics.get() };
+            std::optional<TrackLyrics> dbLyrics{ lyrics.get() };
 
-            dbLyrics.modify()->setSynchronizedLines({ { 1s + 300ms, "First line\nSecondLine" }, { 2s + 351ms, "ThirdLine" } });
+            dbLyrics->setSynchronizedLines({ { 1s + 300ms, "First line\nSecondLine" }, { 2s + 351ms, "ThirdLine" } });
+            TrackLyrics::update(session, *dbLyrics);
             EXPECT_TRUE(dbLyrics->isSynchronized());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const TrackLyrics::pointer dbLyrics{ lyrics.get() };
+            const std::optional<TrackLyrics> dbLyrics{ lyrics.get() };
 
             EXPECT_TRUE(dbLyrics->isSynchronized());
             const auto synchronizedLines{ dbLyrics->getSynchronizedLines() };
@@ -118,7 +120,7 @@ namespace lms::db::tests
             EXPECT_EQ(TrackLyrics::getCount(session), 1);
             EXPECT_EQ(TrackLyrics::getExternalLyricsCount(session), 0);
 
-            const TrackLyrics::pointer dbLyrics{ lyrics.get() };
+            const std::optional<TrackLyrics> dbLyrics{ lyrics.get() };
             EXPECT_FALSE(dbLyrics->isSynchronized());
             EXPECT_FALSE(dbLyrics->getLastWriteTime().isValid());
             EXPECT_TRUE(dbLyrics->getLastWriteTime().isNull());
@@ -127,16 +129,17 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            TrackLyrics::pointer dbLyrics{ lyrics.get() };
+            std::optional<TrackLyrics> dbLyrics{ lyrics.get() };
 
-            dbLyrics.modify()->setUnsynchronizedLines(std::array<std::string, 2>{ "First line\nSecondLine", "ThirdLine" });
+            dbLyrics->setUnsynchronizedLines(std::array<std::string, 2>{ "First line\nSecondLine", "ThirdLine" });
+            TrackLyrics::update(session, *dbLyrics);
             EXPECT_FALSE(dbLyrics->isSynchronized());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const TrackLyrics::pointer dbLyrics{ lyrics.get() };
+            const std::optional<TrackLyrics> dbLyrics{ lyrics.get() };
 
             EXPECT_FALSE(dbLyrics->isSynchronized());
             const std::vector<std::string> lines{ dbLyrics->getUnsynchronizedLines() };
@@ -162,9 +165,13 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            externalLyrics.get().modify()->setAbsoluteFilePath("/tmp/test.lrc");
-            externalLyrics.get().modify()->setTrack(track.get());
-            internalLyrics.get().modify()->setTrack(track.get());
+            std::optional<TrackLyrics> updatedExternalLyrics{ externalLyrics.get() };
+            updatedExternalLyrics->setAbsoluteFilePath("/tmp/test.lrc");
+            updatedExternalLyrics->setTrack(track.getId());
+            TrackLyrics::update(session, *updatedExternalLyrics);
+            std::optional<TrackLyrics> updatedInternalLyrics{ internalLyrics.get() };
+            updatedInternalLyrics->setTrack(track.getId());
+            TrackLyrics::update(session, *updatedInternalLyrics);
         }
 
         {
@@ -175,7 +182,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->clearEmbeddedLyrics();
+            Track::clearEmbeddedLyrics(session, track.getId());
         }
 
         {
@@ -185,8 +192,8 @@ namespace lms::db::tests
 
             {
                 bool visited{};
-                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setTrack(track.getId()), [&](const TrackLyrics::pointer& lyrics) {
-                    EXPECT_EQ(lyrics->getAbsoluteFilePath(), "/tmp/test.lrc");
+                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setTrack(track.getId()), [&](const TrackLyrics& lyrics) {
+                    EXPECT_EQ(lyrics.getAbsoluteFilePath(), "/tmp/test.lrc");
                     visited = true;
                 });
                 EXPECT_TRUE(visited);
@@ -194,8 +201,8 @@ namespace lms::db::tests
 
             {
                 bool visited{};
-                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setExternal(true), [&](const TrackLyrics::pointer& lyrics) {
-                    EXPECT_EQ(lyrics->getAbsoluteFilePath(), "/tmp/test.lrc");
+                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setExternal(true), [&](const TrackLyrics& lyrics) {
+                    EXPECT_EQ(lyrics.getAbsoluteFilePath(), "/tmp/test.lrc");
                     visited = true;
                 });
                 EXPECT_TRUE(visited);
@@ -203,7 +210,7 @@ namespace lms::db::tests
 
             {
                 bool visited{};
-                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setExternal(false), [&](const TrackLyrics::pointer&) {
+                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setExternal(false), [&](const TrackLyrics&) {
                     visited = true;
                 });
                 EXPECT_FALSE(visited);
@@ -211,7 +218,7 @@ namespace lms::db::tests
 
             {
                 bool visited{};
-                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setSortMethod(TrackLyricsSortMethod::EmbeddedFirst), [&](const TrackLyrics::pointer&) {
+                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setSortMethod(TrackLyricsSortMethod::EmbeddedFirst), [&](const TrackLyrics&) {
                     visited = true;
                 });
                 EXPECT_TRUE(visited);
@@ -219,7 +226,7 @@ namespace lms::db::tests
 
             {
                 bool visited{};
-                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setSortMethod(TrackLyricsSortMethod::ExternalFirst), [&](const TrackLyrics::pointer&) {
+                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setSortMethod(TrackLyricsSortMethod::ExternalFirst), [&](const TrackLyrics&) {
                     visited = true;
                 });
                 EXPECT_TRUE(visited);

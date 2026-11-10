@@ -19,6 +19,8 @@
 
 #include "AuthTokenService.hpp"
 
+#include <array>
+
 #include <Wt/Auth/HashFunction.h>
 #include <Wt/WRandom.h>
 
@@ -32,14 +34,14 @@ namespace lms::auth
 {
     namespace
     {
-        AuthTokenService::AuthTokenInfo createAuthTokenInfo(const db::AuthToken::pointer& authToken)
+        AuthTokenService::AuthTokenInfo createAuthTokenInfo(const db::AuthToken& authToken)
         {
             return AuthTokenService::AuthTokenInfo{
-                .userId = authToken->getUser()->getId(),
-                .expiry = authToken->getExpiry(),
-                .lastUsed = authToken->getLastUsed(),
-                .useCount = authToken->getUseCount(),
-                .maxUseCount = authToken->getMaxUseCount(),
+                .userId = authToken.getUserId(),
+                .expiry = authToken.getExpiry(),
+                .lastUsed = authToken.getLastUsed(),
+                .useCount = authToken.getUseCount(),
+                .maxUseCount = authToken.getMaxUseCount(),
             };
         }
     } // namespace
@@ -73,16 +75,16 @@ namespace lms::auth
         {
             auto transaction{ session.createWriteTransaction() };
 
-            const db::User::pointer user{ db::User::find(session, userId) };
+            const std::optional<db::User> user{ db::User::find(session, userId) };
             if (!user)
                 throw Exception{ "User deleted" };
 
-            const db::AuthToken::pointer authToken{ db::AuthToken::create(session, domain.str(), token, expiry, params.tokenMaxUseCount, user) };
+            const db::AuthToken authToken{ db::AuthToken::create(session, domain.str(), token, expiry, params.tokenMaxUseCount, user->getId()) };
 
-            LMS_LOG(UI, DEBUG, "Created auth token for user '" << user->getLoginName() << "', expiry = " << authToken->getExpiry().toString() << ", maxUseCount = " << (authToken->getMaxUseCount() ? std::to_string(*authToken->getMaxUseCount()) : "<unset>"));
+            LMS_LOG(UI, DEBUG, "Created auth token for user '" << user->getLoginName() << "', expiry = " << authToken.getExpiry().toString() << ", maxUseCount = " << (authToken.getMaxUseCount() ? std::to_string(*authToken.getMaxUseCount()) : "<unset>"));
 
             // TODO per domain
-            if (user->getAuthTokensCount() >= 50)
+            if (db::User::getAuthTokensCount(session, user->getId()) >= 50)
                 db::AuthToken::removeExpiredTokens(session, domain.str(), Wt::WDateTime::currentDateTime());
         }
     }
@@ -103,28 +105,28 @@ namespace lms::auth
         db::ISession& session{ getDbSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        db::AuthToken::pointer authToken{ db::AuthToken::find(session, domain.str(), token) };
+        std::optional<db::AuthToken> authToken{ db::AuthToken::find(session, domain.str(), token) };
         if (!authToken)
             return std::nullopt;
 
         if (authToken->getExpiry().isValid() && authToken->getExpiry() < Wt::WDateTime::currentDateTime())
         {
-            authToken.remove();
+            db::AuthToken::destroy(session, std::array{ authToken->getId() });
             return std::nullopt;
         }
 
-        LMS_LOG(UI, DEBUG, "Found auth token for user '" << authToken->getUser()->getLoginName() << "' on domain '" << domain.str() << "'");
+        LMS_LOG(UI, DEBUG, "Found auth token for user '" << db::User::find(session, authToken->getUserId())->getLoginName() << "' on domain '" << domain.str() << "'");
 
-        AuthTokenInfo res{ createAuthTokenInfo(authToken) };
+        AuthTokenInfo res{ createAuthTokenInfo(*authToken) };
 
-        const std::size_t tokenUseCount{ authToken.modify()->incUseCount() };
-        authToken.modify()->setLastUsed(Wt::WDateTime::currentDateTime());
+        const std::size_t tokenUseCount{ authToken->incUseCount() };
+        authToken->setLastUsed(Wt::WDateTime::currentDateTime());
 
-        if (auto maxUseCount{ authToken->getMaxUseCount() })
-        {
-            if (tokenUseCount >= *maxUseCount)
-                authToken.remove();
-        }
+        const auto maxUseCount{ authToken->getMaxUseCount() };
+        if (maxUseCount && tokenUseCount >= *maxUseCount)
+            db::AuthToken::destroy(session, std::array{ authToken->getId() });
+        else
+            db::AuthToken::update(session, *authToken);
 
         return res;
     }
@@ -165,9 +167,9 @@ namespace lms::auth
         {
             auto transaction{ session.createReadTransaction() };
 
-            db::AuthToken::find(session, domain.str(), userId, [&](const db::AuthToken::pointer& authToken) {
+            db::AuthToken::find(session, domain.str(), userId, [&](const db::AuthToken& authToken) {
                 const AuthTokenInfo info{ createAuthTokenInfo(authToken) };
-                visitor(info, authToken->getValue());
+                visitor(info, authToken.getValue());
             });
         }
     }

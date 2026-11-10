@@ -25,7 +25,7 @@
 
 #include "database/objects/TrackList.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -40,6 +40,15 @@ namespace lms::db::dbo
     public:
         TrackList() = default;
         using db::TrackList::TrackList;
+
+        void syncIds()
+        {
+            _id = id();
+            _userId = _user.id();
+            _playListFileId = _playListFile.id();
+        }
+
+        void applyIds();
 
         template<class Action>
         void persist(Action& a)
@@ -67,7 +76,13 @@ namespace lms::db::dbo
         TrackListEntry() = default;
         using db::TrackListEntry::TrackListEntry;
 
-        TrackListEntry(const ObjectPtr<db::Track>& track, const ObjectPtr<db::TrackList>& tracklist, const Wt::WDateTime& dateTime);
+        TrackListEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist, const Wt::WDateTime& dateTime);
+
+        void syncIds()
+        {
+            _id = id();
+            _trackId = _track.id();
+        }
 
         template<class Action>
         void persist(Action& a)

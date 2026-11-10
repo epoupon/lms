@@ -176,7 +176,11 @@ namespace lms::db
             auto transaction{ session.createWriteTransaction() };
 
             if (!ScanSettings::find(session))
-                ScanSettings::create(session).modify()->setRecommendationEngineType(defaultRecommendationEngineType);
+            {
+                ScanSettings scanSettings{ ScanSettings::create(session) };
+                scanSettings.setRecommendationEngineType(defaultRecommendationEngineType);
+                ScanSettings::update(session, scanSettings);
+            }
         }
 
         void createServerInfoIfNeeded(Session& session)

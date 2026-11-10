@@ -19,6 +19,7 @@
 
 #include "FeedbacksSynchronizer.hpp"
 
+#include <array>
 #include <unordered_map>
 
 #include <Wt/Json/Array.h>
@@ -59,8 +60,8 @@ namespace lms::feedback::listenBrainz
         // so it stops being retried on every flush. Assumes an already-open transaction on `session`.
         void dropFeedbackBackendSync(db::ISession& session, db::TrackFeedbackId id)
         {
-            if (db::TrackFeedbackBackendSync::pointer sync{ db::TrackFeedbackBackendSync::find(session, id, db::FeedbackBackend::ListenBrainz) })
-                sync.remove();
+            if (const std::optional<db::TrackFeedbackBackendSync> sync{ db::TrackFeedbackBackendSync::find(session, id, db::FeedbackBackend::ListenBrainz) })
+                db::TrackFeedbackBackendSync::destroy(session, std::array{ sync->getId() });
         }
 
         std::optional<std::size_t> parseTotalFeedbackCount(std::string_view msgBody)
@@ -101,27 +102,32 @@ namespace lms::feedback::listenBrainz
             db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            db::TrackFeedback::pointer trackFeedback{ db::TrackFeedback::find(session, id) };
+            std::optional<db::TrackFeedback> trackFeedback{ db::TrackFeedback::find(session, id) };
             if (!trackFeedback)
                 return;
 
             // The caller already checked canBeFeedbacked before notifying us; this is just a defensive
             // re-check against a narrow TOCTOU race (e.g. the recording MBID got cleared in between).
-            recordingMBID = trackFeedback->getTrack()->getRecordingMBID();
+            recordingMBID = db::Track::find(session, trackFeedback->getTrackId())->getRecordingMBID();
             if (!recordingMBID)
                 return;
 
-            listenBrainzToken = trackFeedback->getUser()->getListenBrainzToken();
+            listenBrainzToken = db::User::find(session, trackFeedback->getUserId())->getListenBrainzToken();
             if (listenBrainzToken.empty())
                 return;
 
             value = trackFeedback->getValue();
 
-            db::TrackFeedbackBackendSync::pointer sync{ db::TrackFeedbackBackendSync::find(session, id, db::FeedbackBackend::ListenBrainz) };
+            std::optional<db::TrackFeedbackBackendSync> sync{ db::TrackFeedbackBackendSync::find(session, id, db::FeedbackBackend::ListenBrainz) };
             if (!sync)
-                sync = db::TrackFeedbackBackendSync::create(session, trackFeedback, db::FeedbackBackend::ListenBrainz);
+            {
+                db::TrackFeedbackBackendSync::create(session, trackFeedback->getId(), db::FeedbackBackend::ListenBrainz);
+            }
             else if (sync->getSyncState() != db::SyncState::PendingAdd)
-                sync.modify()->setSyncState(db::SyncState::PendingAdd);
+            {
+                sync->setSyncState(db::SyncState::PendingAdd);
+                db::TrackFeedbackBackendSync::update(session, *sync);
+            }
         }
 
         sendFeedback(listenBrainzToken, id, *recordingMBID, value);
@@ -158,15 +164,18 @@ namespace lms::feedback::listenBrainz
         db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        db::TrackFeedback::pointer trackFeedback{ db::TrackFeedback::find(session, id) };
+        std::optional<db::TrackFeedback> trackFeedback{ db::TrackFeedback::find(session, id) };
         if (!trackFeedback)
         {
             LOG(DEBUG, "Track feedback not found. deleted?");
             return;
         }
 
-        if (db::TrackFeedbackBackendSync::pointer sync{ db::TrackFeedbackBackendSync::find(session, id, db::FeedbackBackend::ListenBrainz) })
-            sync.modify()->setSyncState(db::SyncState::Synchronized);
+        if (std::optional<db::TrackFeedbackBackendSync> sync{ db::TrackFeedbackBackendSync::find(session, id, db::FeedbackBackend::ListenBrainz) })
+        {
+            sync->setSyncState(db::SyncState::Synchronized);
+            db::TrackFeedbackBackendSync::update(session, *sync);
+        }
 
         LOG(DEBUG, "State set to synchronized");
     }
@@ -194,21 +203,21 @@ namespace lms::feedback::listenBrainz
                 .setSyncState(SyncState::PendingAdd)
                 .setRange(db::Range{ 0, _maxSyncFeedbackCount });
 
-            TrackFeedbackBackendSync::find(session, params, [&](const TrackFeedbackBackendSync::pointer& sync) {
-                const TrackFeedback::pointer trackFeedback{ sync->getTrackFeedback() };
+            TrackFeedbackBackendSync::find(session, params, [&](const TrackFeedbackBackendSync& sync) {
+                const std::optional<TrackFeedback> trackFeedback{ TrackFeedback::find(session, sync.getTrackFeedbackId()) };
                 const TrackFeedbackId id{ trackFeedback->getId() };
 
-                if (!utils::canBeFeedbacked(session, trackFeedback->getTrack()->getId()))
+                if (!utils::canBeFeedbacked(session, trackFeedback->getTrackId()))
                 {
                     toSkip.push_back(id);
                     return;
                 }
 
-                const std::optional<core::UUID> recordingMBID{ trackFeedback->getTrack()->getRecordingMBID() };
+                const std::optional<core::UUID> recordingMBID{ Track::find(session, trackFeedback->getTrackId())->getRecordingMBID() };
                 if (!recordingMBID) // defensive; canBeFeedbacked already checked this
                     return;
 
-                pendingByUser[trackFeedback->getUser()->getId()].push_back(PendingFeedback{ id, *recordingMBID, trackFeedback->getValue() });
+                pendingByUser[trackFeedback->getUserId()].push_back(PendingFeedback{ id, *recordingMBID, trackFeedback->getValue() });
             });
         }
 
@@ -436,7 +445,7 @@ namespace lms::feedback::listenBrainz
 
         {
             auto transaction{ session.createReadTransaction() };
-            const std::vector<Track::pointer> tracks{ Track::findByRecordingMBID(session, feedback.recordingMBID) };
+            const std::vector<Track> tracks{ Track::findByRecordingMBID(session, feedback.recordingMBID) };
             if (tracks.size() > 1)
             {
                 LOG(DEBUG, "Too many matches for feedback '" << feedback << "': duplicate recording MBIDs found");
@@ -449,10 +458,10 @@ namespace lms::feedback::listenBrainz
                 return;
             }
 
-            trackId = tracks.front()->getId();
+            trackId = tracks.front().getId();
 
-            const TrackFeedback::pointer trackFeedback{ TrackFeedback::find(session, trackId, context.userId) };
-            const TrackFeedbackBackendSync::pointer sync{ trackFeedback ? TrackFeedbackBackendSync::find(session, trackFeedback->getId(), FeedbackBackend::ListenBrainz) : TrackFeedbackBackendSync::pointer{} };
+            const std::optional<TrackFeedback> trackFeedback{ TrackFeedback::find(session, trackId, context.userId) };
+            const std::optional<TrackFeedbackBackendSync> sync{ trackFeedback ? TrackFeedbackBackendSync::find(session, trackFeedback->getId(), FeedbackBackend::ListenBrainz) : std::optional<TrackFeedbackBackendSync>{} };
 
             // If nothing is tracked locally yet for this backend, import it. If something is already queued
             // to be sent to the backend, let that win (it'll be resent later). Only re-import when we're fully
@@ -466,25 +475,27 @@ namespace lms::feedback::listenBrainz
 
             auto transaction{ session.createWriteTransaction() };
 
-            const Track::pointer track{ Track::find(session, trackId) };
+            const std::optional<Track> track{ Track::find(session, trackId) };
             if (!track)
                 return;
 
-            const User::pointer user{ User::find(session, context.userId) };
+            const std::optional<User> user{ User::find(session, context.userId) };
             if (!user)
                 return;
 
-            TrackFeedback::pointer trackFeedback{ TrackFeedback::find(session, trackId, context.userId) };
+            std::optional<TrackFeedback> trackFeedback{ TrackFeedback::find(session, trackId, context.userId) };
             if (!trackFeedback)
-                trackFeedback = TrackFeedback::create(session, track, user);
+                trackFeedback = TrackFeedback::create(session, track->getId(), user->getId());
 
-            trackFeedback.modify()->setValue(feedback.score);
-            trackFeedback.modify()->setDateTime(feedback.created);
+            trackFeedback->setValue(feedback.score);
+            trackFeedback->setDateTime(feedback.created);
+            TrackFeedback::update(session, *trackFeedback);
 
-            TrackFeedbackBackendSync::pointer sync{ TrackFeedbackBackendSync::find(session, trackFeedback->getId(), FeedbackBackend::ListenBrainz) };
+            std::optional<TrackFeedbackBackendSync> sync{ TrackFeedbackBackendSync::find(session, trackFeedback->getId(), FeedbackBackend::ListenBrainz) };
             if (!sync)
-                sync = TrackFeedbackBackendSync::create(session, trackFeedback, FeedbackBackend::ListenBrainz);
-            sync.modify()->setSyncState(SyncState::Synchronized);
+                sync = TrackFeedbackBackendSync::create(session, trackFeedback->getId(), FeedbackBackend::ListenBrainz);
+            sync->setSyncState(SyncState::Synchronized);
+            TrackFeedbackBackendSync::update(session, *sync);
 
             context.import.importedFeedbackCount++;
         }

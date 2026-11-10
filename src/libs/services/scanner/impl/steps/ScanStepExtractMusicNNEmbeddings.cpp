@@ -126,15 +126,15 @@ namespace lms::scanner
 
         void writeEmbedding(db::ISession& session, const TrackEmbeddingAssociation& assoc)
         {
-            db::Track::pointer track{ db::Track::find(session, assoc.trackId) };
-            assert(track);
+            assert(db::Track::exists(session, assoc.trackId));
 
-            db::TrackMusicNNEmbeddings::pointer entry{ db::TrackMusicNNEmbeddings::create(session, track) };
+            db::TrackMusicNNEmbeddings entry{ db::TrackMusicNNEmbeddings::create(session, assoc.trackId) };
             if (assoc.embeddings)
             {
                 std::vector<std::byte> blob(sizeof(audio::TrackMusicNNEmbeddings));
                 audio::trackMusicNNEmbeddingsToBlob(*assoc.embeddings, blob);
-                entry.modify()->setData(blob);
+                entry.setData(blob);
+                db::TrackMusicNNEmbeddings::update(session, entry);
             }
         }
 
@@ -183,13 +183,14 @@ namespace lms::scanner
             const std::string identifier{ fileIdentifier + "|" + std::to_string(_settings.musicnnMaxPatchCountPerTrack) };
 
             auto transaction{ dbSession.createWriteTransaction() };
-            db::ScanSettings::pointer settings{ db::ScanSettings::find(dbSession) };
+            std::optional<db::ScanSettings> settings{ db::ScanSettings::find(dbSession) };
             assert(settings);
             if (settings->getMusicNNModelIdentifier() != identifier)
             {
                 LMS_LOG(DBUPDATER, INFO, "MusicNN model changed, clearing embeddings");
                 db::TrackMusicNNEmbeddings::removeAll(dbSession);
-                settings.modify()->setMusicNNModelIdentifier(identifier);
+                settings->setMusicNNModelIdentifier(identifier);
+                db::ScanSettings::update(dbSession, *settings);
             }
         }
 

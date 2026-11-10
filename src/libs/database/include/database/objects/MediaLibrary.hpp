@@ -21,35 +21,41 @@
 
 #include <filesystem>
 #include <functional>
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
-#include "database/Object.hpp"
 #include "database/objects/MediaLibraryId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
 
-    class MediaLibrary : public Object<MediaLibrary, MediaLibraryId>
+    class MediaLibrary : public detail::Object<MediaLibrary, MediaLibraryId>
     {
     public:
         static const std::size_t maxNameLength{ 128 };
 
-        static pointer create(ISession& session, std::string_view name, const std::filesystem::path& p);
+        static MediaLibrary create(ISession& session, std::string_view name, const std::filesystem::path& p);
+
+        static void destroy(ISession& session, std::span<const MediaLibraryId> ids);
 
         // find
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, MediaLibraryId id);
-        static pointer find(ISession& session, std::string_view name);
-        static pointer find(ISession& session, const std::filesystem::path& path);
-        static void find(ISession& session, std::function<void(const pointer&)> func);
-        static std::vector<pointer> find(ISession& session);
+        static std::optional<MediaLibrary> find(ISession& session, MediaLibraryId id);
+        static std::optional<MediaLibrary> find(ISession& session, std::string_view name);
+        static std::optional<MediaLibrary> find(ISession& session, const std::filesystem::path& path);
+        static void find(ISession& session, const std::function<void(const MediaLibrary&)>& func);
+        static std::vector<MediaLibrary> find(ISession& session);
+        static bool isEmpty(ISession& session, MediaLibraryId id); // no track
+
+        static void update(ISession& session, const MediaLibrary& mediaLibrary);
 
         // getters
         std::string_view getName() const { return _name; }
         const std::filesystem::path& getPath() const { return _path; }
-        bool isEmpty() const;
 
         // setters
         void setName(std::string_view name) { _name = name; }

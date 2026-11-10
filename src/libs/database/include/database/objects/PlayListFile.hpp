@@ -20,6 +20,7 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -27,32 +28,29 @@
 #include <Wt/WDateTime.h>
 
 #include "database/IdRange.hpp"
-#include "database/Object.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/DirectoryId.hpp"
-
-LMS_DECLARE_IDTYPE(PlayListFileId)
+#include "database/objects/MediaLibraryId.hpp"
+#include "database/objects/PlayListFileId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Directory;
     class ISession;
-    class MediaLibrary;
-    class TrackList;
 
-    class PlayListFile : public Object<PlayListFile, PlayListFileId>
+    class PlayListFile : public detail::Object<PlayListFile, PlayListFileId>
     {
     public:
-        static pointer create(ISession& session, const std::filesystem::path& file);
+        static PlayListFile create(ISession& session, const std::filesystem::path& file);
         static void destroy(ISession& session, std::span<const PlayListFileId> ids);
 
         // find
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, PlayListFileId id);
-        static pointer find(ISession& session, const std::filesystem::path& path);
-        static void find(ISession& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func);
+        static std::optional<PlayListFile> find(ISession& session, PlayListFileId id);
+        static std::optional<PlayListFile> find(ISession& session, const std::filesystem::path& path);
+        static void find(ISession& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(const PlayListFile&)>& func);
         static void findAbsoluteFilePath(ISession& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(PlayListFileId playListFileId, const std::filesystem::path& absoluteFilePath)>& func);
-        static void find(ISession& session, const IdRange<PlayListFileId>& idRange, const std::function<void(const PlayListFile::pointer&)>& func);
+        static void find(ISession& session, const IdRange<PlayListFileId>& idRange, const std::function<void(const PlayListFile&)>& func);
         static IdRange<PlayListFileId> findNextIdRange(ISession& session, PlayListFileId lastRetrievedId, std::size_t count);
 
         // getters
@@ -61,24 +59,23 @@ namespace lms::db
         std::size_t getFileSize() const { return _fileSize; }
         std::string_view getName() const { return _name; }
         const std::filesystem::path& getCoverImageFile() const { return _coverImageFile; }
-        ArtworkId getPreferredArtworkId() const;
+        ArtworkId getPreferredArtworkId() const { return _preferredArtworkId; }
         std::vector<std::filesystem::path> getFiles() const;
-        ObjectPtr<TrackList> getTrackList() const;
-        ObjectPtr<Directory> getDirectory() const;
-        DirectoryId getDirectoryId() const;
+        DirectoryId getDirectoryId() const { return _directoryId; }
 
         // setters
         void setAbsoluteFilePath(const std::filesystem::path& filePath);
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
         void setCoverImageFile(const std::filesystem::path& file);
-        void setMediaLibrary(const ObjectPtr<MediaLibrary>& mediaLibrary);
-        void setDirectory(const ObjectPtr<Directory>& directory);
-        void setTrackList(const ObjectPtr<TrackList>& trackList);
+        void setMediaLibrary(MediaLibraryId mediaLibrary) { _mediaLibraryId = mediaLibrary; }
+        void setDirectory(DirectoryId directory) { _directoryId = directory; }
         void setName(std::string_view name);
         void setFiles(std::span<const std::filesystem::path> files);
 
         static void updatePreferredArtwork(ISession& session, PlayListFileId id, ArtworkId artworkId);
+
+        static void update(ISession& session, const PlayListFile& playListFile);
 
     protected:
         PlayListFile() = default;
@@ -95,5 +92,8 @@ namespace lms::db
         std::string _name;
         std::string _entries; // A json encoded list of files
         std::filesystem::path _coverImageFile;
+        ArtworkId _preferredArtworkId;
+        DirectoryId _directoryId;
+        MediaLibraryId _mediaLibraryId;
     };
 } // namespace lms::db

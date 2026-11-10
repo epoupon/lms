@@ -24,7 +24,7 @@
 
 #include "database/objects/Movement.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,7 +36,12 @@ namespace lms::db::dbo
         Movement() = default;
         using db::Movement::Movement;
 
-        Movement(std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<db::Track>& track);
+        Movement(std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, Wt::Dbo::ptr<Track> track);
+
+        void syncIds()
+        {
+            _id = id();
+        }
 
         template<class Action>
         void persist(Action& a)

@@ -68,11 +68,15 @@ namespace lms::scrobbling::listenBrainz
         ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        const Track::pointer track{ Track::find(session, trackId) };
+        const std::optional<Track> track{ Track::find(session, trackId) };
         if (!track)
             return false;
 
-        if (track->getArtistLinks(TrackArtistLinkType::Artist).empty())
+        bool hasArtist{};
+        TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(trackId).setLinkType(TrackArtistLinkType::Artist), [&](const TrackArtistLink&) {
+            hasArtist = true;
+        });
+        if (!hasArtist)
         {
             LMS_LOG_LISTENBRAINZ(DEBUG, "Track cannot be scrobbled: no artist");
             return false;

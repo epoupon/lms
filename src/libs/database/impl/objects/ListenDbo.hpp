@@ -24,7 +24,7 @@
 
 #include "database/objects/Listen.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -37,7 +37,14 @@ namespace lms::db::dbo
         Listen() = default;
         using db::Listen::Listen;
 
-        Listen(const ObjectPtr<db::User>& user, const ObjectPtr<db::Track>& track, const Wt::WDateTime& dateTime);
+        Listen(Wt::Dbo::ptr<User> user, Wt::Dbo::ptr<Track> track, const Wt::WDateTime& dateTime);
+
+        void syncIds()
+        {
+            _id = id();
+            _userId = _user.id();
+            _trackId = _track.id();
+        }
 
         template<class Action>
         void persist(Action& a)

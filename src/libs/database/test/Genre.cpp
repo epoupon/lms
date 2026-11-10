@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <array>
+
 #include "Common.hpp"
 
 namespace lms::db::tests
@@ -36,7 +38,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Genre::getCount(session), 1);
 
-            const Genre::pointer found{ Genre::find(session, genre.getId()) };
+            const std::optional<Genre> found{ Genre::find(session, genre.getId()) };
             ASSERT_TRUE(found);
             EXPECT_EQ(found->getName(), "Rock");
             EXPECT_EQ(found->getTrackCount(), 0);
@@ -53,9 +55,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            rock = Genre::create(session, "Rock")->getId();
-            jazz = Genre::create(session, "Jazz")->getId();
-            pop = Genre::create(session, "Pop")->getId();
+            rock = Genre::create(session, "Rock").getId();
+            jazz = Genre::create(session, "Jazz").getId();
+            pop = Genre::create(session, "Pop").getId();
         }
 
         EXPECT_TRUE(rock.isValid());
@@ -120,15 +122,15 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Genre::findOrphanIds(session).size(), 2);
-            EXPECT_EQ(track->getGenres().size(), 0);
-            EXPECT_EQ(track->getGenreIds().size(), 0);
+            EXPECT_EQ(Genre::find(session, Genre::FindParameters{}.setTrack(track.getId())).size(), 0);
+            EXPECT_EQ(Genre::findIds(session, Genre::FindParameters{}.setTrack(track.getId())).size(), 0);
             EXPECT_EQ(Genre::computeTrackCount(session, genre1.getId()), 0);
             EXPECT_EQ(Genre::computeTrackCount(session, genre2.getId()), 0);
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setGenres(std::array{ genre1.get() });
+            Track::setGenres(session, track.getId(), std::array{ genre1.getId() });
         }
 
         {
@@ -145,11 +147,11 @@ namespace lms::db::tests
             ASSERT_EQ(orphans.size(), 1);
             EXPECT_EQ(orphans.front(), genre2.getId());
 
-            const auto trackGenres{ track->getGenres() };
+            const auto trackGenres{ Genre::find(session, Genre::FindParameters{}.setTrack(track.getId())) };
             ASSERT_EQ(trackGenres.size(), 1);
-            EXPECT_EQ(trackGenres.front()->getId(), genre1.getId());
+            EXPECT_EQ(trackGenres.front().getId(), genre1.getId());
 
-            const auto trackGenreIds{ track->getGenreIds() };
+            const auto trackGenreIds{ Genre::findIds(session, Genre::FindParameters{}.setTrack(track.getId())) };
             ASSERT_EQ(trackGenreIds.size(), 1);
             EXPECT_EQ(trackGenreIds.front(), genre1.getId());
         }
@@ -173,7 +175,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setGenres(std::array{ genre1.get(), genre2.get() });
+            Track::setGenres(session, track.getId(), std::array{ genre1.getId(), genre2.getId() });
         }
 
         {
@@ -182,7 +184,7 @@ namespace lms::db::tests
             EXPECT_EQ(Genre::computeTrackCount(session, genre2.getId()), 1);
             EXPECT_EQ(Genre::findOrphanIds(session).size(), 0);
 
-            const auto trackGenres{ track->getGenres() };
+            const auto trackGenres{ Genre::find(session, Genre::FindParameters{}.setTrack(track.getId())) };
             EXPECT_EQ(trackGenres.size(), 2);
         }
 
@@ -206,8 +208,10 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
-            track.get().modify()->setGenres(std::array{ genre.get() });
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
+            Track::setGenres(session, track.getId(), std::array{ genre.getId() });
         }
 
         {
@@ -224,11 +228,10 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            Genre::pointer genre{ Genre::create(session, longName) };
-            ASSERT_TRUE(genre);
-            EXPECT_EQ(genre->getName().size(), Genre::maxNameLength);
-            EXPECT_EQ(genre->getName(), expectedName);
-            genre.remove();
+            const Genre genre{ Genre::create(session, longName) };
+            EXPECT_EQ(genre.getName().size(), Genre::maxNameLength);
+            EXPECT_EQ(genre.getName(), expectedName);
+            Genre::destroy(session, std::array{ genre.getId() });
         }
     }
 
@@ -258,9 +261,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setGenres(std::array{ g1.get() });
-            track2.get().modify()->setGenres(std::array{ g1.get() });
-            track3.get().modify()->setGenres(std::array{ g2.get() });
+            Track::setGenres(session, track1.getId(), std::array{ g1.getId() });
+            Track::setGenres(session, track2.getId(), std::array{ g1.getId() });
+            Track::setGenres(session, track3.getId(), std::array{ g2.getId() });
         }
 
         {

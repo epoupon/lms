@@ -120,7 +120,7 @@ namespace lms::ui
         bool moreResults{};
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            _trackCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }, moreResults, [&](const db::Track::pointer& track) {
+            _trackCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }, moreResults, [&](const db::Track& track) {
                 _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
             });
         }
@@ -133,8 +133,8 @@ namespace lms::ui
         bool moreResults{};
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            _trackCollector.get(db::Range{ 0, _maxCount }, moreResults, [&](const db::Track::pointer& track) {
-                ids.push_back(track->getId());
+            _trackCollector.get(db::Range{ 0, _maxCount }, moreResults, [&](const db::Track& track) {
+                ids.push_back(track.getId());
             });
         }
         return ids;

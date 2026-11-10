@@ -86,21 +86,24 @@ namespace lms::scanner::tests
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                db::Artist::pointer artist{ db::Artist::create(session, std::string{ name }, mbid) };
-                artist.modify()->setSortName(sortName);
-                return artist->getId();
+                db::Artist artist{ db::Artist::create(session, std::string{ name }, mbid) };
+                artist.setSortName(sortName);
+                db::Artist::update(session, artist);
+                return artist.getId();
             }
 
             void createTrackArtistLink(db::ArtistId artistId, int year, bool mbidMatched, std::string_view name, std::string_view sortName)
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                db::Track::pointer track{ db::Track::create(session) };
-                track.modify()->setDate(core::PartialDateTime{ year });
+                db::Track track{ db::Track::create(session) };
+                track.setDate(core::PartialDateTime{ year });
+                db::Track::update(session, track);
 
-                db::TrackArtistLink::pointer link{ db::TrackArtistLink::create(session, track, db::Artist::find(session, artistId), db::TrackArtistLinkType::Artist, mbidMatched) };
-                link.modify()->setArtistName(name);
-                link.modify()->setArtistSortName(sortName);
+                db::TrackArtistLink link{ db::TrackArtistLink::create(session, track.getId(), artistId, db::TrackArtistLinkType::Artist, mbidMatched) };
+                link.setArtistName(name);
+                link.setArtistSortName(sortName);
+                db::TrackArtistLink::update(session, link);
             }
 
             std::string getArtistName(db::ArtistId artistId)
@@ -128,7 +131,7 @@ namespace lms::scanner::tests
                 {
                     auto transaction{ session.createWriteTransaction() };
 
-                    db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(session, _rootDirectory.getPath()) };
+                    std::optional<db::MediaLibrary> mediaLibrary{ db::MediaLibrary::find(session, _rootDirectory.getPath()) };
                     if (!mediaLibrary)
                         mediaLibrary = db::MediaLibrary::create(session, "Test", _rootDirectory.getPath());
                     mediaLibraryId = mediaLibrary->getId();
@@ -229,9 +232,9 @@ namespace lms::scanner::tests
         EXPECT_EQ(getArtistName(artistId), "New Artist");
 
         auto transaction{ session.createReadTransaction() };
-        const std::vector<db::Artist::pointer> oldArtists{ db::Artist::find(session, "Old Artist") };
+        const std::vector<db::Artist> oldArtists{ db::Artist::find(session, "Old Artist") };
         ASSERT_EQ(oldArtists.size(), 1);
-        EXPECT_FALSE(oldArtists[0]->hasMBID());
-        EXPECT_EQ(oldArtists[0]->getSortName(), "Artist, Recent Tag");
+        EXPECT_FALSE(oldArtists[0].hasMBID());
+        EXPECT_EQ(oldArtists[0].getSortName(), "Artist, Recent Tag");
     }
 } // namespace lms::scanner::tests

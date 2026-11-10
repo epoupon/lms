@@ -35,7 +35,7 @@ namespace lms::feedback::listenBrainz::utils
         {
             auto transaction{ session.createReadTransaction() };
 
-            if (const db::User::pointer user{ db::User::find(session, userId) })
+            if (const std::optional<db::User> user{ db::User::find(session, userId) })
                 res = std::string{ user->getListenBrainzToken() };
         }
 
@@ -98,7 +98,7 @@ namespace lms::feedback::listenBrainz::utils
     {
         auto transaction{ session.createReadTransaction() };
 
-        const db::Track::pointer track{ db::Track::find(session, trackId) };
+        const std::optional<db::Track> track{ db::Track::find(session, trackId) };
         if (!track)
             return false;
 

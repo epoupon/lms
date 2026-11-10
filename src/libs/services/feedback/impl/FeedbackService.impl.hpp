@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <array>
+#include <optional>
+
 #include "FeedbackService.hpp"
 
 #include "database/IDb.hpp"
@@ -36,27 +39,27 @@ namespace lms::feedback
             db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            const db::User::pointer user{ db::User::find(session, userId) };
+            const std::optional<db::User> user{ db::User::find(session, userId) };
             if (!user)
                 return;
 
             // Recording feedback locally is backend-independent
-            typename FeedbackObjType::pointer feedbackObj{ FeedbackObjType::find(session, id, userId) };
+            std::optional<FeedbackObjType> feedbackObj{ FeedbackObjType::find(session, id, userId) };
             if (!feedbackObj)
             {
                 if (value == db::FeedbackValue::None)
                     return; // nothing to clear
 
-                const typename ObjType::pointer obj{ ObjType::find(session, id) };
-                if (!obj)
+                if (!ObjType::exists(session, id))
                     return;
 
-                feedbackObj = FeedbackObjType::create(session, obj, user);
+                feedbackObj = FeedbackObjType::create(session, id, userId);
             }
 
-            feedbackObj.modify()->setValue(value);
+            feedbackObj->setValue(value);
             if (value != db::FeedbackValue::None)
-                feedbackObj.modify()->setDateTime(Wt::WDateTime::currentDateTime());
+                feedbackObj->setDateTime(Wt::WDateTime::currentDateTime());
+            FeedbackObjType::update(session, *feedbackObj);
 
             feedbackObjId = feedbackObj->getId();
             backends = user->getFeedbackBackends();
@@ -77,7 +80,7 @@ namespace lms::feedback
         db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        typename FeedbackObjType::pointer feedbackObj{ FeedbackObjType::find(session, id, userId) };
+        const std::optional<FeedbackObjType> feedbackObj{ FeedbackObjType::find(session, id, userId) };
         return feedbackObj ? feedbackObj->getValue() : db::FeedbackValue::None;
     }
 
@@ -87,7 +90,7 @@ namespace lms::feedback
         db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        typename FeedbackObjType::pointer feedbackObj{ FeedbackObjType::find(session, id, userId) };
+        const std::optional<FeedbackObjType> feedbackObj{ FeedbackObjType::find(session, id, userId) };
         if (feedbackObj && feedbackObj->getValue() == db::FeedbackValue::Loved)
             return feedbackObj->getDateTime();
 
@@ -100,27 +103,29 @@ namespace lms::feedback
         db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        typename RatedObjType::pointer ratedObject{ RatedObjType::find(session, objectId, userId) };
+        std::optional<RatedObjType> ratedObject{ RatedObjType::find(session, objectId, userId) };
         if (rating)
         {
             if (!ratedObject)
             {
-                typename ObjType::pointer obj{ ObjType::find(session, objectId) };
-                const db::User::pointer user{ db::User::find(session, userId) };
-
-                if (!obj || !user)
+                const std::optional<db::User> user{ db::User::find(session, userId) };
+                if (!user)
                     return;
 
-                ratedObject = RatedObjType::create(session, obj, user);
+                if (!ObjType::exists(session, objectId))
+                    return;
+
+                ratedObject = RatedObjType::create(session, objectId, userId);
             }
 
-            ratedObject.modify()->setRating(*rating);
-            ratedObject.modify()->setLastUpdated(Wt::WDateTime::currentDateTime());
+            ratedObject->setRating(*rating);
+            ratedObject->setLastUpdated(Wt::WDateTime::currentDateTime());
+            RatedObjType::update(session, *ratedObject);
         }
         else
         {
             if (ratedObject)
-                ratedObject.remove();
+                RatedObjType::destroy(session, std::array{ ratedObject->getId() });
         }
     }
 
@@ -130,7 +135,7 @@ namespace lms::feedback
         db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        const typename RatedObjType::pointer ratedObj{ RatedObjType::find(session, objectId, userId) };
+        const std::optional<RatedObjType> ratedObj{ RatedObjType::find(session, objectId, userId) };
         if (!ratedObj)
             return std::nullopt;
 

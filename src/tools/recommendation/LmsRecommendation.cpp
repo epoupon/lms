@@ -53,7 +53,7 @@ namespace lms
         {
             auto transaction{ session.createReadTransaction() };
             for (const auto& track : db::Track::findByMBID(session, *mbid))
-                trackIds.push_back(track->getId());
+                trackIds.push_back(track.getId());
         }
         else
         {
@@ -69,16 +69,16 @@ namespace lms
         {
             auto trackToString = [&](const db::TrackId trackId) {
                 auto transaction{ session.createReadTransaction() };
-                const db::Track::pointer track{ db::Track::find(session, trackId) };
+                const std::optional<db::Track> track{ db::Track::find(session, trackId) };
 
                 std::ostringstream oss;
                 oss << "'" << track->getName() << "'";
-                if (track->getRelease())
-                    oss << " [" << track->getRelease()->getName() << "]";
+                if (const std::optional<db::Release> release{ db::Release::find(session, track->getReleaseId()) })
+                    oss << " [" << release->getName() << "]";
                 if (std::string_view artistDisplayName{ track->getArtistDisplayName() }; !artistDisplayName.empty())
                     oss << " by '" << artistDisplayName << "'";
-                for (const auto& cluster : track->getClusters())
-                    oss << " {" << cluster->getType()->getName() << "-" << cluster->getName() << "}";
+                for (const auto& cluster : db::Cluster::find(session, db::Cluster::FindParameters{}.setTrack(trackId)))
+                    oss << " {" << db::ClusterType::find(session, cluster.getTypeId())->getName() << "-" << cluster.getName() << "}";
                 oss << " - '" + track->getAbsoluteFilePath().string() << "'";
 
                 return oss.str();
@@ -116,7 +116,7 @@ namespace lms
             auto releaseToString = [&](db::ReleaseId releaseId) -> std::string {
                 auto transaction{ session.createReadTransaction() };
 
-                const db::Release::pointer release{ db::Release::find(session, releaseId) };
+                const std::optional<db::Release> release{ db::Release::find(session, releaseId) };
 
                 std::ostringstream oss;
 
@@ -158,7 +158,7 @@ namespace lms
             auto artistToString = [&](db::ArtistId artistId) {
                 auto transaction{ session.createReadTransaction() };
 
-                db::Artist::pointer artist{ db::Artist::find(session, artistId) };
+                std::optional<db::Artist> artist{ db::Artist::find(session, artistId) };
                 return artist->getName();
             };
 
@@ -182,8 +182,8 @@ namespace lms
         {
             auto transaction{ session.createReadTransaction() };
             trackIds.reserve(db::TrackMusicNNEmbeddings::getCount(session));
-            db::TrackMusicNNEmbeddings::find(session, [&](const db::TrackMusicNNEmbeddings::pointer& features) {
-                trackIds.push_back(features->getTrackId());
+            db::TrackMusicNNEmbeddings::find(session, [&](const db::TrackMusicNNEmbeddings& features) {
+                trackIds.push_back(features.getTrackId());
             });
         }
 
@@ -201,12 +201,12 @@ namespace lms
 
         auto trackToString = [&](const db::TrackId trackId) {
             auto transaction{ session.createReadTransaction() };
-            const db::Track::pointer track{ db::Track::find(session, trackId) };
+            const std::optional<db::Track> track{ db::Track::find(session, trackId) };
 
             std::ostringstream oss;
             oss << "'" << track->getName() << "'";
-            if (track->getRelease())
-                oss << " [" << track->getRelease()->getName() << "]";
+            if (const std::optional<db::Release> release{ db::Release::find(session, track->getReleaseId()) })
+                oss << " [" << release->getName() << "]";
             if (std::string_view artistDisplayName{ track->getArtistDisplayName() }; !artistDisplayName.empty())
                 oss << " by '" << artistDisplayName << "'";
 
@@ -264,7 +264,7 @@ namespace lms
 
         auto releaseToString = [&](const db::ReleaseId releaseId) -> std::string {
             auto transaction{ session.createReadTransaction() };
-            const db::Release::pointer release{ db::Release::find(session, releaseId) };
+            const std::optional<db::Release> release{ db::Release::find(session, releaseId) };
 
             std::ostringstream oss;
             oss << "'" << release->getName() << "'";
@@ -325,7 +325,7 @@ namespace lms
 
         auto artistToString = [&](const db::ArtistId artistId) {
             auto transaction{ session.createReadTransaction() };
-            const db::Artist::pointer artist{ db::Artist::find(session, artistId) };
+            const std::optional<db::Artist> artist{ db::Artist::find(session, artistId) };
             return artist->getName();
         };
 
@@ -365,7 +365,7 @@ namespace lms
         {
             auto transaction{ session.createReadTransaction() };
             for (const auto& track : db::Track::findByMBID(session, *mbid))
-                fromTrackIds.push_back(track->getId());
+                fromTrackIds.push_back(track.getId());
         }
         else
         {
@@ -381,7 +381,7 @@ namespace lms
         {
             auto transaction{ session.createReadTransaction() };
             for (const auto& track : db::Track::findByMBID(session, *mbid))
-                toTrackIds.push_back(track->getId());
+                toTrackIds.push_back(track.getId());
         }
         else
         {
@@ -401,12 +401,12 @@ namespace lms
 
         auto trackToString = [&](const db::TrackId trackId) {
             auto transaction{ session.createReadTransaction() };
-            const db::Track::pointer track{ db::Track::find(session, trackId) };
+            const std::optional<db::Track> track{ db::Track::find(session, trackId) };
 
             std::ostringstream oss;
             oss << "'" << track->getName() << "'";
-            if (track->getRelease())
-                oss << " [" << track->getRelease()->getName() << "]";
+            if (const std::optional<db::Release> release{ db::Release::find(session, track->getReleaseId()) })
+                oss << " [" << release->getName() << "]";
             if (std::string_view artistDisplayName{ track->getArtistDisplayName() }; !artistDisplayName.empty())
                 oss << " by '" << artistDisplayName << "'";
 

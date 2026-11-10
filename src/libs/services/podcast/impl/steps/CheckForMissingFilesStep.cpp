@@ -46,11 +46,11 @@ namespace lms::podcast
             return res;
         }
 
-        bool checkArtworkFile(const db::Artwork::pointer& artwork)
+        bool checkArtworkFile(db::ISession& session, const db::Artwork& artwork)
         {
-            assert(std::holds_alternative<db::ImageId>(artwork->getUnderlyingId())); // these artworks can only be an image
+            assert(std::holds_alternative<db::ImageId>(artwork.getUnderlyingId())); // these artworks can only be an image
 
-            const std::filesystem::path filePath{ artwork->getAbsoluteFilePath() };
+            const std::filesystem::path filePath{ db::Artwork::getAbsoluteFilePath(session, artwork.getId()) };
             return fileExists(filePath.string());
         }
     } // namespace
@@ -76,23 +76,23 @@ namespace lms::podcast
             auto& session{ getDb().getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            db::Podcast::find(session, [&](const db::Podcast::pointer& podcast) {
-                if (const db::Artwork::pointer artwork{ podcast->getArtwork() })
+            db::Podcast::find(session, [&](const db::Podcast& podcast) {
+                if (const std::optional<db::Artwork> artwork{ db::Artwork::find(session, podcast.getArtworkId()) })
                 {
-                    if (!checkArtworkFile(artwork))
+                    if (!checkArtworkFile(session, *artwork))
                     {
-                        LMS_LOG(PODCAST, DEBUG, "Artwork file " << artwork->getAbsoluteFilePath() << " is missing for podcast '" << podcast->getTitle() << "'");
+                        LMS_LOG(PODCAST, DEBUG, "Artwork file " << db::Artwork::getAbsoluteFilePath(session, artwork->getId()) << " is missing for podcast '" << podcast.getTitle() << "'");
                         missingImages.push_back(artwork->getImageId());
                     }
                 }
             });
 
-            db::PodcastEpisode::find(session, db::PodcastEpisode::FindParameters{}, [&](const db::PodcastEpisode::pointer& episode) {
-                if (const db::Artwork::pointer artwork{ episode->getArtwork() })
+            db::PodcastEpisode::find(session, db::PodcastEpisode::FindParameters{}, [&](const db::PodcastEpisode& episode) {
+                if (const std::optional<db::Artwork> artwork{ db::Artwork::find(session, episode.getArtworkId()) })
                 {
-                    if (!checkArtworkFile(artwork))
+                    if (!checkArtworkFile(session, *artwork))
                     {
-                        LMS_LOG(PODCAST, DEBUG, "Artwork file " << artwork->getAbsoluteFilePath() << " is missing for podcast episode '" << episode->getTitle() << "'");
+                        LMS_LOG(PODCAST, DEBUG, "Artwork file " << db::Artwork::getAbsoluteFilePath(session, artwork->getId()) << " is missing for podcast episode '" << episode.getTitle() << "'");
                         missingImages.push_back(artwork->getImageId());
                     }
                 }
@@ -116,15 +116,15 @@ namespace lms::podcast
             auto& session{ getDb().getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            db::PodcastEpisode::find(session, db::PodcastEpisode::FindParameters{}, [&](const db::PodcastEpisode::pointer& episode) {
-                if (episode->getAudioRelativeFilePath().empty())
+            db::PodcastEpisode::find(session, db::PodcastEpisode::FindParameters{}, [&](const db::PodcastEpisode& episode) {
+                if (episode.getAudioRelativeFilePath().empty())
                     return;
 
-                const std::filesystem::path filePath{ getCachePath() / episode->getAudioRelativeFilePath() };
+                const std::filesystem::path filePath{ getCachePath() / episode.getAudioRelativeFilePath() };
                 if (!fileExists(filePath))
                 {
-                    LMS_LOG(PODCAST, INFO, "Episode file " << filePath << " is missing for episode '" << episode->getTitle() << "'");
-                    missingEpisodes.push_back(episode->getId());
+                    LMS_LOG(PODCAST, INFO, "Episode file " << filePath << " is missing for episode '" << episode.getTitle() << "'");
+                    missingEpisodes.push_back(episode.getId());
                 }
             });
         }
@@ -136,8 +136,9 @@ namespace lms::podcast
 
             for (const auto& episodeId : missingEpisodes)
             {
-                db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, episodeId) };
-                episode.modify()->setAudioRelativeFilePath({});
+                std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(session, episodeId) };
+                episode->setAudioRelativeFilePath({});
+                db::PodcastEpisode::update(session, *episode);
             }
         }
     }

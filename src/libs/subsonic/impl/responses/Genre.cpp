@@ -25,21 +25,21 @@
 
 namespace lms::api::subsonic
 {
-    Response::Node createGenreNode(RequestContext& context, const db::Genre::pointer& genre)
+    Response::Node createGenreNode(RequestContext& context, const db::Genre& genre)
     {
         Response::Node genreNode;
 
         switch (context.getResponseFormat())
         {
         case ResponseFormat::json:
-            genreNode.setAttribute("value", genre->getName());
+            genreNode.setAttribute("value", genre.getName());
             break;
         case ResponseFormat::xml:
-            genreNode.setValue(genre->getName());
+            genreNode.setValue(genre.getName());
             break;
         }
-        genreNode.setAttribute("songCount", genre->getTrackCount());
-        genreNode.setAttribute("albumCount", genre->getReleaseCount());
+        genreNode.setAttribute("songCount", genre.getTrackCount());
+        genreNode.setAttribute("albumCount", genre.getReleaseCount());
 
         return genreNode;
     }

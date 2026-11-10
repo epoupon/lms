@@ -19,6 +19,8 @@
 
 #include "ScrobblingsSynchronizer.hpp"
 
+#include <array>
+
 #include <boost/asio/bind_executor.hpp>
 #include <boost/asio/post.hpp>
 
@@ -56,7 +58,7 @@ namespace lms::scrobbling::lastFm
         {
             auto transaction{ session.createReadTransaction() };
 
-            const db::Track::pointer track{ db::Track::find(session, listen.trackId) };
+            const std::optional<db::Track> track{ db::Track::find(session, listen.trackId) };
             if (!track)
                 return std::nullopt;
 
@@ -71,7 +73,7 @@ namespace lms::scrobbling::lastFm
             info.artistName = artistName;
             info.trackName = track->getName();
 
-            if (const auto release{ track->getRelease() })
+            if (const auto release{ db::Release::find(session, track->getReleaseId()) })
                 info.albumName = release->getName();
 
             const auto secs{ std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()) };
@@ -206,32 +208,28 @@ namespace lms::scrobbling::lastFm
         db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
+        std::optional<db::Listen> dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
         if (!dbListen)
         {
-            const db::User::pointer user{ db::User::find(session, listen.userId) };
+            const std::optional<db::User> user{ db::User::find(session, listen.userId) };
             if (!user)
                 return false;
 
-            const db::Track::pointer track{ db::Track::find(session, listen.trackId) };
+            const std::optional<db::Track> track{ db::Track::find(session, listen.trackId) };
             if (!track)
                 return false;
 
-            dbListen = db::Listen::create(session, user, track, listen.listenedAt);
+            dbListen = db::Listen::create(session, user->getId(), track->getId(), listen.listenedAt);
         }
 
-        db::ListenBackendSync::pointer sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::LastFm) };
+        std::optional<db::ListenBackendSync> sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::LastFm) };
         if (!sync)
-        {
-            sync = db::ListenBackendSync::create(session, dbListen, db::ScrobblingBackend::LastFm);
-            sync.modify()->setSyncState(syncState);
-            return true;
-        }
-
-        if (sync->getSyncState() == syncState)
+            sync = db::ListenBackendSync::create(session, dbListen->getId(), db::ScrobblingBackend::LastFm);
+        else if (sync->getSyncState() == syncState)
             return false;
 
-        sync.modify()->setSyncState(syncState);
+        sync->setSyncState(syncState);
+        db::ListenBackendSync::update(session, *sync);
         return true;
     }
 
@@ -265,14 +263,14 @@ namespace lms::scrobbling::lastFm
         db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
+        std::optional<db::Listen> dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
         if (!dbListen)
             return;
 
-        if (db::ListenBackendSync::pointer sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::LastFm) })
+        if (std::optional<db::ListenBackendSync> sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::LastFm) })
         {
             LMS_LOG_LASTFM(DEBUG, "Listen cannot be scrobbled (no artist tag): dropping sync entry");
-            sync.remove();
+            db::ListenBackendSync::destroy(session, std::array{ sync->getId() });
         }
     }
 
@@ -289,13 +287,13 @@ namespace lms::scrobbling::lastFm
                 .setSyncState(db::SyncState::PendingAdd)
                 .setRange(db::Range{ 0, maxBatchSize * 10 });
 
-            db::ListenBackendSync::find(session, params, [&](const db::ListenBackendSync::pointer& sync) {
-                const db::Listen::pointer dbListen{ sync->getListen() };
+            db::ListenBackendSync::find(session, params, [&](const db::ListenBackendSync& sync) {
+                const std::optional<db::Listen> dbListen{ db::Listen::find(session, sync.getListenId()) };
 
                 TimedListen tl;
                 tl.listenedAt = dbListen->getDateTime();
-                tl.userId = dbListen->getUser()->getId();
-                tl.trackId = dbListen->getTrack()->getId();
+                tl.userId = dbListen->getUserId();
+                tl.trackId = dbListen->getTrackId();
                 pendingByUser[tl.userId].push_back(tl);
             });
         }

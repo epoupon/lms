@@ -31,22 +31,31 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_TRUE(release->getArtistLinks().empty());
+            bool visited{};
+            ReleaseArtistLink::find(session, release.getId(), [&](const ReleaseArtistLink&) {
+                visited = true;
+            });
+            EXPECT_FALSE(visited);
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track.get().modify()->setRelease(release.get());
-            ReleaseArtistLink::create(session, release.get(), artist.get(), false);
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
+            ReleaseArtistLink::create(session, release.getId(), artist.getId(), false);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const std::vector<ReleaseArtistLink::pointer> links{ release->getArtistLinks() };
+            std::vector<ReleaseArtistLink> links;
+            ReleaseArtistLink::find(session, release.getId(), [&](const ReleaseArtistLink& link) {
+                links.push_back(link);
+            });
             ASSERT_EQ(links.size(), 1);
-            EXPECT_EQ(links[0]->getArtistId(), artist.getId());
+            EXPECT_EQ(links[0].getArtistId(), artist.getId());
         }
     }
 } // namespace lms::db::tests

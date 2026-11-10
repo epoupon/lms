@@ -25,7 +25,7 @@
 
 #include "database/objects/Podcast.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -37,6 +37,13 @@ namespace lms::db::dbo
     public:
         Podcast() = default;
         using db::Podcast::Podcast;
+
+        void syncIds()
+        {
+            _id = id();
+            _artworkId = _artwork.id();
+        }
+        void applyIds();
 
         template<class Action>
         void persist(Action& a)

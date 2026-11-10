@@ -24,7 +24,7 @@
 
 #include "database/objects/RatedTrack.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -37,7 +37,14 @@ namespace lms::db::dbo
         RatedTrack() = default;
         using db::RatedTrack::RatedTrack;
 
-        RatedTrack(const ObjectPtr<db::Track>& track, const ObjectPtr<db::User>& user);
+        RatedTrack(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<User> user);
+
+        void syncIds()
+        {
+            _id = id();
+            _trackId = _track.id();
+            _userId = _user.id();
+        }
 
         template<class Action>
         void persist(Action& a)

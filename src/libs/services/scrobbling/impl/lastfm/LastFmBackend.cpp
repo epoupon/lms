@@ -67,7 +67,7 @@ namespace lms::scrobbling::lastFm
         db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        const db::Track::pointer track{ db::Track::find(session, trackId) };
+        const std::optional<db::Track> track{ db::Track::find(session, trackId) };
         if (!track)
             return false;
 
@@ -172,11 +172,12 @@ namespace lms::scrobbling::lastFm
             {
                 db::ISession& session{ _db.getTLSSession() };
                 auto transaction{ session.createWriteTransaction() };
-                if (db::User::pointer user{ db::User::find(session, userId) })
+                if (std::optional<db::User> user{ db::User::find(session, userId) })
                 {
-                    user.modify()->setLastFmApiKey(pending.apiKey);
-                    user.modify()->setLastFmApiSecret(pending.apiSecret);
-                    user.modify()->setLastFmSessionKey(sessionKey);
+                    user->setLastFmApiKey(pending.apiKey);
+                    user->setLastFmApiSecret(pending.apiSecret);
+                    user->setLastFmSessionKey(sessionKey);
+                    db::User::update(session, *user);
                 }
             }
 

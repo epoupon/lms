@@ -26,8 +26,8 @@
 
 #include "ArtistDbo.hpp"
 #include "ArtworkDbo.hpp"
+#include "DboAccess.hpp"
 #include "JoinSet.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "objects/FilterExprCompiler.hpp"
@@ -150,6 +150,21 @@ namespace lms::db
             {
                 joins.add(trackArtistLinkJoin);
                 res.combineWithAnd({ "t_a_l.track_id = ?", { params.track.getValue() } });
+            }
+
+            if (params.release.isValid())
+            {
+                // The release artists and the track artists of a release are not the same artists
+                assert(params.releaseArtistsOnly != params.trackArtistLinkType.has_value());
+                if (params.releaseArtistsOnly)
+                {
+                    res.combineWithAnd({ "r_a_l.release_id = ?", { params.release.getValue() } });
+                }
+                else
+                {
+                    addTrackArtistJoins(joins);
+                    res.combineWithAnd({ "t.release_id = ?", { params.release.getValue() } });
+                }
             }
 
             // The joins of a sort select the artists too: the ones without any row are excluded
@@ -275,6 +290,11 @@ namespace lms::db
             switch (params.sortMethod)
             {
             case ArtistSortMethod::None:
+                // the links are created in tag order
+                if (params.release.isValid() && params.releaseArtistsOnly)
+                    query.orderBy("MIN(r_a_l.id)");
+                else if (params.release.isValid() || params.track.isValid())
+                    query.orderBy("MIN(t_a_l.id)");
                 break;
             case ArtistSortMethod::Id:
                 query.orderBy("a.id");
@@ -337,7 +357,7 @@ namespace lms::db
         setName(name);
     }
 
-    Artist::pointer Artist::create(ISession& session, const std::string& name, const std::optional<core::UUID>& mbid)
+    Artist Artist::create(ISession& session, const std::string& name, const std::optional<core::UUID>& mbid)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Artist>{ new dbo::Artist{ name, mbid } });
     }
@@ -361,7 +381,7 @@ namespace lms::db
         return utils::fetchQuerySingleResult(createCountQuery(session, params));
     }
 
-    void Artist::find(ISession& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist::pointer&)>& func, MediaLibraryId library)
+    void Artist::find(ISession& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist&)>& func, MediaLibraryId library)
     {
         checkReadTransaction(session);
 
@@ -377,13 +397,13 @@ namespace lms::db
                 .bind(library);
         }
 
-        utils::forEachQueryObject(query, [&](const Artist::pointer& artist) {
+        utils::forEachQueryObject(query, [&](const Artist& artist) {
             func(artist);
-            lastRetrievedArtist = artist->getId();
+            lastRetrievedArtist = artist.getId();
         });
     }
 
-    void Artist::find(ISession& session, const IdRange<ArtistId>& idRange, const std::function<void(const Artist::pointer&)>& func)
+    void Artist::find(ISession& session, const IdRange<ArtistId>& idRange, const std::function<void(const Artist&)>& func)
     {
         checkReadTransaction(session);
 
@@ -391,12 +411,10 @@ namespace lms::db
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artist>>("SELECT a from artist a").orderBy("a.id").where("a.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
 
-        utils::forEachQueryObject(query, [&](const Artist::pointer& artist) {
-            func(artist);
-        });
+        utils::forEachQueryObject(query, func);
     }
 
-    std::vector<Artist::pointer> Artist::find(ISession& session, std::string_view name)
+    std::vector<Artist> Artist::find(ISession& session, std::string_view name)
     {
         checkReadTransaction(session);
 
@@ -405,15 +423,18 @@ namespace lms::db
         return utils::fetchQueryObjects(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artist>>("SELECT a FROM artist a").where("a.name = ?").bind(name).orderBy("LENGTH(a.mbid) DESC")); // put mbid entries first
     }
 
-    Artist::pointer Artist::find(ISession& session, const core::UUID& mbid)
+    std::optional<Artist> Artist::find(ISession& session, const core::UUID& mbid)
     {
         checkReadTransaction(session);
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artist>>("SELECT a FROM artist a").where("a.mbid = ?").bind(mbid));
     }
 
-    Artist::pointer Artist::find(ISession& session, ArtistId id)
+    std::optional<Artist> Artist::find(ISession& session, ArtistId id)
     {
         checkReadTransaction(session);
+        if (!id.isValid())
+            return std::nullopt;
+
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Artist>>("SELECT a FROM artist a").where("a.id = ?").bind(id));
     }
 
@@ -425,7 +446,7 @@ namespace lms::db
         return utils::execRangeQuery<ArtistId>(query, params.range);
     }
 
-    std::vector<Artist::pointer> Artist::find(ISession& session, const FindParameters& params)
+    std::vector<Artist> Artist::find(ISession& session, const FindParameters& params)
     {
         checkReadTransaction(session);
 
@@ -433,7 +454,7 @@ namespace lms::db
         return utils::execRangeObjectQuery(query, params.range);
     }
 
-    void Artist::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    void Artist::find(ISession& session, const FindParameters& params, const std::function<void(const Artist&)>& func)
     {
         checkReadTransaction(session);
 
@@ -484,7 +505,7 @@ AND NOT EXISTS (
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT 1 FROM artist").where("id = ?").bind(id)) == 1;
     }
 
-    void Artist::findNameUpdates(ISession& session, const std::function<void(const pointer& artist, std::string_view newName, std::string_view newSortName)>& func)
+    void Artist::findNameUpdates(ISession& session, const std::function<void(const Artist& artist, std::string_view newName, std::string_view newSortName)>& func)
     {
         checkReadTransaction(session);
 
@@ -514,28 +535,24 @@ AND NOT EXISTS (
                                                                           " WHERE a.name <> n.name OR a.sort_name <> n.sort_name") };
 
         utils::forEachQueryResult(query, [&](const auto& res) {
-            func(toObjectPtr(std::get<0>(res)), std::get<1>(res), std::get<2>(res));
+            func(toEntity(std::get<0>(res)), std::get<1>(res), std::get<2>(res));
         });
     }
 
     void Artist::updatePreferredArtwork(ISession& session, ArtistId artistId, ArtworkId artworkId)
     {
-        checkWriteTransaction(session);
-
-        if (artworkId.isValid())
-            utils::executeCommand(*getDboSession(session), "UPDATE artist SET preferred_artwork_id = ? WHERE id = ?", artworkId, artistId);
-        else
-            utils::executeCommand(*getDboSession(session), "UPDATE artist SET preferred_artwork_id = NULL WHERE id = ?", artistId);
+        dbo::Artist& artist{ utils::modifyObject<dbo::Artist>(session, artistId) };
+        setRelation(*getDboSession(session), artist._preferredArtwork, artworkId);
     }
 
-    ObjectPtr<Artwork> Artist::getPreferredArtwork() const
+    void Artist::update(ISession& session, const Artist& artist)
     {
-        return toObjectPtr(getDbo(*this)._preferredArtwork);
+        utils::updateObject<dbo::Artist>(session, artist);
     }
 
-    ArtworkId Artist::getPreferredArtworkId() const
+    void dbo::Artist::applyIds()
     {
-        return getDbo(*this)._preferredArtwork.id();
+        setRelation(*session(), _preferredArtwork, _preferredArtworkId);
     }
 
     void Artist::setName(std::string_view name)
@@ -548,10 +565,5 @@ AND NOT EXISTS (
     {
         _sortName = core::stringUtils::utf8Truncate(sortName, maxNameLength);
         LMS_LOG_IF(DB, WARNING, sortName.size() > maxNameLength, "Artist sort name too long, truncated to '" << _sortName << "'");
-    }
-
-    void Artist::setPreferredArtwork(const ObjectPtr<Artwork>& artwork)
-    {
-        getDbo(*this)._preferredArtwork = getDboPtr(artwork);
     }
 } // namespace lms::db

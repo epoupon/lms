@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <array>
+
 #include "Common.hpp"
 
 #include "core/PartialDateTime.hpp"
@@ -73,20 +75,20 @@ namespace lms::db::tests
                 const auto releases{ Release::findIds(session, Release::FindParameters{}) };
                 ASSERT_EQ(releases.size(), 1);
                 EXPECT_EQ(releases.front(), release.getId());
-                EXPECT_EQ(release->getDuration(), std::chrono::seconds{ 0 });
+                EXPECT_EQ(Release::getDuration(session, release.getId()), std::chrono::seconds{ 0 });
             }
 
             {
                 const auto releases{ Release::find(session, Release::FindParameters{}) };
                 ASSERT_EQ(releases.size(), 1);
-                EXPECT_EQ(releases.front()->getId(), release.getId());
+                EXPECT_EQ(releases.front().getId(), release.getId());
             }
 
             {
                 bool visited{};
-                Release::find(session, Release::FindParameters{}, [&](const Release::pointer& r) {
+                Release::find(session, Release::FindParameters{}, [&](const Release& r) {
                     visited = true;
-                    EXPECT_EQ(r->getId(), release.getId());
+                    EXPECT_EQ(r.getId(), release.getId());
                 });
                 EXPECT_TRUE(visited);
             }
@@ -107,26 +109,38 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track2a.get().modify()->setMediaLibrary(library.get());
-            track2b.get().modify()->setMediaLibrary(library.get());
-            track1.get().modify()->setRelease(release1.get());
-            track2a.get().modify()->setRelease(release2.get());
-            track2b.get().modify()->setRelease(release2.get());
-            track3.get().modify()->setRelease(release3.get());
+            std::optional<Track> updatedTrack2a{ track2a.get() };
+            updatedTrack2a->setMediaLibrary(library.getId());
+            Track::update(session, *updatedTrack2a);
+            std::optional<Track> updatedTrack2b{ track2b.get() };
+            updatedTrack2b->setMediaLibrary(library.getId());
+            Track::update(session, *updatedTrack2b);
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1);
+            updatedTrack2a = track2a.get();
+            updatedTrack2a->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2a);
+            updatedTrack2b = track2b.get();
+            updatedTrack2b->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2b);
+            std::optional<Track> updatedTrack3{ track3.get() };
+            updatedTrack3->setRelease(release3.getId());
+            Track::update(session, *updatedTrack3);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             ReleaseId lastRetrievedId;
-            std::vector<Release::pointer> visitedReleases;
-            Release::find(session, lastRetrievedId, 10, [&](const Release::pointer& release) {
+            std::vector<Release> visitedReleases;
+            Release::find(session, lastRetrievedId, 10, [&](const Release& release) {
                 visitedReleases.push_back(release);
             });
             ASSERT_EQ(visitedReleases.size(), 3);
-            EXPECT_EQ(visitedReleases[0]->getId(), release1.getId());
-            EXPECT_EQ(visitedReleases[1]->getId(), release2.getId());
-            EXPECT_EQ(visitedReleases[2]->getId(), release3.getId());
+            EXPECT_EQ(visitedReleases[0].getId(), release1.getId());
+            EXPECT_EQ(visitedReleases[1].getId(), release2.getId());
+            EXPECT_EQ(visitedReleases[2].getId(), release3.getId());
             EXPECT_EQ(lastRetrievedId, release3.getId());
         }
 
@@ -134,12 +148,12 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             ReleaseId lastRetrievedId{ release1.getId() };
-            std::vector<Release::pointer> visitedReleases;
-            Release::find(session, lastRetrievedId, 1, [&](const Release::pointer& release) {
+            std::vector<Release> visitedReleases;
+            Release::find(session, lastRetrievedId, 1, [&](const Release& release) {
                 visitedReleases.push_back(release);
             });
             ASSERT_EQ(visitedReleases.size(), 1);
-            EXPECT_EQ(visitedReleases[0]->getId(), release2.getId());
+            EXPECT_EQ(visitedReleases[0].getId(), release2.getId());
             EXPECT_EQ(lastRetrievedId, release2.getId());
         }
 
@@ -147,8 +161,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             ReleaseId lastRetrievedId{ release1.getId() };
-            std::vector<Release::pointer> visitedReleases;
-            Release::find(session, lastRetrievedId, 0, [&](const Release::pointer& release) {
+            std::vector<Release> visitedReleases;
+            Release::find(session, lastRetrievedId, 0, [&](const Release& release) {
                 visitedReleases.push_back(release);
             });
             ASSERT_EQ(visitedReleases.size(), 0);
@@ -159,9 +173,9 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             ReleaseId lastRetrievedId;
-            std::vector<Release::pointer> visitedReleases;
+            std::vector<Release> visitedReleases;
             Release::find(
-                session, lastRetrievedId, 10, [&](const Release::pointer& release) {
+                session, lastRetrievedId, 10, [&](const Release& release) {
                     visitedReleases.push_back(release);
                 },
                 otherLibrary.getId());
@@ -173,14 +187,14 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             ReleaseId lastRetrievedId;
-            std::vector<Release::pointer> visitedReleases;
+            std::vector<Release> visitedReleases;
             Release::find(
-                session, lastRetrievedId, 10, [&](const Release::pointer& release) {
+                session, lastRetrievedId, 10, [&](const Release& release) {
                     visitedReleases.push_back(release);
                 },
                 library.getId());
             ASSERT_EQ(visitedReleases.size(), 1);
-            EXPECT_EQ(visitedReleases[0]->getId(), release2.getId());
+            EXPECT_EQ(visitedReleases[0].getId(), release2.getId());
             EXPECT_EQ(lastRetrievedId, release2.getId());
         }
     }
@@ -254,9 +268,9 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             std::size_t count{};
-            Release::find(session, IdRange<ReleaseId>{ .first = release1.getId(), .last = release1.getId() }, [&](const db::Release::pointer& release) {
+            Release::find(session, IdRange<ReleaseId>{ .first = release1.getId(), .last = release1.getId() }, [&](const db::Release& release) {
                 count++;
-                EXPECT_EQ(release->getId(), release1.getId());
+                EXPECT_EQ(release.getId(), release1.getId());
             });
             EXPECT_EQ(count, 1);
         }
@@ -265,7 +279,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             std::size_t count{};
-            Release::find(session, IdRange<ReleaseId>{ .first = release1.getId(), .last = release3.getId() }, [&](const db::Release::pointer&) {
+            Release::find(session, IdRange<ReleaseId>{ .first = release1.getId(), .last = release3.getId() }, [&](const db::Release&) {
                 count++;
             });
             EXPECT_EQ(count, 3);
@@ -281,9 +295,13 @@ namespace lms::db::tests
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                track.get().modify()->setRelease(release.get());
-                track.get().modify()->setName("MyTrackName");
-                release.get().modify()->setName("MyReleaseName");
+                std::optional<Track> updatedTrack{ track.get() };
+                updatedTrack->setRelease(release.getId());
+                updatedTrack->setName("MyTrackName");
+                Track::update(session, *updatedTrack);
+                std::optional<Release> updatedRelease{ release.get() };
+                updatedRelease->setName("MyReleaseName");
+                Release::update(session, *updatedRelease);
             }
 
             {
@@ -298,8 +316,8 @@ namespace lms::db::tests
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                ASSERT_TRUE(track->getRelease());
-                EXPECT_EQ(track->getRelease()->getId(), release.getId());
+                ASSERT_TRUE(track->getReleaseId().isValid());
+                EXPECT_EQ(track->getReleaseId(), release.getId());
             }
 
             {
@@ -342,8 +360,10 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track.get().modify()->setRelease(release.get());
-            track.get().modify()->setMediaLibrary(library.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            updatedTrack->setMediaLibrary(library.getId());
+            Track::update(session, *updatedTrack);
         }
         {
             auto transaction{ session.createReadTransaction() };
@@ -378,12 +398,24 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track1.get().modify()->setRelease(release1.get());
-            track2.get().modify()->setRelease(release2.get());
-            track3.get().modify()->setRelease(release3.get());
-            track4.get().modify()->setRelease(release4.get());
-            track5.get().modify()->setRelease(release5.get());
-            track6.get().modify()->setRelease(release6.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1);
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2);
+            std::optional<Track> updatedTrack3{ track3.get() };
+            updatedTrack3->setRelease(release3.getId());
+            Track::update(session, *updatedTrack3);
+            std::optional<Track> updatedTrack4{ track4.get() };
+            updatedTrack4->setRelease(release4.getId());
+            Track::update(session, *updatedTrack4);
+            std::optional<Track> updatedTrack5{ track5.get() };
+            updatedTrack5->setRelease(release5.getId());
+            Track::update(session, *updatedTrack5);
+            std::optional<Track> updatedTrack6{ track6.get() };
+            updatedTrack6->setRelease(release6.getId());
+            Track::update(session, *updatedTrack6);
         }
 
         {
@@ -438,9 +470,15 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track1.get().modify()->setRelease(release1.get());
-            track2.get().modify()->setRelease(release2.get());
-            track3.get().modify()->setRelease(release3.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1);
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2);
+            std::optional<Track> updatedTrack3{ track3.get() };
+            updatedTrack3->setRelease(release3.getId());
+            Track::update(session, *updatedTrack3);
         }
 
         {
@@ -462,15 +500,20 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, ReleaseSearchByMediumName)
     {
         ScopedRelease release{ session, "The Beatles In Mono" };
-        ScopedMedium medium{ session, release.lockAndGet() };
+        ScopedMedium medium{ session, release.getId() };
         ScopedTrack track{ session };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track.get().modify()->setRelease(release.get());
-            track.get().modify()->setMedium(medium.get());
-            medium.get().modify()->setName("Sgt. Pepper's Lonely Hearts Club Band");
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            updatedTrack->setMedium(medium.getId());
+            Track::update(session, *updatedTrack);
+
+            std::optional<Medium> updatedMedium{ medium.get() };
+            updatedMedium->setName("Sgt. Pepper's Lonely Hearts Club Band");
+            Medium::update(session, *updatedMedium);
         }
 
         {
@@ -499,21 +542,31 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, ReleaseSearchByMediumName_multipleMediaNoDuplicates)
     {
         ScopedRelease release{ session, "The Beatles In Mono" };
-        ScopedMedium medium1{ session, release.lockAndGet() };
-        ScopedMedium medium2{ session, release.lockAndGet() };
+        ScopedMedium medium1{ session, release.getId() };
+        ScopedMedium medium2{ session, release.getId() };
         ScopedTrack track1{ session };
         ScopedTrack track2{ session };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track1.get().modify()->setRelease(release.get());
-            track1.get().modify()->setMedium(medium1.get());
-            medium1.get().modify()->setName("Sgt. Pepper's Lonely Hearts Club Band");
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setRelease(release.getId());
+            updatedTrack1->setMedium(medium1.getId());
+            Track::update(session, *updatedTrack1);
 
-            track2.get().modify()->setRelease(release.get());
-            track2.get().modify()->setMedium(medium2.get());
-            medium2.get().modify()->setName("Abbey Road");
+            std::optional<Medium> updatedMedium1{ medium1.get() };
+            updatedMedium1->setName("Sgt. Pepper's Lonely Hearts Club Band");
+            Medium::update(session, *updatedMedium1);
+
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setRelease(release.getId());
+            updatedTrack2->setMedium(medium2.getId());
+            Track::update(session, *updatedTrack2);
+
+            std::optional<Medium> updatedMedium2{ medium2.get() };
+            updatedMedium2->setName("Abbey Road");
+            Medium::update(session, *updatedMedium2);
         }
 
         {
@@ -539,7 +592,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track1.get().modify()->setRelease(release1.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1);
         }
 
         {
@@ -551,7 +606,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            release1.get().modify()->setTotalDisc(6);
+            std::optional<Release> updatedRelease1{ release1.get() };
+            updatedRelease1->setTotalDisc(6);
+            Release::update(session, *updatedRelease1);
         }
 
         {
@@ -565,8 +622,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track2.get().modify()->setRelease(release1.get());
-            release1.get().modify()->setTotalDisc(67);
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setRelease(release1.getId());
+            Track::update(session, *updatedTrack2);
+            std::optional<Release> updatedRelease1{ release1.get() };
+            updatedRelease1->setTotalDisc(67);
+            Release::update(session, *updatedRelease1);
         }
 
         {
@@ -587,8 +648,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track3.get().modify()->setRelease(release2.get());
-            release2.get().modify()->setTotalDisc(5);
+            std::optional<Track> updatedTrack3{ track3.get() };
+            updatedTrack3->setRelease(release2.getId());
+            Track::update(session, *updatedTrack3);
+            std::optional<Release> updatedRelease2{ release2.get() };
+            updatedRelease2->setTotalDisc(5);
+            Release::update(session, *updatedRelease2);
         }
         {
             auto transaction{ session.createReadTransaction() };
@@ -603,11 +668,11 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, MultiTracksSingleReleaseFirstTrack)
     {
         ScopedRelease release1{ session, "MyRelease1" };
-        ScopedMedium medium1A{ session, release1.lockAndGet() };
-        ScopedMedium medium1B{ session, release1.lockAndGet() };
+        ScopedMedium medium1A{ session, release1.getId() };
+        ScopedMedium medium1B{ session, release1.getId() };
         ScopedRelease release2{ session, "MyRelease2" };
-        ScopedMedium medium2A{ session, release2.lockAndGet() };
-        ScopedMedium medium2B{ session, release2.lockAndGet() };
+        ScopedMedium medium2A{ session, release2.getId() };
+        ScopedMedium medium2B{ session, release2.getId() };
 
         ScopedTrack track1A{ session };
         ScopedTrack track1B{ session };
@@ -624,22 +689,38 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track1A.get().modify()->setRelease(release1.get());
-            track1A.get().modify()->setMedium(medium1A.get());
+            std::optional<Track> updatedTrack1A{ track1A.get() };
+            updatedTrack1A->setRelease(release1.getId());
+            updatedTrack1A->setMedium(medium1A.getId());
+            Track::update(session, *updatedTrack1A);
 
-            track1B.get().modify()->setRelease(release1.get());
-            track1B.get().modify()->setMedium(medium1B.get());
+            std::optional<Track> updatedTrack1B{ track1B.get() };
+            updatedTrack1B->setRelease(release1.getId());
+            updatedTrack1B->setMedium(medium1B.getId());
+            Track::update(session, *updatedTrack1B);
 
-            track2A.get().modify()->setRelease(release2.get());
-            track2A.get().modify()->setMedium(medium2A.get());
-            track2B.get().modify()->setRelease(release2.get());
-            track2B.get().modify()->setMedium(medium2B.get());
+            std::optional<Track> updatedTrack2A{ track2A.get() };
+            updatedTrack2A->setRelease(release2.getId());
+            updatedTrack2A->setMedium(medium2A.getId());
+            Track::update(session, *updatedTrack2A);
+            std::optional<Track> updatedTrack2B{ track2B.get() };
+            updatedTrack2B->setRelease(release2.getId());
+            updatedTrack2B->setMedium(medium2B.getId());
+            Track::update(session, *updatedTrack2B);
 
-            track1A.get().modify()->setTrackNumber(1);
-            track1B.get().modify()->setTrackNumber(2);
+            updatedTrack1A = track1A.get();
+            updatedTrack1A->setTrackNumber(1);
+            Track::update(session, *updatedTrack1A);
+            updatedTrack1B = track1B.get();
+            updatedTrack1B->setTrackNumber(2);
+            Track::update(session, *updatedTrack1B);
 
-            track2A.get().modify()->setTrackNumber(1);
-            track2B.get().modify()->setTrackNumber(2);
+            updatedTrack2A = track2A.get();
+            updatedTrack2A->setTrackNumber(1);
+            Track::update(session, *updatedTrack2A);
+            updatedTrack2B = track2B.get();
+            updatedTrack2B->setTrackNumber(2);
+            Track::update(session, *updatedTrack2B);
         }
 
         {
@@ -683,21 +764,37 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track1A.get().modify()->setRelease(release1.get());
-            track1B.get().modify()->setRelease(release1.get());
-            track2A.get().modify()->setRelease(release2.get());
-            track2B.get().modify()->setRelease(release2.get());
+            std::optional<Track> updatedTrack1A{ track1A.get() };
+            updatedTrack1A->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1A);
+            std::optional<Track> updatedTrack1B{ track1B.get() };
+            updatedTrack1B->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1B);
+            std::optional<Track> updatedTrack2A{ track2A.get() };
+            updatedTrack2A->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2A);
+            std::optional<Track> updatedTrack2B{ track2B.get() };
+            updatedTrack2B->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2B);
 
-            track1A.get().modify()->setDate(release1Date);
-            track1B.get().modify()->setDate(release1Date);
-            track1A.get().modify()->setOriginalDate(release1OriginalDate);
-            track1B.get().modify()->setOriginalDate(release1OriginalDate);
+            updatedTrack1A = track1A.get();
+            updatedTrack1A->setDate(release1Date);
+            Track::update(session, *updatedTrack1A);
+            updatedTrack1B = track1B.get();
+            updatedTrack1B->setDate(release1Date);
+            Track::update(session, *updatedTrack1B);
+            updatedTrack1A = track1A.get();
+            updatedTrack1A->setOriginalDate(release1OriginalDate);
+            Track::update(session, *updatedTrack1A);
+            updatedTrack1B = track1B.get();
+            updatedTrack1B->setOriginalDate(release1OriginalDate);
+            Track::update(session, *updatedTrack1B);
 
-            EXPECT_EQ(release1.get()->getDate(), release1Date);
-            EXPECT_EQ(release1.get()->getOriginalDate(), release1OriginalDate);
+            EXPECT_EQ(Release::getDate(session, release1.getId()), release1Date);
+            EXPECT_EQ(Release::getOriginalDate(session, release1.getId()), release1OriginalDate);
 
-            EXPECT_EQ(release1.get()->getYear(), release1Date.getYear());
-            EXPECT_EQ(release1.get()->getOriginalYear(), release1OriginalDate.getYear());
+            EXPECT_EQ(Release::getYear(session, release1.getId()), release1Date.getYear());
+            EXPECT_EQ(Release::getOriginalYear(session, release1.getId()), release1OriginalDate.getYear());
         }
 
         {
@@ -739,19 +836,35 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track1A.get().modify()->setRelease(release1.get());
-            track1B.get().modify()->setRelease(release1.get());
-            track2A.get().modify()->setRelease(release2.get());
-            track2B.get().modify()->setRelease(release2.get());
+            std::optional<Track> updatedTrack1A{ track1A.get() };
+            updatedTrack1A->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1A);
+            std::optional<Track> updatedTrack1B{ track1B.get() };
+            updatedTrack1B->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1B);
+            std::optional<Track> updatedTrack2A{ track2A.get() };
+            updatedTrack2A->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2A);
+            std::optional<Track> updatedTrack2B{ track2B.get() };
+            updatedTrack2B->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2B);
 
-            track1A.get().modify()->setDate(release1Date);
-            track1B.get().modify()->setDate(release1Date);
+            updatedTrack1A = track1A.get();
+            updatedTrack1A->setDate(release1Date);
+            Track::update(session, *updatedTrack1A);
+            updatedTrack1B = track1B.get();
+            updatedTrack1B->setDate(release1Date);
+            Track::update(session, *updatedTrack1B);
 
-            track1A.get().modify()->setOriginalDate(release1OriginalDate);
-            track1B.get().modify()->setOriginalDate(release1OriginalDate);
+            updatedTrack1A = track1A.get();
+            updatedTrack1A->setOriginalDate(release1OriginalDate);
+            Track::update(session, *updatedTrack1A);
+            updatedTrack1B = track1B.get();
+            updatedTrack1B->setOriginalDate(release1OriginalDate);
+            Track::update(session, *updatedTrack1B);
 
-            EXPECT_EQ(release1.get()->getOriginalDate(), release1OriginalDate);
-            EXPECT_EQ(release1.get()->getOriginalYear(), release1OriginalDate.getYear());
+            EXPECT_EQ(Release::getOriginalDate(session, release1.getId()), release1OriginalDate);
+            EXPECT_EQ(Release::getOriginalYear(session, release1.getId()), release1OriginalDate.getYear());
         }
 
         {
@@ -792,18 +905,34 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track1A.get().modify()->setRelease(release1.get());
-            track1B.get().modify()->setRelease(release1.get());
-            track2A.get().modify()->setRelease(release2.get());
-            track2B.get().modify()->setRelease(release2.get());
+            std::optional<Track> updatedTrack1A{ track1A.get() };
+            updatedTrack1A->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1A);
+            std::optional<Track> updatedTrack1B{ track1B.get() };
+            updatedTrack1B->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1B);
+            std::optional<Track> updatedTrack2A{ track2A.get() };
+            updatedTrack2A->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2A);
+            std::optional<Track> updatedTrack2B{ track2B.get() };
+            updatedTrack2B->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2B);
 
-            track1A.get().modify()->setDate(core::PartialDateTime{ release1Year });
-            track1B.get().modify()->setDate(core::PartialDateTime{ release1Year });
-            track1A.get().modify()->setOriginalDate(core::PartialDateTime{ release1OriginalYear });
-            track1B.get().modify()->setOriginalDate(core::PartialDateTime{ release1OriginalYear });
+            updatedTrack1A = track1A.get();
+            updatedTrack1A->setDate(core::PartialDateTime{ release1Year });
+            Track::update(session, *updatedTrack1A);
+            updatedTrack1B = track1B.get();
+            updatedTrack1B->setDate(core::PartialDateTime{ release1Year });
+            Track::update(session, *updatedTrack1B);
+            updatedTrack1A = track1A.get();
+            updatedTrack1A->setOriginalDate(core::PartialDateTime{ release1OriginalYear });
+            Track::update(session, *updatedTrack1A);
+            updatedTrack1B = track1B.get();
+            updatedTrack1B->setOriginalDate(core::PartialDateTime{ release1OriginalYear });
+            Track::update(session, *updatedTrack1B);
 
-            EXPECT_EQ(release1.get()->getYear(), release1Year);
-            EXPECT_EQ(release1.get()->getOriginalYear(), release1OriginalYear);
+            EXPECT_EQ(Release::getYear(session, release1.getId()), release1Year);
+            EXPECT_EQ(Release::getOriginalYear(session, release1.getId()), release1OriginalYear);
         }
 
         {
@@ -830,7 +959,9 @@ namespace lms::db::tests
         ScopedArtist artist2{ session, "MyArtist2" };
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -849,8 +980,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Producer);
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Producer);
         }
 
         {
@@ -883,9 +1014,9 @@ namespace lms::db::tests
             ASSERT_EQ(releases.size(), 1);
             EXPECT_EQ(releases.front(), release.getId());
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setTrackArtist(artist.getId())), 1);
-            EXPECT_EQ(release->getTrackArtists().size(), 1);
-            EXPECT_EQ(release->getTrackArtists(TrackArtistLinkType::Artist).size(), 1);
-            EXPECT_EQ(release->getTrackArtists(TrackArtistLinkType::Conductor).size(), 0);
+            EXPECT_EQ(Artist::find(session, Artist::FindParameters{}.setRelease(release.getId()).setTrackArtistLinkType(TrackArtistLinkType::Artist)).size(), 1);
+            EXPECT_EQ(Artist::find(session, Artist::FindParameters{}.setRelease(release.getId()).setTrackArtistLinkType(TrackArtistLinkType::Artist)).size(), 1);
+            EXPECT_EQ(Artist::find(session, Artist::FindParameters{}.setRelease(release.getId()).setTrackArtistLinkType(TrackArtistLinkType::Conductor)).size(), 0);
 
             releases = Release::findIds(session, Release::FindParameters{}.setTrackArtist(artist.getId(), { TrackArtistLinkType::Composer }));
             EXPECT_EQ(releases.size(), 0);
@@ -899,16 +1030,16 @@ namespace lms::db::tests
 
             {
                 bool visited{};
-                release->visitTrackArtistLinks(TrackArtistLinkType::Artist, [&](const db::TrackArtistLink::pointer& link) {
+                TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setRelease(release.getId()).setLinkType(TrackArtistLinkType::Artist), [&](const db::TrackArtistLink& link) {
                     visited = true;
-                    EXPECT_EQ(link->getArtistId(), artist.getId());
+                    EXPECT_EQ(link.getArtistId(), artist.getId());
                 });
                 EXPECT_TRUE(visited);
             }
 
             {
                 bool visited{};
-                release->visitTrackArtistLinks(TrackArtistLinkType::Conductor, [&](const db::TrackArtistLink::pointer&) {
+                TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setRelease(release.getId()).setLinkType(TrackArtistLinkType::Conductor), [&](const db::TrackArtistLink&) {
                     visited = true;
                 });
                 EXPECT_FALSE(visited);
@@ -929,11 +1060,9 @@ namespace lms::db::tests
             const auto releases{ Release::findIds(session, Release::FindParameters{}.setArtist(artist1.getId())) };
             EXPECT_EQ(releases.size(), 0);
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist1.getId())), 0);
-            EXPECT_EQ(release->getTrackArtists(TrackArtistLinkType::Conductor).size(), 0);
-            EXPECT_EQ(release->getArtistLinks().size(), 0);
-
+            EXPECT_EQ(Artist::find(session, Artist::FindParameters{}.setRelease(release.getId()).setTrackArtistLinkType(TrackArtistLinkType::Conductor)).size(), 0);
             bool visited{};
-            release->visitArtistLinks([&](const db::ReleaseArtistLink::pointer&) {
+            ReleaseArtistLink::find(session, release.getId(), [&](const db::ReleaseArtistLink&) {
                 visited = true;
             });
             EXPECT_FALSE(visited);
@@ -941,41 +1070,45 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            auto link1{ ReleaseArtistLink::create(session, release.get(), artist1.get(), false) };
-            auto link2{ ReleaseArtistLink::create(session, release.get(), artist2.get(), true) };
-            link2.modify()->setArtistName("MyArtistAlternateName");
-            link2.modify()->setArtistSortName("MyArtistAlternateSortName");
+            auto link1{ ReleaseArtistLink::create(session, release.getId(), artist1.getId(), false) };
+            ReleaseArtistLink link2{ ReleaseArtistLink::create(session, release.getId(), artist2.getId(), true) };
+            link2.setArtistName("MyArtistAlternateName");
+            link2.setArtistSortName("MyArtistAlternateSortName");
+            ReleaseArtistLink::update(session, link2);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto links{ release->getArtistLinks() };
+            std::vector<ReleaseArtistLink> links;
+            ReleaseArtistLink::find(session, release.getId(), [&](const ReleaseArtistLink& link) {
+                links.push_back(link);
+            });
             ASSERT_EQ(links.size(), 2);
-            EXPECT_EQ(links[0]->getArtistId(), artist1.getId());
-            EXPECT_EQ(links[0]->getArtistName(), "");
-            EXPECT_EQ(links[0]->getArtistSortName(), "");
-            EXPECT_EQ(links[1]->getArtistId(), artist2.getId());
-            EXPECT_EQ(links[1]->getArtistName(), "MyArtistAlternateName");
-            EXPECT_EQ(links[1]->getArtistSortName(), "MyArtistAlternateSortName");
-            EXPECT_EQ(links[1]->isArtistMBIDMatched(), true);
+            EXPECT_EQ(links[0].getArtistId(), artist1.getId());
+            EXPECT_EQ(links[0].getArtistName(), "");
+            EXPECT_EQ(links[0].getArtistSortName(), "");
+            EXPECT_EQ(links[1].getArtistId(), artist2.getId());
+            EXPECT_EQ(links[1].getArtistName(), "MyArtistAlternateName");
+            EXPECT_EQ(links[1].getArtistSortName(), "MyArtistAlternateSortName");
+            EXPECT_EQ(links[1].isArtistMBIDMatched(), true);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            std::vector<db::ReleaseArtistLink::pointer> links;
-            release->visitArtistLinks([&](const db::ReleaseArtistLink::pointer& artistLink) {
+            std::vector<db::ReleaseArtistLink> links;
+            ReleaseArtistLink::find(session, release.getId(), [&](const db::ReleaseArtistLink& artistLink) {
                 links.push_back(artistLink);
             });
             ASSERT_EQ(links.size(), 2);
-            EXPECT_EQ(links[0]->getArtistId(), artist1.getId());
-            EXPECT_EQ(links[0]->getArtistName(), "");
-            EXPECT_EQ(links[0]->getArtistSortName(), "");
-            EXPECT_EQ(links[1]->getArtistId(), artist2.getId());
-            EXPECT_EQ(links[1]->getArtistName(), "MyArtistAlternateName");
-            EXPECT_EQ(links[1]->getArtistSortName(), "MyArtistAlternateSortName");
-            EXPECT_EQ(links[1]->isArtistMBIDMatched(), true);
+            EXPECT_EQ(links[0].getArtistId(), artist1.getId());
+            EXPECT_EQ(links[0].getArtistName(), "");
+            EXPECT_EQ(links[0].getArtistSortName(), "");
+            EXPECT_EQ(links[1].getArtistId(), artist2.getId());
+            EXPECT_EQ(links[1].getArtistName(), "MyArtistAlternateName");
+            EXPECT_EQ(links[1].getArtistSortName(), "MyArtistAlternateSortName");
+            EXPECT_EQ(links[1].isArtistMBIDMatched(), true);
         }
 
         {
@@ -995,16 +1128,16 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto artists{ release->getArtists() };
+            const auto artists{ Artist::find(session, Artist::FindParameters{}.setRelease(release.getId()).setReleaseArtistsOnly(true)) };
             EXPECT_EQ(artists.size(), 2);
-            EXPECT_EQ(artists[0]->getId(), artist1.getId());
-            EXPECT_EQ(artists[1]->getId(), artist2.getId());
+            EXPECT_EQ(artists[0].getId(), artist1.getId());
+            EXPECT_EQ(artists[1].getId(), artist2.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_TRUE(release->hasArtist(artist1.getId()));
-            EXPECT_FALSE(release->hasArtist(artist3.getId()));
+            EXPECT_TRUE(Release::hasArtist(session, release.getId(), artist1.getId()));
+            EXPECT_FALSE(Release::hasArtist(session, release.getId(), artist3.getId()));
         }
     }
 
@@ -1019,7 +1152,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->setCompilation(true);
+            std::optional<Release> updatedRelease{ release.get() };
+            updatedRelease->setCompilation(true);
+            Release::update(session, *updatedRelease);
         }
 
         {
@@ -1032,16 +1167,17 @@ namespace lms::db::tests
     {
         {
             auto transaction{ session.createReadTransaction() };
-            Label::pointer res{ Label::find(session, "label") };
-            EXPECT_EQ(res, Label::pointer{});
+            std::optional<Label> res{ Label::find(session, "label") };
+            EXPECT_FALSE(res);
         }
 
         ScopedLabel label{ session, "MyLabel" };
 
         {
             auto transaction{ session.createReadTransaction() };
-            Label::pointer res{ Label::find(session, "MyLabel") };
-            EXPECT_EQ(res, label.get());
+            std::optional<Label> res{ Label::find(session, "MyLabel") };
+            ASSERT_TRUE(res);
+            EXPECT_EQ(res->getId(), label.getId());
         }
     }
 
@@ -1052,18 +1188,25 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto names{ release.get()->getLabelNames() };
-            EXPECT_EQ(names.size(), 0);
+
+            bool visited{};
+            Label::find(session, release.getId(), [&](const Label&) {
+                visited = true;
+            });
+            EXPECT_FALSE(visited);
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->addLabel(label.get());
+            Release::addLabel(session, release.getId(), label.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto names{ release.get()->getLabelNames() };
+            std::vector<std::string> names;
+            Label::find(session, release.getId(), [&](const Label& releaseLabel) {
+                names.emplace_back(releaseLabel.getName());
+            });
             ASSERT_EQ(names.size(), 1);
             EXPECT_EQ(names[0], "MyLabel");
         }
@@ -1084,7 +1227,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->addLabel(label.get());
+            Release::addLabel(session, release.getId(), label.getId());
         }
 
         {
@@ -1095,7 +1238,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->clearLabels();
+            Release::clearLabels(session, release.getId());
         }
 
         {
@@ -1110,16 +1253,17 @@ namespace lms::db::tests
     {
         {
             auto transaction{ session.createReadTransaction() };
-            Country::pointer res{ Country::find(session, "country") };
-            EXPECT_EQ(res, Country::pointer{});
+            std::optional<Country> res{ Country::find(session, "country") };
+            EXPECT_FALSE(res);
         }
 
         ScopedCountry country{ session, "MyCountry" };
 
         {
             auto transaction{ session.createReadTransaction() };
-            Country::pointer res{ Country::find(session, "MyCountry") };
-            EXPECT_EQ(res, country.get());
+            std::optional<Country> res{ Country::find(session, "MyCountry") };
+            ASSERT_TRUE(res);
+            EXPECT_EQ(res->getId(), country.getId());
         }
     }
 
@@ -1130,12 +1274,15 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->addCountry(country.get());
+            Release::addCountry(session, release.getId(), country.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto names{ release.get()->getCountryNames() };
+            std::vector<std::string> names;
+            Country::find(session, release.getId(), [&](const Country& releaseCountry) {
+                names.emplace_back(releaseCountry.getName());
+            });
             ASSERT_EQ(names.size(), 1);
             EXPECT_EQ(names[0], "MyCountry");
         }
@@ -1156,7 +1303,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->addCountry(country.get());
+            Release::addCountry(session, release.getId(), country.getId());
         }
 
         {
@@ -1167,7 +1314,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->clearCountries();
+            Release::clearCountries(session, release.getId());
         }
 
         {
@@ -1182,16 +1329,17 @@ namespace lms::db::tests
     {
         {
             auto transaction{ session.createReadTransaction() };
-            ReleaseType::pointer res{ ReleaseType::find(session, "album") };
-            EXPECT_EQ(res, ReleaseType::pointer{});
+            std::optional<ReleaseType> res{ ReleaseType::find(session, "album") };
+            EXPECT_FALSE(res);
         }
 
         ScopedReleaseType releaseType{ session, "album" };
 
         {
             auto transaction{ session.createReadTransaction() };
-            ReleaseType::pointer res{ ReleaseType::find(session, "album") };
-            EXPECT_EQ(res, releaseType.get());
+            std::optional<ReleaseType> res{ ReleaseType::find(session, "album") };
+            ASSERT_TRUE(res);
+            EXPECT_EQ(res->getId(), releaseType.getId());
         }
     }
 
@@ -1211,7 +1359,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->addReleaseType(releaseType.get());
+            Release::addReleaseType(session, release.getId(), releaseType.getId());
         }
 
         {
@@ -1222,7 +1370,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->clearReleaseTypes();
+            Release::clearReleaseTypes(session, release.getId());
         }
 
         {
@@ -1239,26 +1387,30 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release.get()->getReleaseTypes().size(), 0);
+            bool visited{};
+            ReleaseType::find(session, release.getId(), [&](const ReleaseType&) {
+                visited = true;
+            });
+            EXPECT_FALSE(visited);
         }
 
         ScopedReleaseType releaseType{ session, "album" };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->addReleaseType(releaseType.get());
+            Release::addReleaseType(session, release.getId(), releaseType.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releaseTypes{ release.get()->getReleaseTypes() };
+            std::vector<ReleaseType> releaseTypes;
+            ReleaseType::find(session, release.getId(), [&](const ReleaseType& type) {
+                releaseTypes.push_back(type);
+            });
             ASSERT_EQ(releaseTypes.size(), 1);
-            EXPECT_EQ(releaseTypes.front()->getId(), releaseType.getId());
-
-            const auto releaseTypeNames{ release.get()->getReleaseTypeNames() };
-            ASSERT_EQ(releaseTypeNames.size(), 1);
-            EXPECT_EQ(releaseTypeNames.front(), "album");
+            EXPECT_EQ(releaseTypes.front().getId(), releaseType.getId());
+            EXPECT_EQ(releaseTypes.front().getName(), "album");
         }
     }
 
@@ -1276,7 +1428,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->addReleaseType(releaseType.get());
+            Release::addReleaseType(session, release.getId(), releaseType.getId());
         }
 
         {
@@ -1287,7 +1439,7 @@ namespace lms::db::tests
 
             releases = Release::find(session, Release::FindParameters{}.setReleaseType("album"));
             ASSERT_EQ(releases.size(), 1);
-            EXPECT_EQ(releases.front()->getId(), release.getId());
+            EXPECT_EQ(releases.front().getId(), release.getId());
         }
     }
 
@@ -1309,12 +1461,16 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track1.get().modify()->setRelease(release1.get());
-            track1.get().modify()->setOriginalDate(release1OriginalDate);
-            track1.get().modify()->setDate(release1Date);
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setRelease(release1.getId());
+            updatedTrack1->setOriginalDate(release1OriginalDate);
+            updatedTrack1->setDate(release1Date);
+            Track::update(session, *updatedTrack1);
 
-            track2.get().modify()->setRelease(release2.get());
-            track2.get().modify()->setDate(release2Date);
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setRelease(release2.getId());
+            updatedTrack2->setDate(release2Date);
+            Track::update(session, *updatedTrack2);
         }
 
         {
@@ -1388,13 +1544,19 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track1Early.get().modify()->setDate(release1EarlyDate);
-            track1Early.get().modify()->setRelease(release1.get());
-            track1Late.get().modify()->setDate(release1LateDate);
-            track1Late.get().modify()->setRelease(release1.get());
+            std::optional<Track> updatedTrack1Early{ track1Early.get() };
+            updatedTrack1Early->setDate(release1EarlyDate);
+            updatedTrack1Early->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1Early);
+            std::optional<Track> updatedTrack1Late{ track1Late.get() };
+            updatedTrack1Late->setDate(release1LateDate);
+            updatedTrack1Late->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1Late);
 
-            track2.get().modify()->setDate(release2Date);
-            track2.get().modify()->setRelease(release2.get());
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setDate(release2Date);
+            updatedTrack2->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2);
         }
 
         {
@@ -1429,13 +1591,19 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track1Early.get().modify()->setOriginalDate(release1EarlyOriginalDate);
-            track1Early.get().modify()->setRelease(release1.get());
-            track1Late.get().modify()->setOriginalDate(release1LateOriginalDate);
-            track1Late.get().modify()->setRelease(release1.get());
+            std::optional<Track> updatedTrack1Early{ track1Early.get() };
+            updatedTrack1Early->setOriginalDate(release1EarlyOriginalDate);
+            updatedTrack1Early->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1Early);
+            std::optional<Track> updatedTrack1Late{ track1Late.get() };
+            updatedTrack1Late->setOriginalDate(release1LateOriginalDate);
+            updatedTrack1Late->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1Late);
 
-            track2.get().modify()->setDate(release2Date);
-            track2.get().modify()->setRelease(release2.get());
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setDate(release2Date);
+            updatedTrack2->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2);
         }
 
         {
@@ -1464,13 +1632,19 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            releaseAlpha.get().modify()->setSortName("Aardvark");
+            std::optional<Release> updatedReleaseAlpha{ releaseAlpha.get() };
+            updatedReleaseAlpha->setSortName("Aardvark");
+            Release::update(session, *updatedReleaseAlpha);
 
             const core::PartialDateTime date{ 2000, 1, 1 };
-            trackZulu.get().modify()->setDate(date);
-            trackZulu.get().modify()->setRelease(releaseZulu.get());
-            trackAlpha.get().modify()->setDate(date);
-            trackAlpha.get().modify()->setRelease(releaseAlpha.get());
+            std::optional<Track> updatedTrackZulu{ trackZulu.get() };
+            updatedTrackZulu->setDate(date);
+            updatedTrackZulu->setRelease(releaseZulu.getId());
+            Track::update(session, *updatedTrackZulu);
+            std::optional<Track> updatedTrackAlpha{ trackAlpha.get() };
+            updatedTrackAlpha->setDate(date);
+            updatedTrackAlpha->setRelease(releaseAlpha.getId());
+            Track::update(session, *updatedTrackAlpha);
         }
 
         {
@@ -1492,8 +1666,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            releaseZulu.get().modify()->setArtistDisplayName("Zeppelin");
-            releaseAlpha.get().modify()->setArtistDisplayName("Abba");
+            std::optional<Release> updatedReleaseZulu{ releaseZulu.get() };
+            updatedReleaseZulu->setArtistDisplayName("Zeppelin");
+            Release::update(session, *updatedReleaseZulu);
+            std::optional<Release> updatedReleaseAlpha{ releaseAlpha.get() };
+            updatedReleaseAlpha->setArtistDisplayName("Abba");
+            Release::update(session, *updatedReleaseAlpha);
         }
 
         {
@@ -1516,9 +1694,13 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            releaseZulu.get().modify()->setArtistDisplayName("SameArtist");
-            releaseAlpha.get().modify()->setArtistDisplayName("SameArtist");
-            releaseAlpha.get().modify()->setSortName("Aardvark");
+            std::optional<Release> updatedReleaseZulu{ releaseZulu.get() };
+            updatedReleaseZulu->setArtistDisplayName("SameArtist");
+            Release::update(session, *updatedReleaseZulu);
+            std::optional<Release> updatedReleaseAlpha{ releaseAlpha.get() };
+            updatedReleaseAlpha->setArtistDisplayName("SameArtist");
+            updatedReleaseAlpha->setSortName("Aardvark");
+            Release::update(session, *updatedReleaseAlpha);
         }
 
         {
@@ -1540,30 +1722,36 @@ namespace lms::db::tests
 
         auto checkExpectedBitrate = [&](std::size_t bitrate) {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release1->getMeanBitrate(), bitrate);
+            EXPECT_EQ(Release::getMeanBitrate(session, release1.getId()), bitrate);
         };
 
         checkExpectedBitrate(0);
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setBitrate(128);
-            track1.get().modify()->setRelease(release1.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setBitrate(128);
+            updatedTrack1->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1);
         }
 
         checkExpectedBitrate(128);
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track2.get().modify()->setBitrate(256);
-            track2.get().modify()->setRelease(release1.get());
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setBitrate(256);
+            updatedTrack2->setRelease(release1.getId());
+            Track::update(session, *updatedTrack2);
         }
         checkExpectedBitrate(192);
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track3.get().modify()->setBitrate(0);
-            track3.get().modify()->setRelease(release1.get());
+            std::optional<Track> updatedTrack3{ track3.get() };
+            updatedTrack3->setBitrate(0);
+            updatedTrack3->setRelease(release1.getId());
+            Track::update(session, *updatedTrack3);
         }
         checkExpectedBitrate(192); // 0 should not be taken into account
     }
@@ -1578,27 +1766,35 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            ASSERT_EQ(release1->getCodecs().size(), 0);
+            ASSERT_EQ(Release::getCodecs(session, release1.getId()).size(), 0);
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setCodec(core::media::Codec::FLAC);
-            track1.get().modify()->setRelease(release1.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setCodec(core::media::Codec::FLAC);
+            updatedTrack1->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1);
 
-            track2.get().modify()->setCodec(core::media::Codec::MP3);
-            track2.get().modify()->setRelease(release1.get());
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setCodec(core::media::Codec::MP3);
+            updatedTrack2->setRelease(release1.getId());
+            Track::update(session, *updatedTrack2);
 
-            track3.get().modify()->setCodec(core::media::Codec::MP3);
-            track3.get().modify()->setRelease(release1.get());
+            std::optional<Track> updatedTrack3{ track3.get() };
+            updatedTrack3->setCodec(core::media::Codec::MP3);
+            updatedTrack3->setRelease(release1.getId());
+            Track::update(session, *updatedTrack3);
 
-            track4.get().modify()->setCodec(core::media::Codec::AAC);
-            track4.get().modify()->setRelease(release1.get());
+            std::optional<Track> updatedTrack4{ track4.get() };
+            updatedTrack4->setCodec(core::media::Codec::AAC);
+            updatedTrack4->setRelease(release1.getId());
+            Track::update(session, *updatedTrack4);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release1->getCodecs(), (std::vector<core::media::Codec>{ core::media::Codec::MP3, core::media::Codec::FLAC, core::media::Codec::AAC }));
+            EXPECT_EQ(Release::getCodecs(session, release1.getId()), (std::vector<core::media::Codec>{ core::media::Codec::MP3, core::media::Codec::FLAC, core::media::Codec::AAC }));
         }
     }
 
@@ -1612,16 +1808,20 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            ASSERT_EQ(release1->getCodecs().size(), 0);
+            ASSERT_EQ(Release::getCodecs(session, release1.getId()).size(), 0);
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setCodec(core::media::Codec::FLAC);
-            track1.get().modify()->setRelease(release1.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setCodec(core::media::Codec::FLAC);
+            updatedTrack1->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1);
 
-            track2.get().modify()->setCodec(core::media::Codec::MP3);
-            track2.get().modify()->setRelease(release2.get());
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setCodec(core::media::Codec::MP3);
+            updatedTrack2->setRelease(release2.getId());
+            Track::update(session, *updatedTrack2);
         }
 
         {
@@ -1648,16 +1848,22 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setRelease(release1.get());
-            track2.get().modify()->setRelease(release1.get());
-            track3.get().modify()->setRelease(release2.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setRelease(release1.getId());
+            Track::update(session, *updatedTrack1);
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setRelease(release1.getId());
+            Track::update(session, *updatedTrack2);
+            std::optional<Track> updatedTrack3{ track3.get() };
+            updatedTrack3->setRelease(release2.getId());
+            Track::update(session, *updatedTrack3);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release1->getTrackCount(), 2);
-            EXPECT_EQ(release2->getTrackCount(), 1);
-            EXPECT_EQ(release3->getTrackCount(), 0);
+            EXPECT_EQ(Release::getTrackCount(session, release1.getId()), 2);
+            EXPECT_EQ(Release::getTrackCount(session, release2.getId()), 1);
+            EXPECT_EQ(Release::getTrackCount(session, release3.getId()), 0);
         }
     }
 
@@ -1667,34 +1873,31 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_FALSE(release.get()->getPreferredArtwork());
+            EXPECT_FALSE(release->getPreferredArtworkId().isValid());
         }
 
         ScopedImage image{ session, "/image.jpg" };
-        ScopedArtwork artwork{ session, image.lockAndGet() };
+        ScopedArtwork artwork{ session, image.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->setPreferredArtwork(artwork.get());
+            Release::updatePreferredArtwork(session, release.getId(), artwork.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            auto releaseArtwork(release.get()->getPreferredArtwork());
-            ASSERT_TRUE(releaseArtwork);
-            EXPECT_EQ(releaseArtwork->getId(), artwork.getId());
+            EXPECT_EQ(release.get()->getPreferredArtworkId(), artwork.getId());
         }
 
         // Check cascade delete
         {
             auto transaction{ session.createWriteTransaction() };
-            image.lockAndGet().remove();
+            Image::destroy(session, std::array{ image.getId() });
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            auto releaseArtwork(release.get()->getPreferredArtwork());
-            ASSERT_FALSE(releaseArtwork);
+            EXPECT_FALSE(release.get()->getPreferredArtworkId().isValid());
         }
     }
 
@@ -1714,17 +1917,35 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            trackA1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
-            trackB1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
-            trackD1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
-            trackD1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 3 } });
-            trackA2.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 4 } });
+            std::optional<Track> updatedTrackA1{ trackA1.get() };
+            updatedTrackA1->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            Track::update(session, *updatedTrackA1);
+            std::optional<Track> updatedTrackB1{ trackB1.get() };
+            updatedTrackB1->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
+            Track::update(session, *updatedTrackB1);
+            std::optional<Track> updatedTrackD1{ trackD1.get() };
+            updatedTrackD1->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
+            updatedTrackD1->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 3 } });
+            Track::update(session, *updatedTrackD1);
+            std::optional<Track> updatedTrackA2{ trackA2.get() };
+            updatedTrackA2->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 4 } });
+            Track::update(session, *updatedTrackA2);
 
-            trackA1.get().modify()->setRelease(releaseA.get());
-            trackA2.get().modify()->setRelease(releaseA.get());
-            trackB1.get().modify()->setRelease(releaseB.get());
-            trackC1.get().modify()->setRelease(releaseC.get());
-            trackD1.get().modify()->setRelease(releaseD.get());
+            updatedTrackA1 = trackA1.get();
+            updatedTrackA1->setRelease(releaseA.getId());
+            Track::update(session, *updatedTrackA1);
+            updatedTrackA2 = trackA2.get();
+            updatedTrackA2->setRelease(releaseA.getId());
+            Track::update(session, *updatedTrackA2);
+            updatedTrackB1 = trackB1.get();
+            updatedTrackB1->setRelease(releaseB.getId());
+            Track::update(session, *updatedTrackB1);
+            std::optional<Track> updatedTrackC1{ trackC1.get() };
+            updatedTrackC1->setRelease(releaseC.getId());
+            Track::update(session, *updatedTrackC1);
+            updatedTrackD1 = trackD1.get();
+            updatedTrackD1->setRelease(releaseD.getId());
+            Track::update(session, *updatedTrackD1);
         }
 
         {
@@ -1751,14 +1972,24 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            releaseAlpha.get().modify()->setSortName("Aardvark");
+            std::optional<Release> updatedReleaseAlpha{ releaseAlpha.get() };
+            updatedReleaseAlpha->setSortName("Aardvark");
+            Release::update(session, *updatedReleaseAlpha);
 
             const Wt::WDateTime addedTime{ Wt::WDate{ 2021, 1, 2 } };
-            trackZulu.get().modify()->setAddedTime(addedTime);
-            trackAlpha.get().modify()->setAddedTime(addedTime);
+            std::optional<Track> updatedTrackZulu{ trackZulu.get() };
+            updatedTrackZulu->setAddedTime(addedTime);
+            Track::update(session, *updatedTrackZulu);
+            std::optional<Track> updatedTrackAlpha{ trackAlpha.get() };
+            updatedTrackAlpha->setAddedTime(addedTime);
+            Track::update(session, *updatedTrackAlpha);
 
-            trackZulu.get().modify()->setRelease(releaseZulu.get());
-            trackAlpha.get().modify()->setRelease(releaseAlpha.get());
+            updatedTrackZulu = trackZulu.get();
+            updatedTrackZulu->setRelease(releaseZulu.getId());
+            Track::update(session, *updatedTrackZulu);
+            updatedTrackAlpha = trackAlpha.get();
+            updatedTrackAlpha->setRelease(releaseAlpha.getId());
+            Track::update(session, *updatedTrackAlpha);
         }
 
         {
@@ -1787,17 +2018,35 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            trackA1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
-            trackB1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
-            trackD1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
-            trackD1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 3 } });
-            trackA2.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 4 } });
+            std::optional<Track> updatedTrackA1{ trackA1.get() };
+            updatedTrackA1->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            Track::update(session, *updatedTrackA1);
+            std::optional<Track> updatedTrackB1{ trackB1.get() };
+            updatedTrackB1->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
+            Track::update(session, *updatedTrackB1);
+            std::optional<Track> updatedTrackD1{ trackD1.get() };
+            updatedTrackD1->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
+            updatedTrackD1->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 3 } });
+            Track::update(session, *updatedTrackD1);
+            std::optional<Track> updatedTrackA2{ trackA2.get() };
+            updatedTrackA2->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 4 } });
+            Track::update(session, *updatedTrackA2);
 
-            trackA1.get().modify()->setRelease(releaseA.get());
-            trackA2.get().modify()->setRelease(releaseA.get());
-            trackB1.get().modify()->setRelease(releaseB.get());
-            trackC1.get().modify()->setRelease(releaseC.get());
-            trackD1.get().modify()->setRelease(releaseD.get());
+            updatedTrackA1 = trackA1.get();
+            updatedTrackA1->setRelease(releaseA.getId());
+            Track::update(session, *updatedTrackA1);
+            updatedTrackA2 = trackA2.get();
+            updatedTrackA2->setRelease(releaseA.getId());
+            Track::update(session, *updatedTrackA2);
+            updatedTrackB1 = trackB1.get();
+            updatedTrackB1->setRelease(releaseB.getId());
+            Track::update(session, *updatedTrackB1);
+            std::optional<Track> updatedTrackC1{ trackC1.get() };
+            updatedTrackC1->setRelease(releaseC.getId());
+            Track::update(session, *updatedTrackC1);
+            updatedTrackD1 = trackD1.get();
+            updatedTrackD1->setRelease(releaseD.getId());
+            Track::update(session, *updatedTrackD1);
         }
 
         {
@@ -1822,14 +2071,24 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            releaseAlpha.get().modify()->setSortName("Aardvark");
+            std::optional<Release> updatedReleaseAlpha{ releaseAlpha.get() };
+            updatedReleaseAlpha->setSortName("Aardvark");
+            Release::update(session, *updatedReleaseAlpha);
 
             const Wt::WDateTime lastWriteTime{ Wt::WDate{ 2021, 1, 2 } };
-            trackZulu.get().modify()->setLastWriteTime(lastWriteTime);
-            trackAlpha.get().modify()->setLastWriteTime(lastWriteTime);
+            std::optional<Track> updatedTrackZulu{ trackZulu.get() };
+            updatedTrackZulu->setLastWriteTime(lastWriteTime);
+            Track::update(session, *updatedTrackZulu);
+            std::optional<Track> updatedTrackAlpha{ trackAlpha.get() };
+            updatedTrackAlpha->setLastWriteTime(lastWriteTime);
+            Track::update(session, *updatedTrackAlpha);
 
-            trackZulu.get().modify()->setRelease(releaseZulu.get());
-            trackAlpha.get().modify()->setRelease(releaseAlpha.get());
+            updatedTrackZulu = trackZulu.get();
+            updatedTrackZulu->setRelease(releaseZulu.getId());
+            Track::update(session, *updatedTrackZulu);
+            updatedTrackAlpha = trackAlpha.get();
+            updatedTrackAlpha->setRelease(releaseAlpha.getId());
+            Track::update(session, *updatedTrackAlpha);
         }
 
         {
@@ -1852,22 +2111,30 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            Wt::WDateTime lastWritten{ release.get()->getLastWrittenTime() };
+            Wt::WDateTime lastWritten{ Release::getLastWrittenTime(session, release.getId()) };
             EXPECT_FALSE(lastWritten.isValid());
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
-            track2.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
-            track1.get().modify()->setRelease(release.get());
-            track2.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            Track::update(session, *updatedTrack1);
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
+            Track::update(session, *updatedTrack2);
+            updatedTrack1 = track1.get();
+            updatedTrack1->setRelease(release.getId());
+            Track::update(session, *updatedTrack1);
+            updatedTrack2 = track2.get();
+            updatedTrack2->setRelease(release.getId());
+            Track::update(session, *updatedTrack2);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            Wt::WDateTime lastWritten{ release.get()->getLastWrittenTime() };
+            Wt::WDateTime lastWritten{ Release::getLastWrittenTime(session, release.getId()) };
             ASSERT_TRUE(lastWritten.isValid());
             EXPECT_EQ(lastWritten, track2.get()->getLastWriteTime());
         }
@@ -1883,22 +2150,30 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const Wt::WDateTime addedTime{ release.get()->getAddedTime() };
+            const Wt::WDateTime addedTime{ Release::getAddedTime(session, release.getId()) };
             EXPECT_FALSE(addedTime.isValid());
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
-            track2.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
-            track1.get().modify()->setRelease(release.get());
-            track2.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            Track::update(session, *updatedTrack1);
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
+            Track::update(session, *updatedTrack2);
+            updatedTrack1 = track1.get();
+            updatedTrack1->setRelease(release.getId());
+            Track::update(session, *updatedTrack1);
+            updatedTrack2 = track2.get();
+            updatedTrack2->setRelease(release.getId());
+            Track::update(session, *updatedTrack2);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const Wt::WDateTime addedTime{ release.get()->getAddedTime() };
+            const Wt::WDateTime addedTime{ Release::getAddedTime(session, release.getId()) };
             ASSERT_TRUE(addedTime.isValid());
             EXPECT_EQ(addedTime, track2.get()->getAddedTime());
         }
@@ -1918,7 +2193,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->setGroupMBID(groupMBID);
+            std::optional<Release> updatedRelease{ release.get() };
+            updatedRelease->setGroupMBID(groupMBID);
+            Release::update(session, *updatedRelease);
         }
 
         {
@@ -1926,7 +2203,7 @@ namespace lms::db::tests
 
             const auto releases{ Release::find(session, Release::FindParameters{}.setReleaseGroupMBID(groupMBID)) };
             EXPECT_EQ(releases.size(), 1);
-            EXPECT_EQ(releases[0]->getId(), release->getId());
+            EXPECT_EQ(releases[0].getId(), release->getId());
         }
     }
 
@@ -1937,8 +2214,12 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release1.get().modify()->setSortName("BB");
-            release2.get().modify()->setSortName("AA");
+            std::optional<Release> updatedRelease1{ release1.get() };
+            updatedRelease1->setSortName("BB");
+            Release::update(session, *updatedRelease1);
+            std::optional<Release> updatedRelease2{ release2.get() };
+            updatedRelease2->setSortName("AA");
+            Release::update(session, *updatedRelease2);
         }
 
         {
@@ -1946,8 +2227,8 @@ namespace lms::db::tests
 
             const auto releases{ Release::find(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::Name)) };
             ASSERT_EQ(releases.size(), 2);
-            EXPECT_EQ(releases[0]->getId(), release1->getId());
-            EXPECT_EQ(releases[1]->getId(), release2->getId());
+            EXPECT_EQ(releases[0].getId(), release1->getId());
+            EXPECT_EQ(releases[1].getId(), release2->getId());
         }
 
         {
@@ -1955,8 +2236,8 @@ namespace lms::db::tests
 
             const auto releases{ Release::find(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::SortName)) };
             ASSERT_EQ(releases.size(), 2);
-            EXPECT_EQ(releases[0]->getId(), release2->getId());
-            EXPECT_EQ(releases[1]->getId(), release1->getId());
+            EXPECT_EQ(releases[0].getId(), release2->getId());
+            EXPECT_EQ(releases[1].getId(), release1->getId());
         }
     }
 
@@ -1969,7 +2250,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            releaseAlpha.get().modify()->setSortName("Zulu");
+            std::optional<Release> updatedReleaseAlpha{ releaseAlpha.get() };
+            updatedReleaseAlpha->setSortName("Zulu");
+            Release::update(session, *updatedReleaseAlpha);
         }
 
         {
@@ -1978,9 +2261,9 @@ namespace lms::db::tests
             const auto releases{ Release::find(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::SortName)) };
 
             ASSERT_EQ(releases.size(), 3);
-            EXPECT_EQ(releases[0]->getId(), releaseBravo.getId());
-            EXPECT_EQ(releases[1]->getId(), releaseCharlie.getId());
-            EXPECT_EQ(releases[2]->getId(), releaseAlpha.getId());
+            EXPECT_EQ(releases[0].getId(), releaseBravo.getId());
+            EXPECT_EQ(releases[1].getId(), releaseCharlie.getId());
+            EXPECT_EQ(releases[2].getId(), releaseAlpha.getId());
         }
     }
 
@@ -1989,11 +2272,11 @@ namespace lms::db::tests
         ScopedRelease release{ session, "MyRelease" };
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release->getPreferredArtwork(), Artwork::pointer{});
+            EXPECT_FALSE(release->getPreferredArtworkId().isValid());
         }
 
         ScopedImage image{ session, "/image1.jpg" };
-        ScopedArtwork artwork{ session, image.lockAndGet() };
+        ScopedArtwork artwork{ session, image.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -2001,7 +2284,7 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release->getPreferredArtwork()->getId(), artwork.getId());
+            EXPECT_EQ(release->getPreferredArtworkId(), artwork.getId());
         }
 
         {
@@ -2010,7 +2293,7 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release->getPreferredArtwork(), Artwork::pointer{});
+            EXPECT_FALSE(release->getPreferredArtworkId().isValid());
         }
     }
 
@@ -2021,36 +2304,50 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto mediums{ release->getMediums() };
-            EXPECT_EQ(mediums.size(), 0);
+            bool visited{};
+            Medium::find(session, Medium::FindParameters{}.setRelease(release.getId()), [&](const Medium&) {
+                visited = true;
+            });
+            EXPECT_FALSE(visited);
         }
 
-        ScopedMedium medium2{ session, release.lockAndGet() };
+        ScopedMedium medium2{ session, release.getId() };
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto mediums{ release->getMediums() };
+            std::vector<Medium> mediums;
+            Medium::find(session, Medium::FindParameters{}.setRelease(release.getId()).setSortMethod(MediumSortMethod::PositionAsc), [&](const Medium& medium) {
+                mediums.push_back(medium);
+            });
             ASSERT_EQ(mediums.size(), 1);
-            EXPECT_EQ(mediums[0]->getId(), medium2.getId());
+            EXPECT_EQ(mediums[0].getId(), medium2.getId());
         }
 
-        ScopedMedium medium1{ session, release.lockAndGet() };
+        ScopedMedium medium1{ session, release.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            medium1.get().modify()->setPosition(1);
-            medium2.get().modify()->setPosition(2);
+            std::optional<Medium> updatedMedium1{ medium1.get() };
+            updatedMedium1->setPosition(1);
+            Medium::update(session, *updatedMedium1);
+
+            std::optional<Medium> updatedMedium2{ medium2.get() };
+            updatedMedium2->setPosition(2);
+            Medium::update(session, *updatedMedium2);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto mediums{ release->getMediums() };
+            std::vector<Medium> mediums;
+            Medium::find(session, Medium::FindParameters{}.setRelease(release.getId()).setSortMethod(MediumSortMethod::PositionAsc), [&](const Medium& medium) {
+                mediums.push_back(medium);
+            });
             ASSERT_EQ(mediums.size(), 2);
-            EXPECT_EQ(mediums[0]->getId(), medium1.getId());
-            EXPECT_EQ(mediums[1]->getId(), medium2.getId());
+            EXPECT_EQ(mediums[0].getId(), medium1.getId());
+            EXPECT_EQ(mediums[1].getId(), medium2.getId());
         }
     }
 

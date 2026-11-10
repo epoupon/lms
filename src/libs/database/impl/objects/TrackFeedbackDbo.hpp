@@ -24,7 +24,7 @@
 
 #include "database/objects/TrackFeedback.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -37,7 +37,14 @@ namespace lms::db::dbo
         TrackFeedback() = default;
         using db::TrackFeedback::TrackFeedback;
 
-        TrackFeedback(const ObjectPtr<db::Track>& track, const ObjectPtr<db::User>& user);
+        TrackFeedback(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<User> user);
+
+        void syncIds()
+        {
+            _id = id();
+            _trackId = _track.id();
+            _userId = _user.id();
+        }
 
         template<class Action>
         void persist(Action& a)

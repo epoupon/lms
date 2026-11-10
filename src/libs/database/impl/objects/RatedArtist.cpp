@@ -23,7 +23,7 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "ArtistDbo.hpp"
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "RatedArtistDbo.hpp"
 #include "Session.hpp"
 #include "UserDbo.hpp"
@@ -34,15 +34,20 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::RatedArtist)
 
 namespace lms::db
 {
-    dbo::RatedArtist::RatedArtist(const ObjectPtr<db::Artist>& artist, const ObjectPtr<db::User>& user)
-        : _artist{ getDboPtr(artist) }
-        , _user{ getDboPtr(user) }
+    dbo::RatedArtist::RatedArtist(Wt::Dbo::ptr<Artist> artist, Wt::Dbo::ptr<User> user)
+        : _artist{ std::move(artist) }
+        , _user{ std::move(user) }
     {
     }
 
-    RatedArtist::pointer RatedArtist::create(ISession& session, const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user)
+    RatedArtist RatedArtist::create(ISession& session, ArtistId artist, UserId user)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::RatedArtist>{ new dbo::RatedArtist{ artist, user } });
+        return utils::addObject(session, std::unique_ptr<dbo::RatedArtist>{ new dbo::RatedArtist{ getDboSession(session)->loadLazy<dbo::Artist>(artist.getValue()), getDboSession(session)->loadLazy<dbo::User>(user.getValue()) } });
+    }
+
+    void RatedArtist::destroy(ISession& session, std::span<const RatedArtistId> ids)
+    {
+        utils::destroyObjects<dbo::RatedArtist>(session, ids);
     }
 
     std::size_t RatedArtist::getCount(ISession& session)
@@ -51,19 +56,23 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM rated_artist"));
     }
 
-    RatedArtist::pointer RatedArtist::find(ISession& session, RatedArtistId id)
+    std::optional<RatedArtist> RatedArtist::find(ISession& session, RatedArtistId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::RatedArtist>().where("id = ?").bind(id));
     }
 
-    RatedArtist::pointer RatedArtist::find(ISession& session, ArtistId artistId, UserId userId)
+    std::optional<RatedArtist> RatedArtist::find(ISession& session, ArtistId artistId, UserId userId)
     {
         checkReadTransaction(session);
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::RatedArtist>().where("artist_id = ?").bind(artistId).where("user_id = ?").bind(userId));
     }
 
-    void RatedArtist::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    void RatedArtist::find(ISession& session, const FindParameters& params, const std::function<void(const RatedArtist&)>& func)
     {
         checkReadTransaction(session);
 
@@ -80,13 +89,8 @@ namespace lms::db
         _lastUpdated = utils::normalizeDateTime(lastUpdated);
     }
 
-    ObjectPtr<Artist> RatedArtist::getArtist() const
+    void RatedArtist::update(ISession& session, const RatedArtist& ratedArtist)
     {
-        return toObjectPtr(getDbo(*this)._artist);
-    }
-
-    ObjectPtr<User> RatedArtist::getUser() const
-    {
-        return toObjectPtr(getDbo(*this)._user);
+        utils::updateObject<dbo::RatedArtist>(session, ratedArtist);
     }
 } // namespace lms::db

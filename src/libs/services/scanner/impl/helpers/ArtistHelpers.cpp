@@ -27,10 +27,10 @@
 
 namespace lms::scanner
 {
-    std::ostream& operator<<(std::ostream& os, const db::Artist::pointer& artist)
+    std::ostream& operator<<(std::ostream& os, const db::Artist& artist)
     {
-        os << "'" << artist->getName() << "'";
-        if (const auto mbid{ artist->getMBID() })
+        os << "'" << artist.getName() << "'";
+        if (const auto mbid{ artist.getMBID() })
             os << " [" << mbid->toString() << "]";
 
         return os;
@@ -41,37 +41,39 @@ namespace lms::scanner::helpers
 {
     namespace
     {
-        db::Artist::pointer createArtist(db::ISession& session, const Artist& artistInfo)
+        db::Artist createArtist(db::ISession& session, const Artist& artistInfo)
         {
-            db::Artist::pointer artist{ db::Artist::create(session, artistInfo.name) };
+            db::Artist artist{ db::Artist::create(session, artistInfo.name) };
 
             if (artistInfo.mbid)
-                artist.modify()->setMBID(artistInfo.mbid);
+                artist.setMBID(artistInfo.mbid);
 
             if (artistInfo.sortName)
-                artist.modify()->setSortName(*artistInfo.sortName);
+                artist.setSortName(*artistInfo.sortName);
 
+            db::Artist::update(session, artist);
             return artist;
         }
     } // namespace
 
-    db::Artist::pointer getOrCreateArtistByMBID(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
+    db::Artist getOrCreateArtistByMBID(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
     {
         assert(artistInfo.mbid.has_value());
 
-        db::Artist::pointer artist{ db::Artist::find(session, *artistInfo.mbid) };
+        std::optional<db::Artist> artist{ db::Artist::find(session, *artistInfo.mbid) };
         if (!artist)
         {
             if (allowFallbackOnMBIDEntries.value())
             {
                 // an artist with the same name may already exist, let's recycle it
-                for (const db::Artist::pointer& artistWithSameName : db::Artist::find(session, artistInfo.name))
+                for (const db::Artist& artistWithSameName : db::Artist::find(session, artistInfo.name))
                 {
-                    assert(artistWithSameName->getMBID() != artistInfo.mbid);
-                    if (!artistWithSameName->hasMBID())
+                    assert(artistWithSameName.getMBID() != artistInfo.mbid);
+                    if (!artistWithSameName.hasMBID())
                     {
                         artist = artistWithSameName;
-                        artist.modify()->setMBID(artistInfo.mbid);
+                        artist->setMBID(artistInfo.mbid);
+                        db::Artist::update(session, *artist);
                         break;
                     }
                 }
@@ -81,18 +83,18 @@ namespace lms::scanner::helpers
                 artist = createArtist(session, artistInfo);
         }
 
-        return artist;
+        return *artist;
     }
 
-    db::Artist::pointer getOrCreateArtistByName(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
+    db::Artist getOrCreateArtistByName(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
     {
         assert(artistInfo.mbid == std::nullopt);
 
-        db::Artist::pointer artist;
+        std::optional<db::Artist> artist;
 
         // Here we can have only one artist with no MBID, others all have mbids
-        const std::vector<db::Artist::pointer> artistsWithSameName{ db::Artist::find(session, artistInfo.name) };
-        const auto itArtistWithoutMBID{ std::find_if(std::begin(artistsWithSameName), std::end(artistsWithSameName), [](const db::Artist::pointer& artist) { return !artist->hasMBID(); }) };
+        const std::vector<db::Artist> artistsWithSameName{ db::Artist::find(session, artistInfo.name) };
+        const auto itArtistWithoutMBID{ std::find_if(std::begin(artistsWithSameName), std::end(artistsWithSameName), [](const db::Artist& artist) { return !artist.hasMBID(); }) };
         const std::size_t artistCountWithMBID{ artistsWithSameName.size() - (itArtistWithoutMBID != std::end(artistsWithSameName) ? 1 : 0) };
 
         if (!allowFallbackOnMBIDEntries.value() || artistCountWithMBID > 1)
@@ -104,7 +106,7 @@ namespace lms::scanner::helpers
         }
         else
         {
-            const auto itArtistWithMBID{ std::find_if(std::begin(artistsWithSameName), std::end(artistsWithSameName), [](const db::Artist::pointer& artist) { return artist->hasMBID(); }) };
+            const auto itArtistWithMBID{ std::find_if(std::begin(artistsWithSameName), std::end(artistsWithSameName), [](const db::Artist& artist) { return artist.hasMBID(); }) };
 
             if (itArtistWithMBID != std::end(artistsWithSameName))
                 artist = *itArtistWithMBID;
@@ -114,10 +116,10 @@ namespace lms::scanner::helpers
                 artist = createArtist(session, artistInfo);
         }
 
-        return artist;
+        return *artist;
     }
 
-    db::Artist::pointer getOrCreateArtist(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
+    db::Artist getOrCreateArtist(db::ISession& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
     {
         // First try to get by MBID
         if (artistInfo.mbid)

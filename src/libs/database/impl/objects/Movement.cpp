@@ -26,8 +26,8 @@
 
 #include "database/ISession.hpp"
 
+#include "DboAccess.hpp"
 #include "MovementDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "TrackDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
@@ -44,15 +44,28 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Movement name too long, truncated to '" << _name << "'");
     }
 
-    dbo::Movement::Movement(std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<db::Track>& track)
+    dbo::Movement::Movement(std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, Wt::Dbo::ptr<Track> track)
         : db::Movement{ name, number, count }
-        , _track{ getDboPtr(track) }
+        , _track{ std::move(track) }
     {
     }
 
-    Movement::pointer Movement::create(ISession& session, std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<Track>& track)
+    void Movement::find(ISession& session, TrackId trackId, const std::function<void(const Movement&)>& func)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::Movement>{ new dbo::Movement{ name, number, count, track } });
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Movement>>("SELECT m FROM track_movement m").where("m.track_id = ?").bind(trackId).orderBy("m.id") };
+        utils::forEachQueryObject(query, func);
+    }
+
+    Movement Movement::create(ISession& session, std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, TrackId track)
+    {
+        return utils::addObject(session, std::unique_ptr<dbo::Movement>{ new dbo::Movement{ name, number, count, getDboSession(session)->loadLazy<dbo::Track>(track.getValue()) } });
+    }
+
+    void Movement::destroy(ISession& session, std::span<const MovementId> ids)
+    {
+        utils::destroyObjects<dbo::Movement>(session, ids);
     }
 
 } // namespace lms::db

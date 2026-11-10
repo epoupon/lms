@@ -56,7 +56,7 @@ namespace lms::ui::TrackListHelpers
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) };
+        const std::optional<db::Track> track{ db::Track::find(LmsApp->getDbSession(), trackId) };
         if (!track)
             return;
 
@@ -64,7 +64,7 @@ namespace lms::ui::TrackListHelpers
         Wt::WWidget* trackInfoPtr{ trackInfo.get() };
         trackInfo->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-        const auto artistsByRole{ utils::getArtistsByRole(track) };
+        const auto artistsByRole{ utils::getArtistsByRole(*track) };
         if (!artistsByRole.empty())
         {
             trackInfo->setCondition("if-has-artist", true);
@@ -109,12 +109,11 @@ namespace lms::ui::TrackListHelpers
 
         {
             Wt::WContainerWidget* genreContainer{ trackInfo->bindNew<Wt::WContainerWidget>("genres") };
-            for (const db::Genre::pointer& genre : track->getGenres())
-            {
-                const db::GenreId genreId{ genre->getId() };
+            db::Genre::find(LmsApp->getDbSession(), db::Genre::FindParameters{}.setTrack(trackId), [&](const db::Genre& genre) {
+                const db::GenreId genreId{ genre.getId() };
                 Wt::WInteractWidget* entry{ genreContainer->addWidget(utils::createFilterValue(genreId)) };
                 entry->clicked().connect([&filters, genreId] { filters.set(genreId); });
-            }
+            });
             if (const int count{ genreContainer->count() }; count > 0)
             {
                 trackInfo->bindString("genres-label", Wt::WString::trn("Lms.Explore.genre", count));
@@ -124,12 +123,11 @@ namespace lms::ui::TrackListHelpers
 
         {
             Wt::WContainerWidget* groupingContainer{ trackInfo->bindNew<Wt::WContainerWidget>("groupings") };
-            for (const db::Grouping::pointer& grouping : track->getGroupings())
-            {
-                const db::GroupingId groupingId{ grouping->getId() };
+            db::Grouping::find(LmsApp->getDbSession(), db::Grouping::FindParameters{}.setTrack(trackId), [&](const db::Grouping& grouping) {
+                const db::GroupingId groupingId{ grouping.getId() };
                 Wt::WInteractWidget* entry{ groupingContainer->addWidget(utils::createFilterValue(groupingId)) };
                 entry->clicked().connect([&filters, groupingId] { filters.set(groupingId); });
-            }
+            });
             if (const int count{ groupingContainer->count() }; count > 0)
             {
                 trackInfo->bindString("groupings-label", Wt::WString::trn("Lms.Explore.grouping", count));
@@ -139,12 +137,11 @@ namespace lms::ui::TrackListHelpers
 
         {
             Wt::WContainerWidget* languageContainer{ trackInfo->bindNew<Wt::WContainerWidget>("languages") };
-            for (const db::Language::pointer& language : track->getLanguages())
-            {
-                const db::LanguageId languageId{ language->getId() };
+            db::Language::find(LmsApp->getDbSession(), db::Language::FindParameters{}.setTrack(trackId), [&](const db::Language& language) {
+                const db::LanguageId languageId{ language.getId() };
                 Wt::WInteractWidget* entry{ languageContainer->addWidget(utils::createFilterValue(languageId)) };
                 entry->clicked().connect([&filters, languageId] { filters.set(languageId); });
-            }
+            });
             if (const int count{ languageContainer->count() }; count > 0)
             {
                 trackInfo->bindString("languages-label", Wt::WString::trn("Lms.Explore.language", count));
@@ -154,12 +151,11 @@ namespace lms::ui::TrackListHelpers
 
         {
             Wt::WContainerWidget* moodContainer{ trackInfo->bindNew<Wt::WContainerWidget>("moods") };
-            for (const db::Mood::pointer& mood : track->getMoods())
-            {
-                const db::MoodId moodId{ mood->getId() };
+            db::Mood::find(LmsApp->getDbSession(), db::Mood::FindParameters{}.setTrack(trackId), [&](const db::Mood& mood) {
+                const db::MoodId moodId{ mood.getId() };
                 Wt::WInteractWidget* entry{ moodContainer->addWidget(utils::createFilterValue(moodId)) };
                 entry->clicked().connect([&filters, moodId] { filters.set(moodId); });
-            }
+            });
             if (const int count{ moodContainer->count() }; count > 0)
             {
                 trackInfo->bindString("moods-label", Wt::WString::trn("Lms.Explore.mood", count));
@@ -167,7 +163,7 @@ namespace lms::ui::TrackListHelpers
             }
         }
 
-        Wt::WContainerWidget* clusterContainer{ trackInfo->bindWidget("clusters", utils::createFilterClustersForTrack(track, filters)) };
+        Wt::WContainerWidget* clusterContainer{ trackInfo->bindWidget("clusters", utils::createFilterClustersForTrack(*track, filters)) };
         if (clusterContainer->count() > 0)
             trackInfo->setCondition("if-has-clusters", true);
 
@@ -195,7 +191,7 @@ namespace lms::ui::TrackListHelpers
         params.setSortMethod(db::TrackLyricsSortMethod::ExternalFirst);
         params.setRange(db::Range{ 0, 1 });
 
-        db::TrackLyrics::find(LmsApp->getDbSession(), params, [&](const db::TrackLyrics::pointer& lyrics) {
+        db::TrackLyrics::find(LmsApp->getDbSession(), params, [&](const db::TrackLyrics& lyrics) {
             std::string text;
             auto addLine = [&](std::string_view line) {
                 if (!text.empty())
@@ -203,14 +199,14 @@ namespace lms::ui::TrackListHelpers
                 text += line;
             };
 
-            if (lyrics->isSynchronized())
+            if (lyrics.isSynchronized())
             {
-                for (const auto& [timestamp, line] : lyrics->getSynchronizedLines())
+                for (const auto& [timestamp, line] : lyrics.getSynchronizedLines())
                     addLine(line);
             }
             else
             {
-                for (const auto& line : lyrics->getUnsynchronizedLines())
+                for (const auto& line : lyrics.getUnsynchronizedLines())
                     addLine(line);
             }
 
@@ -225,12 +221,12 @@ namespace lms::ui::TrackListHelpers
         LmsApp->getModalManager().show(std::move(trackLyrics));
     }
 
-    std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters)
+    std::unique_ptr<Wt::WWidget> createEntry(const db::Track& track, PlayQueueController& playQueueController, Filters& filters)
     {
         return createEntry(track, playQueueController, filters, {}, 0);
     }
 
-    std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters, std::span<const db::TrackId> orderedTrackIds, std::size_t trackIndex)
+    std::unique_ptr<Wt::WWidget> createEntry(const db::Track& track, PlayQueueController& playQueueController, Filters& filters, std::span<const db::TrackId> orderedTrackIds, std::size_t trackIndex)
     {
         auto entry{ std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Tracks.template.entry")) };
         auto* entryPtr{ entry.get() };
@@ -243,8 +239,8 @@ namespace lms::ui::TrackListHelpers
             entry->bindString("work", Wt::WString::fromUTF8(*displayInfo.workName), Wt::TextFormat::Plain);
         }
 
-        const db::Release::pointer release{ track->getRelease() };
-        const db::TrackId trackId{ track->getId() };
+        const std::optional<db::Release> release{ db::Release::find(LmsApp->getDbSession(), track.getReleaseId()) };
+        const db::TrackId trackId{ track.getId() };
 
         const auto artistDisplayInfo{ utils::computeArtistDisplayInfo(track, db::TrackArtistLinkType::Artist) };
         if (!artistDisplayInfo.entries.empty())
@@ -255,20 +251,20 @@ namespace lms::ui::TrackListHelpers
         }
 
         std::unique_ptr<Wt::WImage> image;
-        if (track->getPreferredMediaArtworkId().isValid())
-            image = utils::createArtworkImage(track->getPreferredMediaArtworkId(), ArtworkResource::DefaultArtworkType::Track, ArtworkResource::Size::Small);
-        else if (track->getPreferredArtworkId().isValid())
-            image = utils::createArtworkImage(track->getPreferredArtworkId(), ArtworkResource::DefaultArtworkType::Track, ArtworkResource::Size::Small);
+        if (track.getPreferredMediaArtworkId().isValid())
+            image = utils::createArtworkImage(track.getPreferredMediaArtworkId(), ArtworkResource::DefaultArtworkType::Track, ArtworkResource::Size::Small);
+        else if (track.getPreferredArtworkId().isValid())
+            image = utils::createArtworkImage(track.getPreferredArtworkId(), ArtworkResource::DefaultArtworkType::Track, ArtworkResource::Size::Small);
         else
             image = utils::createDefaultArtworkImage(ArtworkResource::DefaultArtworkType::Track);
 
         image->addStyleClass("Lms-cover-track rounded"); // hack
-        if (track->getRelease())
+        if (release)
         {
             entry->setCondition("if-has-release", true);
-            entry->bindWidget("release", utils::createReleaseAnchor(track->getRelease()));
+            entry->bindWidget("release", utils::createReleaseAnchor(*release));
 
-            Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(release, false)) };
+            Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(*release, false)) };
             image->addStyleClass("Lms-cover-anchor"); // HACK
             anchor->setImage(std::move((image)));
         }
@@ -277,7 +273,7 @@ namespace lms::ui::TrackListHelpers
             entry->bindWidget<Wt::WImage>("cover", std::move(image));
         }
 
-        entry->bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
+        entry->bindString("duration", utils::durationToString(track.getDuration()), Wt::TextFormat::Plain);
 
         auto playTrack{ [trackId, orderedTrackIds, trackIndex, &playQueueController] {
             if (!orderedTrackIds.empty())
@@ -356,7 +352,7 @@ namespace lms::ui::TrackListHelpers
             ->clicked()
             .connect([trackId, &filters] { showTrackInfoModal(trackId, filters); });
 
-        if (track->hasLyrics())
+        if (db::Track::hasLyrics(LmsApp->getDbSession(), track.getId()))
         {
             entry->setCondition("if-has-lyrics", true);
             entry->bindNew<Wt::WPushButton>("track-lyrics", Wt::WString::tr("Lms.Explore.track-lyrics"))

@@ -30,25 +30,24 @@
 #include "core/UUID.hpp"
 
 #include "database/IdRange.hpp"
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/FilterExpr.hpp"
 #include "database/objects/MediaLibraryId.hpp"
+#include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artwork;
     class ISession;
-    class Release;
     class Track;
     class User;
 
-    class Artist : public Object<Artist, ArtistId>
+    class Artist : public detail::Object<Artist, ArtistId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -64,7 +63,8 @@ namespace lms::db
             std::optional<Range> range;
             UserId feedbackUser;                        // if valid, only artists that have feedback from this user
             std::optional<FeedbackValue> feedbackValue; // if set, only artists with feedback matching this value (any user, unless feedbackUser is also set)
-            TrackId track;                              // artists involved in this track
+            TrackId track;                              // artists involved in this track, in tag order unless sorted
+            ReleaseId release;                          // artists involved in this release, in tag order unless sorted: requires either releaseArtistsOnly or trackArtistLinkType
 
             FindParameters& setFilter(std::optional<FilterExpr> _filter, UserId _user = {})
             {
@@ -107,6 +107,11 @@ namespace lms::db
                 feedbackValue = _value;
                 return *this;
             }
+            FindParameters& setRelease(ReleaseId _release)
+            {
+                release = _release;
+                return *this;
+            }
             FindParameters& setTrack(TrackId _track)
             {
                 track = _track;
@@ -114,26 +119,27 @@ namespace lms::db
             }
         };
 
-        static pointer create(ISession& session, const std::string& name, const std::optional<core::UUID>& mbid = std::nullopt);
+        static Artist create(ISession& session, const std::string& name, const std::optional<core::UUID>& mbid = std::nullopt);
         static void destroy(ISession& session, std::span<const ArtistId> ids);
 
         // Accessors
         static std::size_t getCount(ISession& session);
         static std::size_t getCount(ISession& session, const FindParameters& params);
-        static pointer find(ISession& session, const core::UUID& MBID);
-        static pointer find(ISession& session, ArtistId id);
-        static std::vector<pointer> find(ISession& session, std::string_view name); // exact match on name field
-        static void find(ISession& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist::pointer&)>& func, MediaLibraryId library = {});
-        static void find(ISession& session, const IdRange<ArtistId>& idRange, const std::function<void(const Artist::pointer&)>& func);
-        static std::vector<pointer> find(ISession& session, const FindParameters& params);
-        static void find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func);
+        static std::optional<Artist> find(ISession& session, const core::UUID& MBID);
+        static std::optional<Artist> find(ISession& session, ArtistId id);
+        static std::vector<Artist> find(ISession& session, std::string_view name); // exact match on name field
+        static void find(ISession& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist&)>& func, MediaLibraryId library = {});
+        static void find(ISession& session, const IdRange<ArtistId>& idRange, const std::function<void(const Artist&)>& func);
+        static std::vector<Artist> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Artist&)>& func);
         static IdRange<ArtistId> findNextIdRange(ISession& session, ArtistId lastRetrievedId, std::size_t count);
         static std::vector<ArtistId> findIds(ISession& session, const FindParameters& params);
         static std::vector<ArtistId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt); // No track related
         static bool exists(ISession& session, ArtistId id);
-        static void findNameUpdates(ISession& session, const std::function<void(const pointer& artist, std::string_view newName, std::string_view newSortName)>& func);
+        static void findNameUpdates(ISession& session, const std::function<void(const Artist& artist, std::string_view newName, std::string_view newSortName)>& func);
 
         // Updates
+        static void update(ISession& session, const Artist& artist);
         static void updatePreferredArtwork(ISession& session, ArtistId artistId, ArtworkId artworkId);
 
         // Accessors
@@ -141,13 +147,12 @@ namespace lms::db
         const std::string& getSortName() const { return _sortName; }
         std::optional<core::UUID> getMBID() const { return _mbid; }
         bool hasMBID() const { return _mbid.has_value(); }
-        ObjectPtr<Artwork> getPreferredArtwork() const;
-        ArtworkId getPreferredArtworkId() const;
+        ArtworkId getPreferredArtworkId() const { return _preferredArtworkId; }
 
         void setName(std::string_view name);
         void setMBID(const std::optional<core::UUID>& mbid) { _mbid = mbid; }
         void setSortName(std::string_view sortName);
-        void setPreferredArtwork(const ObjectPtr<Artwork>& artwork);
+        void setPreferredArtwork(ArtworkId artwork) { _preferredArtworkId = artwork; }
 
     protected:
         Artist() = default;
@@ -157,5 +162,7 @@ namespace lms::db
         std::string _name;
         std::string _sortName;
         std::optional<core::UUID> _mbid;
+
+        ArtworkId _preferredArtworkId;
     };
 } // namespace lms::db

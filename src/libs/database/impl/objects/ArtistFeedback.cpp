@@ -24,7 +24,7 @@
 
 #include "ArtistDbo.hpp"
 #include "ArtistFeedbackDbo.hpp"
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "Session.hpp"
 #include "UserDbo.hpp"
 #include "Utils.hpp"
@@ -34,15 +34,20 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::ArtistFeedback)
 
 namespace lms::db
 {
-    dbo::ArtistFeedback::ArtistFeedback(const ObjectPtr<db::Artist>& artist, const ObjectPtr<db::User>& user)
-        : _artist{ getDboPtr(artist) }
-        , _user{ getDboPtr(user) }
+    dbo::ArtistFeedback::ArtistFeedback(Wt::Dbo::ptr<Artist> artist, Wt::Dbo::ptr<User> user)
+        : _artist{ std::move(artist) }
+        , _user{ std::move(user) }
     {
     }
 
-    ArtistFeedback::pointer ArtistFeedback::create(ISession& session, const ObjectPtr<Artist>& artist, const ObjectPtr<User>& user)
+    ArtistFeedback ArtistFeedback::create(ISession& session, ArtistId artist, UserId user)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::ArtistFeedback>{ new dbo::ArtistFeedback{ artist, user } });
+        return utils::addObject(session, std::unique_ptr<dbo::ArtistFeedback>{ new dbo::ArtistFeedback{ getDboSession(session)->loadLazy<dbo::Artist>(artist.getValue()), getDboSession(session)->loadLazy<dbo::User>(user.getValue()) } });
+    }
+
+    void ArtistFeedback::destroy(ISession& session, std::span<const ArtistFeedbackId> ids)
+    {
+        utils::destroyObjects<dbo::ArtistFeedback>(session, ids);
     }
 
     std::size_t ArtistFeedback::getCount(ISession& session)
@@ -51,13 +56,17 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM artist_feedback"));
     }
 
-    ArtistFeedback::pointer ArtistFeedback::find(ISession& session, ArtistFeedbackId id)
+    std::optional<ArtistFeedback> ArtistFeedback::find(ISession& session, ArtistFeedbackId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ArtistFeedback>().where("id = ?").bind(id));
     }
 
-    ArtistFeedback::pointer ArtistFeedback::find(ISession& session, ArtistId artistId, UserId userId)
+    std::optional<ArtistFeedback> ArtistFeedback::find(ISession& session, ArtistId artistId, UserId userId)
     {
         checkReadTransaction(session);
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ArtistFeedback>().where("artist_id = ?").bind(artistId).where("user_id = ?").bind(userId));
@@ -68,13 +77,8 @@ namespace lms::db
         _dateTime = utils::normalizeDateTime(dateTime);
     }
 
-    ObjectPtr<Artist> ArtistFeedback::getArtist() const
+    void ArtistFeedback::update(ISession& session, const ArtistFeedback& artistFeedback)
     {
-        return toObjectPtr(getDbo(*this)._artist);
-    }
-
-    ObjectPtr<User> ArtistFeedback::getUser() const
-    {
-        return toObjectPtr(getDbo(*this)._user);
+        utils::updateObject<dbo::ArtistFeedback>(session, artistFeedback);
     }
 } // namespace lms::db

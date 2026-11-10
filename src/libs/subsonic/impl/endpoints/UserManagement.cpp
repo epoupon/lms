@@ -46,12 +46,12 @@ namespace lms::api::subsonic
 
         checkUserIsMySelfOrAdmin(context, username);
 
-        const User::pointer user{ User::find(context.getDbSession(), username) };
+        const std::optional<User> user{ User::find(context.getDbSession(), username) };
         if (!user)
             throw RequestedDataNotFoundError{};
 
         Response response{ Response::createOkResponse() };
-        response.addNode("user", createUserNode(context, user));
+        response.addNode("user", createUserNode(context, *user));
 
         return response;
     }
@@ -62,7 +62,7 @@ namespace lms::api::subsonic
         Response::Node& usersNode{ response.createNode("users") };
 
         auto transaction{ context.getDbSession().createReadTransaction() };
-        User::find(context.getDbSession(), User::FindParameters{}, [&](const User::pointer& user) {
+        User::find(context.getDbSession(), User::FindParameters{}, [&](const User& user) {
             usersNode.addArrayChild("user", createUserNode(context, user));
         });
 

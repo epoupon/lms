@@ -49,29 +49,31 @@ namespace lms::api::subsonic
 {
     using namespace db;
 
-    Response::Node createAlbumNode(RequestContext& context, const Release::pointer& release, bool id3, const Directory::pointer& directory)
+    Response::Node createAlbumNode(RequestContext& context, const Release& release, bool id3, const std::optional<Directory>& directory)
     {
         LMS_SCOPED_TRACE_DETAILED("Subsonic", "CreateAlbum");
+
+        ISession& session{ context.getDbSession() };
 
         Response::Node albumNode;
 
         if (id3)
         {
-            albumNode.setAttribute("id", idToString(release->getId()));
-            albumNode.setAttribute("name", release->getName());
-            albumNode.setAttribute("songCount", release->getTrackCount());
-            albumNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(release->getDuration()).count());
+            albumNode.setAttribute("id", idToString(release.getId()));
+            albumNode.setAttribute("name", release.getName());
+            albumNode.setAttribute("songCount", Release::getTrackCount(session, release.getId()));
+            albumNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(Release::getDuration(session, release.getId())).count());
         }
         else
         {
-            Directory::pointer directoryToReport{ directory };
+            std::optional<Directory> directoryToReport{ directory };
 
             if (!directoryToReport)
             {
                 Directory::FindParameters params;
-                params.setRelease(release->getId());
+                params.setRelease(release.getId());
                 params.setRange(Range{ 0, 1 }); // only support 1 directory <-> 1 release
-                Directory::find(context.getDbSession(), params, [&](const Directory::pointer& foundDirectory) {
+                Directory::find(context.getDbSession(), params, [&](const Directory& foundDirectory) {
                     directoryToReport = foundDirectory;
                 });
             }
@@ -80,22 +82,22 @@ namespace lms::api::subsonic
             {
                 albumNode.setAttribute("title", directoryToReport->getName());
                 albumNode.setAttribute("id", idToString(directoryToReport->getId()));
-                if (const Directory::pointer & parentDirectory{ directoryToReport->getParentDirectory() })
-                    albumNode.setAttribute("parent", idToString(parentDirectory->getId()));
+                if (const DirectoryId parentDirectoryId{ directoryToReport->getParentDirectoryId() }; parentDirectoryId.isValid())
+                    albumNode.setAttribute("parent", idToString(parentDirectoryId));
             }
 
-            albumNode.setAttribute("album", release->getName());
+            albumNode.setAttribute("album", release.getName());
             albumNode.setAttribute("isDir", true);
         }
 
-        albumNode.setAttribute("created", core::stringUtils::toISO8601String(release->getAddedTime()));
+        albumNode.setAttribute("created", core::stringUtils::toISO8601String(Release::getAddedTime(session, release.getId())));
 
-        if (const db::ArtworkId artworkId{ release->getPreferredArtworkId() }; artworkId.isValid())
+        if (const db::ArtworkId artworkId{ release.getPreferredArtworkId() }; artworkId.isValid())
             albumNode.setAttribute("coverArt", idToString(artworkId));
 
-        if (const auto originalYear{ release->getOriginalYear() })
+        if (const auto originalYear{ Release::getOriginalYear(session, release.getId()) })
             albumNode.setAttribute("year", *originalYear);
-        else if (const auto year{ release->getYear() })
+        else if (const auto year{ Release::getYear(session, release.getId()) })
             albumNode.setAttribute("year", *year);
 
         struct Artist
@@ -105,21 +107,24 @@ namespace lms::api::subsonic
         };
         std::optional<Artist> artist;
 
-        const auto artistLinks{ release->getArtistLinks() };
+        std::vector<ReleaseArtistLink> artistLinks;
+        ReleaseArtistLink::find(session, release.getId(), [&](const ReleaseArtistLink& artistLink) {
+            artistLinks.push_back(artistLink);
+        });
         if (!artistLinks.empty())
         {
-            artist = Artist{ .name = std::string{ release->getArtistDisplayName() }, .id = {} };
+            artist = Artist{ .name = std::string{ release.getArtistDisplayName() }, .id = {} };
             if (artistLinks.size() == 1)
-                artist->id = idToString(artistLinks.front()->getArtistId());
+                artist->id = idToString(artistLinks.front().getArtistId());
         }
         else
         {
-            if (const auto trackArtists{ release->getTrackArtists(TrackArtistLinkType::Artist) }; !trackArtists.empty())
+            if (const auto trackArtists{ db::Artist::find(session, db::Artist::FindParameters{}.setRelease(release.getId()).setTrackArtistLinkType(TrackArtistLinkType::Artist)) }; !trackArtists.empty())
             {
                 if (trackArtists.size() > 1)
                     artist = Artist{ .name = "Various Artists", .id = {} };
                 else if (trackArtists.size() == 1)
-                    artist = Artist{ .name = trackArtists.front()->getName(), .id = idToString(trackArtists.front()->getId()) };
+                    artist = Artist{ .name = trackArtists.front().getName(), .id = idToString(trackArtists.front().getId()) };
             }
         }
 
@@ -130,101 +135,99 @@ namespace lms::api::subsonic
                 albumNode.setAttribute("artistId", artist->id);
         }
 
-        albumNode.setAttribute("playCount", Listen::getCount(context.getDbSession(), context.getUser()->getId(), release->getId()));
+        albumNode.setAttribute("playCount", Listen::getCount(context.getDbSession(), context.getUser()->getId(), release.getId()));
 
         Genre::FindParameters genreParams;
-        genreParams.setRelease(release->getId());
+        genreParams.setRelease(release.getId());
         genreParams.setSortMethod(GenreSortMethod::TrackCountDesc);
         const auto genres{ Genre::find(context.getDbSession(), genreParams) };
         if (!genres.empty())
-            albumNode.setAttribute("genre", genres.front()->getName());
+            albumNode.setAttribute("genre", genres.front().getName());
 
-        if (const ReleaseFeedback::pointer feedback{ ReleaseFeedback::find(context.getDbSession(), release->getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == FeedbackValue::Loved)
+        if (const std::optional<ReleaseFeedback> feedback{ ReleaseFeedback::find(context.getDbSession(), release.getId(), context.getUser()->getId()) }; feedback && feedback->getValue() == FeedbackValue::Loved)
             albumNode.setAttribute("starred", core::stringUtils::toISO8601String(feedback->getDateTime()));
 
         // Always report user rating, even if legacy API only specified it for directories
-        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.getUser()->getId(), release->getId()) })
+        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.getUser()->getId(), release.getId()) })
             albumNode.setAttribute("userRating", *rating);
 
         if (!context.isOpenSubsonicEnabled())
             return albumNode;
 
         // OpenSubsonic specific fields (must always be set)
-        albumNode.setAttribute("version", release->getComment());
-        albumNode.setAttribute("sortName", release->getSortName());
+        albumNode.setAttribute("version", release.getComment());
+        albumNode.setAttribute("sortName", release.getSortName());
         albumNode.setAttribute("mediaType", "album");
 
         {
-            const Listen::pointer listen{ Listen::getMostRecentListen(context.getDbSession(), context.getUser()->getId(), release->getId()) };
+            const std::optional<Listen> listen{ Listen::getMostRecentListen(context.getDbSession(), context.getUser()->getId(), release.getId()) };
             albumNode.setAttribute("played", listen ? core::stringUtils::toISO8601String(listen->getDateTime()) : std::string{ "" });
         }
 
         {
-            std::optional<core::UUID> mbid{ release->getMBID() };
+            std::optional<core::UUID> mbid{ release.getMBID() };
             albumNode.setAttribute("musicBrainzId", mbid ? mbid->toString() : "");
         }
 
         albumNode.createEmptyArrayValue("moods");
         {
             Mood::FindParameters params;
-            params.setRelease(release->getId());
-            Mood::find(context.getDbSession(), params, [&](const Mood::pointer& mood) {
-                albumNode.addArrayValue("moods", mood->getName());
+            params.setRelease(release.getId());
+            Mood::find(context.getDbSession(), params, [&](const Mood& mood) {
+                albumNode.addArrayValue("moods", mood.getName());
             });
         }
 
         albumNode.createEmptyArrayValue("groupings");
         {
             Grouping::FindParameters params;
-            params.setRelease(release->getId());
-            Grouping::find(context.getDbSession(), params, [&](const Grouping::pointer& grouping) {
-                albumNode.addArrayValue("groupings", grouping->getName());
+            params.setRelease(release.getId());
+            Grouping::find(context.getDbSession(), params, [&](const Grouping& grouping) {
+                albumNode.addArrayValue("groupings", grouping.getName());
             });
         }
 
         albumNode.createEmptyArrayChild("genres");
         for (const auto& genre : genres)
-            albumNode.addArrayChild("genres", createItemGenreNode(genre->getName()));
+            albumNode.addArrayChild("genres", createItemGenreNode(genre.getName()));
 
         if (id3)
         {
             albumNode.createEmptyArrayChild("artists");
-            for (const db::ReleaseArtistLink::pointer& artistLink : artistLinks)
+            for (const db::ReleaseArtistLink& artistLink : artistLinks)
                 albumNode.addArrayChild("artists", createMinimalArtistNode(artistLink));
 
-            albumNode.setAttribute("displayArtist", release->getArtistDisplayName());
+            albumNode.setAttribute("displayArtist", release.getArtistDisplayName());
         }
         else
         {
             albumNode.createEmptyArrayChild("albumArtists");
-            for (const db::ReleaseArtistLink::pointer& artistLink : artistLinks)
+            for (const db::ReleaseArtistLink& artistLink : artistLinks)
                 albumNode.addArrayChild("albumArtists", createMinimalArtistNode(artistLink));
 
-            albumNode.setAttribute("displayAlbumArtist", release->getArtistDisplayName());
+            albumNode.setAttribute("displayAlbumArtist", release.getArtistDisplayName());
 
             albumNode.createEmptyArrayChild("artists");
             albumNode.setAttribute("displayArtist", "");
         }
-        albumNode.addChild("originalReleaseDate", createItemDateNode(release->getOriginalDate()));
-        albumNode.addChild("releaseDate", createItemDateNode(release->getDate()));
+        albumNode.addChild("originalReleaseDate", createItemDateNode(Release::getOriginalDate(session, release.getId())));
+        albumNode.addChild("releaseDate", createItemDateNode(Release::getDate(session, release.getId())));
 
-        albumNode.setAttribute("isCompilation", release->isCompilation());
+        albumNode.setAttribute("isCompilation", release.isCompilation());
 
         albumNode.createEmptyArrayValue("releaseTypes");
-        for (std::string_view releaseType : release->getReleaseTypeNames())
-            albumNode.addArrayValue("releaseTypes", releaseType);
+        ReleaseType::find(session, release.getId(), [&](const ReleaseType& releaseType) {
+            albumNode.addArrayValue("releaseTypes", releaseType.getName());
+        });
 
         albumNode.createEmptyArrayChild("discTitles");
-        for (const auto& medium : release->getMediums())
-        {
-            if (medium->getName().empty())
-                continue;
-
-            albumNode.addArrayChild("discTitles", createDiscTitle(medium));
-        }
+        Medium::find(session, Medium::FindParameters{}.setRelease(release.getId()).setSortMethod(MediumSortMethod::PositionAsc), [&](const Medium& medium) {
+            if (!medium.getName().empty())
+                albumNode.addArrayChild("discTitles", createDiscTitle(medium));
+        });
 
         albumNode.createEmptyArrayChild("recordLabels");
-        release->visitLabels([&](const Label::pointer& label) {
+        Label::find(session, release.getId(), [&](const Label& label) {
             albumNode.addArrayChild("recordLabels", createRecordLabel(label));
         });
 
@@ -238,7 +241,7 @@ namespace lms::api::subsonic
             return "";
         };
 
-        albumNode.setAttribute("explicitStatus", advisoryToExplicitStatus(release->getAdvisories()));
+        albumNode.setAttribute("explicitStatus", advisoryToExplicitStatus(Release::getAdvisories(session, release.getId())));
 
         return albumNode;
     }

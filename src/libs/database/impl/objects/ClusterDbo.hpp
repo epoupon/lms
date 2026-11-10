@@ -25,7 +25,7 @@
 
 #include "database/objects/Cluster.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -39,7 +39,13 @@ namespace lms::db::dbo
         Cluster() = default;
         using db::Cluster::Cluster;
 
-        Cluster(const ObjectPtr<db::ClusterType>& type, std::string_view name);
+        Cluster(Wt::Dbo::ptr<ClusterType> type, std::string_view name);
+
+        void syncIds()
+        {
+            _id = id();
+            _typeId = _clusterType.id();
+        }
 
         template<class Action>
         void persist(Action& a)
@@ -59,6 +65,8 @@ namespace lms::db::dbo
     public:
         ClusterType() = default;
         using db::ClusterType::ClusterType;
+
+        void syncIds() { _id = id(); }
 
         template<class Action>
         void persist(Action& a)

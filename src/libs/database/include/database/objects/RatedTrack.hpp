@@ -20,26 +20,27 @@
 #pragma once
 
 #include <optional>
+#include <span>
 
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/RatedTrackId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class Track;
     class User;
 
-    class RatedTrack : public Object<RatedTrack, RatedTrackId>
+    class RatedTrack : public detail::Object<RatedTrack, RatedTrackId>
     {
     public:
-        static pointer create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<User>& user);
+        static RatedTrack create(ISession& session, TrackId track, UserId user);
+        static void destroy(ISession& session, std::span<const RatedTrackId> ids);
 
         struct FindParameters
         {
@@ -60,13 +61,15 @@ namespace lms::db
 
         // Search utility
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, RatedTrackId id);
-        static pointer find(ISession& session, TrackId trackId, UserId userId);
-        static void find(ISession& session, const FindParameters& findParams, std::function<void(const pointer&)> func);
+        static std::optional<RatedTrack> find(ISession& session, RatedTrackId id);
+        static std::optional<RatedTrack> find(ISession& session, TrackId trackId, UserId userId);
+        static void find(ISession& session, const FindParameters& findParams, const std::function<void(const RatedTrack&)>& func);
+
+        static void update(ISession& session, const RatedTrack& ratedTrack);
 
         // Accessors
-        ObjectPtr<Track> getTrack() const;
-        ObjectPtr<User> getUser() const;
+        TrackId getTrackId() const { return _trackId; }
+        UserId getUserId() const { return _userId; }
         Rating getRating() const { return _rating; }
         const Wt::WDateTime& getLastUpdated() const { return _lastUpdated; }
 
@@ -79,5 +82,7 @@ namespace lms::db
 
         Rating _rating{};
         Wt::WDateTime _lastUpdated; // when it was rated for the last time
+        TrackId _trackId;
+        UserId _userId;
     };
 } // namespace lms::db

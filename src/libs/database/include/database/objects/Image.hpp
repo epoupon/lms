@@ -29,21 +29,20 @@
 #include "core/TaggedType.hpp"
 #include "core/media/ImageFormat.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/DirectoryId.hpp"
 #include "database/objects/ImageId.hpp"
+#include "database/objects/detail/Object.hpp"
 #include "database/objects/detail/Types.hpp"
 
 namespace lms::db
 {
-    class Directory;
     class ISession;
 
-    class Image : public Object<Image, ImageId>
+    class Image : public detail::Object<Image, ImageId>
     {
     public:
-        static pointer create(ISession& session, const std::filesystem::path& p);
+        static Image create(ISession& session, const std::filesystem::path& p);
         static void destroy(ISession& session, std::span<const ImageId> ids);
 
         struct FindParameters
@@ -75,12 +74,14 @@ namespace lms::db
 
         // find
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, ImageId id);
-        static pointer find(ISession& session, const std::filesystem::path& file);
-        static std::vector<pointer> find(ISession& session, const FindParameters& params);
-        static void find(ISession& session, const FindParameters& parameters, const std::function<void(const Image::pointer&)>& func);
-        static void find(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(const Image::pointer&)>& func);
+        static std::optional<Image> find(ISession& session, ImageId id);
+        static std::optional<Image> find(ISession& session, const std::filesystem::path& file);
+        static std::vector<Image> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& parameters, const std::function<void(const Image&)>& func);
+        static void find(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(const Image&)>& func);
         static void findAbsoluteFilePath(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(ImageId imageId, const std::filesystem::path& absoluteFilePath)>& func);
+
+        static void update(ISession& session, const Image& image);
 
         // getters
         const std::filesystem::path& getAbsoluteFilePath() const { return _fileAbsolutePath; }
@@ -98,7 +99,7 @@ namespace lms::db
         void setWidth(std::size_t width) { _width = width; }
         void setHeight(std::size_t height) { _height = height; }
         void setFormat(core::media::ImageFormat format);
-        void setDirectory(const ObjectPtr<Directory>& directory);
+        void setDirectory(DirectoryId directory) { _directoryId = directory; }
 
     protected:
         Image() = default;
@@ -111,5 +112,6 @@ namespace lms::db
         int _width{};
         int _height{};
         detail::ImageFormat _format{ detail::ImageFormat::Unknown };
+        DirectoryId _directoryId;
     };
 } // namespace lms::db

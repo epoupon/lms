@@ -19,6 +19,7 @@
 
 #include "ImageFileScanner.hpp"
 
+#include <array>
 #include <optional>
 
 #include "core/ILogger.hpp"
@@ -74,13 +75,13 @@ namespace lms::scanner
         ImageFileScanOperation::OperationResult ImageFileScanOperation::processResult()
         {
             db::ISession& dbSession{ getDb().getTLSSession() };
-            db::Image::pointer image{ db::Image::find(dbSession, getFilePath()) };
+            std::optional<db::Image> image{ db::Image::find(dbSession, getFilePath()) };
 
             if (!_parsedImage)
             {
                 if (image)
                 {
-                    image.remove();
+                    db::Image::destroy(dbSession, std::array{ image->getId() });
 
                     LMS_LOG(DBUPDATER, DEBUG, "Removed image " << getFilePath());
                     return OperationResult::Removed;
@@ -93,24 +94,25 @@ namespace lms::scanner
             if (added)
             {
                 image = db::Image::create(dbSession, getFilePath());
-                db::Artwork::create(dbSession, image);
+                db::Artwork::create(dbSession, image->getId());
             }
             else if (image->getLastWriteTime() != getLastWriteTime()
                      || image->getFileSize() != getFileSize())
             {
-                if (auto artwork{ db::Artwork::find(dbSession, image->getId()) })
-                    artwork.remove();
-                db::Artwork::create(dbSession, image);
+                if (const std::optional<db::Artwork> artwork{ db::Artwork::find(dbSession, image->getId()) })
+                    db::Artwork::destroy(dbSession, std::array{ artwork->getId() });
+                db::Artwork::create(dbSession, image->getId());
             }
 
             const image::ImageDimensions dimensions{ _parsedImage->dimensions.value_or(image::ImageDimensions{}) };
-            image.modify()->setLastWriteTime(getLastWriteTime());
-            image.modify()->setFileSize(getFileSize());
-            image.modify()->setHeight(dimensions.height);
-            image.modify()->setWidth(dimensions.width);
-            image.modify()->setFormat(_parsedImage->format);
-            db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
-            image.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary));
+            image->setLastWriteTime(getLastWriteTime());
+            image->setFileSize(getFileSize());
+            image->setHeight(dimensions.height);
+            image->setWidth(dimensions.width);
+            image->setFormat(_parsedImage->format);
+            std::optional<db::MediaLibrary> mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
+            image->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary).getId());
+            db::Image::update(dbSession, *image);
 
             if (added)
             {
@@ -149,7 +151,7 @@ namespace lms::scanner
         db::ISession& dbSession{ _db.getTLSSession() };
         auto transaction{ _db.getTLSSession().createReadTransaction() };
 
-        const db::Image::pointer image{ db::Image::find(dbSession, file.filePath) };
+        const std::optional<db::Image> image{ db::Image::find(dbSession, file.filePath) };
         return (!image || image->getLastWriteTime() != file.lastWriteTime);
     }
 

@@ -24,7 +24,7 @@
 
 #include "database/objects/ReleaseFeedbackBackendSync.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -36,7 +36,13 @@ namespace lms::db::dbo
         ReleaseFeedbackBackendSync() = default;
         using db::ReleaseFeedbackBackendSync::ReleaseFeedbackBackendSync;
 
-        ReleaseFeedbackBackendSync(const ObjectPtr<db::ReleaseFeedback>& releaseFeedback, FeedbackBackend backend);
+        ReleaseFeedbackBackendSync(Wt::Dbo::ptr<ReleaseFeedback> releaseFeedback, FeedbackBackend backend);
+
+        void syncIds()
+        {
+            _id = id();
+            _releaseFeedbackId = _releaseFeedback.id();
+        }
 
         template<class Action>
         void persist(Action& a)

@@ -23,9 +23,9 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "ArtistDbo.hpp"
+#include "DboAccess.hpp"
 #include "JoinSet.hpp"
 #include "ListenDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "ReleaseDbo.hpp"
 #include "Session.hpp"
 #include "TrackDbo.hpp"
@@ -180,16 +180,21 @@ namespace lms::db
     {
     }
 
-    dbo::Listen::Listen(const ObjectPtr<db::User>& user, const ObjectPtr<db::Track>& track, const Wt::WDateTime& dateTime)
+    dbo::Listen::Listen(Wt::Dbo::ptr<User> user, Wt::Dbo::ptr<Track> track, const Wt::WDateTime& dateTime)
         : db::Listen{ dateTime }
-        , _user{ getDboPtr(user) }
-        , _track{ getDboPtr(track) }
+        , _user{ std::move(user) }
+        , _track{ std::move(track) }
     {
     }
 
-    Listen::pointer Listen::create(ISession& session, const ObjectPtr<User>& user, const ObjectPtr<Track>& track, const Wt::WDateTime& dateTime)
+    Listen Listen::create(ISession& session, UserId user, TrackId track, const Wt::WDateTime& dateTime)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::Listen>{ new dbo::Listen{ user, track, dateTime } });
+        return utils::addObject(session, std::unique_ptr<dbo::Listen>{ new dbo::Listen{ getDboSession(session)->loadLazy<dbo::User>(user.getValue()), getDboSession(session)->loadLazy<dbo::Track>(track.getValue()), dateTime } });
+    }
+
+    void Listen::destroy(ISession& session, std::span<const ListenId> ids)
+    {
+        utils::destroyObjects<dbo::Listen>(session, ids);
     }
 
     std::size_t Listen::getCount(ISession& session)
@@ -198,9 +203,13 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM listen"));
     }
 
-    Listen::pointer Listen::find(ISession& session, ListenId id)
+    std::optional<Listen> Listen::find(ISession& session, ListenId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Listen>>("SELECT l from listen l").where("l.id = ?").bind(id));
     }
 
@@ -216,7 +225,7 @@ namespace lms::db
         return utils::execRangeQuery<ListenId>(query, parameters.range);
     }
 
-    Listen::pointer Listen::find(ISession& session, UserId userId, TrackId trackId, const Wt::WDateTime& dateTime)
+    std::optional<Listen> Listen::find(ISession& session, UserId userId, TrackId trackId, const Wt::WDateTime& dateTime)
     {
         checkReadTransaction(session);
 
@@ -265,7 +274,7 @@ namespace lms::db
         return utils::execRangeQuery<TrackId>(query, params.range);
     }
 
-    void Listen::getTopArtists(ISession& session, const ArtistStatsFindParameters& params, const std::function<void(const ObjectPtr<Artist>&)>& func)
+    void Listen::getTopArtists(ISession& session, const ArtistStatsFindParameters& params, const std::function<void(const Artist&)>& func)
     {
         checkReadTransaction(session);
         auto query{ createArtistsQuery(session, params)
@@ -274,11 +283,11 @@ namespace lms::db
 
         utils::forEachQueryRangeResult(query, params.range, [&](const ArtistId& id) {
             if (const auto artist{ Artist::find(session, id) })
-                func(artist);
+                func(*artist);
         });
     }
 
-    void Listen::getTopReleases(ISession& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Release>&)>& func)
+    void Listen::getTopReleases(ISession& session, const StatsFindParameters& params, const std::function<void(const Release&)>& func)
     {
         checkReadTransaction(session);
         auto query{ createReleasesQuery(session, params)
@@ -287,11 +296,11 @@ namespace lms::db
 
         utils::forEachQueryRangeResult(query, params.range, [&](const ReleaseId& id) {
             if (const auto release{ Release::find(session, id) })
-                func(release);
+                func(*release);
         });
     }
 
-    void Listen::getTopTracks(ISession& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Track>&)>& func)
+    void Listen::getTopTracks(ISession& session, const StatsFindParameters& params, const std::function<void(const Track&)>& func)
     {
         checkReadTransaction(session);
         auto query{ createTracksQuery(session, params)
@@ -300,11 +309,11 @@ namespace lms::db
 
         utils::forEachQueryRangeResult(query, params.range, [&](const TrackId& id) {
             if (const auto track{ Track::find(session, id) })
-                func(track);
+                func(*track);
         });
     }
 
-    void Listen::getRecentArtists(ISession& session, const ArtistStatsFindParameters& params, const std::function<void(const ObjectPtr<Artist>&)>& func)
+    void Listen::getRecentArtists(ISession& session, const ArtistStatsFindParameters& params, const std::function<void(const Artist&)>& func)
     {
         checkReadTransaction(session);
         auto query{ createArtistsQuery(session, params)
@@ -314,11 +323,11 @@ namespace lms::db
 
         utils::forEachQueryRangeResult(query, params.range, [&](const ArtistId& id) {
             if (const auto artist{ Artist::find(session, id) })
-                func(artist);
+                func(*artist);
         });
     }
 
-    void Listen::getRecentReleases(ISession& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Release>&)>& func)
+    void Listen::getRecentReleases(ISession& session, const StatsFindParameters& params, const std::function<void(const Release&)>& func)
     {
         checkReadTransaction(session);
         auto query{ createReleasesQuery(session, params)
@@ -328,11 +337,11 @@ namespace lms::db
 
         utils::forEachQueryRangeResult(query, params.range, [&](const ReleaseId& id) {
             if (const auto release{ Release::find(session, id) })
-                func(release);
+                func(*release);
         });
     }
 
-    void Listen::getRecentTracks(ISession& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Track>&)>& func)
+    void Listen::getRecentTracks(ISession& session, const StatsFindParameters& params, const std::function<void(const Track&)>& func)
     {
         checkReadTransaction(session);
         auto query{ createTracksQuery(session, params)
@@ -342,7 +351,7 @@ namespace lms::db
 
         utils::forEachQueryRangeResult(query, params.range, [&](const TrackId& id) {
             if (const auto track{ Track::find(session, id) })
-                func(track);
+                func(*track);
         });
     }
 
@@ -369,7 +378,7 @@ namespace lms::db
                                                  .bind(releaseId));
     }
 
-    Listen::pointer Listen::getMostRecentListen(ISession& session, UserId userId, ReleaseId releaseId)
+    std::optional<Listen> Listen::getMostRecentListen(ISession& session, UserId userId, ReleaseId releaseId)
     {
         checkReadTransaction(session);
 
@@ -386,7 +395,7 @@ namespace lms::db
         return utils::fetchQuerySingleObject(query);
     }
 
-    Listen::pointer Listen::getMostRecentListen(ISession& session, UserId userId, TrackId trackId)
+    std::optional<Listen> Listen::getMostRecentListen(ISession& session, UserId userId, TrackId trackId)
     {
         checkReadTransaction(session);
 
@@ -400,15 +409,5 @@ namespace lms::db
         // clang-format on
 
         return utils::fetchQuerySingleObject(query);
-    }
-
-    ObjectPtr<User> Listen::getUser() const
-    {
-        return toObjectPtr(getDbo(*this)._user);
-    }
-
-    ObjectPtr<Track> Listen::getTrack() const
-    {
-        return toObjectPtr(getDbo(*this)._track);
     }
 } // namespace lms::db

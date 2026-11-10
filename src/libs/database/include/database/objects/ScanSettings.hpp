@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -27,8 +28,8 @@
 #include <Wt/WTime.h>
 
 #include "database/IdType.hpp"
-#include "database/Object.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 LMS_DECLARE_IDTYPE(ScanSettingsId)
 
@@ -36,7 +37,7 @@ namespace lms::db
 {
     class ISession;
 
-    class ScanSettings : public Object<ScanSettings, ScanSettingsId>
+    class ScanSettings : public detail::Object<ScanSettings, ScanSettingsId>
     {
     public:
         // Do not modify values (just add)
@@ -49,10 +50,14 @@ namespace lms::db
             Hourly,
         };
 
-        static pointer create(ISession& session, std::string_view name = "");
+        static ScanSettings create(ISession& session, std::string_view name = "");
 
-        static pointer find(ISession& session, std::string_view name = "");
-        static pointer find(ISession& session, ScanSettingsId id);
+        static void destroy(ISession& session, std::span<const ScanSettingsId> ids);
+
+        static std::optional<ScanSettings> find(ISession& session, std::string_view name = "");
+        static std::optional<ScanSettings> find(ISession& session, ScanSettingsId id);
+
+        static void update(ISession& session, const ScanSettings& scanSettings);
 
         // Getters
         std::size_t getAudioScanVersion() const { return _audioScanVersion; }

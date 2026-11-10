@@ -28,6 +28,7 @@
 #include "ArtistDbo.hpp"
 #include "ArtworkDbo.hpp"
 #include "ClusterDbo.hpp"
+#include "DboAccess.hpp"
 #include "DirectoryDbo.hpp"
 #include "GenreDbo.hpp"
 #include "GroupingDbo.hpp"
@@ -36,7 +37,6 @@
 #include "MediumDbo.hpp"
 #include "MoodDbo.hpp"
 #include "MovementDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "ReleaseDbo.hpp"
 #include "Session.hpp"
 #include "TrackArtistLinkDbo.hpp"
@@ -122,7 +122,7 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Genre name too long, truncated to '" << _name << "'");
     }
 
-    Genre::pointer Genre::create(ISession& session, std::string_view name)
+    Genre Genre::create(ISession& session, std::string_view name)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Genre>{ new dbo::Genre{ name } });
     }
@@ -145,33 +145,42 @@ namespace lms::db
         return utils::execRangeQuery<GenreId>(query, params.range);
     }
 
-    std::vector<Genre::pointer> Genre::find(ISession& session, const FindParameters& params)
+    std::vector<Genre> Genre::find(ISession& session, const FindParameters& params)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Genre>>(session, params) };
         return utils::execRangeObjectQuery(query, params.range);
     }
 
-    void Genre::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    void Genre::find(ISession& session, const FindParameters& params, const std::function<void(const Genre&)>& func)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Genre>>(session, params) };
         utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    Genre::pointer Genre::find(ISession& session, GenreId id)
+    std::optional<Genre> Genre::find(ISession& session, GenreId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Genre>().where("id = ?").bind(id));
     }
 
-    Genre::pointer Genre::find(ISession& session, std::string_view name)
+    std::optional<Genre> Genre::find(ISession& session, std::string_view name)
     {
         checkReadTransaction(session);
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Genre>().where("name = ?").bind(name));
+    }
+
+    void Genre::update(ISession& session, const Genre& genre)
+    {
+        utils::updateObject<dbo::Genre>(session, genre);
     }
 
     std::vector<GenreId> Genre::findOrphanIds(ISession& session, std::optional<Range> range)

@@ -19,7 +19,9 @@
 
 #pragma once
 
+#include <cassert>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -92,7 +94,7 @@ namespace lms::db::utils
         using type = ResultType;
     };
 
-    // Mapped entities must be fetched using the *Object variants, so that callers get ObjectPtr
+    // Entities must be fetched using the *Object variants, so that callers get values
     template<typename T>
     inline constexpr bool isObjectResult{ false };
 
@@ -126,7 +128,7 @@ namespace lms::db::utils
     void forEachQueryObject(const Query& query, UnaryFunc&& func)
     {
         detail::forEachQueryResult(query, [&](const auto& result) {
-            func(toObjectPtr(result));
+            func(toEntity(result));
         });
     }
 
@@ -153,9 +155,10 @@ namespace lms::db::utils
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQueryResults", "Query", query.asString());
 
         ScopedQueryProfiler queryProfiler{ query };
-        std::vector<decltype(toObjectPtr(std::declval<typename QueryResultType<Query>::type>()))> results;
+        using ResultType = typename QueryResultType<Query>::type;
+        std::vector<EntityOf<typename ResultType::pointed>> results;
         for (const auto& result : query.resultList())
-            results.push_back(toObjectPtr(result));
+            results.push_back(toEntity(result));
 
         return results;
     }
@@ -174,7 +177,12 @@ namespace lms::db::utils
     {
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQuerySingleResult", "Query", query.asString());
         ScopedQueryProfiler queryProfiler{ query };
-        return toObjectPtr(query.resultValue());
+        using ResultType = typename QueryResultType<Query>::type;
+        std::optional<EntityOf<typename ResultType::pointed>> res;
+        if (const ResultType result{ query.resultValue() })
+            res = toEntity(result);
+
+        return res;
     }
 
     template<typename ResultType, typename Query>
@@ -221,16 +229,38 @@ namespace lms::db::utils
         }
     }
 
-    template<typename Object>
-    typename Object::pointer addObject(ISession& session, std::unique_ptr<Object> object)
+    template<MappedEntity Object>
+    EntityOf<Object> addObject(ISession& session, std::unique_ptr<Object> object)
     {
         checkWriteTransaction(session);
 
         Wt::Dbo::Session& dboSession{ *getDboSession(session) };
-        typename Object::pointer res{ toObjectPtr(dboSession.add(std::move(object))) };
+        const Wt::Dbo::ptr<Object> ptr{ dboSession.add(std::move(object)) };
         dboSession.flush();
 
-        return res;
+        return EntityOf<Object>{ toEntity(ptr) };
+    }
+
+    // Marked as modified, the object is kept by the session until the end of the transaction
+    template<MappedEntity Object>
+    Object& modifyObject(ISession& session, typename Object::IdType id)
+    {
+        checkWriteTransaction(session);
+        assert(id.isValid());
+
+        Object& dbo{ *getDboSession(session)->load<Object>(id.getValue()).modify() };
+        dbo.syncIds();
+        return dbo;
+    }
+
+    // Entities whose foreign keys can be set apply their ids to the relations in applyIds()
+    template<MappedEntity Object>
+    void updateObject(ISession& session, const EntityOf<Object>& entity)
+    {
+        Object& dbo{ modifyObject<Object>(session, entity.getId()) };
+        static_cast<EntityOf<Object>&>(dbo) = entity;
+        if constexpr (requires { dbo.applyIds(); })
+            dbo.applyIds();
     }
 
     template<typename Object>
@@ -239,6 +269,9 @@ namespace lms::db::utils
         checkWriteTransaction(session);
 
         Wt::Dbo::Session& dboSession{ *getDboSession(session) };
+        // Like Wt before its own queries: otherwise a pending update of a deleted row would be flushed later and fail
+        dboSession.flush();
+
         const std::string query{ std::string{ "DELETE FROM " } + dboSession.tableName<Object>() + " WHERE id = ?" };
         for (typename Object::IdType id : ids)
             executeCommand(dboSession, query, id.getValue());

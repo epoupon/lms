@@ -19,17 +19,14 @@
 
 #include "ReleaseCollector.hpp"
 
-#include "database/ISession.hpp"
 #include "database/objects/Listen.hpp"
 #include "database/objects/Release.hpp"
-#include "database/objects/User.hpp"
 
-#include "Filters.hpp"
 #include "LmsApplication.hpp"
 
 namespace lms::ui
 {
-    void ReleaseCollector::get(db::Range requestedRange, bool& moreResults, const std::function<void(const db::ObjectPtr<db::Release>&)>& func)
+    void ReleaseCollector::get(db::Range requestedRange, bool& moreResults, const std::function<void(const db::Release&)>& func)
     {
         const db::Range range{ getActualRange(requestedRange) };
 
@@ -53,7 +50,7 @@ namespace lms::ui
                 for (const auto id : slice)
                 {
                     if (const auto release{ db::Release::find(LmsApp->getDbSession(), id) })
-                        func(release);
+                        func(*release);
                 }
                 break;
             }

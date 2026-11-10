@@ -19,6 +19,8 @@
 
 #include "Playlists.hpp"
 
+#include <array>
+
 #include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackList.hpp"
@@ -35,7 +37,7 @@ namespace lms::api::subsonic
 
     namespace
     {
-        void checkTrackListModificationAccess(const db::TrackList::pointer& trackList, const db::UserId currentUserId)
+        void checkTrackListModificationAccess(const std::optional<db::TrackList>& trackList, const db::UserId currentUserId)
         {
             if (!trackList || trackList->getType() != TrackListType::PlayList)
                 throw RequestedDataNotFoundError{};
@@ -49,6 +51,20 @@ namespace lms::api::subsonic
                 throw RequestedDataNotFoundError{};
             }
         }
+
+        void addEntryNodes(RequestContext& context, Response::Node& playlistNode, TrackListId trackListId)
+        {
+            std::vector<TrackId> trackIds;
+            TrackListEntry::find(context.getDbSession(), TrackListEntry::FindParameters{}.setTrackList(trackListId), [&](const TrackListEntry& entry) {
+                trackIds.push_back(entry.getTrackId());
+            });
+
+            for (const TrackId trackId : trackIds)
+            {
+                if (const std::optional<Track> track{ Track::find(context.getDbSession(), trackId) })
+                    playlistNode.addArrayChild("entry", createSongNode(context, *track, true /* id3 */));
+            }
+        }
     } // namespace
 
     Response handleGetPlaylistsRequest(RequestContext& context)
@@ -58,7 +74,7 @@ namespace lms::api::subsonic
         Response response{ Response::createOkResponse() };
         Response::Node& playlistsNode{ response.createNode("playlists") };
 
-        auto addTrackList{ [&](const db::TrackList::pointer& trackList) {
+        auto addTrackList{ [&](const db::TrackList& trackList) {
             playlistsNode.addArrayChild("playlist", createPlaylistNode(context, trackList));
         } };
 
@@ -68,7 +84,7 @@ namespace lms::api::subsonic
             params.setUser(context.getUser()->getId());
             params.setType(TrackListType::PlayList);
 
-            db::TrackList::find(context.getDbSession(), params, [&](const db::TrackList::pointer& trackList) {
+            db::TrackList::find(context.getDbSession(), params, [&](const db::TrackList& trackList) {
                 addTrackList(trackList);
             });
         }
@@ -80,8 +96,8 @@ namespace lms::api::subsonic
             params.setType(TrackListType::PlayList);
             params.setExcludedUser(context.getUser()->getId());
 
-            db::TrackList::find(context.getDbSession(), params, [&](const db::TrackList::pointer& trackList) {
-                assert(trackList->getUserId() != context.getUser()->getId());
+            db::TrackList::find(context.getDbSession(), params, [&](const db::TrackList& trackList) {
+                assert(trackList.getUserId() != context.getUser()->getId());
                 addTrackList(trackList);
             });
         }
@@ -96,7 +112,7 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        TrackList::pointer trackList{ TrackList::find(context.getDbSession(), trackListId) };
+        std::optional<TrackList> trackList{ TrackList::find(context.getDbSession(), trackListId) };
         if (!trackList || trackList->getType() != TrackListType::PlayList)
             throw RequestedDataNotFoundError{};
 
@@ -104,11 +120,8 @@ namespace lms::api::subsonic
             throw RequestedDataNotFoundError{};
 
         Response response{ Response::createOkResponse() };
-        Response::Node playlistNode{ createPlaylistNode(context, trackList) };
-
-        auto entries{ trackList->getEntries() };
-        for (const TrackListEntry::pointer& entry : entries)
-            playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), context.getUser()));
+        Response::Node playlistNode{ createPlaylistNode(context, *trackList) };
+        addEntryNodes(context, playlistNode, trackList->getId());
 
         response.addNode("playlist", std::move(playlistNode));
 
@@ -128,40 +141,38 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createWriteTransaction() };
 
-        TrackList::pointer trackList;
+        std::optional<TrackList> trackList;
         if (id)
         {
             trackList = TrackList::find(context.getDbSession(), *id);
             checkTrackListModificationAccess(trackList, context.getUser()->getId());
 
             if (name)
-                trackList.modify()->setName(*name);
+                trackList->setName(*name);
 
-            trackList.modify()->clear();
-            trackList.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+            TrackList::clear(context.getDbSession(), trackList->getId());
+            trackList->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
         }
         else
         {
             trackList = TrackList::create(context.getDbSession(), *name, TrackListType::PlayList);
-            trackList.modify()->setUser(context.getUser());
-            trackList.modify()->setVisibility(TrackList::Visibility::Private);
+            trackList->setUser(context.getUser()->getId());
+            trackList->setVisibility(TrackList::Visibility::Private);
         }
+        TrackList::update(context.getDbSession(), *trackList);
 
         for (const TrackId trackId : trackIds)
         {
-            Track::pointer track{ Track::find(context.getDbSession(), trackId) };
+            std::optional<Track> track{ Track::find(context.getDbSession(), trackId) };
             if (!track)
                 continue;
 
-            TrackListEntry::create(context.getDbSession(), track, trackList);
+            TrackListEntry::create(context.getDbSession(), track->getId(), trackList->getId());
         }
 
         Response response{ Response::createOkResponse() };
-        Response::Node playlistNode{ createPlaylistNode(context, trackList) };
-
-        auto entries{ trackList->getEntries() };
-        for (const TrackListEntry::pointer& entry : entries)
-            playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), context.getUser()));
+        Response::Node playlistNode{ createPlaylistNode(context, *trackList) };
+        addEntryNodes(context, playlistNode, trackList->getId());
 
         response.addNode("playlist", std::move(playlistNode));
 
@@ -182,15 +193,16 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createWriteTransaction() };
 
-        TrackList::pointer trackList{ TrackList::find(context.getDbSession(), id) };
+        std::optional<TrackList> trackList{ TrackList::find(context.getDbSession(), id) };
         checkTrackListModificationAccess(trackList, context.getUser()->getId());
 
         if (name)
-            trackList.modify()->setName(*name);
+            trackList->setName(*name);
 
         if (isPublic)
-            trackList.modify()->setVisibility(*isPublic ? db::TrackList::Visibility::Public : db::TrackList::Visibility::Private);
-        trackList.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+            trackList->setVisibility(*isPublic ? db::TrackList::Visibility::Public : db::TrackList::Visibility::Private);
+        trackList->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+        TrackList::update(context.getDbSession(), *trackList);
 
         {
             // Remove from end to make indexes stable
@@ -198,20 +210,23 @@ namespace lms::api::subsonic
 
             for (std::size_t trackPositionToRemove : trackPositionsToRemove)
             {
-                auto entry{ trackList->getEntry(trackPositionToRemove) };
+                std::optional<TrackListEntry> entry;
+                TrackListEntry::find(context.getDbSession(), TrackListEntry::FindParameters{}.setTrackList(id).setRange(Range{ trackPositionToRemove, 1 }), [&](const TrackListEntry& foundEntry) {
+                    entry = foundEntry;
+                });
                 if (entry)
-                    entry.remove();
+                    TrackListEntry::destroy(context.getDbSession(), std::array{ entry->getId() });
             }
         }
 
         // Add tracks
         for (const TrackId trackIdToAdd : trackIdsToAdd)
         {
-            Track::pointer track{ Track::find(context.getDbSession(), trackIdToAdd) };
+            std::optional<Track> track{ Track::find(context.getDbSession(), trackIdToAdd) };
             if (!track)
                 continue;
 
-            TrackListEntry::create(context.getDbSession(), track, trackList);
+            TrackListEntry::create(context.getDbSession(), track->getId(), trackList->getId());
         }
 
         return Response::createOkResponse();
@@ -223,10 +238,10 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createWriteTransaction() };
 
-        TrackList::pointer trackList{ TrackList::find(context.getDbSession(), id) };
+        std::optional<TrackList> trackList{ TrackList::find(context.getDbSession(), id) };
         checkTrackListModificationAccess(trackList, context.getUser()->getId());
 
-        trackList.remove();
+        TrackList::destroy(context.getDbSession(), std::span{ &id, 1 });
 
         return Response::createOkResponse();
     }

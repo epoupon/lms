@@ -46,12 +46,15 @@ namespace lms::podcast
         {
             auto transaction{ session.createWriteTransaction() };
 
-            db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, episodeId) };
+            std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(session, episodeId) };
             if (!episode)
                 return;
 
-            if (db::Artwork::pointer artwork{ utils::createArtworkFromImage(session, filePath, probedImage) })
-                episode.modify()->setArtwork(artwork);
+            if (std::optional<db::Artwork> artwork{ utils::createArtworkFromImage(session, filePath, probedImage) })
+            {
+                episode->setArtwork(artwork->getId());
+                db::PodcastEpisode::update(session, *episode);
+            }
         }
     } // namespace
 
@@ -66,14 +69,14 @@ namespace lms::podcast
         auto transaction{ session.createReadTransaction() };
 
         _episodeArtworksToDownload.clear();
-        db::PodcastEpisode::find(session, db::PodcastEpisode::FindParameters{}, [&](const db::PodcastEpisode::pointer& episode) {
-            if (episode->getImageUrl().empty())
+        db::PodcastEpisode::find(session, db::PodcastEpisode::FindParameters{}, [&](const db::PodcastEpisode& episode) {
+            if (episode.getImageUrl().empty())
                 return;
 
-            if (episode->getArtworkId().isValid())
+            if (episode.getArtworkId().isValid())
                 return;
 
-            _episodeArtworksToDownload.push_back(episode->getId());
+            _episodeArtworksToDownload.push_back(episode.getId());
         });
 
         processNext();

@@ -20,17 +20,17 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 
-#include "database/Object.hpp"
+#include "database/objects/Directory.hpp"
+#include "database/objects/MediaLibrary.hpp"
 
 namespace lms::db
 {
-    class Directory;
     class ISession;
-    class MediaLibrary;
 } // namespace lms::db
 
 namespace lms::scanner::utils
 {
-    db::ObjectPtr<db::Directory> getOrCreateDirectory(db::ISession& session, const std::filesystem::path& path, const db::ObjectPtr<db::MediaLibrary>& mediaLibrary);
+    db::Directory getOrCreateDirectory(db::ISession& session, const std::filesystem::path& path, const std::optional<db::MediaLibrary>& mediaLibrary);
 } // namespace lms::scanner::utils

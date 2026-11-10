@@ -20,32 +20,34 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/PodcastId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artwork;
     class ISession;
 
-    class Podcast : public Object<Podcast, PodcastId>
+    class Podcast : public detail::Object<Podcast, PodcastId>
     {
     public:
         static const std::size_t maxMediaLength{ 64 };
 
-        static pointer create(ISession& session, std::string_view url);
+        static Podcast create(ISession& session, std::string_view url);
         static void destroy(ISession& session, std::span<const PodcastId> ids);
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, PodcastId id);
-        static pointer find(ISession& session, std::string_view url);
-        static void find(ISession& session, std::function<void(const pointer&)> func);
+        static std::optional<Podcast> find(ISession& session, PodcastId id);
+        static std::optional<Podcast> find(ISession& session, std::string_view url);
+        static void find(ISession& session, const std::function<void(const Podcast&)>& func);
+
+        static void update(ISession& session, const Podcast& podcast);
 
         // getters
         std::string_view getUrl() const { return _url; }
@@ -65,8 +67,7 @@ namespace lms::db
         std::string_view getOwnerName() const { return _ownerName; }
         std::string_view getSubtitle() const { return _subtitle; }
         std::string_view getSummary() const { return _summary; }
-        ObjectPtr<Artwork> getArtwork() const;
-        ArtworkId getArtworkId() const;
+        ArtworkId getArtworkId() const { return _artworkId; }
 
         // setters
         void setUrl(std::string_view url) { _url = url; }
@@ -86,7 +87,7 @@ namespace lms::db
         void setOwnerName(std::string_view ownerName) { _ownerName = ownerName; }
         void setSubtitle(std::string_view subtitle) { _subtitle = subtitle; }
         void setSummary(std::string_view summary) { _summary = summary; }
-        void setArtwork(const ObjectPtr<Artwork>& artwork);
+        void setArtwork(ArtworkId artwork) { _artworkId = artwork; }
 
     protected:
         Podcast() = default;
@@ -111,5 +112,6 @@ namespace lms::db
         std::string _ownerName;
         std::string _subtitle;
         std::string _summary;
+        ArtworkId _artworkId;
     };
 } // namespace lms::db

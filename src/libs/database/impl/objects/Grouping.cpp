@@ -28,6 +28,7 @@
 #include "ArtistDbo.hpp"
 #include "ArtworkDbo.hpp"
 #include "ClusterDbo.hpp"
+#include "DboAccess.hpp"
 #include "DirectoryDbo.hpp"
 #include "GenreDbo.hpp"
 #include "GroupingDbo.hpp"
@@ -36,7 +37,6 @@
 #include "MediumDbo.hpp"
 #include "MoodDbo.hpp"
 #include "MovementDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "ReleaseDbo.hpp"
 #include "Session.hpp"
 #include "TrackArtistLinkDbo.hpp"
@@ -122,7 +122,7 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Grouping name too long, truncated to '" << _name << "'");
     }
 
-    Grouping::pointer Grouping::create(ISession& session, std::string_view name)
+    Grouping Grouping::create(ISession& session, std::string_view name)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Grouping>{ new dbo::Grouping{ name } });
     }
@@ -145,27 +145,31 @@ namespace lms::db
         return utils::execRangeQuery<GroupingId>(query, params.range);
     }
 
-    std::vector<Grouping::pointer> Grouping::find(ISession& session, const FindParameters& params)
+    std::vector<Grouping> Grouping::find(ISession& session, const FindParameters& params)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Grouping>>(session, params) };
         return utils::execRangeObjectQuery(query, params.range);
     }
 
-    void Grouping::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    void Grouping::find(ISession& session, const FindParameters& params, const std::function<void(const Grouping&)>& func)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Grouping>>(session, params) };
         utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    Grouping::pointer Grouping::find(ISession& session, GroupingId id)
+    std::optional<Grouping> Grouping::find(ISession& session, GroupingId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Grouping>().where("id = ?").bind(id));
     }
 
-    Grouping::pointer Grouping::find(ISession& session, std::string_view name)
+    std::optional<Grouping> Grouping::find(ISession& session, std::string_view name)
     {
         checkReadTransaction(session);
 

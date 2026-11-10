@@ -20,6 +20,7 @@
 #pragma once
 
 #include <memory>
+#include <span>
 
 #include <gtest/gtest.h>
 
@@ -58,19 +59,14 @@ namespace lms::db::tests
         {
             auto transaction{ _session.createWriteTransaction() };
 
-            auto entity{ T::create(_session, std::forward<Args>(args)...) };
-            EXPECT_TRUE(entity);
-            _id = entity->getId();
+            _id = T::create(_session, std::forward<Args>(args)...).getId();
         }
 
         ~ScopedEntity()
         {
             auto transaction{ _session.createWriteTransaction() };
 
-            auto entity{ T::find(_session, _id) };
-            // could not be here due to "on delete cascade" constraints...
-            if (entity)
-                entity.remove();
+            T::destroy(_session, std::span{ &_id, 1 });
         }
 
         ScopedEntity(const ScopedEntity&) = delete;
@@ -78,20 +74,20 @@ namespace lms::db::tests
         ScopedEntity& operator=(const ScopedEntity&) = delete;
         ScopedEntity& operator=(ScopedEntity&&) = delete;
 
-        typename T::pointer lockAndGet()
+        auto lockAndGet()
         {
             auto transaction{ _session.createReadTransaction() };
             return get();
         }
 
-        typename T::pointer get()
+        auto get()
         {
             auto entity{ T::find(_session, _id) };
             EXPECT_TRUE(entity);
             return entity;
         }
 
-        typename T::pointer operator->()
+        auto operator->()
         {
             return get();
         }

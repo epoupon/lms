@@ -456,8 +456,8 @@ VALUES
 
             for (const ListenId listenId : listens)
             {
-                const Listen::pointer listen{ Listen::find(session, listenId) };
-                const ListenBackendSync::pointer sync{ ListenBackendSync::find(session, listenId, ScrobblingBackend::ListenBrainz) };
+                const std::optional<Listen> listen{ Listen::find(session, listenId) };
+                const std::optional<ListenBackendSync> sync{ ListenBackendSync::find(session, listenId, ScrobblingBackend::ListenBrainz) };
                 ASSERT_TRUE(sync);
 
                 if (listen->getDateTime() == Wt::WDateTime{ Wt::WDate{ 2024, 5, 8 }, Wt::WTime{ 12, 0, 0 } })

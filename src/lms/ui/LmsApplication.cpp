@@ -199,12 +199,15 @@ namespace lms::ui
         return _db.getTLSSession();
     }
 
-    db::User::pointer LmsApplication::getUser()
+    db::User LmsApplication::getUser()
     {
-        if (!_user)
-            return {};
+        assert(_user);
 
-        return db::User::find(getDbSession(), _user->userId);
+        std::optional<db::User> user{ db::User::find(getDbSession(), _user->userId) };
+        if (!user)
+            throw UserNotFoundException{};
+
+        return *user;
     }
 
     db::UserId LmsApplication::getUserId() const
@@ -380,7 +383,7 @@ namespace lms::ui
     {
         auto transaction{ getDbSession().createReadTransaction() };
 
-        const db::User::pointer user{ db::User::find(getDbSession(), userId) };
+        const std::optional<db::User> user{ db::User::find(getDbSession(), userId) };
         if (!user)
             throw core::LmsException{ "Internal error" }; // Do not put details here at it may appear on the user rendered html
 

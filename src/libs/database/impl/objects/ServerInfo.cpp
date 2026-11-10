@@ -22,7 +22,7 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "ServerInfoDbo.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
@@ -37,18 +37,17 @@ namespace lms::db
     {
     }
 
-    ServerInfo::pointer ServerInfo::getOrCreate(ISession& session)
+    ServerInfo ServerInfo::getOrCreate(ISession& session)
     {
         checkWriteTransaction(session);
 
-        pointer serverInfo{ utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ServerInfo>()) };
-        if (!serverInfo)
-            return toObjectPtr(getDboSession(session)->add(std::unique_ptr<dbo::ServerInfo>{ new dbo::ServerInfo{ core::UUID::generate() } }));
+        if (std::optional<ServerInfo> serverInfo{ utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ServerInfo>()) })
+            return *serverInfo;
 
-        return serverInfo;
+        return utils::addObject(session, std::unique_ptr<dbo::ServerInfo>{ new dbo::ServerInfo{ core::UUID::generate() } });
     }
 
-    ServerInfo::pointer ServerInfo::get(ISession& session)
+    std::optional<ServerInfo> ServerInfo::get(ISession& session)
     {
         checkReadTransaction(session);
 

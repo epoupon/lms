@@ -95,7 +95,7 @@ namespace lms::scanner
 
             auto transaction{ session.createReadTransaction() };
 
-            const ScanSettings::pointer scanSettings{ ScanSettings::find(session, name) };
+            const std::optional<ScanSettings> scanSettings{ ScanSettings::find(session, name) };
             if (!scanSettings)
                 return settings;
 
@@ -105,11 +105,11 @@ namespace lms::scanner
             settings->startTime = scanSettings->getUpdateStartTime();
             settings->updatePeriod = scanSettings->getUpdatePeriod();
 
-            MediaLibrary::find(session, [&](const MediaLibrary::pointer& mediaLibrary) {
+            MediaLibrary::find(session, [&](const MediaLibrary& mediaLibrary) {
                 MediaLibraryInfo info;
-                info.firstScan = mediaLibrary->isEmpty();
-                info.id = mediaLibrary->getId();
-                info.rootDirectory = mediaLibrary->getPath().lexically_normal();
+                info.firstScan = MediaLibrary::isEmpty(session, mediaLibrary.getId());
+                info.id = mediaLibrary.getId();
+                info.rootDirectory = mediaLibrary.getPath().lexically_normal();
                 info.ignoreRules = loadIgnoreRules(info.rootDirectory / ".lmsignore");
 
                 settings->mediaLibraries.push_back(info);
@@ -142,12 +142,13 @@ namespace lms::scanner
         {
             auto transaction{ session.createWriteTransaction() };
 
-            ScanSettings::pointer scanSettings{ ScanSettings::find(session, name) };
+            std::optional<ScanSettings> scanSettings{ ScanSettings::find(session, name) };
             if (!scanSettings)
                 scanSettings = ScanSettings::create(session, name);
 
-            scanSettings.modify()->setAllowMBIDArtistMerge(settings.allowArtistMBIDFallback);
-            scanSettings.modify()->setSkipSingleReleasePlayLists(settings.skipSingleReleasePlayLists);
+            scanSettings->setAllowMBIDArtistMerge(settings.allowArtistMBIDFallback);
+            scanSettings->setSkipSingleReleasePlayLists(settings.skipSingleReleasePlayLists);
+            ScanSettings::update(session, *scanSettings);
             // TODO add more fields
         }
 

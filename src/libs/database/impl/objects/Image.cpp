@@ -22,9 +22,9 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
+#include "DboAccess.hpp"
 #include "DirectoryDbo.hpp"
 #include "ImageDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
 #include "objects/detail/Types.hpp"
@@ -68,7 +68,7 @@ namespace lms::db
         setAbsoluteFilePath(p);
     }
 
-    Image::pointer Image::create(ISession& session, const std::filesystem::path& p)
+    Image Image::create(ISession& session, const std::filesystem::path& p)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Image>{ new dbo::Image{ p } });
     }
@@ -85,33 +85,36 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM image"));
     }
 
-    Image::pointer Image::find(ISession& session, ImageId id)
+    std::optional<Image> Image::find(ISession& session, ImageId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Image>>("SELECT i from image i").where("i.id = ?").bind(id));
     }
 
-    Image::pointer Image::find(ISession& session, const std::filesystem::path& file)
+    std::optional<Image> Image::find(ISession& session, const std::filesystem::path& file)
     {
         checkReadTransaction(session);
 
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Image>>("SELECT i from image i").where("i.absolute_file_path = ?").bind(file));
     }
 
-    void Image::find(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(const Image::pointer&)>& func)
+    void Image::find(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(const Image&)>& func)
     {
         checkReadTransaction(session);
 
         auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Image>>("SELECT i from image i").orderBy("i.id").where("i.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
-        utils::forEachQueryObject(query, [&](const Image::pointer& image) {
+        utils::forEachQueryObject(query, [&](const Image& image) {
             func(image);
-            lastRetrievedId = image->getId();
+            lastRetrievedId = image.getId();
         });
     }
 
-    std::vector<Image::pointer> Image::find(ISession& session, const FindParameters& params)
+    std::vector<Image> Image::find(ISession& session, const FindParameters& params)
     {
         checkReadTransaction(session);
 
@@ -119,12 +122,10 @@ namespace lms::db
         return utils::execRangeObjectQuery(query, params.range);
     }
 
-    void Image::find(ISession& session, const FindParameters& params, const std::function<void(const Image::pointer&)>& func)
+    void Image::find(ISession& session, const FindParameters& params, const std::function<void(const Image&)>& func)
     {
         auto query{ createQuery(session, params) };
-        utils::forEachQueryObject(query, [&](const Image::pointer& image) {
-            func(image);
-        });
+        utils::forEachQueryObject(query, func);
     }
 
     void Image::findAbsoluteFilePath(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(ImageId imageId, const std::filesystem::path& absoluteFilePath)>& func)
@@ -156,9 +157,13 @@ namespace lms::db
         _format = detail::getDbImageFormat(format);
     }
 
-    void Image::setDirectory(const ObjectPtr<Directory>& directory)
+    void dbo::Image::applyIds()
     {
-        getDbo(*this)._directory = getDboPtr(directory);
+        setRelation(*session(), _directory, _directoryId);
     }
 
+    void Image::update(ISession& session, const Image& image)
+    {
+        utils::updateObject<dbo::Image>(session, image);
+    }
 } // namespace lms::db

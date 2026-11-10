@@ -39,7 +39,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            settings.get().modify()->setArtistsToNotSplit(std::initializer_list<std::string_view>{ "AC/DC", "My/Artist" });
+            std::optional<ScanSettings> updatedSettings{ settings.get() };
+            updatedSettings->setArtistsToNotSplit(std::initializer_list<std::string_view>{ "AC/DC", "My/Artist" });
+            ScanSettings::update(session, *updatedSettings);
         }
 
         {

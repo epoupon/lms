@@ -44,12 +44,15 @@ namespace lms::podcast
         {
             auto transaction{ session.createWriteTransaction() };
 
-            db::Podcast::pointer dbPodcast{ db::Podcast::find(session, podcastId) };
+            std::optional<db::Podcast> dbPodcast{ db::Podcast::find(session, podcastId) };
             if (!dbPodcast)
                 return; // may have been deleted by admin
 
-            if (db::Artwork::pointer artwork{ utils::createArtworkFromImage(session, filePath, probedImage) })
-                dbPodcast.modify()->setArtwork(artwork);
+            if (std::optional<db::Artwork> artwork{ utils::createArtworkFromImage(session, filePath, probedImage) })
+            {
+                dbPodcast->setArtwork(artwork->getId());
+                db::Podcast::update(session, *dbPodcast);
+            }
         }
     } // namespace
 
@@ -64,14 +67,14 @@ namespace lms::podcast
         auto transaction{ session.createReadTransaction() };
 
         _podcastArtworksToDownload.clear();
-        db::Podcast::find(session, [&](const db::Podcast::pointer& podcast) {
-            if (podcast->getImageUrl().empty() || podcast->getTitle().empty())
+        db::Podcast::find(session, [&](const db::Podcast& podcast) {
+            if (podcast.getImageUrl().empty() || podcast.getTitle().empty())
                 return;
 
-            if (podcast->getArtworkId().isValid())
+            if (podcast.getArtworkId().isValid())
                 return;
 
-            _podcastArtworksToDownload.push_back(podcast->getId());
+            _podcastArtworksToDownload.push_back(podcast.getId());
         });
 
         processNext();

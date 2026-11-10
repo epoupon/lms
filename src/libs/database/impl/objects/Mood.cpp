@@ -28,6 +28,7 @@
 #include "ArtistDbo.hpp"
 #include "ArtworkDbo.hpp"
 #include "ClusterDbo.hpp"
+#include "DboAccess.hpp"
 #include "DirectoryDbo.hpp"
 #include "GenreDbo.hpp"
 #include "GroupingDbo.hpp"
@@ -36,7 +37,6 @@
 #include "MediumDbo.hpp"
 #include "MoodDbo.hpp"
 #include "MovementDbo.hpp"
-#include "ObjectPtrImpl.hpp"
 #include "ReleaseDbo.hpp"
 #include "Session.hpp"
 #include "TrackArtistLinkDbo.hpp"
@@ -122,7 +122,7 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Mood name too long, truncated to '" << _name << "'");
     }
 
-    Mood::pointer Mood::create(ISession& session, std::string_view name)
+    Mood Mood::create(ISession& session, std::string_view name)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Mood>{ new dbo::Mood{ name } });
     }
@@ -145,27 +145,31 @@ namespace lms::db
         return utils::execRangeQuery<MoodId>(query, params.range);
     }
 
-    std::vector<Mood::pointer> Mood::find(ISession& session, const FindParameters& params)
+    std::vector<Mood> Mood::find(ISession& session, const FindParameters& params)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Mood>>(session, params) };
         return utils::execRangeObjectQuery(query, params.range);
     }
 
-    void Mood::find(ISession& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    void Mood::find(ISession& session, const FindParameters& params, const std::function<void(const Mood&)>& func)
     {
         checkReadTransaction(session);
         auto query{ createQuery<Wt::Dbo::ptr<dbo::Mood>>(session, params) };
         utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    Mood::pointer Mood::find(ISession& session, MoodId id)
+    std::optional<Mood> Mood::find(ISession& session, MoodId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Mood>().where("id = ?").bind(id));
     }
 
-    Mood::pointer Mood::find(ISession& session, std::string_view name)
+    std::optional<Mood> Mood::find(ISession& session, std::string_view name)
     {
         checkReadTransaction(session);
 

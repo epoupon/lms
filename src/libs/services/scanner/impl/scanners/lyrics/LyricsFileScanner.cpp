@@ -19,6 +19,7 @@
 
 #include "LyricsFileScanner.hpp"
 
+#include <array>
 #include <fstream>
 #include <optional>
 
@@ -70,13 +71,13 @@ namespace lms::scanner
         LyricsFileScanOperation::OperationResult LyricsFileScanOperation::processResult()
         {
             db::ISession& dbSession{ getDb().getTLSSession() };
-            db::TrackLyrics::pointer trackLyrics{ db::TrackLyrics::find(dbSession, getFilePath()) };
+            std::optional<db::TrackLyrics> trackLyrics{ db::TrackLyrics::find(dbSession, getFilePath()) };
 
             if (!_parsedLyrics)
             {
                 if (trackLyrics)
                 {
-                    trackLyrics.remove();
+                    db::TrackLyrics::destroy(dbSession, std::array{ trackLyrics->getId() });
 
                     LMS_LOG(DBUPDATER, DEBUG, "Removed lyrics file " << getFilePath());
                     return OperationResult::Removed;
@@ -89,22 +90,23 @@ namespace lms::scanner
             if (!trackLyrics)
             {
                 trackLyrics = db::TrackLyrics::create(dbSession);
-                trackLyrics.modify()->setAbsoluteFilePath(getFilePath());
+                trackLyrics->setAbsoluteFilePath(getFilePath());
             }
 
-            trackLyrics.modify()->setLastWriteTime(getLastWriteTime());
-            trackLyrics.modify()->setFileSize(getFileSize());
-            trackLyrics.modify()->setLanguage(!_parsedLyrics->language.empty() ? _parsedLyrics->language : "xxx");
-            trackLyrics.modify()->setOffset(_parsedLyrics->offset);
-            trackLyrics.modify()->setDisplayTitle(_parsedLyrics->displayTitle);
-            trackLyrics.modify()->setDisplayArtist(_parsedLyrics->displayArtist);
+            trackLyrics->setLastWriteTime(getLastWriteTime());
+            trackLyrics->setFileSize(getFileSize());
+            trackLyrics->setLanguage(!_parsedLyrics->language.empty() ? _parsedLyrics->language : "xxx");
+            trackLyrics->setOffset(_parsedLyrics->offset);
+            trackLyrics->setDisplayTitle(_parsedLyrics->displayTitle);
+            trackLyrics->setDisplayArtist(_parsedLyrics->displayArtist);
             if (!_parsedLyrics->synchronizedLines.empty())
-                trackLyrics.modify()->setSynchronizedLines(_parsedLyrics->synchronizedLines);
+                trackLyrics->setSynchronizedLines(_parsedLyrics->synchronizedLines);
             else
-                trackLyrics.modify()->setUnsynchronizedLines(_parsedLyrics->unsynchronizedLines);
+                trackLyrics->setUnsynchronizedLines(_parsedLyrics->unsynchronizedLines);
 
-            db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
-            trackLyrics.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary));
+            std::optional<db::MediaLibrary> mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
+            trackLyrics->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary).getId());
+            db::TrackLyrics::update(dbSession, *trackLyrics);
 
             if (added)
             {
@@ -143,7 +145,7 @@ namespace lms::scanner
         db::ISession& dbSession{ _db.getTLSSession() };
         auto transaction{ _db.getTLSSession().createReadTransaction() };
 
-        const db::TrackLyrics::pointer lyrics{ db::TrackLyrics::find(dbSession, file.filePath) };
+        const std::optional<db::TrackLyrics> lyrics{ db::TrackLyrics::find(dbSession, file.filePath) };
         return !lyrics || lyrics->getLastWriteTime() != file.lastWriteTime;
     }
 

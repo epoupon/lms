@@ -43,13 +43,13 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const PlayListFile::pointer dbPlayList{ playlist.get() };
+            const std::optional<PlayListFile> dbPlayList{ playlist.get() };
 
             EXPECT_EQ(dbPlayList->getAbsoluteFilePath(), "/tmp/foo.m3u");
             EXPECT_EQ(dbPlayList->getLastWriteTime(), Wt::WDateTime{});
             EXPECT_EQ(dbPlayList->getFileSize(), 0);
             EXPECT_EQ(dbPlayList->getName(), "");
-            EXPECT_EQ(dbPlayList->getTrackList(), TrackList::pointer{});
+            EXPECT_FALSE(TrackList::find(session, dbPlayList->getId()));
         }
 
         ScopedTrackList trackList{ session, "MyTrackList", TrackListType::PlayList };
@@ -57,27 +57,31 @@ namespace lms::db::tests
         // Now change some values
         {
             auto transaction{ session.createWriteTransaction() };
-            PlayListFile::pointer dbPlayList{ playlist.get() };
+            std::optional<PlayListFile> dbPlayList{ playlist.get() };
 
-            dbPlayList.modify()->setAbsoluteFilePath("/tmp/bar.m3u");
-            dbPlayList.modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2024, 30, 1 }, Wt::WTime{ 12, 58, 29 } });
-            dbPlayList.modify()->setFileSize(1234);
-            dbPlayList.modify()->setName("My playlist");
-            dbPlayList.modify()->setTrackList(trackList.get());
-            dbPlayList.modify()->setFiles({ { std::filesystem::path{ "/foo/foo.mp3" }, std::filesystem::path{ "/foo/bar.mp3" } } });
+            dbPlayList->setAbsoluteFilePath("/tmp/bar.m3u");
+            dbPlayList->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2024, 30, 1 }, Wt::WTime{ 12, 58, 29 } });
+            dbPlayList->setFileSize(1234);
+            dbPlayList->setName("My playlist");
+            PlayListFile::update(session, *dbPlayList);
+            std::optional<TrackList> updatedTrackList{ trackList.get() };
+            updatedTrackList->setPlayListFile(dbPlayList->getId());
+            TrackList::update(session, *updatedTrackList);
+            dbPlayList->setFiles({ { std::filesystem::path{ "/foo/foo.mp3" }, std::filesystem::path{ "/foo/bar.mp3" } } });
+            PlayListFile::update(session, *dbPlayList);
         }
 
         // Check values are reflected
         {
             auto transaction{ session.createReadTransaction() };
 
-            const PlayListFile::pointer dbPlayList{ playlist.get() };
+            const std::optional<PlayListFile> dbPlayList{ playlist.get() };
 
             EXPECT_EQ(dbPlayList->getAbsoluteFilePath(), "/tmp/bar.m3u");
             EXPECT_EQ(dbPlayList->getLastWriteTime(), (Wt::WDateTime{ Wt::WDate{ 2024, 30, 1 }, Wt::WTime{ 12, 58, 29 } }));
             EXPECT_EQ(dbPlayList->getFileSize(), 1234);
             EXPECT_EQ(dbPlayList->getName(), "My playlist");
-            EXPECT_EQ(dbPlayList->getTrackList(), trackList.get());
+            EXPECT_EQ(TrackList::find(session, dbPlayList->getId())->getId(), trackList.getId());
             const auto files{ dbPlayList->getFiles() };
             ASSERT_EQ(files.size(), 2);
             EXPECT_EQ(files[0], "/foo/foo.mp3");
@@ -110,8 +114,9 @@ namespace lms::db::tests
 
             {
                 auto transaction{ session.createWriteTransaction() };
-                TrackList::pointer trackList{ TrackList::create(session, "MyTrackList", TrackListType::PlayList) };
-                playlist.get().modify()->setTrackList(trackList);
+                TrackList trackList{ TrackList::create(session, "MyTrackList", TrackListType::PlayList) };
+                trackList.setPlayListFile(playlist.getId());
+                TrackList::update(session, trackList);
             }
             {
                 auto transaction{ session.createReadTransaction() };

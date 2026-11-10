@@ -32,7 +32,7 @@
 
 namespace lms::ui
 {
-    void ArtistCollector::get(db::Range requestedRange, bool& moreResults, const std::function<void(const db::ObjectPtr<db::Artist>&)>& func)
+    void ArtistCollector::get(db::Range requestedRange, bool& moreResults, const std::function<void(const db::Artist&)>& func)
     {
         const Range range{ getActualRange(requestedRange) };
 
@@ -65,7 +65,7 @@ namespace lms::ui
                 for (const auto id : slice)
                 {
                     if (const auto artist{ db::Artist::find(LmsApp->getDbSession(), id) })
-                        func(artist);
+                        func(*artist);
                 }
                 break;
             }

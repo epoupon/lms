@@ -26,16 +26,16 @@
 
 #include "core/EnumSet.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
 
-    class User : public Object<User, UserId>
+    class User : public detail::Object<User, UserId>
     {
     public:
         struct PasswordHash
@@ -65,20 +65,23 @@ namespace lms::db
         static inline constexpr ReleaseSortMethod _defaultUIArtistReleaseSortMethod{ ReleaseSortMethod::OriginalDateDesc };
         static inline constexpr SubsonicArtistListMode defaultSubsonicArtistListMode{ SubsonicArtistListMode::AllArtists };
 
-        static pointer create(ISession& session, std::string_view loginName);
+        static User create(ISession& session, std::string_view loginName);
+        static void destroy(ISession& session, std::span<const UserId> ids);
 
         static std::size_t getCount(ISession& session);
-        static pointer find(ISession& session, UserId id);
-        static pointer find(ISession& session, std::string_view loginName);
+        static std::optional<User> find(ISession& session, UserId id);
+        static std::optional<User> find(ISession& session, std::string_view loginName);
         static std::vector<UserId> find(ISession& session, const FindParameters& params);
-        static void find(ISession& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
-        static pointer findDemoUser(ISession& session);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const User&)>& func);
+        static std::optional<User> findDemoUser(ISession& session);
+        static std::size_t getAuthTokensCount(ISession& session, UserId id);
+
+        static void update(ISession& session, const User& user);
 
         // accessors
         const std::string& getLoginName() const { return _loginName; }
         PasswordHash getPasswordHash() const { return PasswordHash{ .bcryptRoundCount = static_cast<std::size_t>(_bcryptRoundCount), .salt = _passwordSalt, .hash = _passwordHash }; }
         const Wt::WDateTime& getLastLogin() const { return _lastLogin; }
-        std::size_t getAuthTokensCount() const;
 
         // write
         void setLastLogin(const Wt::WDateTime& dateTime) { _lastLogin = dateTime; }

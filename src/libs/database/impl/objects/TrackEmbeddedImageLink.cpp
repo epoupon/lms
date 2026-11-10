@@ -22,7 +22,7 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 #include "Session.hpp"
 #include "TrackDbo.hpp"
 #include "TrackEmbeddedImageDbo.hpp"
@@ -36,15 +36,20 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackEmbeddedImageLink)
 
 namespace lms::db
 {
-    dbo::TrackEmbeddedImageLink::TrackEmbeddedImageLink(const ObjectPtr<db::Track>& track, const ObjectPtr<db::TrackEmbeddedImage>& image)
-        : _track{ getDboPtr(track) }
-        , _image{ getDboPtr(image) }
+    dbo::TrackEmbeddedImageLink::TrackEmbeddedImageLink(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackEmbeddedImage> image)
+        : _track{ std::move(track) }
+        , _image{ std::move(image) }
     {
     }
 
-    TrackEmbeddedImageLink::pointer TrackEmbeddedImageLink::create(ISession& session, const ObjectPtr<Track>& track, const ObjectPtr<TrackEmbeddedImage>& image)
+    TrackEmbeddedImageLink TrackEmbeddedImageLink::create(ISession& session, TrackId track, TrackEmbeddedImageId image)
     {
-        return utils::addObject(session, std::unique_ptr<dbo::TrackEmbeddedImageLink>{ new dbo::TrackEmbeddedImageLink{ track, image } });
+        return utils::addObject(session, std::unique_ptr<dbo::TrackEmbeddedImageLink>{ new dbo::TrackEmbeddedImageLink{ getDboSession(session)->loadLazy<dbo::Track>(track.getValue()), getDboSession(session)->loadLazy<dbo::TrackEmbeddedImage>(image.getValue()) } });
+    }
+
+    void TrackEmbeddedImageLink::destroy(ISession& session, std::span<const TrackEmbeddedImageLinkId> ids)
+    {
+        utils::destroyObjects<dbo::TrackEmbeddedImageLink>(session, ids);
     }
 
     std::size_t TrackEmbeddedImageLink::getCount(ISession& session)
@@ -54,14 +59,17 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_embedded_image_link"));
     }
 
-    TrackEmbeddedImageLink::pointer TrackEmbeddedImageLink::find(ISession& session, TrackEmbeddedImageLinkId id)
+    std::optional<TrackEmbeddedImageLink> TrackEmbeddedImageLink::find(ISession& session, TrackEmbeddedImageLinkId id)
     {
         checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
 
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackEmbeddedImageLink>().where("id = ?").bind(id));
     }
 
-    void TrackEmbeddedImageLink::find(ISession& session, TrackEmbeddedImageId trackEmbeddedImageId, std::function<void(const pointer&)> visitor)
+    void TrackEmbeddedImageLink::find(ISession& session, TrackEmbeddedImageId trackEmbeddedImageId, const std::function<void(const TrackEmbeddedImageLink&)>& visitor)
     {
         checkReadTransaction(session);
 
@@ -69,16 +77,6 @@ namespace lms::db
         query.where("track_embedded_image_id = ?").bind(trackEmbeddedImageId);
 
         return utils::forEachQueryObject(query, visitor);
-    }
-
-    ObjectPtr<Track> TrackEmbeddedImageLink::getTrack() const
-    {
-        return toObjectPtr(getDbo(*this)._track);
-    }
-
-    ObjectPtr<TrackEmbeddedImage> TrackEmbeddedImageLink::getImage() const
-    {
-        return toObjectPtr(getDbo(*this)._image);
     }
 
     core::media::ImageType TrackEmbeddedImageLink::getType() const
@@ -89,5 +87,10 @@ namespace lms::db
     void TrackEmbeddedImageLink::setType(core::media::ImageType type)
     {
         _type = detail::getDbImageType(type);
+    }
+
+    void TrackEmbeddedImageLink::update(ISession& session, const TrackEmbeddedImageLink& trackEmbeddedImageLink)
+    {
+        utils::updateObject<dbo::TrackEmbeddedImageLink>(session, trackEmbeddedImageLink);
     }
 } // namespace lms::db

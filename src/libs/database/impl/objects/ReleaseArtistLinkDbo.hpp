@@ -24,7 +24,7 @@
 
 #include "database/objects/ReleaseArtistLink.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -37,7 +37,15 @@ namespace lms::db::dbo
         ReleaseArtistLink() = default;
         using db::ReleaseArtistLink::ReleaseArtistLink;
 
-        ReleaseArtistLink(const ObjectPtr<db::Release>& release, const ObjectPtr<db::Artist>& artist, bool artistMBIDMatched);
+        ReleaseArtistLink(Wt::Dbo::ptr<Release> release, Wt::Dbo::ptr<Artist> artist, bool artistMBIDMatched);
+
+        void syncIds()
+        {
+            _id = id();
+            _releaseId = _release.id();
+            _artistId = _artist.id();
+        }
+        void applyIds();
 
         template<class Action>
         void persist(Action& a)

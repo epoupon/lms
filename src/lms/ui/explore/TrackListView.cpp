@@ -76,7 +76,7 @@ namespace lms::ui
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), *trackListId) };
+        const std::optional<db::TrackList> trackList{ db::TrackList::find(LmsApp->getDbSession(), *trackListId) };
         if (!trackList || trackList->getType() != db::TrackListType::PlayList)
             throw TrackListNotFoundException{};
 
@@ -93,16 +93,16 @@ namespace lms::ui
         clear();
 
         bindString("name", std::string{ trackList->getName() }, Wt::TextFormat::Plain);
-        bindString("duration", utils::durationToString(trackList->getDuration()));
-        const auto trackCount{ trackList->getCount() };
+        bindString("duration", utils::durationToString(db::TrackList::getDuration(LmsApp->getDbSession(), trackList->getId())));
+        const auto trackCount{ db::TrackList::getTrackCount(LmsApp->getDbSession(), trackList->getId()) };
         bindString("track-count", Wt::WString::trn("Lms.track-count", trackCount).arg(trackCount));
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
         {
             for (const db::ClusterTypeId clusterTypeId : db::ClusterType::findIds(LmsApp->getDbSession()))
             {
-                db::Cluster::find(LmsApp->getDbSession(), db::Cluster::FindParameters{}.setTrackList(trackList->getId()).setClusterType(clusterTypeId).setSortMethod(db::ClusterSortMethod::TrackCountDesc).setRange(db::Range{ 0, 3 }), [&](const db::Cluster::pointer& cluster) {
-                    const db::ClusterId clusterId{ cluster->getId() };
+                db::Cluster::find(LmsApp->getDbSession(), db::Cluster::FindParameters{}.setTrackList(trackList->getId()).setClusterType(clusterTypeId).setSortMethod(db::ClusterSortMethod::TrackCountDesc).setRange(db::Range{ 0, 3 }), [&](const db::Cluster& cluster) {
+                    const db::ClusterId clusterId{ cluster.getId() };
                     Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterValue(clusterId)) };
                     entry->clicked().connect([this, clusterId] {
                         _filters.add(clusterId);
@@ -111,7 +111,7 @@ namespace lms::ui
             }
         }
 
-        _trackIds = trackList->getTrackIds(db::Range{ 0, _maxCount });
+        _trackIds = db::Track::findIds(LmsApp->getDbSession(), db::Track::FindParameters{}.setTrackList(trackList->getId()).setRange(db::Range{ 0, _maxCount }));
 
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
             ->clicked()
@@ -153,9 +153,7 @@ namespace lms::ui
                         {
                             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                            db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), *trackListId) };
-                            if (trackList)
-                                trackList.remove();
+                            db::TrackList::destroy(LmsApp->getDbSession(), std::array{ *trackListId });
                         }
 
                         clear();
@@ -190,8 +188,8 @@ namespace lms::ui
 
         for (std::size_t index{ startIndex }; index < endIndex; ++index)
         {
-            if (const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), _trackIds[index]) })
-                _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters, _trackIds, index));
+            if (const std::optional<db::Track> track{ db::Track::find(LmsApp->getDbSession(), _trackIds[index]) })
+                _container->add(TrackListHelpers::createEntry(*track, _playQueueController, _filters, _trackIds, index));
         }
 
         _container->setHasMore(endIndex < _trackIds.size());

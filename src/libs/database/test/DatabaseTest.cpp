@@ -36,8 +36,10 @@ namespace lms::db::tests
 
             auto transaction{ session.createWriteTransaction() };
 
-            TrackArtistLink::create(session, tracks.back().get(), artist.get(), TrackArtistLinkType::Artist);
-            tracks.back().get().modify()->setRelease(release.get());
+            TrackArtistLink::create(session, tracks.back().getId(), artist.getId(), TrackArtistLinkType::Artist);
+            std::optional<Track> updatedTrack{ tracks.back().get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -67,8 +69,10 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto trackArtistLink{ TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist) };
-            track.get().modify()->setRelease(release.get());
+            auto trackArtistLink{ TrackArtistLink::create(session, track.getId(), artist.getId(), TrackArtistLinkType::Artist) };
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setRelease(release.getId());
+            Track::update(session, *updatedTrack);
         }
 
         {
@@ -78,9 +82,9 @@ namespace lms::db::tests
             ASSERT_EQ(releases.size(), 1);
             EXPECT_EQ(releases.front(), release.getId());
 
-            auto artists{ release->getTrackArtists() };
+            auto artists{ Artist::find(session, Artist::FindParameters{}.setRelease(release.getId()).setTrackArtistLinkType(TrackArtistLinkType::Artist)) };
             ASSERT_EQ(artists.size(), 1);
-            ASSERT_EQ(artists.front()->getId(), artist.getId());
+            ASSERT_EQ(artists.front().getId(), artist.getId());
         }
     }
 

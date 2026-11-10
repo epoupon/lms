@@ -25,7 +25,7 @@
 
 #include "database/objects/Track.hpp"
 
-#include "ObjectPtrImpl.hpp"
+#include "DboAccess.hpp"
 
 namespace lms::db::dbo
 {
@@ -50,6 +50,19 @@ namespace lms::db::dbo
     public:
         Track() = default;
         using db::Track::Track;
+
+        void syncIds()
+        {
+            _id = id();
+            _releaseId = _release.id();
+            _mediumId = _medium.id();
+            _mediaLibraryId = _mediaLibrary.id();
+            _directoryId = _directory.id();
+            _preferredArtworkId = _preferredArtwork.id();
+            _preferredMediaArtworkId = _preferredMediaArtwork.id();
+        }
+
+        void applyIds();
 
         template<class Action>
         void persist(Action& a)

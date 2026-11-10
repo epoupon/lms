@@ -142,7 +142,7 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                const db::ScanSettings::pointer scanSettings{ db::ScanSettings::find(LmsApp->getDbSession()) };
+                const std::optional<db::ScanSettings> scanSettings{ db::ScanSettings::find(LmsApp->getDbSession()) };
 
                 auto periodRow{ _updatePeriodModel->getRowFromValue(scanSettings->getUpdatePeriod()) };
                 if (periodRow)
@@ -184,50 +184,52 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                db::ScanSettings::pointer scanSettings{ db::ScanSettings::find(LmsApp->getDbSession()) };
+                std::optional<db::ScanSettings> scanSettings{ db::ScanSettings::find(LmsApp->getDbSession()) };
 
                 {
                     const auto updatePeriodRow{ _updatePeriodModel->getRowFromString(valueText(UpdatePeriodField)) };
                     if (updatePeriodRow)
-                        scanSettings.modify()->setUpdatePeriod(_updatePeriodModel->getValue(*updatePeriodRow));
+                        scanSettings->setUpdatePeriod(_updatePeriodModel->getValue(*updatePeriodRow));
                 }
 
                 {
                     const auto startTimeRow{ _updateStartTimeModel->getRowFromString(valueText(UpdateStartTimeField)) };
                     if (startTimeRow)
-                        scanSettings.modify()->setUpdateStartTime(_updateStartTimeModel->getValue(*startTimeRow));
+                        scanSettings->setUpdateStartTime(_updateStartTimeModel->getValue(*startTimeRow));
                 }
 
                 {
                     const bool skipSingleReleasePlayLists{ Wt::asNumber(value(SkipSingleReleasePlayListsField)) != 0 };
-                    scanSettings.modify()->setSkipSingleReleasePlayLists(skipSingleReleasePlayLists);
+                    scanSettings->setSkipSingleReleasePlayLists(skipSingleReleasePlayLists);
                 }
 
                 {
                     const bool allowMBIDArtistMerge{ Wt::asNumber(value(AllowMBIDArtistMergeField)) != 0 };
-                    scanSettings.modify()->setAllowMBIDArtistMerge(allowMBIDArtistMerge);
+                    scanSettings->setAllowMBIDArtistMerge(allowMBIDArtistMerge);
                 }
 
                 {
                     const bool artistImageFallbackToRelease{ Wt::asNumber(value(ArtistImageFallbackToReleaseField)) != 0 };
-                    scanSettings.modify()->setArtistImageFallbackToRelease(artistImageFallbackToRelease);
+                    scanSettings->setArtistImageFallbackToRelease(artistImageFallbackToRelease);
                 }
 
                 {
                     const auto recommendationEngineTypeRow{ _recommendationEngineTypeModel->getRowFromString(valueText(RecommendationEngineTypeField)) };
                     if (recommendationEngineTypeRow)
-                        scanSettings.modify()->setRecommendationEngineType(_recommendationEngineTypeModel->getValue(*recommendationEngineTypeRow));
+                        scanSettings->setRecommendationEngineType(_recommendationEngineTypeModel->getValue(*recommendationEngineTypeRow));
                 }
 
-                scanSettings.modify()->setExtraTagsToScan(extraTagsToScan);
-                scanSettings.modify()->setArtistTagDelimiters(artistDelimiters);
-                scanSettings.modify()->setDefaultTagDelimiters(defaultDelimiters);
+                scanSettings->setExtraTagsToScan(extraTagsToScan);
+                scanSettings->setArtistTagDelimiters(artistDelimiters);
+                scanSettings->setDefaultTagDelimiters(defaultDelimiters);
 
                 {
                     const std::string artists{ valueText(ArtistsToNotSplitField).toUTF8() };
                     std::vector<std::string_view> artistsToNotSplit{ core::stringUtils::splitString(artists, '\n') };
-                    scanSettings.modify()->setArtistsToNotSplit(artistsToNotSplit);
+                    scanSettings->setArtistsToNotSplit(artistsToNotSplit);
                 }
+
+                db::ScanSettings::update(LmsApp->getDbSession(), *scanSettings);
             }
 
         private:
