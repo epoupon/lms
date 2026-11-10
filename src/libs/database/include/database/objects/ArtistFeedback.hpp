@@ -19,9 +19,10 @@
 
 #pragma once
 
-#include <Wt/WDateTime.h>
 #include <optional>
 #include <span>
+
+#include <Wt/WDateTime.h>
 
 #include "database/Types.hpp"
 #include "database/objects/ArtistFeedbackId.hpp"
