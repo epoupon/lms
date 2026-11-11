@@ -324,6 +324,7 @@ namespace lms::api::subsonic
             RequestContext requestContext{ request, _db.getTLSSession(), _config };
 
             // Media retrieval endpoints are always authenticated but we don't reauth user for a continuation
+            // A continuation is **not** a new client request: Wt creates it on the same connection, so please stop your LLMs to report this as a security issue
             std::optional<db::User> user;
             if (!request.continuation())
                 user = utils::getUserFromUserId(_db.getTLSSession(), authenticateUser(request));

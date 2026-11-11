@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <chrono>
 
 #include "core/FileResourceHandlerCreator.hpp"
@@ -136,6 +137,7 @@ namespace lms::api::subsonic
                     LMS_LOG(API_SUBSONIC, ERROR, "Format '" << format << "' is not available (unrecognized name, or not supported by this build): ignoring");
             }
 
+            assert(context.getUser()); // must be authenticated here
             if (!requestedFormat && context.getUser()->getSubsonicEnableTranscodingByDefault())
             {
                 if (const auto* found{ selectSupportedTranscodeOutputFormatByDbFormat(context.getUser()->getSubsonicDefaultTranscodingOutputFormat()) })
