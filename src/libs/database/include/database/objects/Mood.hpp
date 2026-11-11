@@ -81,7 +81,6 @@ namespace lms::db
 
         static std::size_t getCount(ISession& session);
         static std::vector<MoodId> findIds(ISession& session, const FindParameters& params);
-        static std::vector<Mood> find(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const Mood&)>& func);
         static std::optional<Mood> find(ISession& session, MoodId id);
         static std::optional<Mood> find(ISession& session, std::string_view name);

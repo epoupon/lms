@@ -619,10 +619,12 @@ namespace lms::db
 
                 if (const std::optional<Release> release{ Release::find(trackInfo.session, track->getReleaseId()) })
                     os << " [" << release->getName() << "]";
-                for (const Artist& artist : Artist::find(trackInfo.session, Artist::FindParameters{}.setTrack(track->getId()).setTrackArtistLinkType(TrackArtistLinkType::Artist)))
+                Artist::find(trackInfo.session, Artist::FindParameters{}.setTrack(track->getId()).setTrackArtistLinkType(TrackArtistLinkType::Artist), [&](const Artist& artist) {
                     os << " - " << artist.getName();
-                for (const Cluster& cluster : Cluster::find(trackInfo.session, Cluster::FindParameters{}.setTrack(track->getId())))
+                });
+                Cluster::find(trackInfo.session, Cluster::FindParameters{}.setTrack(track->getId()), [&](const Cluster& cluster) {
                     os << " {" << ClusterType::find(trackInfo.session, cluster.getTypeId())->getName() << "-" << cluster.getName() << "}";
+                });
             }
             else
             {

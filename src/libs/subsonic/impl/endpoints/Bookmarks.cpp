@@ -39,19 +39,15 @@ namespace lms::api::subsonic
     {
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const auto bookmarkIds{ db::TrackBookmark::find(context.getDbSession(), context.getUser()->getId()) };
-
         Response response{ Response::createOkResponse() };
         Response::Node& bookmarksNode{ response.createNode("bookmarks") };
 
-        for (const db::TrackBookmarkId bookmarkId : bookmarkIds)
-        {
-            const std::optional<db::TrackBookmark> bookmark{ db::TrackBookmark::find(context.getDbSession(), bookmarkId) };
-            Response::Node bookmarkNode{ createBookmarkNode(context.getDbSession(), *bookmark) };
-            if (const std::optional<db::Track> track{ db::Track::find(context.getDbSession(), bookmark->getTrackId()) })
+        db::TrackBookmark::find(context.getDbSession(), context.getUser()->getId(), [&](const db::TrackBookmark& bookmark) {
+            Response::Node bookmarkNode{ createBookmarkNode(context.getDbSession(), bookmark) };
+            if (const std::optional<db::Track> track{ db::Track::find(context.getDbSession(), bookmark.getTrackId()) })
                 bookmarkNode.addChild("entry", createSongNode(context, *track));
             bookmarksNode.addArrayChild("bookmark", std::move(bookmarkNode));
-        }
+        });
 
         return response;
     }

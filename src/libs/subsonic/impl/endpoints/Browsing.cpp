@@ -431,18 +431,18 @@ namespace lms::api::subsonic
             auto transaction{ context.getDbSession().createReadTransaction() };
 
             parameters.setRange(Range{ currentArtistOffset, batchSize });
-            const auto artists{ Artist::find(context.getDbSession(), parameters) };
-            for (const Artist& artist : artists)
-            {
+            std::size_t artistCount{};
+            Artist::find(context.getDbSession(), parameters, [&](const Artist& artist) {
                 const std::string_view sortName{ artist.getSortName() };
                 const std::string_view effectiveSortName{ sortName.empty() ? artist.getName() : sortName };
 
                 const char sortChar{ (effectiveSortName.empty() || !std::isalpha(static_cast<unsigned char>(effectiveSortName[0]))) ? '#' : static_cast<char>(std::toupper(static_cast<unsigned char>(effectiveSortName[0]))) };
                 artistsSortedByFirstChar[sortChar].push_back(artist.getId());
-            }
+                ++artistCount;
+            });
 
-            hasMoreArtists = (artists.size() == batchSize);
-            currentArtistOffset += artists.size();
+            hasMoreArtists = (artistCount == batchSize);
+            currentArtistOffset += artistCount;
         }
 
         // second pass: add each artist
@@ -510,9 +510,9 @@ namespace lms::api::subsonic
         Response response{ Response::createOkResponse() };
         Response::Node albumNode{ createAlbumNode(context, *release, true /* id3 */) };
 
-        const auto tracks{ Track::find(context.getDbSession(), Track::FindParameters{}.setRelease(id).setSortMethod(TrackSortMethod::Release)) };
-        for (const Track& track : tracks)
+        Track::find(context.getDbSession(), Track::FindParameters{}.setRelease(id).setSortMethod(TrackSortMethod::Release), [&](const Track& track) {
             albumNode.addArrayChild("song", createSongNode(context, track));
+        });
 
         response.addNode("album", std::move(albumNode));
 

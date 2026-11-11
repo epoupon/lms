@@ -145,13 +145,6 @@ namespace lms::db
         return utils::execRangeQuery<MoodId>(query, params.range);
     }
 
-    std::vector<Mood> Mood::find(ISession& session, const FindParameters& params)
-    {
-        checkReadTransaction(session);
-        auto query{ createQuery<Wt::Dbo::ptr<dbo::Mood>>(session, params) };
-        return utils::execRangeObjectQuery(query, params.range);
-    }
-
     void Mood::find(ISession& session, const FindParameters& params, const std::function<void(const Mood&)>& func)
     {
         checkReadTransaction(session);

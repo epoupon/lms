@@ -76,8 +76,7 @@ namespace lms::db
         static std::size_t getCount(ISession& session);
         static std::optional<Image> find(ISession& session, ImageId id);
         static std::optional<Image> find(ISession& session, const std::filesystem::path& file);
-        static std::vector<Image> find(ISession& session, const FindParameters& params);
-        static void find(ISession& session, const FindParameters& parameters, const std::function<void(const Image&)>& func);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Image&)>& func);
         static void find(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(const Image&)>& func);
         static void findAbsoluteFilePath(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(ImageId imageId, const std::filesystem::path& absoluteFilePath)>& func);
 

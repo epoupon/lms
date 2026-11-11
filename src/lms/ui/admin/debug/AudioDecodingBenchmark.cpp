@@ -78,19 +78,15 @@ namespace lms::ui
             params.setSortMethod(db::TrackSortMethod::Random);
             params.setRange(db::Range{ .offset = 0, .size = queryBatchSize });
 
-            const auto results{ db::Track::find(session, params) };
-
             std::vector<TrackEntry> entries;
-            for (const db::Track& track : results)
-            {
+            db::Track::find(session, params, [&](const db::Track& track) {
+                if (entries.size() == maxTracksPerCodec)
+                    return;
+
                 const auto trackDuration{ track.getDuration() };
                 if (trackDuration >= minTrackDuration && trackDuration <= maxTrackDuration)
-                {
                     entries.push_back({ track.getAbsoluteFilePath(), trackDuration, static_cast<std::size_t>(track.getFileSize()), track.getBitrate() });
-                    if (entries.size() == maxTracksPerCodec)
-                        break;
-                }
-            }
+            });
 
             return entries;
         }

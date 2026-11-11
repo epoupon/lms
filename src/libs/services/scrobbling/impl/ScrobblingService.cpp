@@ -204,7 +204,7 @@ namespace lms::scrobbling
 
                 db::Listen::FindParameters params;
                 params.setUser(userId).setRange(db::Range{ offset, chunkSize });
-                ids = db::Listen::find(session, params);
+                ids = db::Listen::findIds(session, params);
             }
 
             if (ids.empty())

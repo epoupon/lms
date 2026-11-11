@@ -588,14 +588,6 @@ namespace lms::db
         return IdRange<ReleaseId>{ .first = std::get<0>(res), .last = std::get<1>(res) };
     }
 
-    std::vector<Release> Release::find(ISession& session, const FindParameters& params)
-    {
-        checkReadTransaction(session);
-
-        auto query{ createListQuery<Wt::Dbo::ptr<dbo::Release>>(session, "r", params) };
-        return utils::execRangeObjectQuery(query, params.range);
-    }
-
     void Release::find(ISession& session, const FindParameters& params, const std::function<void(const Release&)>& func)
     {
         checkReadTransaction(session);

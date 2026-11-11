@@ -92,7 +92,7 @@ namespace lms::db::tests
     {
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_TRUE(User::find(session, User::FindParameters{}).empty());
+            EXPECT_TRUE(User::findIds(session, User::FindParameters{}).empty());
             EXPECT_EQ(User::getCount(session), 0);
         }
 
@@ -101,7 +101,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            EXPECT_EQ(User::find(session, User::FindParameters{}).size(), 1);
+            EXPECT_EQ(User::findIds(session, User::FindParameters{}).size(), 1);
             EXPECT_EQ(User::getCount(session), 1);
         }
     }

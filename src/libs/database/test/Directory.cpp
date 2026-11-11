@@ -219,12 +219,13 @@ namespace lms::db::tests
             Directory::FindParameters params;
             params.setWithNoTrack(true);
 
-            auto res{ Directory::find(session, params) };
+            std::vector<DirectoryId> visitedIds;
+            Directory::find(session, params, [&](const Directory& directory) { visitedIds.push_back(directory.getId()); });
 
-            ASSERT_EQ(res.size(), 3);
-            EXPECT_EQ(res[0].getId(), parent.getId());
-            EXPECT_EQ(res[1].getId(), child1.getId());
-            EXPECT_EQ(res[2].getId(), child2.getId());
+            ASSERT_EQ(visitedIds.size(), 3);
+            EXPECT_EQ(visitedIds[0], parent.getId());
+            EXPECT_EQ(visitedIds[1], child1.getId());
+            EXPECT_EQ(visitedIds[2], child2.getId());
         }
 
         {
@@ -240,10 +241,12 @@ namespace lms::db::tests
             Directory::FindParameters params;
             params.setWithNoTrack(true);
 
-            auto res{ Directory::find(session, params) };
-            ASSERT_EQ(res.size(), 2);
-            EXPECT_EQ(res[0].getId(), parent.getId());
-            EXPECT_EQ(res[1].getId(), child1.getId());
+            std::vector<DirectoryId> visitedIds;
+            Directory::find(session, params, [&](const Directory& directory) { visitedIds.push_back(directory.getId()); });
+
+            ASSERT_EQ(visitedIds.size(), 2);
+            EXPECT_EQ(visitedIds[0], parent.getId());
+            EXPECT_EQ(visitedIds[1], child1.getId());
         }
     }
 
@@ -259,11 +262,12 @@ namespace lms::db::tests
             Directory::FindParameters params;
             params.setKeywords({ "foo" });
 
-            auto res{ Directory::find(session, params) };
+            std::vector<DirectoryId> visitedIds;
+            Directory::find(session, params, [&](const Directory& directory) { visitedIds.push_back(directory.getId()); });
 
-            ASSERT_EQ(res.size(), 2);
-            EXPECT_EQ(res[0].getId(), child1.getId());
-            EXPECT_EQ(res[1].getId(), child2.getId());
+            ASSERT_EQ(visitedIds.size(), 2);
+            EXPECT_EQ(visitedIds[0], child1.getId());
+            EXPECT_EQ(visitedIds[1], child2.getId());
         }
     }
 

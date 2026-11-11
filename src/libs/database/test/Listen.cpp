@@ -70,14 +70,14 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(otherUser->getId())) };
+            auto listens{ Listen::findIds(session, Listen::FindParameters{}.setUser(otherUser->getId())) };
             EXPECT_EQ(listens.size(), 0);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(user->getId())) };
+            auto listens{ Listen::findIds(session, Listen::FindParameters{}.setUser(user->getId())) };
             ASSERT_EQ(listens.size(), 1);
             EXPECT_EQ(listens.front(), listen->getId());
         }
@@ -94,7 +94,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(user->getId())) };
+            auto listens{ Listen::findIds(session, Listen::FindParameters{}.setUser(user->getId())) };
             ASSERT_EQ(listens.size(), 3);
             EXPECT_EQ(listens[0], listen1.getId());
             EXPECT_EQ(listens[1], listen2.getId());

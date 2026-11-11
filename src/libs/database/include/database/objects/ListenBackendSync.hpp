@@ -68,7 +68,7 @@ namespace lms::db
         static std::size_t getCount(ISession& session);
         static std::optional<ListenBackendSync> find(ISession& session, ListenBackendSyncId id);
         static std::optional<ListenBackendSync> find(ISession& session, ListenId listenId, ScrobblingBackend backend);
-        static std::vector<ListenBackendSyncId> find(ISession& session, const FindParameters& params);
+        static std::vector<ListenBackendSyncId> findIds(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const ListenBackendSync&)>& func);
 
         static void update(ISession& session, const ListenBackendSync& listenBackendSync);

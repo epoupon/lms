@@ -20,11 +20,13 @@
 #pragma once
 
 #include <chrono>
+#include <functional>
 #include <optional>
 #include <span>
+#include <string>
+#include <string_view>
 
 #include "database/IdType.hpp"
-#include "database/Types.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/UserId.hpp"
 #include "database/objects/detail/Object.hpp"
@@ -45,7 +47,7 @@ namespace lms::db
         // Find utility functions
         static std::size_t getCount(ISession& session);
         static std::optional<TrackBookmark> find(ISession& session, TrackBookmarkId id);
-        static std::vector<TrackBookmarkId> find(ISession& session, UserId userId, std::optional<Range> range = std::nullopt);
+        static void find(ISession& session, UserId userId, const std::function<void(const TrackBookmark&)>& func);
         static std::optional<TrackBookmark> find(ISession& session, UserId userId, TrackId trackId);
 
         static void update(ISession& session, const TrackBookmark& trackBookmark);

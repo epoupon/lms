@@ -56,13 +56,13 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_bookmark"));
     }
 
-    std::vector<TrackBookmarkId> TrackBookmark::find(ISession& session, UserId userId, std::optional<Range> range)
+    void TrackBookmark::find(ISession& session, UserId userId, const std::function<void(const TrackBookmark&)>& func)
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<TrackBookmarkId>("SELECT id from track_bookmark").where("user_id = ?").bind(userId) };
+        auto query{ getDboSession(session)->find<dbo::TrackBookmark>().where("user_id = ?").bind(userId) };
 
-        return utils::execRangeQuery<TrackBookmarkId>(query, range);
+        utils::forEachQueryObject(query, func);
     }
 
     std::optional<TrackBookmark> TrackBookmark::find(ISession& session, UserId userId, TrackId trackId)

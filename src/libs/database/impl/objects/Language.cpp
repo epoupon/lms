@@ -145,13 +145,6 @@ namespace lms::db
         return utils::execRangeQuery<LanguageId>(query, params.range);
     }
 
-    std::vector<Language> Language::find(ISession& session, const FindParameters& params)
-    {
-        checkReadTransaction(session);
-        auto query{ createQuery<Wt::Dbo::ptr<dbo::Language>>(session, params) };
-        return utils::execRangeObjectQuery(query, params.range);
-    }
-
     void Language::find(ISession& session, const FindParameters& params, const std::function<void(const Language&)>& func)
     {
         checkReadTransaction(session);

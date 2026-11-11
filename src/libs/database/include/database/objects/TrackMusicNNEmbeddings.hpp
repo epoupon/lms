@@ -19,11 +19,13 @@
 
 #pragma once
 
+#include <cstddef>
+#include <functional>
 #include <optional>
 #include <span>
+#include <vector>
 
 #include "database/IdType.hpp"
-#include "database/Types.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/detail/Object.hpp"
 
@@ -43,7 +45,6 @@ namespace lms::db
         static std::size_t getCount(ISession& session);
         static std::optional<TrackMusicNNEmbeddings> find(ISession& session, TrackMusicNNEmbeddingsId id);
         static std::optional<TrackMusicNNEmbeddings> find(ISession& session, TrackId trackId);
-        static std::vector<TrackMusicNNEmbeddingsId> find(ISession& session, std::optional<Range> range = std::nullopt);
         static void find(ISession& session, const std::function<void(const TrackMusicNNEmbeddings&)>& func);
         static void removeAll(ISession& session);
 

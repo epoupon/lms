@@ -79,12 +79,6 @@ namespace lms::db::tests
             }
 
             {
-                const auto releases{ Release::find(session, Release::FindParameters{}) };
-                ASSERT_EQ(releases.size(), 1);
-                EXPECT_EQ(releases.front().getId(), release.getId());
-            }
-
-            {
                 bool visited{};
                 Release::find(session, Release::FindParameters{}, [&](const Release& r) {
                     visited = true;
@@ -1420,7 +1414,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            auto releases{ Release::find(session, Release::FindParameters{}.setReleaseType("Foo")) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setReleaseType("Foo")) };
             EXPECT_EQ(releases.size(), 0);
         }
 
@@ -1434,12 +1428,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::find(session, Release::FindParameters{}.setReleaseType("Foo")) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setReleaseType("Foo")) };
             EXPECT_EQ(releases.size(), 0);
 
-            releases = Release::find(session, Release::FindParameters{}.setReleaseType("album"));
+            releases = Release::findIds(session, Release::FindParameters{}.setReleaseType("album"));
             ASSERT_EQ(releases.size(), 1);
-            EXPECT_EQ(releases.front().getId(), release.getId());
+            EXPECT_EQ(releases.front(), release.getId());
         }
     }
 
@@ -2187,7 +2181,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::find(session, Release::FindParameters{}.setReleaseGroupMBID(groupMBID)) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setReleaseGroupMBID(groupMBID)) };
             EXPECT_EQ(releases.size(), 0);
         }
 
@@ -2201,9 +2195,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::find(session, Release::FindParameters{}.setReleaseGroupMBID(groupMBID)) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setReleaseGroupMBID(groupMBID)) };
             EXPECT_EQ(releases.size(), 1);
-            EXPECT_EQ(releases[0].getId(), release->getId());
+            EXPECT_EQ(releases[0], release->getId());
         }
     }
 
@@ -2225,19 +2219,19 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::find(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::Name)) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::Name)) };
             ASSERT_EQ(releases.size(), 2);
-            EXPECT_EQ(releases[0].getId(), release1->getId());
-            EXPECT_EQ(releases[1].getId(), release2->getId());
+            EXPECT_EQ(releases[0], release1->getId());
+            EXPECT_EQ(releases[1], release2->getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::find(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::SortName)) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::SortName)) };
             ASSERT_EQ(releases.size(), 2);
-            EXPECT_EQ(releases[0].getId(), release2->getId());
-            EXPECT_EQ(releases[1].getId(), release1->getId());
+            EXPECT_EQ(releases[0], release2->getId());
+            EXPECT_EQ(releases[1], release1->getId());
         }
     }
 
@@ -2258,12 +2252,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::find(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::SortName)) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::SortName)) };
 
             ASSERT_EQ(releases.size(), 3);
-            EXPECT_EQ(releases[0].getId(), releaseBravo.getId());
-            EXPECT_EQ(releases[1].getId(), releaseCharlie.getId());
-            EXPECT_EQ(releases[2].getId(), releaseAlpha.getId());
+            EXPECT_EQ(releases[0], releaseBravo.getId());
+            EXPECT_EQ(releases[1], releaseCharlie.getId());
+            EXPECT_EQ(releases[2], releaseAlpha.getId());
         }
     }
 

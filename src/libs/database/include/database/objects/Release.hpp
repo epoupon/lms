@@ -228,7 +228,6 @@ namespace lms::db
         static void find(ISession& session, ReleaseId& lastRetrievedRelease, std::size_t count, const std::function<void(const Release&)>& func, MediaLibraryId library = {});
         static void find(ISession& session, const IdRange<ReleaseId>& idRange, const std::function<void(const Release&)>& func);
         static IdRange<ReleaseId> findNextIdRange(ISession& session, ReleaseId lastRetrievedId, std::size_t count);
-        static std::vector<Release> find(ISession& session, const FindParameters& parameters);
         static void find(ISession& session, const FindParameters& parameters, const std::function<void(const Release&)>& func);
         static std::vector<ReleaseId> findIds(ISession& session, const FindParameters& parameters);
         static std::size_t getCount(ISession& session, const FindParameters& parameters);

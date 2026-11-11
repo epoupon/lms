@@ -121,7 +121,6 @@ namespace lms::db
         static std::optional<Directory> find(ISession& session, DirectoryId id);
         static std::optional<Directory> find(ISession& session, const std::filesystem::path& path);
         static void find(ISession& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory&)>& func);
-        static std::vector<Directory> find(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const Directory&)>& func);
         static std::vector<DirectoryId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
         static std::vector<DirectoryId> findMismatchedLibrary(ISession& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId);

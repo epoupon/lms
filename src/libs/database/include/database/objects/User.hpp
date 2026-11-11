@@ -71,7 +71,7 @@ namespace lms::db
         static std::size_t getCount(ISession& session);
         static std::optional<User> find(ISession& session, UserId id);
         static std::optional<User> find(ISession& session, std::string_view loginName);
-        static std::vector<UserId> find(ISession& session, const FindParameters& params);
+        static std::vector<UserId> findIds(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const User&)>& func);
         static std::optional<User> findDemoUser(ISession& session);
         static std::size_t getAuthTokensCount(ISession& session, UserId id);

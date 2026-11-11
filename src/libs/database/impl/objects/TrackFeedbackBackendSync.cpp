@@ -76,21 +76,6 @@ namespace lms::db
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackFeedbackBackendSync>().where("track_feedback_id = ?").bind(trackFeedbackId).where("backend = ?").bind(backend));
     }
 
-    std::vector<TrackFeedbackBackendSyncId> TrackFeedbackBackendSync::find(ISession& session, const FindParameters& params)
-    {
-        checkReadTransaction(session);
-
-        auto query{ getDboSession(session)->query<TrackFeedbackBackendSyncId>("SELECT id FROM track_feedback_backend_sync") };
-
-        if (params.backend)
-            query.where("backend = ?").bind(*params.backend);
-
-        if (params.syncState)
-            query.where("sync_state = ?").bind(*params.syncState);
-
-        return utils::execRangeQuery<TrackFeedbackBackendSyncId>(query, params.range);
-    }
-
     void TrackFeedbackBackendSync::find(ISession& session, const FindParameters& params, const std::function<void(const TrackFeedbackBackendSync&)>& func)
     {
         checkReadTransaction(session);

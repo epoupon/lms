@@ -67,7 +67,6 @@ namespace lms::db
         static std::size_t getCount(ISession& session);
         static std::optional<ArtistFeedbackBackendSync> find(ISession& session, ArtistFeedbackBackendSyncId id);
         static std::optional<ArtistFeedbackBackendSync> find(ISession& session, ArtistFeedbackId artistFeedbackId, FeedbackBackend backend);
-        static std::vector<ArtistFeedbackBackendSyncId> find(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const ArtistFeedbackBackendSync&)>& func);
 
         static void update(ISession& session, const ArtistFeedbackBackendSync& artistFeedbackBackendSync);

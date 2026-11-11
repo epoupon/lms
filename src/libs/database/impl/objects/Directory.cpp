@@ -183,14 +183,10 @@ namespace lms::db
         });
     }
 
-    std::vector<Directory> Directory::find(ISession& session, const FindParameters& params)
-    {
-        auto query{ createQuery(session, params) };
-        return utils::execRangeObjectQuery(query, params.range);
-    }
-
     void Directory::find(ISession& session, const FindParameters& params, const std::function<void(const Directory&)>& func)
     {
+        checkReadTransaction(session);
+
         auto query{ createQuery(session, params) };
         utils::forEachQueryRangeObject(query, params.range, func);
     }

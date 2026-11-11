@@ -77,8 +77,9 @@ namespace lms
                     oss << " [" << release->getName() << "]";
                 if (std::string_view artistDisplayName{ track->getArtistDisplayName() }; !artistDisplayName.empty())
                     oss << " by '" << artistDisplayName << "'";
-                for (const auto& cluster : db::Cluster::find(session, db::Cluster::FindParameters{}.setTrack(trackId)))
+                db::Cluster::find(session, db::Cluster::FindParameters{}.setTrack(trackId), [&](const db::Cluster& cluster) {
                     oss << " {" << db::ClusterType::find(session, cluster.getTypeId())->getName() << "-" << cluster.getName() << "}";
+                });
                 oss << " - '" + track->getAbsoluteFilePath().string() << "'";
 
                 return oss.str();

@@ -69,7 +69,7 @@ namespace lms::db
         static std::size_t getCount(ISession& session);
         static std::optional<Listen> find(ISession& session, ListenId id);
         static std::optional<Listen> find(ISession& session, UserId userId, TrackId trackId, const Wt::WDateTime& dateTime);
-        static std::vector<ListenId> find(ISession& session, const FindParameters& parameters);
+        static std::vector<ListenId> findIds(ISession& session, const FindParameters& parameters);
 
         // Stats
         struct StatsFindParameters

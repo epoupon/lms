@@ -166,14 +166,6 @@ namespace lms::db
         return utils::execRangeQuery<ClusterId>(query, params.range);
     }
 
-    std::vector<Cluster> Cluster::find(ISession& session, const FindParameters& params)
-    {
-        checkReadTransaction(session);
-        auto query{ createQuery<Wt::Dbo::ptr<dbo::Cluster>>(session, params) };
-
-        return utils::execRangeObjectQuery(query, params.range);
-    }
-
     void Cluster::find(ISession& session, const FindParameters& params, const std::function<void(const Cluster& cluster)>& _func)
     {
         checkReadTransaction(session);

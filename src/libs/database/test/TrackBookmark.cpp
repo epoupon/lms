@@ -51,9 +51,10 @@ namespace lms::db::tests
 
             EXPECT_EQ(TrackBookmark::getCount(session), 1);
 
-            const auto bookmarks{ TrackBookmark::find(session, user.getId()) };
-            ASSERT_EQ(bookmarks.size(), 1);
-            EXPECT_EQ(bookmarks.front(), bookmark.getId());
+            std::vector<TrackBookmarkId> visitedIds;
+            TrackBookmark::find(session, user.getId(), [&](const TrackBookmark& userBookmark) { visitedIds.push_back(userBookmark.getId()); });
+            ASSERT_EQ(visitedIds.size(), 1);
+            EXPECT_EQ(visitedIds.front(), bookmark.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };

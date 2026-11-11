@@ -87,7 +87,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(Image::find(session, Image::FindParameters{}.setDirectory(directory.getId())).size(), 0);
+            bool visited{};
+            Image::find(session, Image::FindParameters{}.setDirectory(directory.getId()), [&](const Image&) { visited = true; });
+            EXPECT_FALSE(visited);
         }
 
         {
@@ -99,9 +101,10 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto results{ Image::find(session, Image::FindParameters{}.setDirectory(directory.getId())) };
+            std::vector<ImageId> results;
+            Image::find(session, Image::FindParameters{}.setDirectory(directory.getId()), [&](const Image& foundImage) { results.push_back(foundImage.getId()); });
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results.front().getId(), image.getId());
+            EXPECT_EQ(results.front(), image.getId());
         }
     }
 
@@ -147,25 +150,28 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             Image::FindParameters params;
             params.setFileStem(fileStem);
-            const auto results{ Image::find(session, params) };
+            std::vector<ImageId> results;
+            Image::find(session, params, [&](const Image& foundImage) { results.push_back(foundImage.getId()); });
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0].getId(), image.getId());
+            EXPECT_EQ(results[0], image.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             Image::FindParameters params;
             params.setFileStem(fileStem, Image::FindParameters::ProcessWildcards{ true });
-            const auto results{ Image::find(session, params) };
+            std::vector<ImageId> results;
+            Image::find(session, params, [&](const Image& foundImage) { results.push_back(foundImage.getId()); });
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0].getId(), image.getId());
+            EXPECT_EQ(results[0], image.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             Image::FindParameters params;
             params.setFileStem("nonexistent");
-            const auto results{ Image::find(session, params) };
+            std::vector<ImageId> results;
+            Image::find(session, params, [&](const Image& foundImage) { results.push_back(foundImage.getId()); });
             EXPECT_EQ(results.size(), 0);
         }
 
@@ -173,7 +179,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             Image::FindParameters params;
             params.setFileStem("ima*");
-            const auto results{ Image::find(session, params) };
+            std::vector<ImageId> results;
+            Image::find(session, params, [&](const Image& foundImage) { results.push_back(foundImage.getId()); });
             ASSERT_EQ(results.size(), 0);
         }
 
@@ -181,43 +188,48 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             Image::FindParameters params;
             params.setFileStem("ima*", Image::FindParameters::ProcessWildcards{ true });
-            const auto results{ Image::find(session, params) };
+            std::vector<ImageId> results;
+            Image::find(session, params, [&](const Image& foundImage) { results.push_back(foundImage.getId()); });
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0].getId(), image.getId());
+            EXPECT_EQ(results[0], image.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             Image::FindParameters params;
             params.setFileStem("*ge", Image::FindParameters::ProcessWildcards{ true });
-            const auto results{ Image::find(session, params) };
+            std::vector<ImageId> results;
+            Image::find(session, params, [&](const Image& foundImage) { results.push_back(foundImage.getId()); });
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0].getId(), image.getId());
+            EXPECT_EQ(results[0], image.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             Image::FindParameters params;
             params.setFileStem("*g*", Image::FindParameters::ProcessWildcards{ true });
-            const auto results{ Image::find(session, params) };
+            std::vector<ImageId> results;
+            Image::find(session, params, [&](const Image& foundImage) { results.push_back(foundImage.getId()); });
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0].getId(), image.getId());
+            EXPECT_EQ(results[0], image.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             Image::FindParameters params;
             params.setFileStem("*", Image::FindParameters::ProcessWildcards{ true });
-            const auto results{ Image::find(session, params) };
+            std::vector<ImageId> results;
+            Image::find(session, params, [&](const Image& foundImage) { results.push_back(foundImage.getId()); });
             ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(results[0].getId(), image.getId());
+            EXPECT_EQ(results[0], image.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             Image::FindParameters params;
             params.setFileStem("ima%");
-            const auto results{ Image::find(session, params) };
+            std::vector<ImageId> results;
+            Image::find(session, params, [&](const Image& foundImage) { results.push_back(foundImage.getId()); });
             ASSERT_EQ(results.size(), 0);
         }
 
@@ -225,7 +237,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             Image::FindParameters params;
             params.setFileStem("ima%", Image::FindParameters::ProcessWildcards{ true });
-            const auto results{ Image::find(session, params) };
+            std::vector<ImageId> results;
+            Image::find(session, params, [&](const Image& foundImage) { results.push_back(foundImage.getId()); });
             ASSERT_EQ(results.size(), 0);
         }
     }

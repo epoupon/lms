@@ -450,7 +450,7 @@ VALUES
             // migrateFromV110: the two rows sharing (user, track, date_time) across Internal/ListenBrainz collapse into
             // one canonical listen (Internal dropped, since it's implicit) + one ListenBackendSync row; the third row
             // (different date_time) stays a separate canonical listen with its own delivery row
-            const auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(myUser->getId())) };
+            const auto listens{ Listen::findIds(session, Listen::FindParameters{}.setUser(myUser->getId())) };
             ASSERT_EQ(listens.size(), 2);
             EXPECT_EQ(ListenBackendSync::getCount(session), 2);
 

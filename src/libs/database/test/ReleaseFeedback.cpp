@@ -38,7 +38,7 @@ namespace lms::db::tests
             EXPECT_FALSE(releaseFeedback);
             EXPECT_EQ(ReleaseFeedback::getCount(session), 0);
 
-            auto releases{ Release::find(session, Release::FindParameters{}) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}) };
             EXPECT_EQ(releases.size(), 1);
         }
 
@@ -59,13 +59,13 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::find(session, Release::FindParameters{}) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}) };
             EXPECT_EQ(releases.size(), 1);
 
-            releases = Release::find(session, Release::FindParameters{}.setFeedbackUser(user.getId()));
+            releases = Release::findIds(session, Release::FindParameters{}.setFeedbackUser(user.getId()));
             EXPECT_EQ(releases.size(), 1);
 
-            releases = Release::find(session, Release::FindParameters{}.setFeedbackUser(user2.getId()));
+            releases = Release::findIds(session, Release::FindParameters{}.setFeedbackUser(user2.getId()));
             EXPECT_EQ(releases.size(), 0);
         }
     }
@@ -82,13 +82,13 @@ namespace lms::db::tests
             std::optional<ReleaseFeedback> updatedReleaseFeedback{ releaseFeedback.get() };
             updatedReleaseFeedback->setValue(FeedbackValue::Loved);
             ReleaseFeedback::update(session, *updatedReleaseFeedback);
-            auto releases{ Release::find(session, Release::FindParameters{}.setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved)) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved)) };
             EXPECT_EQ(releases.size(), 1);
 
             updatedReleaseFeedback = releaseFeedback.get();
             updatedReleaseFeedback->setValue(FeedbackValue::None);
             ReleaseFeedback::update(session, *updatedReleaseFeedback);
-            releases = Release::find(session, Release::FindParameters{}.setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved));
+            releases = Release::findIds(session, Release::FindParameters{}.setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved));
             EXPECT_EQ(releases.size(), 0);
         }
     }
@@ -105,7 +105,7 @@ namespace lms::db::tests
             std::optional<ReleaseFeedback> updatedReleaseFeedback{ releaseFeedback.get() };
             updatedReleaseFeedback->setValue(FeedbackValue::Hated);
             ReleaseFeedback::update(session, *updatedReleaseFeedback);
-            auto releases{ Release::find(session, Release::FindParameters{}.setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved)) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setFeedbackUser(user.getId()).setFeedbackValue(FeedbackValue::Loved)) };
             EXPECT_EQ(releases.size(), 0);
         }
     }
@@ -122,7 +122,7 @@ namespace lms::db::tests
             std::optional<ReleaseFeedback> updatedReleaseFeedback{ releaseFeedback.get() };
             updatedReleaseFeedback->setValue(FeedbackValue::Hated);
             ReleaseFeedback::update(session, *updatedReleaseFeedback);
-            auto releases{ Release::find(session, Release::FindParameters{}.setFeedbackUser(user.getId())) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setFeedbackUser(user.getId())) };
             EXPECT_EQ(releases.size(), 1);
         }
     }

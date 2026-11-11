@@ -76,21 +76,6 @@ namespace lms::db
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ReleaseFeedbackBackendSync>().where("release_feedback_id = ?").bind(releaseFeedbackId).where("backend = ?").bind(backend));
     }
 
-    std::vector<ReleaseFeedbackBackendSyncId> ReleaseFeedbackBackendSync::find(ISession& session, const FindParameters& params)
-    {
-        checkReadTransaction(session);
-
-        auto query{ getDboSession(session)->query<ReleaseFeedbackBackendSyncId>("SELECT id FROM release_feedback_backend_sync") };
-
-        if (params.backend)
-            query.where("backend = ?").bind(*params.backend);
-
-        if (params.syncState)
-            query.where("sync_state = ?").bind(*params.syncState);
-
-        return utils::execRangeQuery<ReleaseFeedbackBackendSyncId>(query, params.range);
-    }
-
     void ReleaseFeedbackBackendSync::find(ISession& session, const FindParameters& params, const std::function<void(const ReleaseFeedbackBackendSync&)>& func)
     {
         checkReadTransaction(session);

@@ -145,13 +145,6 @@ namespace lms::db
         return utils::execRangeQuery<GroupingId>(query, params.range);
     }
 
-    std::vector<Grouping> Grouping::find(ISession& session, const FindParameters& params)
-    {
-        checkReadTransaction(session);
-        auto query{ createQuery<Wt::Dbo::ptr<dbo::Grouping>>(session, params) };
-        return utils::execRangeObjectQuery(query, params.range);
-    }
-
     void Grouping::find(ISession& session, const FindParameters& params, const std::function<void(const Grouping&)>& func)
     {
         checkReadTransaction(session);

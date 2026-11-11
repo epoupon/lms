@@ -114,18 +114,12 @@ namespace lms::db
         });
     }
 
-    std::vector<Image> Image::find(ISession& session, const FindParameters& params)
+    void Image::find(ISession& session, const FindParameters& params, const std::function<void(const Image&)>& func)
     {
         checkReadTransaction(session);
 
         auto query{ createQuery(session, params) };
-        return utils::execRangeObjectQuery(query, params.range);
-    }
-
-    void Image::find(ISession& session, const FindParameters& params, const std::function<void(const Image&)>& func)
-    {
-        auto query{ createQuery(session, params) };
-        utils::forEachQueryObject(query, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     void Image::findAbsoluteFilePath(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(ImageId imageId, const std::filesystem::path& absoluteFilePath)>& func)

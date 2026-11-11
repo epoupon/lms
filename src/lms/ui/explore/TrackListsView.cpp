@@ -146,14 +146,13 @@ namespace lms::ui
             break;
         }
 
-        const auto trackListIds{ db::TrackList::find(session, params) };
-        for (const db::TrackListId trackListId : trackListIds)
-        {
-            if (const std::optional<db::TrackList> trackList{ db::TrackList::find(LmsApp->getDbSession(), trackListId) })
-                addTracklist(*trackList);
-        }
+        std::size_t trackListCount{};
+        db::TrackList::find(session, params, [&](const db::TrackList& trackList) {
+            addTracklist(trackList);
+            ++trackListCount;
+        });
 
-        _container->setHasMore(trackListIds.size() == _batchSize);
+        _container->setHasMore(trackListCount == _batchSize);
     }
 
     void TrackLists::addTracklist(const db::TrackList& trackList)

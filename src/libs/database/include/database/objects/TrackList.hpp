@@ -114,7 +114,7 @@ namespace lms::db
         static std::size_t getCount(ISession& session);
         static std::optional<TrackList> find(ISession& session, TrackListId tracklistId);
         static std::optional<TrackList> find(ISession& session, PlayListFileId playListFileId); // the track list made from this playlist file
-        static std::vector<TrackListId> find(ISession& session, const FindParameters& params);
+        static std::vector<TrackListId> findIds(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackList&)>& func);
 
         // Computed from the entries

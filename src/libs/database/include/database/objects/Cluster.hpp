@@ -105,7 +105,6 @@ namespace lms::db
         // Find utility
         static std::size_t getCount(ISession& session);
         static std::vector<ClusterId> findIds(ISession& session, const FindParameters& params);
-        static std::vector<Cluster> find(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const Cluster& cluster)>& func);
         static std::optional<Cluster> find(ISession& session, ClusterId id);
         static std::optional<Cluster> find(ISession& session, ClusterTypeId type, std::string_view name);

@@ -76,7 +76,7 @@ namespace lms::db
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ListenBackendSync>().where("listen_id = ?").bind(listenId).where("backend = ?").bind(backend));
     }
 
-    std::vector<ListenBackendSyncId> ListenBackendSync::find(ISession& session, const FindParameters& params)
+    std::vector<ListenBackendSyncId> ListenBackendSync::findIds(ISession& session, const FindParameters& params)
     {
         checkReadTransaction(session);
 

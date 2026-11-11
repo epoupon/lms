@@ -125,7 +125,7 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM tracklist"));
     }
 
-    std::vector<TrackListId> TrackList::find(ISession& session, const FindParameters& params)
+    std::vector<TrackListId> TrackList::findIds(ISession& session, const FindParameters& params)
     {
         checkReadTransaction(session);
         auto query{ createListQuery<TrackListId>(session, "t_l.id", params) };

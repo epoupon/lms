@@ -81,14 +81,14 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto pendingListenBrainz{ ListenBackendSync::find(session, ListenBackendSync::FindParameters{}.setBackend(ScrobblingBackend::ListenBrainz).setSyncState(SyncState::PendingAdd)) };
+            auto pendingListenBrainz{ ListenBackendSync::findIds(session, ListenBackendSync::FindParameters{}.setBackend(ScrobblingBackend::ListenBrainz).setSyncState(SyncState::PendingAdd)) };
             ASSERT_EQ(pendingListenBrainz.size(), 1);
             EXPECT_EQ(pendingListenBrainz.front(), sync1.getId());
 
-            auto allListenBrainz{ ListenBackendSync::find(session, ListenBackendSync::FindParameters{}.setBackend(ScrobblingBackend::ListenBrainz)) };
+            auto allListenBrainz{ ListenBackendSync::findIds(session, ListenBackendSync::FindParameters{}.setBackend(ScrobblingBackend::ListenBrainz)) };
             EXPECT_EQ(allListenBrainz.size(), 2);
 
-            auto allLastFm{ ListenBackendSync::find(session, ListenBackendSync::FindParameters{}.setBackend(ScrobblingBackend::LastFm)) };
+            auto allLastFm{ ListenBackendSync::findIds(session, ListenBackendSync::FindParameters{}.setBackend(ScrobblingBackend::LastFm)) };
             ASSERT_EQ(allLastFm.size(), 1);
             EXPECT_EQ(allLastFm.front(), sync3.getId());
         }

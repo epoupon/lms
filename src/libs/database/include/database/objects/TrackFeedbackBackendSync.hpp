@@ -67,7 +67,6 @@ namespace lms::db
         static std::size_t getCount(ISession& session);
         static std::optional<TrackFeedbackBackendSync> find(ISession& session, TrackFeedbackBackendSyncId id);
         static std::optional<TrackFeedbackBackendSync> find(ISession& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend);
-        static std::vector<TrackFeedbackBackendSyncId> find(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackFeedbackBackendSync&)>& func);
 
         static void update(ISession& session, const TrackFeedbackBackendSync& trackFeedbackBackendSync);

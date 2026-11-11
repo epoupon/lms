@@ -71,15 +71,6 @@ namespace lms::db
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackMusicNNEmbeddings>().where("track_id = ?").bind(trackId));
     }
 
-    std::vector<TrackMusicNNEmbeddingsId> TrackMusicNNEmbeddings::find(ISession& session, std::optional<Range> range)
-    {
-        checkReadTransaction(session);
-
-        auto query{ getDboSession(session)->query<TrackMusicNNEmbeddingsId>("SELECT id from track_musicnn_embeddings") };
-
-        return utils::execRangeQuery<TrackMusicNNEmbeddingsId>(query, range);
-    }
-
     void TrackMusicNNEmbeddings::find(ISession& session, const std::function<void(const TrackMusicNNEmbeddings&)>& func)
     {
         checkReadTransaction(session);

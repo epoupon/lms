@@ -675,7 +675,7 @@ namespace lms::db::benchs
         {
             std::size_t count{};
             for (const ClusterTypeId clusterTypeId : library.clusterTypes)
-                count += Cluster::find(session, Cluster::FindParameters{ scope }.setClusterType(clusterTypeId).setSortMethod(sortMethod).setRange(Range{ 0, 3 })).size();
+                Cluster::find(session, Cluster::FindParameters{ scope }.setClusterType(clusterTypeId).setSortMethod(sortMethod).setRange(Range{ 0, 3 }), [&](const Cluster&) { ++count; });
             return count;
         }
 

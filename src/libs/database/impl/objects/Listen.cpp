@@ -213,7 +213,7 @@ namespace lms::db
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Listen>>("SELECT l from listen l").where("l.id = ?").bind(id));
     }
 
-    std::vector<ListenId> Listen::find(ISession& session, const FindParameters& parameters)
+    std::vector<ListenId> Listen::findIds(ISession& session, const FindParameters& parameters)
     {
         checkReadTransaction(session);
 

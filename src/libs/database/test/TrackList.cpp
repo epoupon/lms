@@ -166,7 +166,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setSortMethod(TrackListSortMethod::Name)) };
+            const auto trackLists{ TrackList::findIds(session, TrackList::FindParameters{}.setSortMethod(TrackListSortMethod::Name)) };
             ASSERT_EQ(trackLists.size(), 2);
             EXPECT_EQ(trackLists[0], trackList1.getId());
             EXPECT_EQ(trackLists[1], trackList2.getId());
@@ -186,7 +186,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
+            const auto trackLists{ TrackList::findIds(session, TrackList::FindParameters{}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
             ASSERT_EQ(trackLists.size(), 2);
             EXPECT_EQ(trackLists[0], trackList2.getId());
             EXPECT_EQ(trackLists[1], trackList1.getId());
@@ -206,7 +206,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
+            const auto trackLists{ TrackList::findIds(session, TrackList::FindParameters{}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
             ASSERT_EQ(trackLists.size(), 2);
             EXPECT_EQ(trackLists[0], trackList1.getId());
             EXPECT_EQ(trackLists[1], trackList2.getId());
@@ -338,7 +338,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setFilter(FilterExpr::equal(cluster.getId()))) };
+            auto trackLists{ TrackList::findIds(session, TrackList::FindParameters{}.setFilter(FilterExpr::equal(cluster.getId()))) };
             EXPECT_EQ(trackLists.size(), 0);
         }
 
@@ -352,7 +352,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setFilter(FilterExpr::equal(cluster.getId()))) };
+            auto trackLists{ TrackList::findIds(session, TrackList::FindParameters{}.setFilter(FilterExpr::equal(cluster.getId()))) };
             ASSERT_EQ(trackLists.size(), 1);
             EXPECT_EQ(trackLists.front(), trackList1.getId());
         }
