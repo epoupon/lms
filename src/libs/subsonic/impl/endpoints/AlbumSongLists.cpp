@@ -235,7 +235,7 @@ namespace lms::api::subsonic
             for (const TrackId trackId : Track::findIds(context.getDbSession(), trackFindParameters))
             {
                 if (auto track{ Track::find(context.getDbSession(), trackId) })
-                    starredNode.addArrayChild("song", createSongNode(context, *track, true /* id3 */));
+                    starredNode.addArrayChild("song", createSongNode(context, *track));
             }
 
             return response;
@@ -272,7 +272,7 @@ namespace lms::api::subsonic
             params.setFilter(FilterExpr::equal(mediaLibraryId));
 
         Track::find(context.getDbSession(), params, [&](const Track& track) {
-            randomSongsNode.addArrayChild("song", createSongNode(context, track, true /* id3 */));
+            randomSongsNode.addArrayChild("song", createSongNode(context, track));
         });
 
         return response;
@@ -309,7 +309,7 @@ namespace lms::api::subsonic
         params.setRange(Range{ offset, count });
 
         Track::find(context.getDbSession(), params, [&](const Track& track) {
-            songsByGenreNode.addArrayChild("song", createSongNode(context, track, true /* id3 */));
+            songsByGenreNode.addArrayChild("song", createSongNode(context, track));
         });
 
         return response;
@@ -339,7 +339,7 @@ namespace lms::api::subsonic
             if (!track)
                 return;
 
-            auto NowPlayingEntryNode{ createSongNode(context, *track, true /* id3 */) };
+            auto NowPlayingEntryNode{ createSongNode(context, *track) };
             NowPlayingEntryNode.setAttribute("username", user->getLoginName());
             NowPlayingEntryNode.setAttribute("minutesAgo", static_cast<int>(std::chrono::duration_cast<std::chrono::minutes>(now - startedAt).count()));
             NowPlayingEntryNode.setAttribute("playerId", user->getId().getValue()); // not sure what to put here

@@ -295,7 +295,7 @@ namespace lms::api::subsonic
             }
         }
 
-        void findRequestedTracks(RequestContext& context, bool id3, const std::vector<std::string_view>& keywords, MediaLibraryId mediaLibrary, Response::Node& searchResultNode)
+        void findRequestedTracks(RequestContext& context, const std::vector<std::string_view>& keywords, MediaLibraryId mediaLibrary, Response::Node& searchResultNode)
         {
             static ScanTracker<TrackId> currentScansInProgress;
 
@@ -319,7 +319,7 @@ namespace lms::api::subsonic
                 params.setSortMethod(TrackSortMethod::Id); // must be consistent with both methods
 
                 Track::find(context.getDbSession(), params, [&](const Track& track) {
-                    searchResultNode.addArrayChild("song", createSongNode(context, track, id3));
+                    searchResultNode.addArrayChild("song", createSongNode(context, track));
                     lastRetrievedId = track.getId();
                 });
             } };
@@ -342,7 +342,7 @@ namespace lms::api::subsonic
             {
                 Track::find(
                     context.getDbSession(), cachedLastRetrievedId, songCount, [&](const Track& track) {
-                        searchResultNode.addArrayChild("song", createSongNode(context, track, id3));
+                        searchResultNode.addArrayChild("song", createSongNode(context, track));
                     },
                     mediaLibrary);
                 lastRetrievedId = cachedLastRetrievedId;
@@ -386,7 +386,7 @@ namespace lms::api::subsonic
             else
                 findRequestedArtistDirectories(context, keywords, mediaLibrary, searchResultNode);
             findRequestedAlbums(context, id3, keywords, mediaLibrary, searchResultNode);
-            findRequestedTracks(context, id3, keywords, mediaLibrary, searchResultNode);
+            findRequestedTracks(context, keywords, mediaLibrary, searchResultNode);
 
             return response;
         }

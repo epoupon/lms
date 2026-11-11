@@ -49,7 +49,7 @@ namespace lms::api::subsonic
             const std::optional<db::TrackBookmark> bookmark{ db::TrackBookmark::find(context.getDbSession(), bookmarkId) };
             Response::Node bookmarkNode{ createBookmarkNode(context.getDbSession(), *bookmark) };
             if (const std::optional<db::Track> track{ db::Track::find(context.getDbSession(), bookmark->getTrackId()) })
-                bookmarkNode.addChild("entry", createSongNode(context, *track, true /* id3 */));
+                bookmarkNode.addChild("entry", createSongNode(context, *track));
             bookmarksNode.addArrayChild("bookmark", std::move(bookmarkNode));
         }
 
@@ -151,7 +151,7 @@ namespace lms::api::subsonic
             playQueueNode.setAttribute("position", std::chrono::duration_cast<std::chrono::milliseconds>(playQueue.getCurrentPositionInTrack()).count());
 
             db::Track::find(context.getDbSession(), db::Track::FindParameters{}.setTrackList(playQueue.getTrackListId()), [&](const db::Track& track) {
-                playQueueNode.addArrayChild("entry", createSongNode(context, track, true /* id3 */));
+                playQueueNode.addArrayChild("entry", createSongNode(context, track));
             });
         }
 

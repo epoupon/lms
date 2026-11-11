@@ -79,7 +79,7 @@ namespace lms::api::subsonic
                 for (const db::TrackId trackId : jukeboxService.getTracks())
                 {
                     if (const std::optional<db::Track> track{ db::Track::find(context.getDbSession(), trackId) })
-                        jukeboxPlaylistNode.addArrayChild("entry", createSongNode(context, *track, true));
+                        jukeboxPlaylistNode.addArrayChild("entry", createSongNode(context, *track));
                 }
             }
 

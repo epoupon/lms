@@ -74,7 +74,7 @@ namespace lms::api::subsonic
         }
     } // namespace
 
-    Response::Node createSongNode(RequestContext& context, const db::Track& track, bool id3)
+    Response::Node createSongNode(RequestContext& context, const db::Track& track)
     {
         LMS_SCOPED_TRACE_DETAILED("Subsonic", "CreateSong");
 
@@ -83,11 +83,9 @@ namespace lms::api::subsonic
 
         Response::Node trackResponse;
 
-        if (!id3)
-        {
-            if (const db::DirectoryId directoryId{ track.getDirectoryId() }; directoryId.isValid())
-                trackResponse.setAttribute("parent", idToString(directoryId));
-        }
+        // Set in id3 responses too: clients browsing by folders need it from any song list
+        if (const db::DirectoryId directoryId{ track.getDirectoryId() }; directoryId.isValid())
+            trackResponse.setAttribute("parent", idToString(directoryId));
 
         trackResponse.setAttribute("isDir", false);
         trackResponse.setAttribute("id", idToString(track.getId()));

@@ -62,7 +62,7 @@ namespace lms::api::subsonic
             for (const TrackId trackId : trackIds)
             {
                 if (const std::optional<Track> track{ Track::find(context.getDbSession(), trackId) })
-                    playlistNode.addArrayChild("entry", createSongNode(context, *track, true /* id3 */));
+                    playlistNode.addArrayChild("entry", createSongNode(context, *track));
             }
         }
     } // namespace

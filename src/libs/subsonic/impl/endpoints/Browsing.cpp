@@ -219,7 +219,7 @@ namespace lms::api::subsonic
             for (const TrackId trackId : tracks)
             {
                 if (const std::optional<Track> track{ Track::find(context.getDbSession(), trackId) })
-                    similarSongsNode.addArrayChild("song", createSongNode(context, *track, true /* id3 */));
+                    similarSongsNode.addArrayChild("song", createSongNode(context, *track));
             }
 
             return response;
@@ -279,7 +279,7 @@ namespace lms::api::subsonic
             params.setDirectory(rootdirectory.getId());
 
             Track::find(context.getDbSession(), params, [&](const Track& track) {
-                indexesNode.addArrayChild("child", createSongNode(context, track, true /* id3 */));
+                indexesNode.addArrayChild("child", createSongNode(context, track));
             });
 
             getIndexedChildDirectories(context, rootdirectory, indexedDirectories);
@@ -365,7 +365,7 @@ namespace lms::api::subsonic
             params.setSortMethod(TrackSortMethod::AbsoluteFilePath);
 
             Track::find(context.getDbSession(), params, [&](const Track& track) {
-                directoryNode.addArrayChild("child", createSongNode(context, track, true /* id3 */));
+                directoryNode.addArrayChild("child", createSongNode(context, track));
             });
         }
 
@@ -512,7 +512,7 @@ namespace lms::api::subsonic
 
         const auto tracks{ Track::find(context.getDbSession(), Track::FindParameters{}.setRelease(id).setSortMethod(TrackSortMethod::Release)) };
         for (const Track& track : tracks)
-            albumNode.addArrayChild("song", createSongNode(context, track, true /* id3 */));
+            albumNode.addArrayChild("song", createSongNode(context, track));
 
         response.addNode("album", std::move(albumNode));
 
@@ -531,7 +531,7 @@ namespace lms::api::subsonic
             throw RequestedDataNotFoundError{};
 
         Response response{ Response::createOkResponse() };
-        response.addNode("song", createSongNode(context, *track, true /* id3 */));
+        response.addNode("song", createSongNode(context, *track));
 
         return response;
     }
@@ -680,7 +680,7 @@ namespace lms::api::subsonic
             for (const TrackId trackId : trackIds)
             {
                 if (std::optional<Track> track{ Track::find(context.getDbSession(), trackId) })
-                    topSongs.addArrayChild("song", createSongNode(context, *track, true /* id3 */));
+                    topSongs.addArrayChild("song", createSongNode(context, *track));
             }
         }
 
@@ -710,7 +710,7 @@ namespace lms::api::subsonic
             {
                 Response::Node& sonicMatchNode{ response.createArrayNode("sonicMatch") };
                 sonicMatchNode.setAttribute("similarity", 1.0F - similarTrack.distanceToFirst);
-                sonicMatchNode.addChild("entry", createSongNode(context, *track, true /* id3 */));
+                sonicMatchNode.addChild("entry", createSongNode(context, *track));
             }
         }
 
@@ -741,7 +741,7 @@ namespace lms::api::subsonic
             {
                 Response::Node& sonicMatchNode{ response.createArrayNode("sonicMatch") };
                 sonicMatchNode.setAttribute("similarity", 1.0F - pathTrack.distanceToFirst);
-                sonicMatchNode.addChild("entry", createSongNode(context, *track, true /* id3 */));
+                sonicMatchNode.addChild("entry", createSongNode(context, *track));
             }
         }
 

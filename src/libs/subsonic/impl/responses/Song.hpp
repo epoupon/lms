@@ -31,5 +31,5 @@ namespace lms::api::subsonic
 {
     class RequestContext;
 
-    Response::Node createSongNode(RequestContext& context, const db::Track& track, bool id3);
+    Response::Node createSongNode(RequestContext& context, const db::Track& track);
 } // namespace lms::api::subsonic
