@@ -27,7 +27,7 @@
 
 #include "image/IRawImage.hpp"
 
-namespace lms::image::GraphicsMagick
+namespace lms::image::graphicsMagick
 {
     class RawImage : public IRawImage
     {
@@ -45,4 +45,4 @@ namespace lms::image::GraphicsMagick
     private:
         Magick::Image _image;
     };
-} // namespace lms::image::GraphicsMagick
+} // namespace lms::image::graphicsMagick

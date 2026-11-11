@@ -23,7 +23,6 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
-#include <ostream>
 #include <span>
 #include <string>
 #include <string_view>
@@ -359,14 +358,4 @@ namespace lms::db
         ArtworkId _preferredArtworkId;
         ArtworkId _preferredMediaArtworkId;
     };
-
-    namespace Debug
-    {
-        struct TrackInfo
-        {
-            ISession& session;
-            TrackId trackId;
-        };
-        std::ostream& operator<<(std::ostream& os, const TrackInfo& trackInfo);
-    } // namespace Debug
 } // namespace lms::db

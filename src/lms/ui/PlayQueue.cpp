@@ -635,7 +635,7 @@ namespace lms::ui
 
         entry->bindNew<Wt::WPushButton>("track-info", Wt::WString::tr("Lms.Explore.track-info"))
             ->clicked()
-            .connect([this, trackId] { TrackListHelpers::showTrackInfoModal(trackId, _filters); });
+            .connect([this, trackId] { trackListHelpers::showTrackInfoModal(trackId, _filters); });
     }
 
     void PlayQueue::enqueueRadioTracksIfNeeded()

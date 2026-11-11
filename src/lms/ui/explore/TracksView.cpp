@@ -121,7 +121,7 @@ namespace lms::ui
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
             _trackCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }, moreResults, [&](const db::Track& track) {
-                _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
+                _container->add(trackListHelpers::createEntry(track, _playQueueController, _filters));
             });
         }
         _container->setHasMore(moreResults);

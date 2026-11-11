@@ -700,14 +700,14 @@ namespace lms::ui
 
             entry->bindNew<Wt::WPushButton>("track-info", Wt::WString::tr("Lms.Explore.track-info"))
                 ->clicked()
-                .connect([this, trackId] { TrackListHelpers::showTrackInfoModal(trackId, _filters); });
+                .connect([this, trackId] { trackListHelpers::showTrackInfoModal(trackId, _filters); });
 
             if (db::Track::hasLyrics(LmsApp->getDbSession(), trackId))
             {
                 entry->setCondition("if-has-lyrics", true);
                 entry->bindNew<Wt::WPushButton>("track-lyrics", Wt::WString::tr("Lms.Explore.track-lyrics"))
                     ->clicked()
-                    .connect([trackId] { TrackListHelpers::showTrackLyricsModal(trackId); });
+                    .connect([trackId] { trackListHelpers::showTrackLyricsModal(trackId); });
             }
         }
 

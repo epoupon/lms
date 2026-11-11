@@ -429,7 +429,7 @@ namespace lms::ui
             if (!similarArtist)
                 continue;
 
-            similarArtistsContainer->addWidget(ArtistListHelpers::createEntry(*similarArtist));
+            similarArtistsContainer->addWidget(artistListHelpers::createEntry(*similarArtist));
         }
     }
 
@@ -469,7 +469,7 @@ namespace lms::ui
         for (std::size_t index{ startIndex }; index < endIndex; ++index)
         {
             if (const std::optional<db::Track> track{ db::Track::find(LmsApp->getDbSession(), _nonReleaseTracks[index]) })
-                _trackContainer->add(TrackListHelpers::createEntry(*track, _playQueueController, _filters));
+                _trackContainer->add(trackListHelpers::createEntry(*track, _playQueueController, _filters));
         }
 
         _trackContainer->setHasMore(endIndex < _nonReleaseTracks.size());

@@ -193,7 +193,7 @@ namespace lms::ui
             const auto result{ model->saveData() };
             updateImportCardVisibility();
             if (result.scrobblingTurnedOn || result.feedbackTurnedOn)
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.export-started")); }, [model] { model->loadData(); });
+                LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Settings.export-started")); }, [model] { model->loadData(); });
         t->updateView(model.get());
     }
 
@@ -206,14 +206,14 @@ namespace lms::ui
         _importListensBtn->addStyleClass("btn btn-secondary");
         _importListensBtn->clicked().connect(this, [] {
             core::Service<scrobbling::IScrobblingService>::get()->requestImmediateImport(LmsApp->getUserId(), db::ScrobblingBackend::ListenBrainz);
-            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.listenbrainz-import-started"));
+            LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Settings.listenbrainz-import-started"));
         });
 
         _importFeedbackBtn = _importCard->bindNew<Wt::WPushButton>("import-feedback-btn", Wt::WString::tr("Lms.Settings.listenbrainz-import-feedback"));
         _importFeedbackBtn->addStyleClass("btn btn-secondary");
         _importFeedbackBtn->clicked().connect(this, [] {
             core::Service<feedback::IFeedbackService>::get()->requestImmediateImport(LmsApp->getUserId(), db::FeedbackBackend::ListenBrainz);
-            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.listenbrainz-import-started"));
+            LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Settings.listenbrainz-import-started"));
         });
 
         updateImportCardVisibility();

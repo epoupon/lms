@@ -226,7 +226,7 @@ namespace lms::ui
 
             if (apiKey.empty() || apiSecret.empty())
             {
-                LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.lastfm-missing-credentials"));
+                LmsApp->notifyMsg(notification::Type::Warning, Wt::WString::tr("Lms.Settings.lastfm-missing-credentials"));
                 return;
             }
 
@@ -249,7 +249,7 @@ namespace lms::ui
                 },
                 [sessionId] {
                     LmsApplication::post(sessionId, [] {
-                        LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.lastfm-auth-error"));
+                        LmsApp->notifyMsg(notification::Type::Warning, Wt::WString::tr("Lms.Settings.lastfm-auth-error"));
                         wApp->triggerUpdate();
                     });
                 });
@@ -267,12 +267,12 @@ namespace lms::ui
                         LmsApp->getModalManager().dispose(modalPtr);
                         refreshView();
                         wApp->triggerUpdate();
-                        LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.export-started"));
+                        LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Settings.export-started"));
                     });
                 },
                 [sessionId] {
                     LmsApplication::post(sessionId, [] {
-                        LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.lastfm-auth-error"));
+                        LmsApp->notifyMsg(notification::Type::Warning, Wt::WString::tr("Lms.Settings.lastfm-auth-error"));
                         wApp->triggerUpdate();
                     });
                 });

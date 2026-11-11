@@ -217,7 +217,7 @@ namespace lms::ui
         subsonicTokenRegenBtn->clicked().connect(t, [t, subsonicTokenPtr, updateKeyButtonStates] {
             if (LmsApp->getUserType() == db::UserType::DEMO)
             {
-                LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.demo-cannot-save"));
+                LmsApp->notifyMsg(notification::Type::Warning, Wt::WString::tr("Lms.Settings.demo-cannot-save"));
                 return;
             }
 
@@ -262,7 +262,7 @@ namespace lms::ui
         subsonicTokenDelBtn->clicked().connect(t, [t, subsonicTokenPtr, updateKeyButtonStates] {
             if (LmsApp->getUserType() == db::UserType::DEMO)
             {
-                LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.demo-cannot-save"));
+                LmsApp->notifyMsg(notification::Type::Warning, Wt::WString::tr("Lms.Settings.demo-cannot-save"));
                 return;
             }
 
@@ -295,7 +295,7 @@ namespace lms::ui
             if (!val.empty())
             {
                 utils::copyToClipboard(val);
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.subsonic-token-copied"));
+                LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Settings.subsonic-token-copied"));
             }
         });
         t->bindWidget("subsonic-token-copy-btn", std::move(subsonicTokenCopyBtn));

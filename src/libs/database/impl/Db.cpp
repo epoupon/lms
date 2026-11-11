@@ -280,12 +280,12 @@ namespace lms::db
     {
         Session session{ *this };
 
-        Schema::createTablesIfNeeded(session);
-        const bool migrationPerformed{ Migration::doDbMigration(session) };
+        schema::createTablesIfNeeded(session);
+        const bool migrationPerformed{ migration::doDbMigration(session) };
         createScanSettingsIfNeeded(session, defaultRecommendationEngineType);
         createServerInfoIfNeeded(session);
         removeDemoPlayQueues(session);
-        Schema::createIndexesIfNeeded(session);
+        schema::createIndexesIfNeeded(session);
 
         // As this may be quite long, we only do it during startup
         if (migrationPerformed || isVacuumNeeded(session))

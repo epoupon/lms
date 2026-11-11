@@ -29,7 +29,7 @@
 #include "Session.hpp"
 #include "Utils.hpp"
 
-namespace lms::db::Schema
+namespace lms::db::schema
 {
     namespace
     {
@@ -225,4 +225,4 @@ namespace lms::db::Schema
 
         LMS_LOG(DB, INFO, "Indexes created!");
     }
-} // namespace lms::db::Schema
+} // namespace lms::db::schema

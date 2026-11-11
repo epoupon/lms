@@ -89,10 +89,10 @@ namespace lms::ui
         auto onDbEvent{ [&]() { refreshContents(); } };
 
         LmsApp->getScannerEvents().scanAborted.connect(this, [] {
-            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.scan-aborted"));
+            LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.scan-aborted"));
         });
         LmsApp->getScannerEvents().scanStarted.connect(this, [] {
-            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
+            LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
         });
         LmsApp->getScannerEvents().scanComplete.connect(this, onDbEvent);
         LmsApp->getScannerEvents().scanInProgress.connect(this, onDbEvent);

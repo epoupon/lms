@@ -44,8 +44,8 @@ namespace lms::db::tests
     void TmpDatabase::createTablesAndIndexes()
     {
         const std::unique_ptr<ISession> session{ _db->createSession() };
-        Schema::createTablesIfNeeded(*session);
-        Schema::createIndexesIfNeeded(*session);
+        schema::createTablesIfNeeded(*session);
+        schema::createIndexesIfNeeded(*session);
     }
 
     void executeStatement(ISession& session, std::string_view statement)

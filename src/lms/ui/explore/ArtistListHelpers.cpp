@@ -24,7 +24,7 @@
 
 #include "Utils.hpp"
 
-namespace lms::ui::ArtistListHelpers
+namespace lms::ui::artistListHelpers
 {
     std::unique_ptr<Wt::WTemplate> createEntry(const db::Artist& artist)
     {
@@ -44,4 +44,4 @@ namespace lms::ui::ArtistListHelpers
 
         return entry;
     }
-} // namespace lms::ui::ArtistListHelpers
+} // namespace lms::ui::artistListHelpers

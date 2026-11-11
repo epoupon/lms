@@ -50,7 +50,7 @@
 #include "resource/ArtworkResource.hpp"
 #include "resource/DownloadResource.hpp"
 
-namespace lms::ui::TrackListHelpers
+namespace lms::ui::trackListHelpers
 {
     void showTrackInfoModal(db::TrackId trackId, Filters& filters)
     {
@@ -374,4 +374,4 @@ namespace lms::ui::TrackListHelpers
         return entry;
     }
 
-} // namespace lms::ui::TrackListHelpers
+} // namespace lms::ui::trackListHelpers

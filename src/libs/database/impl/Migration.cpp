@@ -63,7 +63,7 @@ namespace lms::db
     }
 } // namespace lms::db
 
-namespace lms::db::Migration
+namespace lms::db::migration
 {
     class ScopedNoForeignKeys
     {
@@ -2361,4 +2361,4 @@ GROUP BY c.canonical_id, s.backend)");
 
         return migrationPerformed;
     }
-} // namespace lms::db::Migration
+} // namespace lms::db::migration

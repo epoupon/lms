@@ -31,6 +31,6 @@ namespace lms::ui
     class NotificationContainer : public Wt::WContainerWidget
     {
     public:
-        void add(Notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration);
+        void add(notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration);
     };
 } // namespace lms::ui

@@ -38,10 +38,10 @@ namespace lms::ui
     class Filters;
 } // namespace lms::ui
 
-namespace lms::ui::TrackListHelpers
+namespace lms::ui::trackListHelpers
 {
     void showTrackInfoModal(db::TrackId trackId, Filters& filters);
     void showTrackLyricsModal(db::TrackId trackId);
     std::unique_ptr<Wt::WWidget> createEntry(const db::Track& track, PlayQueueController& playQueueController, Filters& filters);
     std::unique_ptr<Wt::WWidget> createEntry(const db::Track& track, PlayQueueController& playQueueController, Filters& filters, std::span<const db::TrackId> orderedTrackIds, std::size_t trackIndex);
-} // namespace lms::ui::TrackListHelpers
+} // namespace lms::ui::trackListHelpers

@@ -555,7 +555,7 @@ namespace lms::ui
 
     void Filters::emitFilterAddedNotification()
     {
-        LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Explore.filter-added"), std::chrono::seconds{ 2 });
+        LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Explore.filter-added"), std::chrono::seconds{ 2 });
 
         notifyUpdated();
     }

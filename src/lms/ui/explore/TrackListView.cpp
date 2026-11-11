@@ -189,7 +189,7 @@ namespace lms::ui
         for (std::size_t index{ startIndex }; index < endIndex; ++index)
         {
             if (const std::optional<db::Track> track{ db::Track::find(LmsApp->getDbSession(), _trackIds[index]) })
-                _container->add(TrackListHelpers::createEntry(*track, _playQueueController, _filters, _trackIds, index));
+                _container->add(trackListHelpers::createEntry(*track, _playQueueController, _filters, _trackIds, index));
         }
 
         _container->setHasMore(endIndex < _trackIds.size());

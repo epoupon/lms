@@ -19,8 +19,6 @@
 
 #include "database/objects/Track.hpp"
 
-#include <sstream>
-
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
@@ -605,34 +603,4 @@ namespace lms::db
     {
         return _originalDate.getYear();
     }
-
-    namespace Debug
-    {
-        std::ostream& operator<<(std::ostream& os, const TrackInfo& trackInfo)
-        {
-            auto transaction{ trackInfo.session.createReadTransaction() };
-
-            const std::optional<Track> track{ Track::find(trackInfo.session, trackInfo.trackId) };
-            if (track)
-            {
-                os << track->getName();
-
-                if (const std::optional<Release> release{ Release::find(trackInfo.session, track->getReleaseId()) })
-                    os << " [" << release->getName() << "]";
-                Artist::find(trackInfo.session, Artist::FindParameters{}.setTrack(track->getId()).setTrackArtistLinkType(TrackArtistLinkType::Artist), [&](const Artist& artist) {
-                    os << " - " << artist.getName();
-                });
-                Cluster::find(trackInfo.session, Cluster::FindParameters{}.setTrack(track->getId()), [&](const Cluster& cluster) {
-                    os << " {" << ClusterType::find(trackInfo.session, cluster.getTypeId())->getName() << "-" << cluster.getName() << "}";
-                });
-            }
-            else
-            {
-                os << "*unknown*";
-            }
-
-            return os;
-        }
-    } // namespace Debug
-
 } // namespace lms::db

@@ -239,8 +239,8 @@ namespace lms::api::subsonic
             { "/savePlayQueueByIndex", { handleSavePlayQueueByIndex } },
 
             // Media library scanning
-            { "/getScanStatus", { Scan::handleGetScanStatus } },
-            { "/startScan", { Scan::handleStartScan, AuthenticationMode::Authenticated, { db::UserType::ADMIN } } },
+            { "/getScanStatus", { scan::handleGetScanStatus } },
+            { "/startScan", { scan::handleStartScan, AuthenticationMode::Authenticated, { db::UserType::ADMIN } } },
         };
 
         using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;

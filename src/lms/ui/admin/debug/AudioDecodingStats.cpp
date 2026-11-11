@@ -195,7 +195,7 @@ namespace lms::ui
         {
             std::ostringstream oss;
             oss << std::chrono::duration_cast<std::chrono::seconds>(AudioDecodingBenchmark::instance().getElapsed()).count() << "s";
-            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.DebugTools.AudioDecodingStats.benchmark-completed").arg(oss.str()));
+            LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Admin.DebugTools.AudioDecodingStats.benchmark-completed").arg(oss.str()));
         }
     }
 

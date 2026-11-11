@@ -23,9 +23,9 @@ namespace lms::db
 {
     class ISession;
 
-    namespace Schema
+    namespace schema
     {
         void createTablesIfNeeded(ISession& session);
         void createIndexesIfNeeded(ISession& session);
-    } // namespace Schema
+    } // namespace schema
 } // namespace lms::db

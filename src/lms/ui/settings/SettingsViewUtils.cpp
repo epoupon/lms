@@ -36,14 +36,14 @@ namespace lms::ui::utils
         saveBtn->clicked().connect([=] {
             if (LmsApp->getUserType() == db::UserType::DEMO)
             {
-                LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.demo-cannot-save"));
+                LmsApp->notifyMsg(notification::Type::Warning, Wt::WString::tr("Lms.Settings.demo-cannot-save"));
                 return;
             }
             t->updateModel(model);
             if (model->validate())
             {
                 saveData();
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.settings-saved"));
+                LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Settings.settings-saved"));
             }
             t->updateView(model);
         });

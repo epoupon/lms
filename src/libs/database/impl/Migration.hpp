@@ -50,7 +50,7 @@ namespace lms::db
         int _version;
     };
 
-    namespace Migration
+    namespace migration
     {
         bool doDbMigration(Session& session); // return true if migration was performed
     }

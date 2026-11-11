@@ -36,7 +36,7 @@ namespace lms::ui
 {
     using ArtistLinkTypesModel = ValueStringModel<std::optional<db::TrackArtistLinkType>>;
 
-    namespace ArtistListHelpers
+    namespace artistListHelpers
     {
         std::unique_ptr<Wt::WTemplate> createEntry(const db::Artist& artist);
     }
