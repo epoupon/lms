@@ -52,6 +52,10 @@ namespace lms::core::http
         using OnChunkReceived = std::function<ChunckReceivedResult(std::span<const std::byte> chunk)>; // return false to stop (onFailureFunc callback will be called)
         OnChunkReceived onChunkReceived;
 
+        // Called before each attempt to send the request: a retry streams the whole body again, so chunks received before must be discarded
+        using OnAttemptStarted = std::function<void()>;
+        OnAttemptStarted onAttemptStarted;
+
         using OnSuccessFunc = std::function<void(const Wt::Http::Message& msg)>;
         OnSuccessFunc onSuccessFunc;
 

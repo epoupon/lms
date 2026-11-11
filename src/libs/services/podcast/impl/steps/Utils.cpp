@@ -68,10 +68,10 @@ namespace lms::podcast::utils
     void removeFile(const std::filesystem::path& filePath)
     {
         std::error_code ec;
-        std::filesystem::remove(filePath, ec);
+        const bool removed{ std::filesystem::remove(filePath, ec) };
         if (ec)
             LMS_LOG(PODCAST, WARNING, "Failed to remove file " << filePath << ": " << ec.message());
-        else
+        else if (removed)
             LMS_LOG(PODCAST, DEBUG, "Removed file " << filePath);
     }
 } // namespace lms::podcast::utils

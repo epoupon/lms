@@ -158,9 +158,13 @@ namespace lms::podcast
         core::http::ClientGETRequestParameters params;
         const std::string url{ episode->getEnclosureUrl() };
         params.relativeUrl = url;
-        params.onFailureFunc = [this, episode] {
+        params.onFailureFunc = [this, episode, tmpFilePath] {
             LMS_LOG(PODCAST, ERROR, "Failed to download podcast episode from '" << episode->getEnclosureUrl() << "'");
+            utils::removeFile(tmpFilePath);
             processNext();
+        };
+        params.onAttemptStarted = [tmpFilePath] {
+            utils::removeFile(tmpFilePath);
         };
         params.onChunkReceived = [url, tmpFilePath](std::span<const std::byte> chunk) {
             std::ofstream file{ tmpFilePath, std::ios::binary | std::ios::app };

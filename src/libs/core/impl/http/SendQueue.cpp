@@ -175,6 +175,8 @@ namespace lms::core::http
                 requests.pop_front();
 
                 request->bytesReceived = 0; // reset before each dispatch attempt, including retries
+                if (request->getParameters().onAttemptStarted)
+                    request->getParameters().onAttemptStarted();
 
                 if (!sendRequest(*request))
                 {

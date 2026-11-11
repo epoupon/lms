@@ -268,4 +268,45 @@ namespace lms::core::http::tests
         EXPECT_TRUE(failureCalled);
         EXPECT_EQ(_httpClient->getCalls().size(), 3u); // no further retry beyond maxRetryCount
     }
+
+    TEST_F(SendQueueTest, AttemptStartedOnEachRetry)
+    {
+        bool successCalled{};
+        std::size_t attemptStartedCount{};
+        std::string streamedBody;
+
+        ClientGETRequestParameters params;
+        params.relativeUrl = "/ok";
+        params.onSuccessFunc = [&](const Wt::Http::Message&) { successCalled = true; };
+        params.onAttemptStarted = [&] {
+            ++attemptStartedCount;
+            streamedBody.clear();
+        };
+        params.onChunkReceived = [&](std::span<const std::byte> chunk) {
+            streamedBody.append(reinterpret_cast<const char*>(chunk.data()), chunk.size());
+            return ClientRequestParameters::ChunckReceivedResult::Continue;
+        };
+        _queue->sendRequest(std::make_unique<ClientRequest>(std::move(params)));
+        pump();
+
+        _httpClient->simulateBodyData("0123");
+        pump();
+
+        Wt::Http::Message msg;
+        msg.setStatus(200);
+        msg.setHeader("Content-Length", "10");
+        _httpClient->simulateDone(boost::asio::error::connection_reset, msg);
+        pump();
+        ASSERT_EQ(_httpClient->getCalls().size(), 2u);
+
+        _httpClient->simulateBodyData("0123456789");
+        pump();
+
+        _httpClient->simulateDone({}, msg);
+        pump();
+
+        EXPECT_TRUE(successCalled);
+        EXPECT_EQ(attemptStartedCount, 2u);
+        EXPECT_EQ(streamedBody, "0123456789");
+    }
 } // namespace lms::core::http::tests
