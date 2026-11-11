@@ -178,4 +178,35 @@ namespace lms::db::tests
             EXPECT_EQ(languages[1], l2.getId());
         }
     }
+
+    TEST_F(DatabaseFixture, Language_sortByTrackCount_artist)
+    {
+        ScopedLanguage l1{ session, "eng" };
+        ScopedLanguage l2{ session, "fra" };
+        ScopedArtist artist{ session, "MyArtist" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            // linked three times to the same track: it still is a single track, counted per link l1 would come first
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Composer);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Lyricist);
+            TrackArtistLink::create(session, track2.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track3.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            Track::setLanguages(session, track1.getId(), std::array{ l1.getId() });
+            Track::setLanguages(session, track2.getId(), std::array{ l2.getId() });
+            Track::setLanguages(session, track3.getId(), std::array{ l2.getId() });
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto languages{ Language::findIds(session, Language::FindParameters{}.setArtist(artist.getId()).setSortMethod(LanguageSortMethod::TrackCountDesc)) };
+            ASSERT_EQ(languages.size(), 2);
+            EXPECT_EQ(languages[0], l2.getId());
+            EXPECT_EQ(languages[1], l1.getId());
+        }
+    }
 } // namespace lms::db::tests

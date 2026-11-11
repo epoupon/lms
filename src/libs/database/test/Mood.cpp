@@ -178,4 +178,35 @@ namespace lms::db::tests
             EXPECT_EQ(moods[1], m2.getId());
         }
     }
+
+    TEST_F(DatabaseFixture, Mood_sortByTrackCount_artist)
+    {
+        ScopedMood m1{ session, "Energetic" };
+        ScopedMood m2{ session, "Chill" };
+        ScopedArtist artist{ session, "MyArtist" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            // linked three times to the same track: it still is a single track, counted per link m1 would come first
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Composer);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Lyricist);
+            TrackArtistLink::create(session, track2.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track3.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            Track::setMoods(session, track1.getId(), std::array{ m1.getId() });
+            Track::setMoods(session, track2.getId(), std::array{ m2.getId() });
+            Track::setMoods(session, track3.getId(), std::array{ m2.getId() });
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto moods{ Mood::findIds(session, Mood::FindParameters{}.setArtist(artist.getId()).setSortMethod(MoodSortMethod::TrackCountDesc)) };
+            ASSERT_EQ(moods.size(), 2);
+            EXPECT_EQ(moods[0], m2.getId());
+            EXPECT_EQ(moods[1], m1.getId());
+        }
+    }
 } // namespace lms::db::tests

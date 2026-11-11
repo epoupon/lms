@@ -69,17 +69,15 @@ namespace lms::db
             if (params.track.isValid())
                 query.where("t_gr.track_id = ?").bind(params.track);
 
-            if (params.release.isValid() || params.artist.isValid())
-                query.join("track t ON t.id = t_gr.track_id");
-
             if (params.release.isValid())
-                query.where("t.release_id = ?").bind(params.release);
-
-            if (params.artist.isValid())
             {
-                query.join("track_artist_link t_a_l ON t_a_l.track_id = t.id");
-                query.where("t_a_l.artist_id = ?").bind(params.artist);
+                query.join("track t ON t.id = t_gr.track_id");
+                query.where("t.release_id = ?").bind(params.release);
             }
+
+            // An artist can be linked several times to a track (once per link type): a membership test does not duplicate the tracks
+            if (params.artist.isValid())
+                query.where("t_gr.track_id IN (SELECT t_a_l.track_id FROM track_artist_link t_a_l WHERE t_a_l.artist_id = ?)").bind(params.artist);
 
             switch (params.sortMethod)
             {

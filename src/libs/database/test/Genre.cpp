@@ -274,4 +274,35 @@ namespace lms::db::tests
             EXPECT_EQ(genres[1], g2.getId());
         }
     }
+
+    TEST_F(DatabaseFixture, Genre_sortByTrackCount_artist)
+    {
+        ScopedGenre g1{ session, "Rock" };
+        ScopedGenre g2{ session, "Jazz" };
+        ScopedArtist artist{ session, "MyArtist" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            // linked three times to the same track: it still is a single track, counted per link g1 would come first
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Composer);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Lyricist);
+            TrackArtistLink::create(session, track2.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track3.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            Track::setGenres(session, track1.getId(), std::array{ g1.getId() });
+            Track::setGenres(session, track2.getId(), std::array{ g2.getId() });
+            Track::setGenres(session, track3.getId(), std::array{ g2.getId() });
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto genres{ Genre::findIds(session, Genre::FindParameters{}.setArtist(artist.getId()).setSortMethod(GenreSortMethod::TrackCountDesc)) };
+            ASSERT_EQ(genres.size(), 2);
+            EXPECT_EQ(genres[0], g2.getId());
+            EXPECT_EQ(genres[1], g1.getId());
+        }
+    }
 } // namespace lms::db::tests

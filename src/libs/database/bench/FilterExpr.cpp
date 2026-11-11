@@ -713,6 +713,21 @@ namespace lms::db::benchs
             return countTagCloud(session, library, Cluster::FindParameters{}.setTrackList(library.bigTrackList), ClusterSortMethod::TrackCountDesc);
         }
 
+        std::size_t genreTagCloudOfArtists(ISession& session, const Library& library)
+        {
+            std::size_t count{};
+            for (const ArtistId artistId : library.sampleArtists)
+                Genre::find(session, Genre::FindParameters{}.setArtist(artistId).setSortMethod(GenreSortMethod::TrackCountDesc).setRange(Range{ 0, 3 }), [&](const Genre&) { ++count; });
+            return count;
+        }
+
+        std::size_t genreTagCloudOfProlificArtist(ISession& session, const Library& library)
+        {
+            std::size_t count{};
+            Genre::find(session, Genre::FindParameters{}.setArtist(library.prolificArtist).setSortMethod(GenreSortMethod::TrackCountDesc).setRange(Range{ 0, 3 }), [&](const Genre&) { ++count; });
+            return count;
+        }
+
         template<typename QueryFunc>
         void runQuery(benchmark::State& state, const Library& library, QueryFunc queryFunc)
         {
@@ -782,7 +797,9 @@ namespace lms::db::benchs
                                                       std::pair<core::LiteralString, TagCloudFunc>{ "Release", tagCloudOfReleases },
                                                       std::pair<core::LiteralString, TagCloudFunc>{ "Artist", tagCloudOfArtists },
                                                       std::pair<core::LiteralString, TagCloudFunc>{ "ProlificArtist", tagCloudOfProlificArtist },
-                                                      std::pair<core::LiteralString, TagCloudFunc>{ "TrackList", tagCloudOfBigTrackList } })
+                                                      std::pair<core::LiteralString, TagCloudFunc>{ "TrackList", tagCloudOfBigTrackList },
+                                                      std::pair<core::LiteralString, TagCloudFunc>{ "Genre/Artist", genreTagCloudOfArtists },
+                                                      std::pair<core::LiteralString, TagCloudFunc>{ "Genre/ProlificArtist", genreTagCloudOfProlificArtist } })
             {
                 benchmark::RegisterBenchmark("TagCloud/" + std::string{ name.str() }, [&library, tagCloudFunc](benchmark::State& state) {
                     runQuery(state, library, [&](ISession& session) { return tagCloudFunc(session, library); });

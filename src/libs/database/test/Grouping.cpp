@@ -178,4 +178,35 @@ namespace lms::db::tests
             EXPECT_EQ(groupings[1], g2.getId());
         }
     }
+
+    TEST_F(DatabaseFixture, Grouping_sortByTrackCount_artist)
+    {
+        ScopedGrouping g1{ session, "Compilation" };
+        ScopedGrouping g2{ session, "Live" };
+        ScopedArtist artist{ session, "MyArtist" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            // linked three times to the same track: it still is a single track, counted per link g1 would come first
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Composer);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Lyricist);
+            TrackArtistLink::create(session, track2.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track3.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            Track::setGroupings(session, track1.getId(), std::array{ g1.getId() });
+            Track::setGroupings(session, track2.getId(), std::array{ g2.getId() });
+            Track::setGroupings(session, track3.getId(), std::array{ g2.getId() });
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto groupings{ Grouping::findIds(session, Grouping::FindParameters{}.setArtist(artist.getId()).setSortMethod(GroupingSortMethod::TrackCountDesc)) };
+            ASSERT_EQ(groupings.size(), 2);
+            EXPECT_EQ(groupings[0], g2.getId());
+            EXPECT_EQ(groupings[1], g1.getId());
+        }
+    }
 } // namespace lms::db::tests
