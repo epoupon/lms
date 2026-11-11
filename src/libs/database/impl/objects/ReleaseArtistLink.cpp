@@ -62,7 +62,7 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_artist_link"));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM release_artist_link"));
     }
 
     std::optional<ReleaseArtistLink> ReleaseArtistLink::find(ISession& session, ReleaseArtistLinkId id)
