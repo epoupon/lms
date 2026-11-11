@@ -35,6 +35,7 @@
 #include "database/objects/Listen.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Mood.hpp"
+#include "database/objects/PlayQueue.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ScanSettings.hpp"
 #include "database/objects/Track.hpp"
@@ -103,6 +104,7 @@ namespace lms::db::tests
     using ScopedCluster = ScopedEntity<db::Cluster>;
     using ScopedClusterType = ScopedEntity<db::ClusterType>;
     using ScopedMediaLibrary = ScopedEntity<db::MediaLibrary>;
+    using ScopedPlayQueue = ScopedEntity<db::PlayQueue>;
     using ScopedRelease = ScopedEntity<db::Release>;
     using ScopedTrack = ScopedEntity<db::Track>;
     using ScopedTrackList = ScopedEntity<db::TrackList>;

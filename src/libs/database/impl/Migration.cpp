@@ -36,7 +36,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 117 };
+        static constexpr Version LMS_DATABASE_VERSION{ 118 };
     }
 
     VersionInfo::VersionInfo()
@@ -2192,6 +2192,33 @@ GROUP BY c.canonical_id, s.backend)");
         utils::executeCommand(*session.getDboSession(), R"(DELETE FROM ui_state WHERE item IN ('filters_media_library_id', 'filters_label_id', 'filters_release_type_id', 'filters_codec', 'filters_genre_id', 'filters_grouping_id', 'filters_language_id', 'filters_mood_id'))");
     }
 
+    void migrateFromV117(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        // Play queues now hold their tracks in an internal track list (playqueue_track allowed no duplicates and kept no order)
+        // Existing play queues (UI and Subsonic) are just dropped, along with every internal track list
+        // Foreign keys are off during migrations: delete the entries explicitly
+        utils::executeCommand(dboSession, "DELETE FROM tracklist_entry WHERE tracklist_id IN (SELECT id FROM tracklist WHERE type = 1)");
+        utils::executeCommand(dboSession, "DELETE FROM tracklist WHERE type = 1");
+        utils::executeCommand(dboSession, "DELETE FROM ui_state WHERE item = 'player_cur_playing_track_pos'");
+
+        utils::executeCommand(dboSession, "DROP TABLE playqueue_track");
+        utils::executeCommand(dboSession, "DROP TABLE playqueue");
+        utils::executeCommand(dboSession, R"(CREATE TABLE "playqueue" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "type" integer not null,
+  "current_index" integer not null,
+  "current_position_in_track" integer,
+  "last_modified_date_time" text,
+  "user_id" bigint,
+  "tracklist_id" bigint,
+  constraint "fk_playqueue_user" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_playqueue_tracklist" foreign key ("tracklist_id") references "tracklist" ("id") on delete cascade deferrable initially deferred
+))");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -2285,6 +2312,7 @@ GROUP BY c.canonical_id, s.backend)");
             { 114, migrateFromV114 },
             { 115, migrateFromV115 },
             { 116, migrateFromV116 },
+            { 117, migrateFromV117 },
         };
 
         LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");

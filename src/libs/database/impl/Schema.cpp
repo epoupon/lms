@@ -96,7 +96,8 @@ namespace lms::db::Schema
             "CREATE INDEX IF NOT EXISTS playlist_file_media_library_idx ON playlist_file(media_library_id)",
             "CREATE INDEX IF NOT EXISTS playlist_file_preferred_artwork_idx ON playlist_file(preferred_artwork_id) WHERE preferred_artwork_id IS NOT NULL",
 
-            "CREATE INDEX IF NOT EXISTS playqueue_user_name_idx ON playqueue(user_id, name)",
+            "CREATE INDEX IF NOT EXISTS playqueue_user_type_idx ON playqueue(user_id, type)",
+            "CREATE INDEX IF NOT EXISTS playqueue_tracklist_idx ON playqueue(tracklist_id)",
 
             "CREATE INDEX IF NOT EXISTS podcast_url_idx ON podcast(url)",
             "CREATE INDEX IF NOT EXISTS podcast_artwork_idx ON podcast(artwork_id) WHERE artwork_id IS NOT NULL",

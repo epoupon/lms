@@ -20,43 +20,39 @@
 #pragma once
 
 #include <chrono>
-#include <functional>
 #include <optional>
 #include <span>
-#include <string>
-#include <string_view>
+#include <vector>
 
 #include <Wt/WDateTime.h>
 
 #include "database/objects/PlayQueueId.hpp"
-#include "database/objects/TrackId.hpp"
+#include "database/objects/TrackListId.hpp"
+#include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
 #include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ISession;
-    class User;
 
-    // Usage only for subsonic API
+    // PlayQueue is a tracklist + a cursor on an internal track list
     class PlayQueue : public detail::Object<PlayQueue, PlayQueueId>
     {
     public:
-        static PlayQueue create(ISession& session, UserId user, std::string_view name);
+        static PlayQueue create(ISession& session, UserId user, PlayQueueType type);
         static void destroy(ISession& session, std::span<const PlayQueueId> ids);
 
         static std::size_t getCount(ISession& session);
         static std::optional<PlayQueue> find(ISession& session, PlayQueueId playQueueId);
-        static std::optional<PlayQueue> find(ISession& session, UserId userId, std::string_view name);
-
-        static bool isEmpty(ISession& session, PlayQueueId id);
+        static std::optional<PlayQueue> find(ISession& session, UserId userId, PlayQueueType type);
+        static std::vector<PlayQueueId> findIds(ISession& session, UserId userId);
 
         static void update(ISession& session, const PlayQueue& playQueue);
-        static void clear(ISession& session, PlayQueueId id);
-        static void addTrack(ISession& session, PlayQueueId id, TrackId track);
 
         // Accessors
-        std::string_view getName() const { return _name; }
+        PlayQueueType getType() const { return _type; }
+        TrackListId getTrackListId() const { return _trackListId; }
         std::size_t getCurrentIndex() const { return _currentIndex; }
         std::chrono::milliseconds getCurrentPositionInTrack() const { return _currentPositionInTrack; }
         UserId getUserId() const { return _userId; }
@@ -69,12 +65,13 @@ namespace lms::db
 
     protected:
         PlayQueue() = default;
-        explicit PlayQueue(std::string_view name);
+        explicit PlayQueue(PlayQueueType type);
 
-        std::string _name;
+        PlayQueueType _type{ PlayQueueType::UI };
         int _currentIndex{};
         std::chrono::duration<int, std::milli> _currentPositionInTrack{};
         Wt::WDateTime _lastModifiedDateTime;
         UserId _userId;
+        TrackListId _trackListId;
     };
 } // namespace lms::db

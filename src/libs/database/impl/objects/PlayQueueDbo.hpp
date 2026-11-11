@@ -21,7 +21,6 @@
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 
 #include "database/objects/PlayQueue.hpp"
 
@@ -29,7 +28,7 @@
 
 namespace lms::db::dbo
 {
-    class Track;
+    class TrackList;
     class User;
 
     class PlayQueue final : public db::PlayQueue, public Wt::Dbo::Dbo<PlayQueue>
@@ -38,28 +37,29 @@ namespace lms::db::dbo
         PlayQueue() = default;
         using db::PlayQueue::PlayQueue;
 
-        PlayQueue(Wt::Dbo::ptr<User> user, std::string_view name);
+        PlayQueue(Wt::Dbo::ptr<User> user, PlayQueueType type, Wt::Dbo::ptr<TrackList> trackList);
 
         void syncIds()
         {
             _id = id();
             _userId = _user.id();
+            _trackListId = _trackList.id();
         }
 
         template<class Action>
         void persist(Action& a)
         {
-            Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _type, "type");
             Wt::Dbo::field(a, _currentIndex, "current_index");
             Wt::Dbo::field(a, _currentPositionInTrack, "current_position_in_track");
             Wt::Dbo::field(a, _lastModifiedDateTime, "last_modified_date_time");
 
             Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "playqueue_track", "", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::belongsTo(a, _trackList, "tracklist", Wt::Dbo::OnDeleteCascade);
         }
 
         Wt::Dbo::ptr<User> _user;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
+        Wt::Dbo::ptr<TrackList> _trackList;
     };
 } // namespace lms::db::dbo
 

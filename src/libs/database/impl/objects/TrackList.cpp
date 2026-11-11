@@ -125,14 +125,6 @@ namespace lms::db
         return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM tracklist"));
     }
 
-    std::optional<TrackList> TrackList::find(ISession& session, std::string_view name, TrackListType type, UserId userId)
-    {
-        checkReadTransaction(session);
-        assert(userId.isValid());
-
-        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackList>>("select t_l from tracklist t_l").where("t_l.name = ?").bind(name).where("t_l.type = ?").bind(type).where("t_l.user_id = ?").bind(userId));
-    }
-
     std::vector<TrackListId> TrackList::find(ISession& session, const FindParameters& params)
     {
         checkReadTransaction(session);

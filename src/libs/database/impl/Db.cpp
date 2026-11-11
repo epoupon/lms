@@ -34,8 +34,10 @@
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
 
+#include "database/objects/PlayQueue.hpp"
 #include "database/objects/ScanSettings.hpp"
 #include "database/objects/ServerInfo.hpp"
+#include "database/objects/User.hpp"
 
 #include "ConnectionPool.hpp"
 #include "Db.hpp"
@@ -190,6 +192,15 @@ namespace lms::db
             ServerInfo::getOrCreate(session);
         }
 
+        // Demo play queues are temporary: each UI session removes its own when it ends, but not on a crash
+        void removeDemoPlayQueues(Session& session)
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            if (const std::optional<User> demoUser{ User::findDemoUser(session) })
+                PlayQueue::destroy(session, PlayQueue::findIds(session, demoUser->getId()));
+        }
+
         bool isVacuumNeeded(Session& session)
         {
             long pageCount{};
@@ -273,6 +284,7 @@ namespace lms::db
         const bool migrationPerformed{ Migration::doDbMigration(session) };
         createScanSettingsIfNeeded(session, defaultRecommendationEngineType);
         createServerInfoIfNeeded(session);
+        removeDemoPlayQueues(session);
         Schema::createIndexesIfNeeded(session);
 
         // As this may be quite long, we only do it during startup

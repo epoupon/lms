@@ -30,6 +30,7 @@
 #include "core/TaggedType.hpp"
 
 #include "database/Types.hpp"
+#include "database/objects/PlayQueueId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
 
@@ -80,7 +81,8 @@ namespace lms::ui
         std::size_t getCount();
 
     private:
-        void initTrackLists();
+        void initPlayQueue();
+        void saveCurrentIndex(std::size_t index);
 
         void notifyAddedTracks(std::size_t nbAddedTracks) const;
         std::vector<db::TrackListEntry> getEntries(db::Range range) const;
@@ -114,7 +116,8 @@ namespace lms::ui
 
         Filters& _filters;
         bool _mediaPlayerSettingsLoaded{};
-        db::TrackListId _queueId{};
+        db::PlayQueueId _playQueueId{};
+        db::TrackListId _trackListId{};
         InfiniteScrollingContainer* _entriesContainer{};
         Wt::WText* _nbTracks{};
         Wt::WText* _duration{};

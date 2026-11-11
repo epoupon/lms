@@ -112,7 +112,6 @@ namespace lms::db
             }
         };
         static std::size_t getCount(ISession& session);
-        static std::optional<TrackList> find(ISession& session, std::string_view name, TrackListType type, UserId userId);
         static std::optional<TrackList> find(ISession& session, TrackListId tracklistId);
         static std::optional<TrackList> find(ISession& session, PlayListFileId playListFileId); // the track list made from this playlist file
         static std::vector<TrackListId> find(ISession& session, const FindParameters& params);

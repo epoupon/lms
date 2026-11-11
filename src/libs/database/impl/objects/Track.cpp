@@ -142,12 +142,6 @@ namespace lms::db
                 res.combineWithAnd({ "t_l_e.tracklist_id = ?", { params.trackList.getValue() } });
             }
 
-            if (params.playQueue.isValid())
-            {
-                joins.add("playqueue_track p_t ON p_t.track_id = t.id");
-                res.combineWithAnd({ "p_t.playqueue_id = ?", { params.playQueue.getValue() } });
-            }
-
             if (params.trackNumber)
                 res.combineWithAnd({ "t.track_number = ?", { *params.trackNumber } });
 

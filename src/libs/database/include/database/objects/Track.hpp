@@ -51,7 +51,6 @@
 #include "database/objects/MediumId.hpp"
 #include "database/objects/MoodId.hpp"
 #include "database/objects/MovementId.hpp"
-#include "database/objects/PlayQueueId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
@@ -84,7 +83,6 @@ namespace lms::db
             bool nonRelease{};                                       // only tracks that do not belong to a release
             MediumId medium;                                         // matching this medium
             TrackListId trackList;                                   // in this track list, in list order unless sorted (once per entry)
-            PlayQueueId playQueue;                                   // in this play queue
             ReleaseId release;                                       // matching this release
             std::string releaseName;                                 // matching this release name
             std::optional<int> trackNumber;                          // matching this track number
@@ -149,11 +147,6 @@ namespace lms::db
             FindParameters& setTrackList(TrackListId _trackList)
             {
                 trackList = _trackList;
-                return *this;
-            }
-            FindParameters& setPlayQueue(PlayQueueId _playQueue)
-            {
-                playQueue = _playQueue;
                 return *this;
             }
             FindParameters& setMedium(MediumId _medium)
