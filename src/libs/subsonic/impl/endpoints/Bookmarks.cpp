@@ -175,7 +175,7 @@ namespace lms::api::subsonic
         std::vector<db::TrackId> trackIds{ getMultiParametersAs<db::TrackId>(context.getParameters(), "id") };
         const std::optional<db::TrackId> currentTrackId{ byIndex ? std::nullopt : getParameterAs<db::TrackId>(context.getParameters(), "current") };
         const std::optional<std::size_t> currentIndex{ byIndex ? getParameterAs<std::size_t>(context.getParameters(), "currentIndex") : std::nullopt };
-        const std::chrono::milliseconds currentPositionInTrack{ getParameterAs<std::size_t>(context.getParameters(), "current").value_or(0) };
+        const std::chrono::milliseconds currentPositionInTrack{ getParameterAs<std::size_t>(context.getParameters(), "position").value_or(0) };
 
         db::PlayQueue playQueue{ getOrCreatePlayQueue(context) };
 
