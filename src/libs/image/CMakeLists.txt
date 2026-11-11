@@ -40,7 +40,7 @@ if (${LMS_IMAGE_BACKEND} STREQUAL "stb")
 	set_property(SOURCE impl/stb/StbImageWrite.cpp PROPERTY SKIP_UNITY_BUILD_INCLUSION ON)
 
 	target_compile_options(lmsimage PRIVATE "-DSTB_IMAGE_RESIZE_VERSION=${STB_IMAGE_RESIZE_VERSION}")
-	target_include_directories(lmsimage PRIVATE ${STB_IMAGE_INCLUDE_DIR})
+	target_include_directories(lmsimage SYSTEM PRIVATE ${STB_IMAGE_INCLUDE_DIR})
 
 elseif (${LMS_IMAGE_BACKEND} STREQUAL "graphicsmagick")
 	pkg_check_modules(GraphicsMagick++ REQUIRED IMPORTED_TARGET GraphicsMagick++)

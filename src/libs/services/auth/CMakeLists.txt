@@ -40,9 +40,10 @@ else ()
 	message(STATUS "NOT using PAM authentication backend")
 endif ()
 
+target_compile_definitions(lmsauth PRIVATE LMS_SUPPORT_PAM=$<BOOL:${USE_PAM}>)
+
 if (USE_PAM)
-	target_compile_options(lmsauth PRIVATE "-DLMS_SUPPORT_PAM")
 	target_sources(lmsauth PRIVATE impl/pam/PAMPasswordService.cpp)
-	target_include_directories(lmsauth PRIVATE  ${PAM_INCLUDE_DIR})
+	target_include_directories(lmsauth SYSTEM PRIVATE ${PAM_INCLUDE_DIR})
 	target_link_libraries(lmsauth PRIVATE ${PAM_LIBRARIES})
 endif (USE_PAM)

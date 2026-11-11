@@ -19,7 +19,7 @@
 
 #include "PAMPasswordService.hpp"
 
-#ifndef LMS_SUPPORT_PAM
+#if !LMS_SUPPORT_PAM
     #error "Should not compile this"
 #endif
 

@@ -48,6 +48,9 @@ target_include_directories(lmscore INTERFACE
 
 target_include_directories(lmscore PRIVATE
 	include
+	)
+
+target_include_directories(lmscore SYSTEM PRIVATE
 	${XXHASH_INCLUDE_DIRS}
 	)
 
