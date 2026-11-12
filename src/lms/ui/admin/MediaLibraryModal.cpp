@@ -48,7 +48,7 @@ namespace lms::ui
                     return Wt::WValidator::validate(input);
 
                 Wt::WValidator::Result result{ Wt::ValidationState::Valid };
-                const std::string name{ input.toUTF8() };
+                const std::string foldedName{ core::stringUtils::foldForComparison(input.toUTF8()) };
 
                 auto& session{ LmsApp->getDbSession() };
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
@@ -57,7 +57,7 @@ namespace lms::ui
                     if (library.getId() == _libraryId)
                         return;
 
-                    if (core::stringUtils::stringCaseInsensitiveEqual(name, library.getName()))
+                    if (core::stringUtils::foldForComparison(library.getName()) == foldedName)
                         result = Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.MediaLibrary.name-already-exists") };
                 });
 

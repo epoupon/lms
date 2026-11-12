@@ -90,12 +90,12 @@ namespace lms::ui
 
     void CheckList::applySearch()
     {
-        const std::string query{ _search->text().toUTF8() };
+        const std::string query{ core::stringUtils::foldForComparison(_search->text().toUTF8()) };
 
         _matchingRows.clear();
         for (std::size_t row{}; row < _checked.size(); ++row)
         {
-            if (core::stringUtils::stringCaseInsensitiveContains(getText(*_model, row).toUTF8(), query))
+            if (core::stringUtils::foldForComparison(getText(*_model, row).toUTF8()).find(query) != std::string::npos)
                 _matchingRows.push_back(row);
         }
 
