@@ -226,6 +226,26 @@ namespace lms::core::stringUtils
         // only looked up after a Latin letter
         static_assert(std::all_of(std::cbegin(latinTransliterations), std::cend(latinTransliterations), [](const auto& entry) { return isLatinLetter(static_cast<::utf8proc_int32_t>(entry.first)); }));
 
+        // Typographic punctuation kept by decomposition (used by MusicBrainz), mapped to what keyboards type
+        constexpr std::pair<char32_t, char> punctuationTransliterations[]{
+            { U'‘', '\'' },
+            { U'’', '\'' },
+            { U'‚', '\'' },
+            { U'‛', '\'' },
+            { U'′', '\'' }, // also the result of ″ decomposition
+            { U'“', '"' },
+            { U'”', '"' },
+            { U'„', '"' },
+            { U'‐', '-' }, // also the result of the non-breaking hyphen decomposition
+            { U'‒', '-' },
+            { U'–', '-' },
+            { U'—', '-' },
+            { U'―', '-' },
+            { U'−', '-' },
+        };
+        // only looked up when not a Latin letter
+        static_assert(std::none_of(std::cbegin(punctuationTransliterations), std::cend(punctuationTransliterations), [](const auto& entry) { return isLatinLetter(static_cast<::utf8proc_int32_t>(entry.first)); }));
+
         std::string replaceInvalidUtf8(std::string_view str)
         {
             constexpr std::string_view replacementCharacter{ "\xEF\xBF\xBD" };
@@ -481,6 +501,15 @@ namespace lms::core::stringUtils
                 {
                     for (const char c : it->second)
                         folded.push_back(c);
+                    continue;
+                }
+            }
+            else
+            {
+                const auto it{ std::find_if(std::cbegin(detail::punctuationTransliterations), std::cend(detail::punctuationTransliterations), [=](const auto& entry) { return static_cast<::utf8proc_int32_t>(entry.first) == codepoint; }) };
+                if (it != std::cend(detail::punctuationTransliterations))
+                {
+                    folded.push_back(it->second);
                     continue;
                 }
             }

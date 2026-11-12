@@ -461,6 +461,14 @@ namespace lms::core::stringUtils::tests
         EXPECT_EQ(foldForComparison("co­op"), "coop"); // soft hyphen
     }
 
+    TEST(StringUtils, foldForComparison_typographicPunctuation)
+    {
+        EXPECT_EQ(foldForComparison("Leavin’ on"), "leavin' on");
+        EXPECT_EQ(foldForComparison("Penny‐Whistle"), "penny-whistle");
+        EXPECT_EQ(foldForComparison("“Heroes”"), "\"heroes\"");
+        EXPECT_EQ(foldForComparison("5″"), "5''");
+    }
+
     TEST(StringUtils, foldForComparison_invalidUtf8)
     {
         EXPECT_EQ(foldForComparison("Caf\xFFé"), "caf�e");
