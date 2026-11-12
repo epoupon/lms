@@ -28,7 +28,7 @@ jobs:
         name: Install dependencies (cpp)
         run: |
           sudo apt-get update
-          sudo apt-get install --yes build-essential cmake libarchive-dev libavcodec-dev libavformat-dev libavutil-dev libboost-all-dev libconfig++-dev libgtest-dev libpam0g-dev libpugixml-dev libssl-dev libstb-dev libtag-dev libxxhash-dev
+          sudo apt-get install --yes build-essential cmake libarchive-dev libavcodec-dev libavformat-dev libavutil-dev libboost-all-dev libconfig++-dev libgtest-dev libpam0g-dev libpugixml-dev libssl-dev libstb-dev libtag-dev libutf8proc-dev libxxhash-dev
           export WT_VERSION=4.15.0
           export WT_INSTALL_PREFIX=/usr
           git clone https://github.com/emweb/wt.git /tmp/wt

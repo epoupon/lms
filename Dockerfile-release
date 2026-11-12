@@ -32,6 +32,7 @@ ARG	BUILD_PACKAGES=" \
 	pulseaudio-dev \
 	nasm \
 	sqlite-dev \
+	utf8proc-dev \
 	utfcpp \
 	xxhash-dev \
 	yasm \
@@ -167,6 +168,7 @@ ARG	RUNTIME_PACKAGES=" \
 	opus \
 	pugixml \
 	sqlite-libs \
+	utf8proc \
 	zlib"
 
 ARG	LMS_USER=lms

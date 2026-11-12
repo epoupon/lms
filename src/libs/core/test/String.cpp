@@ -425,6 +425,47 @@ namespace lms::core::stringUtils::tests
         EXPECT_FALSE(stringCaseInsensitiveContains("", "Foo"));
     }
 
+    TEST(StringUtils, foldForComparison_case)
+    {
+        EXPECT_EQ(foldForComparison(""), "");
+        EXPECT_EQ(foldForComparison("AbC 1-2"), "abc 1-2");
+        EXPECT_EQ(foldForComparison("ΟΔΟΣ"), foldForComparison("οδος"));
+        EXPECT_EQ(foldForComparison("Straße"), "strasse");
+    }
+
+    TEST(StringUtils, foldForComparison_composedAndDecomposedAreEqual)
+    {
+        EXPECT_EQ(foldForComparison("café"), foldForComparison("café"));
+    }
+
+    TEST(StringUtils, foldForComparison_latinAccents)
+    {
+        EXPECT_EQ(foldForComparison("Janáček"), "janacek");
+        EXPECT_EQ(foldForComparison("Việt"), "viet");
+        EXPECT_EQ(foldForComparison("Ɛ́"), "ɛ");
+        EXPECT_EQ(foldForComparison("Mø"), "mo");
+        EXPECT_EQ(foldForComparison("Łódź"), "lodz");
+        EXPECT_EQ(foldForComparison("Æon"), "aeon");
+    }
+
+    TEST(StringUtils, foldForComparison_otherScriptsKeepTheirMarks)
+    {
+        EXPECT_EQ(foldForComparison("が"), "が");
+        EXPECT_EQ(foldForComparison("Й"), "й");
+    }
+
+    TEST(StringUtils, foldForComparison_compatibilityForms)
+    {
+        EXPECT_EQ(foldForComparison("Ｓｏｎｇ"), "song");
+        EXPECT_EQ(foldForComparison("ﬁne"), "fine");
+        EXPECT_EQ(foldForComparison("co­op"), "coop"); // soft hyphen
+    }
+
+    TEST(StringUtils, foldForComparison_invalidUtf8)
+    {
+        EXPECT_EQ(foldForComparison("Caf\xFFé"), "caf�e");
+    }
+
     TEST(StringUtils, bufferToHexString)
     {
         EXPECT_EQ(bufferToHexString({}), "");

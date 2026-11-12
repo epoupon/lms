@@ -28,6 +28,7 @@ ARG	LMS_BUILD_PACKAGES=" \
 	pulseaudio-dev \
 	stb \
 	taglib-dev \
+	utf8proc-dev \
 	wt-dev \
 	xxhash-dev"
 

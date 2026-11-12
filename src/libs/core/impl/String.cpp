@@ -20,11 +20,14 @@
 #include "core/String.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <charconv>
 #include <chrono>
 #include <cstring>
 #include <iomanip>
 #include <utility>
+
+#include <utf8proc.h>
 
 #include <Wt/WDate.h>
 #include <Wt/WDateTime.h>
@@ -185,6 +188,85 @@ namespace lms::core::stringUtils
                 return {};
 
             return std::distance(std::cbegin(months), str) + 1;
+        }
+
+        // NFKD + full case folding + removal of default ignorables (soft hyphen, ZWJ...), in canonical order
+        constexpr auto foldDecomposeOptions{ static_cast<::utf8proc_option_t>(UTF8PROC_STABLE | UTF8PROC_DECOMPOSE | UTF8PROC_COMPAT | UTF8PROC_CASEFOLD | UTF8PROC_IGNORE) };
+        constexpr auto foldComposeOptions{ static_cast<::utf8proc_option_t>(UTF8PROC_STABLE | UTF8PROC_COMPOSE) };
+
+        // Accents are only removed from Latin letters: marks are part of the letter in other scripts (Japanese dakuten, Devanagari vowel signs, Cyrillic й)
+        constexpr bool isLatinLetter(::utf8proc_int32_t codepoint)
+        {
+            constexpr std::pair<::utf8proc_int32_t, ::utf8proc_int32_t> latinRanges[]{
+                { 0x0041, 0x005A },
+                { 0x0061, 0x007A },
+                { 0x00C0, 0x02AF },
+                { 0x1E00, 0x1EFF },
+                { 0x2C60, 0x2C7F },
+                { 0xA720, 0xA7FF },
+                { 0xAB30, 0xAB6F },
+            };
+
+            return std::any_of(std::cbegin(latinRanges), std::cend(latinRanges), [=](const auto& range) { return codepoint >= range.first && codepoint <= range.second; });
+        }
+
+        // Latin letters whose accent or stroke is not a separate mark, so decomposition cannot remove it (case folded forms only)
+        constexpr std::pair<char32_t, std::string_view> latinTransliterations[]{
+            { U'æ', "ae" },
+            { U'ð', "d" },
+            { U'ø', "o" },
+            { U'þ', "th" },
+            { U'đ', "d" },
+            { U'ħ', "h" },
+            { U'ı', "i" },
+            { U'ł', "l" },
+            { U'œ', "oe" },
+            { U'ŧ', "t" },
+        };
+        // only looked up after a Latin letter
+        static_assert(std::all_of(std::cbegin(latinTransliterations), std::cend(latinTransliterations), [](const auto& entry) { return isLatinLetter(static_cast<::utf8proc_int32_t>(entry.first)); }));
+
+        std::string replaceInvalidUtf8(std::string_view str)
+        {
+            constexpr std::string_view replacementCharacter{ "\xEF\xBF\xBD" };
+
+            std::string res;
+            res.reserve(str.size());
+            while (!str.empty())
+            {
+                ::utf8proc_int32_t codepoint;
+                const ::utf8proc_ssize_t size{ ::utf8proc_iterate(reinterpret_cast<const ::utf8proc_uint8_t*>(str.data()), static_cast<::utf8proc_ssize_t>(str.size()), &codepoint) };
+                if (size < 0)
+                {
+                    res += replacementCharacter;
+                    str.remove_prefix(1);
+                }
+                else
+                {
+                    res += str.substr(0, size);
+                    str.remove_prefix(size);
+                }
+            }
+
+            return res;
+        }
+
+        std::optional<std::vector<::utf8proc_int32_t>> decomposeForFold(std::string_view str)
+        {
+            std::vector<::utf8proc_int32_t> codepoints(str.size());
+            while (true)
+            {
+                const ::utf8proc_ssize_t count{ ::utf8proc_decompose(reinterpret_cast<const ::utf8proc_uint8_t*>(str.data()), static_cast<::utf8proc_ssize_t>(str.size()), codepoints.data(), static_cast<::utf8proc_ssize_t>(codepoints.size()), foldDecomposeOptions) };
+                if (count == UTF8PROC_ERROR_INVALIDUTF8)
+                    return std::nullopt;
+
+                assert(count >= 0);
+                const bool fits{ static_cast<std::size_t>(count) <= codepoints.size() };
+                codepoints.resize(static_cast<std::size_t>(count));
+                if (fits)
+                    return codepoints;
+                // the buffer was too small: folding expands some code points (ß, ﬃ)
+            }
         }
     } // namespace detail
 
@@ -362,6 +444,57 @@ namespace lms::core::stringUtils
             std::cbegin(strtoFind), std::cend(strtoFind),
             [](char chA, char chB) { return std::tolower(chA) == std::tolower(chB); }) };
         return (it != std::cend(str));
+    }
+
+    std::string foldForComparison(std::string_view str)
+    {
+        // Same result as the full path, which is much slower
+        if (std::all_of(std::cbegin(str), std::cend(str), [](unsigned char c) { return c < 0x80; }))
+        {
+            std::string res{ str };
+            std::transform(std::cbegin(res), std::cend(res), std::begin(res), [](char c) { return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c; });
+            return res;
+        }
+
+        const std::optional<std::vector<::utf8proc_int32_t>> codepoints{ detail::decomposeForFold(str) };
+        if (!codepoints)
+            return foldForComparison(detail::replaceInvalidUtf8(str));
+
+        std::vector<::utf8proc_int32_t> folded;
+        folded.reserve(codepoints->size() + 1);
+
+        bool afterLatinLetter{};
+        for (const ::utf8proc_int32_t codepoint : *codepoints)
+        {
+            if (::utf8proc_category(codepoint) == UTF8PROC_CATEGORY_MN)
+            {
+                if (!afterLatinLetter)
+                    folded.push_back(codepoint);
+                continue;
+            }
+
+            afterLatinLetter = detail::isLatinLetter(codepoint);
+            if (afterLatinLetter)
+            {
+                const auto it{ std::find_if(std::cbegin(detail::latinTransliterations), std::cend(detail::latinTransliterations), [=](const auto& entry) { return static_cast<::utf8proc_int32_t>(entry.first) == codepoint; }) };
+                if (it != std::cend(detail::latinTransliterations))
+                {
+                    for (const char c : it->second)
+                        folded.push_back(c);
+                    continue;
+                }
+            }
+
+            folded.push_back(codepoint);
+        }
+
+        // utf8proc_reencode writes the UTF-8 result over the code points, followed by a terminating NUL
+        const std::size_t count{ folded.size() };
+        folded.resize(count + 1);
+        const ::utf8proc_ssize_t size{ ::utf8proc_reencode(folded.data(), static_cast<::utf8proc_ssize_t>(count), detail::foldComposeOptions) };
+        assert(size >= 0);
+
+        return std::string{ reinterpret_cast<const char*>(folded.data()), static_cast<std::size_t>(size) };
     }
 
     void capitalize(std::string& str)

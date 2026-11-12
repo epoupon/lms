@@ -75,6 +75,9 @@ namespace lms::core::stringUtils
     [[nodiscard]] bool stringCaseInsensitiveEqual(std::string_view strA, std::string_view strB);
     [[nodiscard]] std::string_view::size_type stringCaseInsensitiveContains(std::string_view str, std::string_view strtoFind);
 
+    // Ignores case and Latin accents
+    [[nodiscard]] std::string foldForComparison(std::string_view str);
+
     void capitalize(std::string& str);
 
     // returns empty string if invalid input
