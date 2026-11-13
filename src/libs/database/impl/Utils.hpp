@@ -234,6 +234,9 @@ namespace lms::db::utils
     {
         checkWriteTransaction(session);
 
+        if constexpr (requires { object->updateFoldedNames(); })
+            object->updateFoldedNames();
+
         Wt::Dbo::Session& dboSession{ *getDboSession(session) };
         const Wt::Dbo::ptr<Object> ptr{ dboSession.add(std::move(object)) };
         dboSession.flush();
@@ -254,6 +257,7 @@ namespace lms::db::utils
     }
 
     // Entities whose foreign keys can be set apply their ids to the relations in applyIds()
+    // Entities with search/sort columns derive them from their names in updateFoldedNames(): names must only be written through addObject/updateObject
     template<MappedEntity Object>
     void updateObject(ISession& session, const EntityOf<Object>& entity)
     {
@@ -261,6 +265,8 @@ namespace lms::db::utils
         static_cast<EntityOf<Object>&>(dbo) = entity;
         if constexpr (requires { dbo.applyIds(); })
             dbo.applyIds();
+        if constexpr (requires { dbo.updateFoldedNames(); })
+            dbo.updateFoldedNames();
     }
 
     template<typename Object>

@@ -28,6 +28,8 @@
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
 
+#include "database/IdType.hpp"
+
 #include "Db.hpp"
 #include "Session.hpp"
 #include "Utils.hpp"
@@ -36,7 +38,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 118 };
+        static constexpr Version LMS_DATABASE_VERSION{ 119 };
     }
 
     VersionInfo::VersionInfo()
@@ -2219,6 +2221,72 @@ GROUP BY c.canonical_id, s.backend)");
 ))");
     }
 
+    void migrateFromV118(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        // Search and sort now use folded copies of the names
+        struct FoldedColumnInfo
+        {
+            std::string_view table;
+            std::string_view column;
+        };
+
+        constexpr std::array foldedColumns{
+            FoldedColumnInfo{ .table = "artist", .column = "name" },
+            FoldedColumnInfo{ .table = "artist", .column = "sort_name" },
+            FoldedColumnInfo{ .table = "release", .column = "name" },
+            FoldedColumnInfo{ .table = "release", .column = "sort_name" },
+            FoldedColumnInfo{ .table = "release", .column = "artist_display_name" },
+            FoldedColumnInfo{ .table = "medium", .column = "name" },
+            FoldedColumnInfo{ .table = "track", .column = "name" },
+            FoldedColumnInfo{ .table = "tracklist", .column = "name" },
+            FoldedColumnInfo{ .table = "directory", .column = "name" },
+            FoldedColumnInfo{ .table = "genre", .column = "name" },
+            FoldedColumnInfo{ .table = "grouping", .column = "name" },
+            FoldedColumnInfo{ .table = "language", .column = "name" },
+            FoldedColumnInfo{ .table = "mood", .column = "name" },
+            FoldedColumnInfo{ .table = "cluster", .column = "name" },
+            FoldedColumnInfo{ .table = "label", .column = "name" },
+            FoldedColumnInfo{ .table = "release_type", .column = "name" },
+        };
+
+        for (const FoldedColumnInfo& info : foldedColumns)
+        {
+            const std::string table{ info.table };
+            const std::string column{ info.column };
+            const std::string foldedColumn{ "folded_" + column };
+
+            LMS_LOG(DB, INFO, "Folding '" << column << "' from table '" << table << "'...");
+
+            utils::executeCommand(dboSession, R"(ALTER TABLE ")" + table + R"(" ADD COLUMN ")" + foldedColumn + R"(" text not null default '')");
+
+            // Each batch is fully read before being written back, and kept small to bound memory on large tables
+            const std::string updateSql{ R"(UPDATE ")" + table + R"(" SET ")" + foldedColumn + R"(" = ? WHERE id = ?)" };
+            using Row = std::tuple<IdType::ValueType, std::string>;
+            constexpr int batchSize{ 1000 };
+            IdType::ValueType lastId{};
+            while (true)
+            {
+                const std::vector<Row> rows{ utils::fetchQueryResults(dboSession.query<Row>(R"(SELECT id, ")" + column + R"(" FROM ")" + table + R"(")").where("id > ?").bind(lastId).orderBy("id").limit(batchSize)) };
+                for (const auto& [id, value] : rows)
+                {
+                    const std::string foldedValue{ core::stringUtils::foldForComparison(value) };
+                    if (!foldedValue.empty())
+                        utils::executeCommand(dboSession, updateSql, foldedValue, id);
+                }
+
+                if (rows.size() < static_cast<std::size_t>(batchSize))
+                    break;
+
+                lastId = std::get<0>(rows.back());
+            }
+        }
+
+        // Search and sort indexes now use the folded columns
+        dropIndexes(session);
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -2313,6 +2381,7 @@ GROUP BY c.canonical_id, s.backend)");
             { 115, migrateFromV115 },
             { 116, migrateFromV116 },
             { 117, migrateFromV117 },
+            { 118, migrateFromV118 },
         };
 
         LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");

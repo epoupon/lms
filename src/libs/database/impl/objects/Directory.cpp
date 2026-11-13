@@ -21,6 +21,8 @@
 
 #include <Wt/Dbo/Impl.h>
 
+#include "core/String.hpp"
+
 #include "database/Types.hpp"
 
 #include "DboAccess.hpp"
@@ -252,6 +254,11 @@ namespace lms::db
         setRelation(*session(), _mediaLibrary, _mediaLibraryId);
         setRelation(*session(), _parent, _parentDirectoryId);
         assert(!_parent || (_absolutePath.has_parent_path() && _parent->getAbsolutePath() == _absolutePath.parent_path()));
+    }
+
+    void dbo::Directory::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
     }
 
     void Directory::update(ISession& session, const Directory& directory)

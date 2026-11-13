@@ -48,10 +48,13 @@ namespace lms::db::dbo
             _preferredArtworkId = _preferredArtwork.id();
         }
 
+        void updateFoldedNames();
+
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _foldedName, "folded_name");
             Wt::Dbo::field(a, _position, "position");
             Wt::Dbo::field(a, _trackCount, "track_count");
             Wt::Dbo::field(a, _media, "media");
@@ -65,6 +68,7 @@ namespace lms::db::dbo
         Wt::Dbo::ptr<Release> _release;
         Wt::Dbo::ptr<Artwork> _preferredArtwork;
         Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks; // tracks that match this medium
+        std::string _foldedName;
     };
 } // namespace lms::db::dbo
 

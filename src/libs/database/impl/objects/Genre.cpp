@@ -120,6 +120,11 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Genre name too long, truncated to '" << _name << "'");
     }
 
+    void dbo::Genre::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
+    }
+
     Genre Genre::create(ISession& session, std::string_view name)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Genre>{ new dbo::Genre{ name } });

@@ -499,6 +499,11 @@ namespace lms::db
         setRelation(dboSession, _preferredMediaArtwork, _preferredMediaArtworkId);
     }
 
+    void dbo::Track::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
+    }
+
     void Track::update(ISession& session, const Track& track)
     {
         utils::updateObject<dbo::Track>(session, track);

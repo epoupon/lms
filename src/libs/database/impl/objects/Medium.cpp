@@ -21,6 +21,8 @@
 
 #include <Wt/Dbo/Impl.h>
 
+#include "core/String.hpp"
+
 #include "ArtistDbo.hpp"
 #include "ArtworkDbo.hpp"
 #include "ClusterDbo.hpp"
@@ -51,6 +53,11 @@ namespace lms::db
     dbo::Medium::Medium(Wt::Dbo::ptr<Release> release)
         : _release(std::move(release))
     {
+    }
+
+    void dbo::Medium::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
     }
 
     Medium Medium::create(ISession& session, ReleaseId release)

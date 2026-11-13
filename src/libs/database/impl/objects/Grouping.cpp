@@ -120,6 +120,11 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Grouping name too long, truncated to '" << _name << "'");
     }
 
+    void dbo::Grouping::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
+    }
+
     Grouping Grouping::create(ISession& session, std::string_view name)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Grouping>{ new dbo::Grouping{ name } });

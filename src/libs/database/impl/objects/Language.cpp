@@ -120,6 +120,11 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Language name too long, truncated to '" << _name << "'");
     }
 
+    void dbo::Language::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
+    }
+
     Language Language::create(ISession& session, std::string_view name)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Language>{ new dbo::Language{ name } });

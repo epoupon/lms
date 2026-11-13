@@ -44,18 +44,23 @@ namespace lms::db::dbo
         }
 
         void applyIds();
+        void updateFoldedNames();
 
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _foldedName, "folded_name");
             Wt::Dbo::field(a, _sortName, "sort_name");
+            Wt::Dbo::field(a, _foldedSortName, "folded_sort_name");
             Wt::Dbo::field(a, _mbid, "mbid");
 
             Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
         }
 
         Wt::Dbo::ptr<Artwork> _preferredArtwork;
+        std::string _foldedName;
+        std::string _foldedSortName;
     };
 } // namespace lms::db::dbo
 

@@ -62,15 +62,18 @@ namespace lms::db::dbo
         using db::Label::Label;
 
         void syncIds() { _id = id(); }
+        void updateFoldedNames();
 
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _foldedName, "folded_name");
             Wt::Dbo::hasMany(a, _releases, Wt::Dbo::ManyToMany, "release_label", "", Wt::Dbo::OnDeleteCascade);
         }
 
         Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this label
+        std::string _foldedName;
     };
 
     class ReleaseType final : public db::ReleaseType, public Wt::Dbo::Dbo<ReleaseType>
@@ -80,15 +83,18 @@ namespace lms::db::dbo
         using db::ReleaseType::ReleaseType;
 
         void syncIds() { _id = id(); }
+        void updateFoldedNames();
 
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _foldedName, "folded_name");
             Wt::Dbo::hasMany(a, _releases, Wt::Dbo::ManyToMany, "release_release_type", "", Wt::Dbo::OnDeleteCascade);
         }
 
         Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this type
+        std::string _foldedName;
     };
 
     class Release final : public db::Release, public Wt::Dbo::Dbo<Release>
@@ -103,15 +109,20 @@ namespace lms::db::dbo
             _preferredArtworkId = _preferredArtwork.id();
         }
 
+        void updateFoldedNames();
+
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _foldedName, "folded_name");
             Wt::Dbo::field(a, _sortName, "sort_name");
+            Wt::Dbo::field(a, _foldedSortName, "folded_sort_name");
             Wt::Dbo::field(a, _MBID, "mbid");
             Wt::Dbo::field(a, _groupMBID, "group_mbid");
             Wt::Dbo::field(a, _totalDisc, "total_disc");
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
+            Wt::Dbo::field(a, _foldedArtistDisplayName, "folded_artist_display_name");
             Wt::Dbo::field(a, _isCompilation, "is_compilation");
             Wt::Dbo::field(a, _barcode, "barcode");
             Wt::Dbo::field(a, _comment, "comment");
@@ -130,6 +141,9 @@ namespace lms::db::dbo
         Wt::Dbo::collection<Wt::Dbo::ptr<Label>> _labels;
         Wt::Dbo::collection<Wt::Dbo::ptr<ReleaseType>> _releaseTypes;
         Wt::Dbo::collection<Wt::Dbo::ptr<Country>> _countries;
+        std::string _foldedName;
+        std::string _foldedSortName;
+        std::string _foldedArtistDisplayName;
     };
 } // namespace lms::db::dbo
 

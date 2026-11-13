@@ -555,6 +555,12 @@ AND NOT EXISTS (
         setRelation(*session(), _preferredArtwork, _preferredArtworkId);
     }
 
+    void dbo::Artist::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
+        _foldedSortName = core::stringUtils::foldForComparison(_sortName);
+    }
+
     void Artist::setName(std::string_view name)
     {
         _name = core::stringUtils::utf8Truncate(name, maxNameLength);

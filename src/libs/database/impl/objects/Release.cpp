@@ -345,6 +345,11 @@ namespace lms::db
             throw Exception{ "Label name is too long: '" + std::string{ name } + "'" };
     }
 
+    void dbo::Label::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
+    }
+
     Label Label::create(ISession& session, std::string_view name)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Label>{ new dbo::Label{ name } });
@@ -423,6 +428,11 @@ namespace lms::db
             throw Exception{ "ReleaseType is too long: '" + std::string{ name } + "'" };
     }
 
+    void dbo::ReleaseType::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
+    }
+
     ReleaseType ReleaseType::create(ISession& session, std::string_view name)
     {
         return utils::addObject(session, std::unique_ptr<dbo::ReleaseType>{ new dbo::ReleaseType{ name } });
@@ -497,6 +507,13 @@ namespace lms::db
         : _name{ core::stringUtils::utf8Truncate(name, _maxNameLength) }
         , _MBID{ MBID }
     {
+    }
+
+    void dbo::Release::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
+        _foldedSortName = core::stringUtils::foldForComparison(_sortName);
+        _foldedArtistDisplayName = core::stringUtils::foldForComparison(_artistDisplayName);
     }
 
     Release Release::create(ISession& session, const std::string& name, const std::optional<core::UUID>& MBID)

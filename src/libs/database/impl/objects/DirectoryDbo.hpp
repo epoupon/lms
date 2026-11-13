@@ -43,12 +43,14 @@ namespace lms::db::dbo
             _mediaLibraryId = _mediaLibrary.id();
         }
         void applyIds();
+        void updateFoldedNames();
 
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _absolutePath, "absolute_path");
             Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _foldedName, "folded_name");
 
             Wt::Dbo::belongsTo(a, _parent, "parent_directory", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete directories on media library removal, we want to wait for the next scan to have a chance to migrate files
@@ -56,6 +58,7 @@ namespace lms::db::dbo
 
         Wt::Dbo::ptr<Directory> _parent;
         Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
+        std::string _foldedName;
     };
 } // namespace lms::db::dbo
 

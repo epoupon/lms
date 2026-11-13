@@ -49,11 +49,13 @@ namespace lms::db::dbo
         }
 
         void applyIds();
+        void updateFoldedNames();
 
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _foldedName, "folded_name");
             Wt::Dbo::field(a, _type, "type");
             Wt::Dbo::field(a, _visibility, "visibility");
             Wt::Dbo::field(a, _creationDateTime, "creation_date_time");
@@ -68,6 +70,7 @@ namespace lms::db::dbo
         Wt::Dbo::ptr<User> _user;
         Wt::Dbo::ptr<PlayListFile> _playListFile;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _entries;
+        std::string _foldedName;
     };
 
     class TrackListEntry final : public db::TrackListEntry, public Wt::Dbo::Dbo<TrackListEntry>

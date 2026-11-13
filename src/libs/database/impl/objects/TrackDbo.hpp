@@ -63,6 +63,7 @@ namespace lms::db::dbo
         }
 
         void applyIds();
+        void updateFoldedNames();
 
         template<class Action>
         void persist(Action& a)
@@ -85,6 +86,7 @@ namespace lms::db::dbo
 
             Wt::Dbo::field(a, _trackNumber, "track_number");
             Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _foldedName, "folded_name");
             Wt::Dbo::field(a, _date, "date");
             Wt::Dbo::field(a, _originalDate, "original_date");
             Wt::Dbo::field(a, _trackMBID, "mbid");
@@ -129,6 +131,7 @@ namespace lms::db::dbo
         Wt::Dbo::collection<Wt::Dbo::ptr<Movement>> _movements;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackLyrics>> _trackLyrics;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackEmbeddedImageLink>> _embeddedImageLinks;
+        std::string _foldedName;
     };
 } // namespace lms::db::dbo
 

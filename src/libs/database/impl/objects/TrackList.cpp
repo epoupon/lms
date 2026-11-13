@@ -23,6 +23,8 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
+#include "core/String.hpp"
+
 #include "ClusterDbo.hpp"
 #include "DboAccess.hpp"
 #include "PlayListFileDbo.hpp"
@@ -202,6 +204,11 @@ namespace lms::db
         Wt::Dbo::Session& dboSession{ *session() };
         setRelation(dboSession, _user, _userId);
         setRelation(dboSession, _playListFile, _playListFileId);
+    }
+
+    void dbo::TrackList::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
     }
 
     TrackListEntry::TrackListEntry(const Wt::WDateTime& dateTime)

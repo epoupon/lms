@@ -47,10 +47,13 @@ namespace lms::db::dbo
             _typeId = _clusterType.id();
         }
 
+        void updateFoldedNames();
+
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _foldedName, "folded_name");
 
             Wt::Dbo::belongsTo(a, _clusterType, "cluster_type", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
@@ -58,6 +61,7 @@ namespace lms::db::dbo
 
         Wt::Dbo::ptr<ClusterType> _clusterType;
         Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
+        std::string _foldedName;
     };
 
     class ClusterType final : public db::ClusterType, public Wt::Dbo::Dbo<ClusterType>

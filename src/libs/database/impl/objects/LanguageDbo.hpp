@@ -38,15 +38,18 @@ namespace lms::db::dbo
         using db::Language::Language;
 
         void syncIds() { _id = id(); }
+        void updateFoldedNames();
 
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _foldedName, "folded_name");
             Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_language", "", Wt::Dbo::OnDeleteCascade);
         }
 
         Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
+        std::string _foldedName;
     };
 } // namespace lms::db::dbo
 

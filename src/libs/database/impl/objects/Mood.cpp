@@ -120,6 +120,11 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Mood name too long, truncated to '" << _name << "'");
     }
 
+    void dbo::Mood::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
+    }
+
     Mood Mood::create(ISession& session, std::string_view name)
     {
         return utils::addObject(session, std::unique_ptr<dbo::Mood>{ new dbo::Mood{ name } });

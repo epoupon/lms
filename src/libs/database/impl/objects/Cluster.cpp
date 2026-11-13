@@ -21,6 +21,7 @@
 
 #include <Wt/Dbo/Impl.h>
 
+#include "core/String.hpp"
 #include "core/Utils.hpp"
 
 #include "ArtistDbo.hpp"
@@ -139,6 +140,11 @@ namespace lms::db
         : db::Cluster{ name }
         , _clusterType{ std::move(type) }
     {
+    }
+
+    void dbo::Cluster::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
     }
 
     Cluster Cluster::create(ISession& session, ClusterTypeId type, std::string_view name)
