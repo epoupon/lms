@@ -62,8 +62,9 @@ namespace lms::db
 
             auto query{ getDboSession(session)->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM cluster c") };
 
-            if (params.track.isValid() || params.release.isValid() || params.artist.isValid() || params.trackList.isValid()
-                || params.sortMethod == ClusterSortMethod::TrackCountDesc)
+            const bool joinTracks{ params.track.isValid() || params.release.isValid() || params.artist.isValid() || params.trackList.isValid()
+                                   || params.sortMethod == ClusterSortMethod::TrackCountDesc };
+            if (joinTracks)
                 query.join("track_cluster t_c ON t_c.cluster_id = c.id");
 
             if (!params.clusterTypeName.empty())
@@ -104,9 +105,9 @@ namespace lms::db
                 break;
             }
 
-            // track_cluster has a UNIQUE constraint on (track_id, cluster_id), so no duplicates can occur when filtering by track
+            // Only the track_cluster join duplicates clusters, and not when filtering by track: track_cluster has a UNIQUE constraint on (track_id, cluster_id)
             assert(!params.track.isValid() || params.sortMethod != ClusterSortMethod::TrackCountDesc);
-            if (!params.track.isValid())
+            if (joinTracks && !params.track.isValid())
                 query.groupBy("c.id");
 
             return query;

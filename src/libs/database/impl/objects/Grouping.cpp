@@ -62,8 +62,9 @@ namespace lms::db
 
             auto query{ getDboSession(session)->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM grouping g") };
 
-            if (params.artist.isValid() || params.track.isValid() || params.release.isValid()
-                || params.sortMethod == GroupingSortMethod::TrackCountDesc)
+            const bool joinTracks{ params.artist.isValid() || params.track.isValid() || params.release.isValid()
+                                   || params.sortMethod == GroupingSortMethod::TrackCountDesc };
+            if (joinTracks)
                 query.join("track_grouping t_gr ON t_gr.grouping_id = g.id");
 
             if (params.track.isValid())
@@ -91,8 +92,8 @@ namespace lms::db
                 break;
             }
 
-            // track_grouping has a UNIQUE constraint on (track_id, grouping_id), so no duplicates when filtering by track
-            if (!params.track.isValid())
+            // Only the track_grouping join duplicates groupings, and not when filtering by track: track_grouping has a UNIQUE constraint on (track_id, grouping_id)
+            if (joinTracks && !params.track.isValid())
                 query.groupBy("g.id");
 
             return query;

@@ -62,8 +62,9 @@ namespace lms::db
 
             auto query{ getDboSession(session)->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM genre g") };
 
-            if (params.artist.isValid() || params.track.isValid() || params.release.isValid()
-                || params.sortMethod == GenreSortMethod::TrackCountDesc)
+            const bool joinTracks{ params.artist.isValid() || params.track.isValid() || params.release.isValid()
+                                   || params.sortMethod == GenreSortMethod::TrackCountDesc };
+            if (joinTracks)
                 query.join("track_genre t_g ON t_g.genre_id = g.id");
 
             if (params.track.isValid())
@@ -91,8 +92,8 @@ namespace lms::db
                 break;
             }
 
-            // track_genre has a UNIQUE constraint on (track_id, genre_id), so no duplicates when filtering by track
-            if (!params.track.isValid())
+            // Only the track_genre join duplicates genres, and not when filtering by track: track_genre has a UNIQUE constraint on (track_id, genre_id)
+            if (joinTracks && !params.track.isValid())
                 query.groupBy("g.id");
 
             return query;

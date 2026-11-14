@@ -62,8 +62,9 @@ namespace lms::db
 
             auto query{ getDboSession(session)->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM mood m") };
 
-            if (params.artist.isValid() || params.track.isValid() || params.release.isValid()
-                || params.sortMethod == MoodSortMethod::TrackCountDesc)
+            const bool joinTracks{ params.artist.isValid() || params.track.isValid() || params.release.isValid()
+                                   || params.sortMethod == MoodSortMethod::TrackCountDesc };
+            if (joinTracks)
                 query.join("track_mood t_m ON t_m.mood_id = m.id");
 
             if (params.track.isValid())
@@ -91,8 +92,8 @@ namespace lms::db
                 break;
             }
 
-            // track_mood has a UNIQUE constraint on (track_id, mood_id), so no duplicates when filtering by track
-            if (!params.track.isValid())
+            // Only the track_mood join duplicates moods, and not when filtering by track: track_mood has a UNIQUE constraint on (track_id, mood_id)
+            if (joinTracks && !params.track.isValid())
                 query.groupBy("m.id");
 
             return query;

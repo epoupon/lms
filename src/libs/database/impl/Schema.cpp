@@ -58,6 +58,7 @@ namespace lms::db::schema
             "CREATE INDEX IF NOT EXISTS auth_token_domain_value_idx ON auth_token(domain, value)",
             "CREATE INDEX IF NOT EXISTS auth_token_user_domain_idx ON auth_token(user_id, domain)",
 
+            "CREATE INDEX IF NOT EXISTS cluster_cluster_type_folded_name_idx ON cluster(cluster_type_id, folded_name)",
             "CREATE INDEX IF NOT EXISTS cluster_cluster_type_name_idx ON cluster(cluster_type_id, name)",
             "CREATE INDEX IF NOT EXISTS cluster_folded_name_idx ON cluster(folded_name)",
             "CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)",

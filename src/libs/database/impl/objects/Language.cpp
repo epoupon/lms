@@ -62,8 +62,9 @@ namespace lms::db
 
             auto query{ getDboSession(session)->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM language l") };
 
-            if (params.artist.isValid() || params.track.isValid() || params.release.isValid()
-                || params.sortMethod == LanguageSortMethod::TrackCountDesc)
+            const bool joinTracks{ params.artist.isValid() || params.track.isValid() || params.release.isValid()
+                                   || params.sortMethod == LanguageSortMethod::TrackCountDesc };
+            if (joinTracks)
                 query.join("track_language t_l ON t_l.language_id = l.id");
 
             if (params.track.isValid())
@@ -91,8 +92,8 @@ namespace lms::db
                 break;
             }
 
-            // track_language has a UNIQUE constraint on (track_id, language_id), so no duplicates when filtering by track
-            if (!params.track.isValid())
+            // Only the track_language join duplicates languages, and not when filtering by track: track_language has a UNIQUE constraint on (track_id, language_id)
+            if (joinTracks && !params.track.isValid())
                 query.groupBy("l.id");
 
             return query;
