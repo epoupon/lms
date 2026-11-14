@@ -32,7 +32,7 @@ _LMS_ provides several ways to help you find the music you like:
 * Tag-based filters (ex: "_Rock_", "_Metal_ and _Aggressive_", "_Electronic_ and _Relaxed_", ...)
 * Recommendations for similar artists and albums
 * Radio mode, with endless filling of the play queue with tracks similar to what is there
-* Searches in album, artist and track names (including sort names)
+* Searches in album, artist and track names (including sort names and disc subtitles), ignoring case and accents
 * Starred Albums/Artists/Tracks
 * Random/Starred/Most played/Recently played/Recently added for Artist/Albums/Tracks, allowing you to search for things like:
   * Recently added _Electronic_ artists
