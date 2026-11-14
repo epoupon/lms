@@ -80,6 +80,7 @@ namespace lms::db::schema
             "CREATE INDEX IF NOT EXISTS image_stem_idx ON image(stem COLLATE NOCASE)",
 
             "CREATE INDEX IF NOT EXISTS label_folded_name_idx ON label(folded_name)",
+            "CREATE INDEX IF NOT EXISTS label_name_idx ON label(name)",
 
             "CREATE INDEX IF NOT EXISTS language_folded_name_idx ON language(folded_name)",
             "CREATE UNIQUE INDEX IF NOT EXISTS language_name_idx ON language(name)",
@@ -137,6 +138,7 @@ namespace lms::db::schema
             "CREATE UNIQUE INDEX IF NOT EXISTS release_feedback_backend_sync_release_feedback_backend_idx ON release_feedback_backend_sync(release_feedback_id,backend)",
 
             "CREATE INDEX IF NOT EXISTS release_type_folded_name_idx ON release_type(folded_name)",
+            "CREATE INDEX IF NOT EXISTS release_type_name_idx ON release_type(name)",
 
             "CREATE INDEX IF NOT EXISTS track_absolute_path_idx ON track(absolute_file_path)",
             "CREATE INDEX IF NOT EXISTS track_date_idx ON track(date)",
