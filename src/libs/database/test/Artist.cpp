@@ -775,6 +775,34 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Artist_findByKeywordsFolded)
+    {
+        ScopedArtist artist{ session, "Björk" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "bjork" })).size(), 1);
+            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "BJÖRK" })).size(), 1);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            std::optional<Artist> updatedArtist{ artist.get() };
+            updatedArtist->setName("Sigur Rós");
+            updatedArtist->setSortName("Röyksopp");
+            Artist::update(session, *updatedArtist);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "bjork" })).size(), 0);
+            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "ROS" })).size(), 1);
+            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "royksopp" })).size(), 1);
+        }
+    }
+
     TEST_F(DatabaseFixture, Artist_findByNameEscaped)
     {
         ScopedArtist artist1{ session, R"(MyArtist%)" };

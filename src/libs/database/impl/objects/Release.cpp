@@ -79,15 +79,15 @@ namespace lms::db
                 {
                     if (!res.isEmpty())
                         res.append(" AND ");
-                    res.append(std::string{ column } + " LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" });
+                    res.append(std::string{ column } + " LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { utils::createFoldedContainsPattern(keyword) });
                 }
                 return res;
             } };
 
             SqlFragment res{ "(" };
-            res.append(createKeywordClauses("r.name"));
+            res.append(createKeywordClauses("r.folded_name"));
             res.append(") OR (");
-            res.append(createKeywordClauses("m.name"));
+            res.append(createKeywordClauses("m.folded_name"));
             res.append(")");
             return res;
         }

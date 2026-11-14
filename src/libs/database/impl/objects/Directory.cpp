@@ -44,7 +44,7 @@ namespace lms::db
             auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d FROM directory d") };
 
             for (std::string_view keyword : params.keywords)
-                query.where("d.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
+                query.where("d.folded_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind(utils::createFoldedContainsPattern(keyword));
 
             if (params.trackArtist.isValid()
                 || params.releaseArtist.isValid()

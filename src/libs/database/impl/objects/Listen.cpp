@@ -67,15 +67,15 @@ namespace lms::db
                     {
                         if (!clauses.isEmpty())
                             clauses.append(" AND ");
-                        clauses.append(std::string{ column } + " LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" });
+                        clauses.append(std::string{ column } + " LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { utils::createFoldedContainsPattern(keyword) });
                     }
                     return clauses;
                 } };
 
                 SqlFragment keywords{ "(" };
-                keywords.append(createKeywordClauses("a.name"));
+                keywords.append(createKeywordClauses("a.folded_name"));
                 keywords.append(") OR (");
-                keywords.append(createKeywordClauses("a.sort_name"));
+                keywords.append(createKeywordClauses("a.folded_sort_name"));
                 keywords.append(")");
                 res.combineWithAnd(keywords);
             }
@@ -118,7 +118,7 @@ namespace lms::db
             }
 
             for (const std::string_view keyword : params.keywords)
-                res.combineWithAnd({ "r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" } });
+                res.combineWithAnd({ "r.folded_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { utils::createFoldedContainsPattern(keyword) } });
 
             if (params.filter)
                 res.combineWithAnd(compileFilterExpr(*params.filter, params.filterUser));
@@ -154,7 +154,7 @@ namespace lms::db
             }
 
             for (const std::string_view keyword : params.keywords)
-                res.combineWithAnd({ "t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" } });
+                res.combineWithAnd({ "t.folded_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { utils::createFoldedContainsPattern(keyword) } });
 
             if (params.filter)
                 res.combineWithAnd(compileFilterExpr(*params.filter, params.filterUser));

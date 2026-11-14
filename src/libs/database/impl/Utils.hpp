@@ -46,6 +46,8 @@ namespace lms::db::utils
 #define ESCAPE_CHAR_STR "\\"
     static inline constexpr char escapeChar{ '\\' };
     std::string escapeForLikeKeyword(std::string_view keywords);
+    // LIKE pattern to match a folded_* column containing the keyword
+    std::string createFoldedContainsPattern(std::string_view keyword);
 
     Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
 

@@ -51,7 +51,7 @@ namespace lms::db
             SqlFragment res;
 
             for (const std::string_view keyword : params.keywords)
-                res.combineWithAnd({ "t_l.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" } });
+                res.combineWithAnd({ "t_l.folded_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { utils::createFoldedContainsPattern(keyword) } });
 
             if (params.user.isValid())
                 res.combineWithAnd({ "t_l.user_id = ?", { params.user.getValue() } });

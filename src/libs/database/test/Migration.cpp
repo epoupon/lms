@@ -298,7 +298,8 @@ CREATE INDEX starred_track_user_scrobbler_idx ON starred_track(user_id,scrobbler
 -- Inserting artists (Artist A has a valid UUID MBID to verify round-trip through migration)
 INSERT INTO artist (version, name, sort_name, mbid) VALUES
 (1, 'Artist A', 'Artist A', '550e8400-e29b-41d4-a716-446655440000'),
-(2, 'Artist B', 'Artist B', 'mbid_artist_b');
+(2, 'Artist B', 'Artist B', 'mbid_artist_b'),
+(3, 'Björk', 'Björk', 'mbid_artist_bjork');
 
 -- Inserting releases (Release X has a valid UUID MBID to verify round-trip through migration)
 INSERT INTO release (version, name, mbid) VALUES
@@ -429,6 +430,9 @@ VALUES
             EXPECT_EQ(artist->getMBID(), artistMBID);
             // migrateFromV112: sort names are no longer synthesized from the display name, existing ones are cleared
             EXPECT_TRUE(artist->getSortName().empty());
+
+            // migrateFromV118: existing names are folded
+            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "bjork" })).size(), 1);
 
             const auto releaseMBID{ core::UUID::fromString("6ba7b810-9dad-11d1-80b4-00c04fd430c8") };
             ASSERT_TRUE(releaseMBID);
