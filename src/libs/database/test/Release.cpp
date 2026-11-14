@@ -572,6 +572,28 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, ReleaseSearchBySortName)
+    {
+        ScopedRelease release{ session, "The Beatles In Mono" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            std::optional<Release> updatedRelease{ release.get() };
+            updatedRelease->setSortName("Beatles In Mono, The");
+            Release::update(session, *updatedRelease);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            // matches only the sort name, not the release name
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "mono, the" })) };
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front(), release.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, MultiTracksSingleReleaseTotalDiscTrack)
     {
         ScopedRelease release1{ session, "MyRelease" };

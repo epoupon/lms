@@ -87,6 +87,8 @@ namespace lms::db
             SqlFragment res{ "(" };
             res.append(createKeywordClauses("r.folded_name"));
             res.append(") OR (");
+            res.append(createKeywordClauses("r.folded_sort_name"));
+            res.append(") OR (");
             res.append(createKeywordClauses("m.folded_name"));
             res.append(")");
             return res;
