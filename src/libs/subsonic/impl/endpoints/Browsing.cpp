@@ -25,6 +25,7 @@
 #include "core/ILogger.hpp"
 #include "core/Random.hpp"
 #include "core/Service.hpp"
+#include "core/String.hpp"
 #include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfo.hpp"
@@ -75,6 +76,15 @@ namespace lms::api::subsonic
             return res;
         }
 
+        char getIndexChar(std::string_view name)
+        {
+            const std::string foldedName{ core::stringUtils::foldForComparison(name) };
+            if (foldedName.empty() || foldedName.front() < 'a' || foldedName.front() > 'z')
+                return '#';
+
+            return static_cast<char>(foldedName.front() - 'a' + 'A');
+        }
+
         struct IndexComparator
         {
             constexpr bool operator()(char lhs, char rhs) const
@@ -96,16 +106,8 @@ namespace lms::api::subsonic
             params.setSortMethod(DirectorySortMethod::Name);
 
             Directory::find(context.getDbSession(), params, [&](const Directory& directory) {
-                const std::string_view name{ directory.getName() };
-                assert(!name.empty());
-
-                char sortChar;
-                if (name.empty() || !std::isalpha(static_cast<unsigned char>(name[0])))
-                    sortChar = '#';
-                else
-                    sortChar = static_cast<char>(std::toupper(static_cast<unsigned char>(name[0])));
-
-                res[sortChar].push_back(directory);
+                assert(!directory.getName().empty());
+                res[getIndexChar(directory.getName())].push_back(directory);
             });
         }
 
@@ -434,10 +436,7 @@ namespace lms::api::subsonic
             std::size_t artistCount{};
             Artist::find(context.getDbSession(), parameters, [&](const Artist& artist) {
                 const std::string_view sortName{ artist.getSortName() };
-                const std::string_view effectiveSortName{ sortName.empty() ? artist.getName() : sortName };
-
-                const char sortChar{ (effectiveSortName.empty() || !std::isalpha(static_cast<unsigned char>(effectiveSortName[0]))) ? '#' : static_cast<char>(std::toupper(static_cast<unsigned char>(effectiveSortName[0]))) };
-                artistsSortedByFirstChar[sortChar].push_back(artist.getId());
+                artistsSortedByFirstChar[getIndexChar(sortName.empty() ? artist.getName() : sortName)].push_back(artist.getId());
                 ++artistCount;
             });
 
