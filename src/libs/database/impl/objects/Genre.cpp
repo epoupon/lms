@@ -84,7 +84,7 @@ namespace lms::db
             case GenreSortMethod::None:
                 break;
             case GenreSortMethod::Name:
-                query.orderBy("g.name COLLATE NOCASE");
+                query.orderBy("g.folded_name, g.id");
                 break;
             case GenreSortMethod::TrackCountDesc:
                 query.orderBy("COUNT(t_g.track_id) DESC");

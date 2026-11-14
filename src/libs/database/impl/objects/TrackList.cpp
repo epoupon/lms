@@ -83,7 +83,7 @@ namespace lms::db
             case TrackListSortMethod::None:
                 break;
             case TrackListSortMethod::Name:
-                query.orderBy("t_l.name COLLATE NOCASE");
+                query.orderBy("t_l.folded_name, t_l.id");
                 break;
             case TrackListSortMethod::LastModifiedDesc:
                 query.orderBy("t_l.last_modified_date_time DESC");

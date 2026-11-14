@@ -84,7 +84,7 @@ namespace lms::db
             case GroupingSortMethod::None:
                 break;
             case GroupingSortMethod::Name:
-                query.orderBy("g.name COLLATE NOCASE");
+                query.orderBy("g.folded_name, g.id");
                 break;
             case GroupingSortMethod::TrackCountDesc:
                 query.orderBy("COUNT(t_gr.track_id) DESC");

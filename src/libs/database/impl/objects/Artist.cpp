@@ -300,17 +300,17 @@ namespace lms::db
                 query.orderBy("a.id");
                 break;
             case ArtistSortMethod::Name:
-                query.orderBy("a.name COLLATE NOCASE");
+                query.orderBy("a.folded_name, a.id");
                 break;
             case ArtistSortMethod::SortName:
-                query.orderBy("COALESCE(NULLIF(a.sort_name, ''), a.name) COLLATE NOCASE");
+                query.orderBy("COALESCE(NULLIF(a.folded_sort_name, ''), a.folded_name), a.id");
                 break;
             case ArtistSortMethod::Random:
                 query.orderBy("RANDOM()");
                 break;
             case ArtistSortMethod::LastWrittenDesc:
             case ArtistSortMethod::AddedDesc:
-                query.orderBy(createSortDateExpr(params.sortMethod, useUnion) + " DESC, COALESCE(NULLIF(a.sort_name, ''), a.name) COLLATE NOCASE");
+                query.orderBy(createSortDateExpr(params.sortMethod, useUnion) + " DESC, COALESCE(NULLIF(a.folded_sort_name, ''), a.folded_name), a.id");
                 break;
             case ArtistSortMethod::FeedbackDateDesc:
                 assert(params.feedbackUser.isValid());

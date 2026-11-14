@@ -1031,6 +1031,29 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Artist_sortMethodFolded)
+    {
+        ScopedArtist artistZappa{ session, "Zappa" };
+        ScopedArtist artistEmilie{ session, "Émilie Simon" };
+        ScopedArtist artistEels{ session, "eels" };
+        ScopedArtist artistBjorkAccented{ session, "Björk" };
+        ScopedArtist artistBjork{ session, "BJORK" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto allArtistsByName{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::Name)) };
+
+            // same folded name: by id
+            ASSERT_EQ(allArtistsByName.size(), 5);
+            EXPECT_EQ(allArtistsByName[0], artistBjorkAccented.getId());
+            EXPECT_EQ(allArtistsByName[1], artistBjork.getId());
+            EXPECT_EQ(allArtistsByName[2], artistEels.getId());
+            EXPECT_EQ(allArtistsByName[3], artistEmilie.getId());
+            EXPECT_EQ(allArtistsByName[4], artistZappa.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, Artist_nonReleaseTracks)
     {
         ScopedArtist artist{ session, "artist" };

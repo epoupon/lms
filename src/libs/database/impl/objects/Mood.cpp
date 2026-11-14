@@ -84,7 +84,7 @@ namespace lms::db
             case MoodSortMethod::None:
                 break;
             case MoodSortMethod::Name:
-                query.orderBy("m.name COLLATE NOCASE");
+                query.orderBy("m.folded_name, m.id");
                 break;
             case MoodSortMethod::TrackCountDesc:
                 query.orderBy("COUNT(t_m.track_id) DESC");

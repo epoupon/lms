@@ -112,7 +112,7 @@ namespace lms::db
             case DirectorySortMethod::None:
                 break;
             case DirectorySortMethod::Name:
-                query.orderBy("d.name COLLATE NOCASE");
+                query.orderBy("d.folded_name, d.id");
                 break;
             }
 

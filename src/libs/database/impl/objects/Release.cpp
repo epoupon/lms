@@ -206,34 +206,34 @@ namespace lms::db
                 query.orderBy("r.id");
                 break;
             case ReleaseSortMethod::Name:
-                query.orderBy("r.name COLLATE NOCASE");
+                query.orderBy("r.folded_name, r.id");
                 break;
             case ReleaseSortMethod::SortName:
-                query.orderBy("COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
+                query.orderBy("COALESCE(NULLIF(r.folded_sort_name, ''), r.folded_name), r.id");
                 break;
             case ReleaseSortMethod::ArtistNameThenName:
-                query.orderBy("COALESCE(NULLIF(r.artist_display_name, ''), r.name) COLLATE NOCASE, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
+                query.orderBy("COALESCE(NULLIF(r.folded_artist_display_name, ''), r.folded_name), COALESCE(NULLIF(r.folded_sort_name, ''), r.folded_name), r.id");
                 break;
             case ReleaseSortMethod::Random:
                 query.orderBy("RANDOM()");
                 break;
             case ReleaseSortMethod::LastWrittenDesc:
-                query.orderBy("MAX(t.file_last_write) DESC, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
+                query.orderBy("MAX(t.file_last_write) DESC, COALESCE(NULLIF(r.folded_sort_name, ''), r.folded_name), r.id");
                 break;
             case ReleaseSortMethod::AddedDesc:
-                query.orderBy("MIN(t.file_added) DESC, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
+                query.orderBy("MIN(t.file_added) DESC, COALESCE(NULLIF(r.folded_sort_name, ''), r.folded_name), r.id");
                 break;
             case ReleaseSortMethod::DateAsc:
-                query.orderBy("MIN(t.date) ASC, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
+                query.orderBy("MIN(t.date) ASC, COALESCE(NULLIF(r.folded_sort_name, ''), r.folded_name), r.id");
                 break;
             case ReleaseSortMethod::DateDesc:
-                query.orderBy("MIN(t.date) DESC, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
+                query.orderBy("MIN(t.date) DESC, COALESCE(NULLIF(r.folded_sort_name, ''), r.folded_name), r.id");
                 break;
             case ReleaseSortMethod::OriginalDate:
-                query.orderBy("MIN(COALESCE(t.original_date, t.date)) ASC, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
+                query.orderBy("MIN(COALESCE(t.original_date, t.date)) ASC, COALESCE(NULLIF(r.folded_sort_name, ''), r.folded_name), r.id");
                 break;
             case ReleaseSortMethod::OriginalDateDesc:
-                query.orderBy("MIN(COALESCE(t.original_date, t.date)) DESC, COALESCE(NULLIF(r.sort_name, ''), r.name) COLLATE NOCASE");
+                query.orderBy("MIN(COALESCE(t.original_date, t.date)) DESC, COALESCE(NULLIF(r.folded_sort_name, ''), r.folded_name), r.id");
                 break;
             case ReleaseSortMethod::FeedbackDateDesc:
                 assert(params.feedbackUser.isValid());
@@ -397,7 +397,7 @@ namespace lms::db
         case LabelSortMethod::None:
             break;
         case LabelSortMethod::Name:
-            query.orderBy("name COLLATE NOCASE");
+            query.orderBy("folded_name, id");
         }
 
         utils::forEachQueryObject(query, func);
@@ -480,7 +480,7 @@ namespace lms::db
         case ReleaseTypeSortMethod::None:
             break;
         case ReleaseTypeSortMethod::Name:
-            query.orderBy("name COLLATE NOCASE");
+            query.orderBy("folded_name, id");
         }
 
         utils::forEachQueryObject(query, func);

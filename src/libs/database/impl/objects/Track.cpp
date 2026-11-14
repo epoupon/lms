@@ -217,7 +217,7 @@ namespace lms::db
                 query.orderBy("t_f.date_time DESC");
                 break;
             case TrackSortMethod::Name:
-                query.orderBy("t.name COLLATE NOCASE");
+                query.orderBy("t.folded_name, t.id");
                 break;
             case TrackSortMethod::AbsoluteFilePath:
                 query.orderBy("t.absolute_file_path COLLATE NOCASE");

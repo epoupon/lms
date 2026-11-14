@@ -97,7 +97,7 @@ namespace lms::db
             case ClusterSortMethod::None:
                 break;
             case ClusterSortMethod::Name:
-                query.orderBy("c.name COLLATE NOCASE");
+                query.orderBy("c.folded_name, c.id");
                 break;
             case ClusterSortMethod::TrackCountDesc:
                 query.orderBy("COUNT(*) DESC");

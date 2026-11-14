@@ -84,7 +84,7 @@ namespace lms::db
             case LanguageSortMethod::None:
                 break;
             case LanguageSortMethod::Name:
-                query.orderBy("l.name COLLATE NOCASE");
+                query.orderBy("l.folded_name, l.id");
                 break;
             case LanguageSortMethod::TrackCountDesc:
                 query.orderBy("COUNT(t_l.track_id) DESC");
