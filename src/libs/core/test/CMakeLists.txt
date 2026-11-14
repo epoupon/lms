@@ -17,6 +17,7 @@ add_executable(test-core
 	TraceLogger.cpp
 	UUID.cpp
 	XxHash3.cpp
+	Zipper.cpp
 	)
 
 target_include_directories(test-core PRIVATE

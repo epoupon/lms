@@ -100,6 +100,8 @@ namespace lms::scanner::utils::tests
             { "1234a", 1234 },
             { "19951123", 1995 },
             { "199511", 1995 },
+            { "\xD9\xA1\xD9\xA9\xD9\xA9\xD9\xA5", std::nullopt }, // Arabic-Indic digits
+            { "1995\xC3\xA9", 1995 },
         };
 
         for (const TestCase& testCase : testCases)
@@ -308,6 +310,7 @@ namespace lms::scanner::utils::tests
             { "artist name ( () )", "artist name", "()" },
             { "artist name (drums (drum set))", "artist name", "drums (drum set)" },
             { "artist name (  drums (drum set) )", "artist name", "drums (drum set)" },
+            { "\xC3\x89mile (r\xC3\xB4le)", "\xC3\x89mile", "r\xC3\xB4le" },
         };
 
         for (const TestCase& testCase : testCases)
