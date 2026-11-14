@@ -312,7 +312,8 @@ namespace lms::core::stringUtils::tests
             { "(c", "(c" },
             { "1c", "1c" },
             { "&c", "&c" },
-            { "c c", "C c" }
+            { "c c", "C c" },
+            { " \xC3\xA9t\xC3\xA9", " \xC3\xA9t\xC3\xA9" }
         };
 
         for (const TestCase& test : tests)
@@ -413,6 +414,20 @@ namespace lms::core::stringUtils::tests
         EXPECT_EQ(utf8Truncate("\x80\x80\x80", 2), "");
     }
 
+    TEST(StringUtils, stringToLowerUpper_asciiOnly)
+    {
+        EXPECT_EQ(stringToLower("AbC 1-\xC3\x89"), "abc 1-\xC3\x89");
+        EXPECT_EQ(stringToUpper("aBc 1-\xC3\xA9"), "ABC 1-\xC3\xA9");
+    }
+
+    TEST(StringUtils, stringCaseInsensitiveEqual)
+    {
+        EXPECT_TRUE(stringCaseInsensitiveEqual("FLAC", "flac"));
+        EXPECT_TRUE(stringCaseInsensitiveEqual("", ""));
+        EXPECT_FALSE(stringCaseInsensitiveEqual("flac", "fla"));
+        EXPECT_FALSE(stringCaseInsensitiveEqual("\xC3\x89", "\xC3\xA9")); // É / é: ASCII only
+    }
+
     TEST(StringUtils, stringCaseInsensitiveContains)
     {
         EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "Bar"));
@@ -423,6 +438,8 @@ namespace lms::core::stringUtils::tests
         EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", ""));
         EXPECT_TRUE(stringCaseInsensitiveContains("", ""));
         EXPECT_FALSE(stringCaseInsensitiveContains("", "Foo"));
+        EXPECT_TRUE(stringCaseInsensitiveContains("\xC3\x89t\xC3\xA9", "T\xC3\xA9"));
+        EXPECT_FALSE(stringCaseInsensitiveContains("\xC3\x89t\xC3\xA9", "\xC3\xA9t"));
     }
 
     TEST(StringUtils, foldForComparison_case)
@@ -486,6 +503,16 @@ namespace lms::core::stringUtils::tests
         EXPECT_EQ(stringFromHex("31323334"), "1234");
         EXPECT_EQ(stringFromHex("3132333435"), "12345");
         EXPECT_EQ(stringFromHex("54657374"), "Test");
+        EXPECT_EQ(stringFromHex("6a6B"), "jk");
+        EXPECT_EQ(stringFromHex("3"), std::nullopt);
+        EXPECT_EQ(stringFromHex("3:"), std::nullopt);
+        EXPECT_EQ(stringFromHex("3G"), std::nullopt);
+    }
+
+    TEST(StringUtils, urlEncode)
+    {
+        EXPECT_EQ(urlEncode("aZ09-_.~"), "aZ09-_.~");
+        EXPECT_EQ(urlEncode("a b/\xC3\xA9"), "a%20b%2F%C3%A9");
     }
 
     TEST(StringUtils, toRomanNumeral)
