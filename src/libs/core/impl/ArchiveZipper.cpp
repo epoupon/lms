@@ -137,38 +137,48 @@ namespace lms::zip
         _currentOutputStream = &output;
         _bytesWrittenInCurrentOutputStream = 0;
 
-        while (_bytesWrittenInCurrentOutputStream == 0)
+        try
         {
-            if (!_currentArchiveEntry)
+            while (_bytesWrittenInCurrentOutputStream == 0)
             {
-                if (_currentEntry == std::cend(_entries))
+                if (!_currentArchiveEntry)
                 {
-                    if (::archive_write_close(_archive.get()) != ARCHIVE_OK)
-                        throw ArchiveException{ _archive.get() };
+                    if (_currentEntry == std::cend(_entries))
+                    {
+                        if (::archive_write_close(_archive.get()) != ARCHIVE_OK)
+                            throw ArchiveException{ _archive.get() };
 
-                    _archive.reset();
-                    break;
+                        _archive.reset();
+                        break;
+                    }
+
+                    _currentArchiveEntry = createArchiveEntry(*_currentEntry);
+                    _currentEntryOffset = 0;
+                    const int res{ ::archive_write_header(_archive.get(), _currentArchiveEntry.get()) };
+                    // a name that is not valid UTF-8 is written as is: better than failing the whole archive
+                    if (res == ARCHIVE_WARN)
+                        LMS_LOG(UTILS, WARNING, "Archive entry '" << _currentEntry->fileName << "': " << ArchiveException::getError(_archive.get()));
+                    else if (res != ARCHIVE_OK)
+                        throw ArchiveException{ _archive.get() };
                 }
 
-                _currentArchiveEntry = createArchiveEntry(*_currentEntry);
-                _currentEntryOffset = 0;
-                const int res{ ::archive_write_header(_archive.get(), _currentArchiveEntry.get()) };
-                // a name that is not valid UTF-8 is written as is: better than failing the whole archive
-                if (res == ARCHIVE_WARN)
-                    LMS_LOG(UTILS, WARNING, "Archive entry '" << _currentEntry->fileName << "': " << ArchiveException::getError(_archive.get()));
-                else if (res != ARCHIVE_OK)
-                    throw ArchiveException{ _archive.get() };
-            }
+                if (writeSomeCurrentFileData())
+                {
+                    // entry complete
+                    if (::archive_write_finish_entry(_archive.get()) != ARCHIVE_OK)
+                        throw ArchiveException{ _archive.get() };
 
-            if (writeSomeCurrentFileData())
-            {
-                // entry complete
-                if (::archive_write_finish_entry(_archive.get()) != ARCHIVE_OK)
-                    throw ArchiveException{ _archive.get() };
-
-                _currentArchiveEntry.reset();
-                _currentEntry++;
+                    _currentArchiveEntry.reset();
+                    _currentEntry++;
+                }
             }
+        }
+        catch (...)
+        {
+            // a failed zip must not get its central directory: unzip tools would open it as complete, silently missing entries
+            _currentOutputStream = nullptr;
+            abort();
+            throw;
         }
 
         _currentOutputStream = nullptr;
@@ -298,9 +308,13 @@ namespace lms::zip
             return -1;
         }
 
+        // called from libarchive's C code: report errors through archive_set_error
         _currentOutputStream->write(reinterpret_cast<const char*>(buffer), bufferSize);
         if (!*_currentOutputStream)
-            throw Exception{ "Failed to write " + std::to_string(bufferSize) + " bytes in final archive output!" };
+        {
+            ::archive_set_error(_archive.get(), EIO, "IO error: cannot write final archive output");
+            return -1;
+        }
 
         _bytesWrittenInCurrentOutputStream += bufferSize;
 

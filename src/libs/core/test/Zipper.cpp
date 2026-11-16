@@ -91,4 +91,24 @@ namespace lms::zip::tests
         // libarchive keeps the original bytes when the name cannot be checked as UTF-8
         EXPECT_EQ(zip.substr(30, readUInt16LE(zip, 26)), fileName);
     }
+
+    TEST(Zipper, missingFile)
+    {
+        const core::ScopedTmpDirectory directory;
+        const std::filesystem::path filePath{ directory / "file.txt" };
+        std::ofstream{ filePath } << "content";
+
+        std::ostringstream oss;
+        {
+            const std::unique_ptr<IZipper> zipper{ createArchiveZipper(EntryContainer{ Entry{ .fileName = "file.txt", .filePath = filePath }, Entry{ .fileName = "missing.txt", .filePath = directory / "missing.txt" } }) };
+            EXPECT_THROW(
+                while (!zipper->isComplete()) {
+                    zipper->writeSome(oss);
+                },
+                Exception);
+        }
+
+        // no central directory, even once the zipper is gone: the zip must not look complete
+        EXPECT_EQ(oss.str().find("PK\x01\x02"), std::string::npos);
+    }
 } // namespace lms::zip::tests
