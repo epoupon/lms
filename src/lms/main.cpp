@@ -403,12 +403,6 @@ namespace lms
             if (const auto level{ getTracingLevel() })
                 traceLogger.assign(core::tracing::createTraceLogger(level.value(), config->getULong("tracing-buffer-size", core::tracing::MinBufferSizeInMBytes)));
 
-            // use system locale. libarchive relies on this to write filenames
-            if (char* locale{ ::setlocale(LC_ALL, "") })
-                LMS_LOG(MAIN, INFO, "locale set to '" << locale << "'");
-            else
-                LMS_LOG(MAIN, WARNING, "Cannot set locale from system");
-
             audio::init();
 
             // Make sure the working directory exists
