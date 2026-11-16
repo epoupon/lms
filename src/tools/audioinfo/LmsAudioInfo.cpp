@@ -25,8 +25,8 @@
 #include <Wt/WDate.h>
 #include <boost/program_options.hpp>
 
+#include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
-#include "core/String.hpp"
 #include "core/media/MimeType.hpp"
 
 #include "audio/AudioProperties.hpp"
@@ -219,9 +219,9 @@ int main(int argc, char* argv[])
         }
 
         audio::AudioFileInfoParserBackend parserBackend{ audio::defaultAudioFileInfoParserBackend };
-        if (core::stringUtils::stringCaseInsensitiveEqual(vm["parser"].as<std::string>(), "taglib"))
+        if (core::ascii::caseInsensitiveEqual(vm["parser"].as<std::string>(), "taglib"))
             parserBackend = audio::AudioFileInfoParserBackend::TagLib;
-        else if (core::stringUtils::stringCaseInsensitiveEqual(vm["parser"].as<std::string>(), "ffmpeg"))
+        else if (core::ascii::caseInsensitiveEqual(vm["parser"].as<std::string>(), "ffmpeg"))
             parserBackend = audio::AudioFileInfoParserBackend::FFmpeg;
         else
             throw program_options::validation_error{ program_options::validation_error::invalid_option_value, "parser" };

@@ -28,9 +28,9 @@ extern "C"
 #include <libavformat/avformat.h>
 }
 
+#include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "core/String.hpp"
 
 #include "Exception.hpp"
 #include "Utils.hpp"
@@ -46,7 +46,7 @@ namespace lms::audio::ffmpeg
 
             const AVDictionaryEntry* tag{ NULL };
             while ((tag = av_dict_iterate(dictionnary, tag)))
-                res[core::stringUtils::stringToUpper(tag->key)] = tag->value;
+                res[core::ascii::toUpper(tag->key)] = tag->value;
         }
 
     } // namespace

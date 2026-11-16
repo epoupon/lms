@@ -24,10 +24,10 @@
 #include <cassert>
 #include <chrono>
 
+#include "core/Ascii.hpp"
 #include "core/FileResourceHandlerCreator.hpp"
 #include "core/ILogger.hpp"
 #include "core/IResourceHandler.hpp"
-#include "core/String.hpp"
 #include "core/media/Codec.hpp"
 #include "core/media/Container.hpp"
 #include "core/media/MimeType.hpp"
@@ -73,7 +73,7 @@ namespace lms::api::subsonic
         const SupportedTranscodeFormat* selectSupportedTranscodeOutputFormatByLegacyName(std::string_view legacyFormatName)
         {
             const auto it{ std::find_if(std::cbegin(supportedTranscodeFormats), std::cend(supportedTranscodeFormats), [&](const SupportedTranscodeFormat& candidate) {
-                return core::stringUtils::stringCaseInsensitiveEqual(candidate.legacyName, legacyFormatName)
+                return core::ascii::caseInsensitiveEqual(candidate.legacyName, legacyFormatName)
                     && audio::isEncodingSupported(candidate.format.container, candidate.format.codec);
             }) };
             if (it == std::cend(supportedTranscodeFormats))

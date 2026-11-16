@@ -21,7 +21,7 @@
 
 #include <algorithm>
 
-#include "core/String.hpp"
+#include "core/Ascii.hpp"
 
 #include "AudioFile.hpp"
 
@@ -37,7 +37,7 @@ namespace lms::audio::ffmpeg
     void ImageReader::visitImages(const ImageVisitor& visitor) const
     {
         auto metaDataHasKeyword{ [](const AudioFile::MetadataMap& metadata, std::string_view keyword) {
-            return std::any_of(std::cbegin(metadata), std::cend(metadata), [&](const auto& keyValue) { return core::stringUtils::stringCaseInsensitiveContains(keyValue.second, keyword); });
+            return std::any_of(std::cbegin(metadata), std::cend(metadata), [&](const auto& keyValue) { return core::ascii::caseInsensitiveContains(keyValue.second, keyword); });
         } };
 
         _audioFile.visitAttachedPictures([&](const PictureView& picture, const AudioFile::MetadataMap& metaData) {

@@ -23,6 +23,7 @@ add_library(lmscore STATIC
 	impl/media/ImageType.cpp
 	impl/media/MimeType.cpp
 	impl/ArchiveZipper.cpp
+	impl/Ascii.cpp
 	impl/Config.cpp
 	impl/FileResourceHandler.cpp
 	impl/JobScheduler.cpp

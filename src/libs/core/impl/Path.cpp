@@ -22,13 +22,13 @@
 #include <algorithm>
 #include <array>
 
-#include "core/String.hpp"
+#include "core/Ascii.hpp"
 
 namespace lms::core::pathUtils
 {
     bool hasFileAnyExtension(const std::filesystem::path& file, std::span<const std::filesystem::path> supportedExtensions)
     {
-        const std::filesystem::path extension{ stringUtils::stringToLower(file.extension().c_str()) };
+        const std::filesystem::path extension{ ascii::toLower(file.extension().c_str()) };
 
         return (std::find(std::cbegin(supportedExtensions), std::cend(supportedExtensions), extension) != std::cend(supportedExtensions));
     }

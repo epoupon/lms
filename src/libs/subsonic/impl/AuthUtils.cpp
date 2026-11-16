@@ -23,6 +23,7 @@
 
 #include <boost/asio/ip/address.hpp>
 
+#include "core/Ascii.hpp"
 #include "core/Md5.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
@@ -111,7 +112,7 @@ namespace lms::api::subsonic::utils
         payload += apiKey;
         payload += salt;
 
-        return core::stringUtils::stringCaseInsensitiveEqual(core::stringUtils::bufferToHexString(core::md5(payload)), token);
+        return core::ascii::caseInsensitiveEqual(core::stringUtils::bufferToHexString(core::md5(payload)), token);
     }
 
     db::User getUserFromUserId(db::ISession& session, db::UserId userId)

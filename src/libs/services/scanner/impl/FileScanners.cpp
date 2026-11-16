@@ -21,7 +21,7 @@
 
 #include <cassert>
 
-#include "core/String.hpp"
+#include "core/Ascii.hpp"
 
 #include "scanners/IFileScanner.hpp"
 
@@ -54,7 +54,7 @@ namespace lms::scanner
     IFileScanner* FileScanners::select(const std::filesystem::path& filePath) const
     {
         {
-            const std::string fileName{ core::stringUtils::stringToLower(filePath.filename().string()) };
+            const std::string fileName{ core::ascii::toLower(filePath.filename().string()) };
 
             auto itScanner{ _scannerByFile.find(fileName) };
             if (itScanner != std::cend(_scannerByFile))
@@ -62,7 +62,7 @@ namespace lms::scanner
         }
 
         {
-            const std::string extension{ core::stringUtils::stringToLower(filePath.extension().string()) };
+            const std::string extension{ core::ascii::toLower(filePath.extension().string()) };
 
             auto itScanner{ _scannerByExtension.find(extension) };
             if (itScanner != std::cend(_scannerByExtension))

@@ -21,6 +21,7 @@
 
 #include <array>
 
+#include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 #include "core/media/AudioFormat.hpp"
@@ -99,7 +100,7 @@ namespace lms::api::subsonic::detail
                 break;
             }
 
-            return std::any_of(std::cbegin(containerNames), std::cend(containerNames), [&](std::string_view containerName) { return core::stringUtils::stringCaseInsensitiveEqual(containerName, containerStr); });
+            return std::any_of(std::cbegin(containerNames), std::cend(containerNames), [&](std::string_view containerName) { return core::ascii::caseInsensitiveEqual(containerName, containerStr); });
         }
 
         bool isMatchingCodecName(core::media::Codec codec, std::string_view codecStr)
@@ -196,7 +197,7 @@ namespace lms::api::subsonic::detail
                 break;
             }
 
-            return std::any_of(std::cbegin(codecNames), std::cend(codecNames), [&](std::string_view codecName) { return core::stringUtils::stringCaseInsensitiveEqual(codecName, codecStr); });
+            return std::any_of(std::cbegin(codecNames), std::cend(codecNames), [&](std::string_view codecName) { return core::ascii::caseInsensitiveEqual(codecName, codecStr); });
         }
 
         struct AdjustResult

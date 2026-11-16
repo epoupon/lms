@@ -23,6 +23,8 @@
 #include <string>
 #include <string_view>
 
+#include "core/Ascii.hpp"
+
 namespace lms::ui
 {
     class UppercaseValidator : public Wt::WValidator
@@ -38,7 +40,7 @@ namespace lms::ui
             return Wt::WValidator::validate(input);
 
         const std::string str{ input.toUTF8() };
-        const bool valid{ std::all_of(std::cbegin(str), std::cend(str), [&](char c) { return !std::isalpha(c) || std::isupper(c); }) };
+        const bool valid{ std::none_of(std::cbegin(str), std::cend(str), core::ascii::isLower) };
 
         if (!valid)
             return Wt::WValidator::Result(Wt::ValidationState::Invalid, Wt::WString::tr("Lms.field-must-be-in-upper-case"));

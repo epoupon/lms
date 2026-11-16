@@ -28,6 +28,7 @@
 #include <Wt/WTemplateFormView.h>
 #include <Wt/WTextArea.h>
 
+#include "core/Ascii.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/ISession.hpp"
@@ -86,7 +87,7 @@ namespace lms::ui
                     return Wt::WValidator::validate(input);
 
                 std::string inputStr{ input.toUTF8() };
-                if (std::all_of(std::cbegin(inputStr), std::cend(inputStr), [](char c) { return std::isspace(c); }))
+                if (std::all_of(std::cbegin(inputStr), std::cend(inputStr), core::ascii::isSpace))
                     return Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces") };
 
                 return Wt::WValidator::Result{ Wt::ValidationState::Valid };

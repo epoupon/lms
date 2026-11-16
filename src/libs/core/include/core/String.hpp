@@ -68,17 +68,8 @@ namespace lms::core::stringUtils
     // Like str.substr(0, maxBytes), but takes utf8 into account to properly truncate
     [[nodiscard]] std::string_view utf8Truncate(std::string_view str, std::size_t maxBytes);
 
-    [[nodiscard]] std::string stringToLower(std::string_view str);
-    void stringToLower(std::string& str);
-    [[nodiscard]] std::string stringToUpper(std::string_view str);
-
-    [[nodiscard]] bool stringCaseInsensitiveEqual(std::string_view strA, std::string_view strB);
-    [[nodiscard]] bool stringCaseInsensitiveContains(std::string_view str, std::string_view strtoFind);
-
     // Ignores case, Latin accents and typographic punctuation
     [[nodiscard]] std::string foldForComparison(std::string_view str);
-
-    void capitalize(std::string& str);
 
     // returns empty string if invalid input
     [[nodiscard]] std::string toRomanNumeral(std::size_t n);

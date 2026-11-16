@@ -26,6 +26,9 @@
 #include <string_view>
 #include <unordered_map>
 
+#include "core/Ascii.hpp"
+#include "core/String.hpp"
+
 namespace lms::scanner::utils
 {
     Wt::WDate parseDate(std::string_view dateStr)
@@ -80,16 +83,15 @@ namespace lms::scanner::utils
             sign = 1;
         }
 
-        if (yearStr.empty() || !std::isdigit(yearStr.front()))
+        if (yearStr.empty() || !core::ascii::isDigit(yearStr.front()))
             return std::nullopt;
 
         int result{};
         for (std::size_t i{}; i < yearStr.size() && i < 4; ++i)
         {
-            if (!std::isdigit(yearStr[i]))
-            {
+            if (!core::ascii::isDigit(yearStr[i]))
                 break;
-            }
+
             result = result * 10 + (yearStr[i] - '0');
         }
 
@@ -110,7 +112,7 @@ namespace lms::scanner::utils
             std::size_t currentIndex{ entry.size() - i - 1 };
             const char c{ entry[currentIndex] };
 
-            if (std::isspace(c))
+            if (core::ascii::isSpace(c))
                 continue;
 
             if (c == ')')

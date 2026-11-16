@@ -32,52 +32,18 @@
 #include <Wt/WDate.h>
 #include <Wt/WDateTime.h>
 
+#include "core/Ascii.hpp"
+
 namespace lms::core::stringUtils
 {
     namespace detail
     {
-        // don't depend on locale
-        constexpr bool isAsciiUpper(char c)
+        std::optional<unsigned> hexDigitValue(char c)
         {
-            return c >= 'A' && c <= 'Z';
-        }
-
-        constexpr bool isAsciiLower(char c)
-        {
-            return c >= 'a' && c <= 'z';
-        }
-
-        constexpr bool isAsciiAlpha(char c)
-        {
-            return isAsciiUpper(c) || isAsciiLower(c);
-        }
-
-        constexpr bool isAsciiDigit(char c)
-        {
-            return c >= '0' && c <= '9';
-        }
-
-        constexpr bool isAsciiSpace(char c)
-        {
-            return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r';
-        }
-
-        constexpr char asciiToLower(char c)
-        {
-            return isAsciiUpper(c) ? static_cast<char>(c - 'A' + 'a') : c;
-        }
-
-        constexpr char asciiToUpper(char c)
-        {
-            return isAsciiLower(c) ? static_cast<char>(c - 'a' + 'A') : c;
-        }
-
-        constexpr std::optional<unsigned> hexDigitValue(char c)
-        {
-            if (isAsciiDigit(c))
+            if (ascii::isDigit(c))
                 return static_cast<unsigned>(c - '0');
 
-            const char upper{ asciiToUpper(c) };
+            const char upper{ ascii::toUpper(c) };
             if (upper >= 'A' && upper <= 'F')
                 return static_cast<unsigned>(upper - 'A' + 10);
 
@@ -209,7 +175,7 @@ namespace lms::core::stringUtils
             if (zoneStr.size() != 5)
                 return std::nullopt;
 
-            if (!std::all_of(std::cbegin(zoneStr) + 1, std::cend(zoneStr), [](char c) { return isAsciiDigit(c); }))
+            if (!std::all_of(std::cbegin(zoneStr) + 1, std::cend(zoneStr), ascii::isDigit))
                 return std::nullopt;
 
             int hours{};
@@ -353,9 +319,9 @@ namespace lms::core::stringUtils
     template<>
     std::optional<bool> readAs(std::string_view str)
     {
-        if (str == "1" || stringCaseInsensitiveEqual(str, "true"))
+        if (str == "1" || ascii::caseInsensitiveEqual(str, "true"))
             return true;
-        else if (str == "0" || stringCaseInsensitiveEqual(str, "false"))
+        else if (str == "0" || ascii::caseInsensitiveEqual(str, "false"))
             return false;
 
         return std::nullopt;
@@ -463,48 +429,11 @@ namespace lms::core::stringUtils
         return str.substr(0, len);
     }
 
-    std::string stringToLower(std::string_view str)
-    {
-        std::string res{ str };
-        stringToLower(res);
-        return res;
-    }
-
-    void stringToLower(std::string& str)
-    {
-        std::transform(std::cbegin(str), std::cend(str), std::begin(str), detail::asciiToLower);
-    }
-
-    std::string stringToUpper(std::string_view str)
-    {
-        std::string res{ str };
-        std::transform(std::cbegin(res), std::cend(res), std::begin(res), detail::asciiToUpper);
-        return res;
-    }
-
-    bool stringCaseInsensitiveEqual(std::string_view strA, std::string_view strB)
-    {
-        return std::equal(std::cbegin(strA), std::cend(strA), std::cbegin(strB), std::cend(strB),
-                          [](char chA, char chB) { return detail::asciiToLower(chA) == detail::asciiToLower(chB); });
-    }
-
-    bool stringCaseInsensitiveContains(std::string_view str, std::string_view strtoFind)
-    {
-        if (str.empty() && strtoFind.empty())
-            return true; // same as std
-
-        const auto it{ std::search(
-            std::cbegin(str), std::cend(str),
-            std::cbegin(strtoFind), std::cend(strtoFind),
-            [](char chA, char chB) { return detail::asciiToLower(chA) == detail::asciiToLower(chB); }) };
-        return (it != std::cend(str));
-    }
-
     std::string foldForComparison(std::string_view str)
     {
         // Same result as the full path, which is much slower
         if (std::all_of(std::cbegin(str), std::cend(str), [](unsigned char c) { return c < 0x80; }))
-            return stringToLower(str);
+            return ascii::toLower(str);
 
         const std::optional<std::vector<::utf8proc_int32_t>> codepoints{ detail::decomposeForFold(str) };
         if (!codepoints)
@@ -554,19 +483,6 @@ namespace lms::core::stringUtils
         assert(size >= 0);
 
         return std::string{ reinterpret_cast<const char*>(folded.data()), static_cast<std::size_t>(size) };
-    }
-
-    void capitalize(std::string& str)
-    {
-        for (auto it{ std::begin(str) }; it != std::end(str); ++it)
-        {
-            if (detail::isAsciiSpace(*it))
-                continue;
-
-            *it = detail::asciiToUpper(*it);
-
-            break;
-        }
     }
 
     std::string toRomanNumeral(std::size_t n)
@@ -658,7 +574,7 @@ namespace lms::core::stringUtils
 
         for (const char c : str)
         {
-            if (detail::isAsciiAlpha(c) || detail::isAsciiDigit(c) || c == '-' || c == '_' || c == '.' || c == '~')
+            if (ascii::isAlpha(c) || ascii::isDigit(c) || c == '-' || c == '_' || c == '.' || c == '~')
                 encoded << c;
             else
                 encoded << '%' << std::setw(2) << std::setfill('0') << static_cast<unsigned>(static_cast<unsigned char>(c));

@@ -295,35 +295,6 @@ namespace lms::core::stringUtils::tests
         EXPECT_EQ(readAs<int>("a1024a"), std::nullopt);
     }
 
-    TEST(StringUtils, capitalize)
-    {
-        struct TestCase
-        {
-            std::string input;
-            std::string expectedOutput;
-        };
-
-        TestCase tests[]{
-            { "", "" },
-            { "C", "C" },
-            { "c", "C" },
-            { " c", " C" },
-            { " cc", " Cc" },
-            { "(c", "(c" },
-            { "1c", "1c" },
-            { "&c", "&c" },
-            { "c c", "C c" },
-            { " \xC3\xA9t\xC3\xA9", " \xC3\xA9t\xC3\xA9" }
-        };
-
-        for (const TestCase& test : tests)
-        {
-            std::string str{ test.input };
-            capitalize(str);
-            EXPECT_EQ(str, test.expectedOutput) << " str was '" << test.input << "'";
-        }
-    }
-
     TEST(Stringutils, DateToString)
     {
         {
@@ -412,34 +383,6 @@ namespace lms::core::stringUtils::tests
         EXPECT_EQ(utf8Truncate("e\xCC\x81", 3), "e\xCC\x81");
 
         EXPECT_EQ(utf8Truncate("\x80\x80\x80", 2), "");
-    }
-
-    TEST(StringUtils, stringToLowerUpper_asciiOnly)
-    {
-        EXPECT_EQ(stringToLower("AbC 1-\xC3\x89"), "abc 1-\xC3\x89");
-        EXPECT_EQ(stringToUpper("aBc 1-\xC3\xA9"), "ABC 1-\xC3\xA9");
-    }
-
-    TEST(StringUtils, stringCaseInsensitiveEqual)
-    {
-        EXPECT_TRUE(stringCaseInsensitiveEqual("FLAC", "flac"));
-        EXPECT_TRUE(stringCaseInsensitiveEqual("", ""));
-        EXPECT_FALSE(stringCaseInsensitiveEqual("flac", "fla"));
-        EXPECT_FALSE(stringCaseInsensitiveEqual("\xC3\x89", "\xC3\xA9")); // É / é: ASCII only
-    }
-
-    TEST(StringUtils, stringCaseInsensitiveContains)
-    {
-        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "Bar"));
-        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "bar"));
-        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "Foo"));
-        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "foo"));
-        EXPECT_FALSE(stringCaseInsensitiveContains("something", "foo"));
-        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", ""));
-        EXPECT_TRUE(stringCaseInsensitiveContains("", ""));
-        EXPECT_FALSE(stringCaseInsensitiveContains("", "Foo"));
-        EXPECT_TRUE(stringCaseInsensitiveContains("\xC3\x89t\xC3\xA9", "T\xC3\xA9"));
-        EXPECT_FALSE(stringCaseInsensitiveContains("\xC3\x89t\xC3\xA9", "\xC3\xA9t"));
     }
 
     TEST(StringUtils, foldForComparison_case)

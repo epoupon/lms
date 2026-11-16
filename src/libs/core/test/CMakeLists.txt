@@ -1,6 +1,7 @@
 include(GoogleTest)
 
 add_executable(test-core
+	Ascii.cpp
 	Codec.cpp
 	EnumSet.cpp
 	Hash.cpp

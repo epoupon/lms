@@ -49,7 +49,7 @@
     #include <taglib/mp4file.h>
 #endif
 
-#include "core/String.hpp"
+#include "core/Ascii.hpp"
 
 namespace lms::audio::taglib
 {
@@ -236,9 +236,9 @@ namespace lms::audio::taglib
 #if LMS_TAGLIB_HAS_APE && LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES
         core::media::ImageType imageTypeFromAPEPictureType(std::string_view pictureType)
         {
-            if (core::stringUtils::stringCaseInsensitiveContains(pictureType, "front"))
+            if (core::ascii::caseInsensitiveContains(pictureType, "front"))
                 return core::media::ImageType::FrontCover;
-            if (core::stringUtils::stringCaseInsensitiveContains(pictureType, "back"))
+            if (core::ascii::caseInsensitiveContains(pictureType, "back"))
                 return core::media::ImageType::BackCover;
 
             return core::media::ImageType::Unknown;

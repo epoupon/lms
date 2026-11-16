@@ -26,12 +26,12 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
+#include "core/Ascii.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/IOContextRunner.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
-#include "core/String.hpp"
 #include "core/SystemPaths.hpp"
 #include "core/UUID.hpp"
 
@@ -74,7 +74,7 @@ namespace lms
 
         ui::AuthenticationBackend getUIAuthenticationBackend()
         {
-            const std::string backend{ core::stringUtils::stringToLower(core::Service<core::IConfig>::get()->getString("authentication-backend", "internal")) };
+            const std::string backend{ core::ascii::toLower(core::Service<core::IConfig>::get()->getString("authentication-backend", "internal")) };
             if (backend == "internal")
                 return ui::AuthenticationBackend::Internal;
             if (backend == "pam")

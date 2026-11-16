@@ -23,8 +23,8 @@
 #include <fstream>
 #include <system_error>
 
+#include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
-#include "core/String.hpp"
 
 #include "database/IDb.hpp"
 #include "database/ISession.hpp"
@@ -168,7 +168,7 @@ namespace lms::scanner
     {
         // Special case: only files named "artist.nfo" are compatible with this scanner
         // Hack here since the scanner framework only handle extensions (the discover count is not accurate)
-        if (!core::stringUtils::stringCaseInsensitiveEqual(file.filePath.stem().string(), "artist"))
+        if (!core::ascii::caseInsensitiveEqual(file.filePath.stem().string(), "artist"))
             return false;
 
         db::ISession& dbSession{ _db.getTLSSession() };

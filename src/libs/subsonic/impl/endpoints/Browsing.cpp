@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <array>
 
+#include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
 #include "core/Random.hpp"
 #include "core/Service.hpp"
@@ -87,11 +88,11 @@ namespace lms::api::subsonic
 
         struct IndexComparator
         {
-            constexpr bool operator()(char lhs, char rhs) const
+            bool operator()(char lhs, char rhs) const
             {
-                if (lhs == '#' && std::isalpha(static_cast<unsigned char>(rhs)))
+                if (lhs == '#' && core::ascii::isAlpha(rhs))
                     return false;
-                if (rhs == '#' && std::isalpha(static_cast<unsigned char>(lhs)))
+                if (rhs == '#' && core::ascii::isAlpha(lhs))
                     return true;
 
                 return lhs < rhs;

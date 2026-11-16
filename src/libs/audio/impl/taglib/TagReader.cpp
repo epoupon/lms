@@ -61,6 +61,7 @@
     #include <taglib/dsffile.h>
 #endif
 
+#include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
@@ -328,7 +329,7 @@ namespace lms::audio::taglib
                     if (attributeList.isEmpty())
                         continue;
 
-                    const std::string strName{ core::stringUtils::stringToUpper(name.to8Bit(true)) };
+                    const std::string strName{ core::ascii::toUpper(name.to8Bit(true)) };
                     if (enableExtraDebugLogs)
                     {
                         for (const auto& attribute : attributeList)

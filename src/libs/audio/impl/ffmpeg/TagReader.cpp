@@ -19,8 +19,8 @@
 
 #include "TagReader.hpp"
 
+#include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
-#include "core/String.hpp"
 
 namespace lms::audio::ffmpeg
 {
@@ -199,7 +199,7 @@ namespace lms::audio::ffmpeg
             constexpr std::string_view lyricsPrefix{ "LYRICS-" };
             if (tag.starts_with(lyricsPrefix))
             {
-                const std::string language{ core::stringUtils::stringToLower(tag.substr(lyricsPrefix.size())) };
+                const std::string language{ core::ascii::toLower(tag.substr(lyricsPrefix.size())) };
                 visitor(language, value);
             }
         }

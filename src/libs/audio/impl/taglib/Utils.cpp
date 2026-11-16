@@ -62,9 +62,9 @@
     #include <taglib/shortenfile.h>
 #endif
 
+#include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "core/String.hpp"
 #include "core/media/AudioFormat.hpp"
 
 #include "audio/Exception.hpp"
@@ -237,7 +237,7 @@ namespace lms::audio::taglib::utils
         if (extension.empty())
             return file;
 
-        const std::string ext{ core::stringUtils::stringToLower(extension.string()) };
+        const std::string ext{ core::ascii::toLower(extension.string()) };
 
         // Extensions can be ambiguous (e.g. .oga is both Ogg+FLAC and Ogg+Vorbis): try every candidate
         // pairing for this extension, in table order, until one actually validates

@@ -25,8 +25,8 @@
 #include <boost/asio/steady_timer.hpp>
 #include <boost/program_options.hpp>
 
+#include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
-#include "core/String.hpp"
 
 #include "audio/Exception.hpp"
 #include "audio/IAudioOutput.hpp"
@@ -157,11 +157,11 @@ int main(int argc, char* argv[])
         const std::chrono::seconds offset{ vm["offset"].as<std::size_t>() };
 
         audio::AudioOutputBackend outputBackend;
-        if (core::stringUtils::stringCaseInsensitiveEqual(vm["backend"].as<std::string>(), "alsa"))
+        if (core::ascii::caseInsensitiveEqual(vm["backend"].as<std::string>(), "alsa"))
             outputBackend = audio::AudioOutputBackend::ALSA;
-        else if (core::stringUtils::stringCaseInsensitiveEqual(vm["backend"].as<std::string>(), "pulseaudio"))
+        else if (core::ascii::caseInsensitiveEqual(vm["backend"].as<std::string>(), "pulseaudio"))
             outputBackend = audio::AudioOutputBackend::PulseAudio;
-        else if (core::stringUtils::stringCaseInsensitiveEqual(vm["backend"].as<std::string>(), "auto"))
+        else if (core::ascii::caseInsensitiveEqual(vm["backend"].as<std::string>(), "auto"))
             outputBackend = audio::AudioOutputBackend::Auto;
         else
             throw program_options::validation_error{ program_options::validation_error::invalid_option_value, "backend" };
