@@ -25,7 +25,7 @@
 
 namespace lms::core::ascii::tests
 {
-    TEST(Ascii,nonAsciiChars)
+    TEST(Ascii, nonAsciiChars)
     {
         // negative chars: UB with <cctype>
         EXPECT_FALSE(isAlpha('\xC3'));
@@ -34,13 +34,13 @@ namespace lms::core::ascii::tests
         EXPECT_EQ(toUpper('\xA9'), '\xA9');
     }
 
-    TEST(Ascii,toLowerUpper)
+    TEST(Ascii, toLowerUpper)
     {
         EXPECT_EQ(toLower("AbC 1-\xC3\x89"), "abc 1-\xC3\x89");
         EXPECT_EQ(toUpper("aBc 1-\xC3\xA9"), "ABC 1-\xC3\xA9");
     }
 
-    TEST(Ascii,caseInsensitiveEqual)
+    TEST(Ascii, caseInsensitiveEqual)
     {
         EXPECT_TRUE(caseInsensitiveEqual("FLAC", "flac"));
         EXPECT_TRUE(caseInsensitiveEqual("", ""));
@@ -48,7 +48,7 @@ namespace lms::core::ascii::tests
         EXPECT_FALSE(caseInsensitiveEqual("\xC3\x89", "\xC3\xA9")); // É / é
     }
 
-    TEST(Ascii,caseInsensitiveContains)
+    TEST(Ascii, caseInsensitiveContains)
     {
         EXPECT_TRUE(caseInsensitiveContains("FooBar", "Bar"));
         EXPECT_TRUE(caseInsensitiveContains("FooBar", "bar"));
@@ -62,7 +62,7 @@ namespace lms::core::ascii::tests
         EXPECT_FALSE(caseInsensitiveContains("\xC3\x89t\xC3\xA9", "\xC3\xA9t"));
     }
 
-    TEST(Ascii,capitalize)
+    TEST(Ascii, capitalize)
     {
         struct TestCase
         {
