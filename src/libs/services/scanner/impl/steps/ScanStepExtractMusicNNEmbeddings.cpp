@@ -156,14 +156,6 @@ namespace lms::scanner
         }
     } // namespace
 
-    ScanStepExtractMusicNNEmbeddings::ScanStepExtractMusicNNEmbeddings(InitParams& initParams, const std::filesystem::path& modelPath, std::size_t musicnnMaxPatchCountPerTrack)
-        : ScanStepBase{ initParams }
-        , _embeddingExtractor{ audio::createMusicNNEmbeddingExtractor(modelPath, musicnnMaxPatchCountPerTrack) }
-    {
-    }
-
-    ScanStepExtractMusicNNEmbeddings::~ScanStepExtractMusicNNEmbeddings() = default;
-
     bool ScanStepExtractMusicNNEmbeddings::needProcess([[maybe_unused]] const ScanContext& context) const
     {
         return true;
@@ -173,31 +165,52 @@ namespace lms::scanner
     {
         db::ISession& dbSession{ _db.getTLSSession() };
 
+        const std::string fileIdentifier{ audio::getMusicNNModelIdentifier(_settings.musicnnModelPath) };
+        if (fileIdentifier.empty())
         {
-            const std::string fileIdentifier{ audio::getMusicNNModelIdentifier(_settings.musicnnModelPath) };
-            if (fileIdentifier.empty())
-            {
-                LMS_LOG(DBUPDATER, WARNING, "Cannot identify MusicNN model file, skipping embedding extraction");
-                return;
-            }
-            const std::string identifier{ fileIdentifier + "|" + std::to_string(_settings.musicnnMaxPatchCountPerTrack) };
+            LMS_LOG(DBUPDATER, WARNING, "Cannot identify MusicNN model file, skipping embedding extraction");
+            return;
+        }
+        const std::string identifier{ fileIdentifier + "|" + std::to_string(_settings.musicnnMaxPatchCountPerTrack) };
+
+        bool modelChanged{};
+        {
+            auto transaction{ dbSession.createReadTransaction() };
+            const std::optional<db::ScanSettings> settings{ db::ScanSettings::find(dbSession) };
+            assert(settings);
+            modelChanged = settings->getMusicNNModelIdentifier() != identifier;
+            if (!modelChanged)
+                context.currentStepStats.totalElems = db::Track::getCount(dbSession, createFindTrackParams());
+        }
+
+        if (!modelChanged && context.currentStepStats.totalElems == 0)
+            return;
+
+        // Created per run: the ONNX runtime keeps its memory arena as long as the model lives
+        // Loaded before clearing the embeddings: a model that fails to load must not wipe the ones computed by the previous model
+        std::unique_ptr<audio::IMusicNNEmbeddingExtractor> embeddingExtractor;
+        try
+        {
+            embeddingExtractor = audio::createMusicNNEmbeddingExtractor(_settings.musicnnModelPath, _settings.musicnnMaxPatchCountPerTrack);
+        }
+        catch (const audio::Exception& e)
+        {
+            LMS_LOG(DBUPDATER, WARNING, "Cannot load MusicNN model, skipping embedding extraction: " << e.what());
+            return;
+        }
+
+        if (modelChanged)
+        {
+            LMS_LOG(DBUPDATER, INFO, "MusicNN model changed, clearing embeddings");
 
             auto transaction{ dbSession.createWriteTransaction() };
             std::optional<db::ScanSettings> settings{ db::ScanSettings::find(dbSession) };
             assert(settings);
-            if (settings->getMusicNNModelIdentifier() != identifier)
-            {
-                LMS_LOG(DBUPDATER, INFO, "MusicNN model changed, clearing embeddings");
-                db::TrackMusicNNEmbeddings::removeAll(dbSession);
-                settings->setMusicNNModelIdentifier(identifier);
-                db::ScanSettings::update(dbSession, *settings);
-            }
-        }
+            db::TrackMusicNNEmbeddings::removeAll(dbSession);
+            settings->setMusicNNModelIdentifier(identifier);
+            db::ScanSettings::update(dbSession, *settings);
 
-        {
-            db::Track::FindParameters params{ createFindTrackParams() };
-            auto transaction{ dbSession.createReadTransaction() };
-            context.currentStepStats.totalElems = db::Track::getCount(dbSession, params);
+            context.currentStepStats.totalElems = db::Track::getCount(dbSession, createFindTrackParams());
         }
 
         TrackEmbeddingAssociationContainer pendingAssocs;
@@ -239,7 +252,7 @@ namespace lms::scanner
             db::TrackId lastRetrievedTrackId;
             TrackLocation trackLocation;
             while (!_abortScan && fetchNextTrackWithoutEmbeddings(dbSession, lastRetrievedTrackId, trackLocation))
-                queue.push(std::make_unique<ExtractMusicNNEmbeddingsJob>(*_embeddingExtractor, trackLocation));
+                queue.push(std::make_unique<ExtractMusicNNEmbeddingsJob>(*embeddingExtractor, trackLocation));
         }
 
         writeEmbeddings(context, dbSession, pendingAssocs, false);

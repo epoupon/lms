@@ -536,7 +536,7 @@ namespace lms::scanner
 
         // Audio extraction scan step must be last as it is the most long running
         if (_settings.extractMusicNNEmbeddings)
-            _scanSteps.emplace_back(std::make_unique<ScanStepExtractMusicNNEmbeddings>(params, _settings.musicnnModelPath, _settings.musicnnMaxPatchCountPerTrack));
+            _scanSteps.emplace_back(std::make_unique<ScanStepExtractMusicNNEmbeddings>(params));
     }
 
     void ScannerService::notifyInProgress(const ScanStepStats& stepStats)
