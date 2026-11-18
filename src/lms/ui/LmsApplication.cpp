@@ -255,7 +255,7 @@ namespace lms::ui
         require("js/mediaplayer.js");
 
 #if LMS_WT_HAS_FAVICON
-        setFavicon(std::make_unique<Wt::WUrlFavicon>(resolveRelativeUrl("images/favicon.svg")));
+        setFavicon(std::make_unique<Wt::WUrlFavicon>(resolveRelativeUrl(std::string{ core::Service<core::IConfig>::get()->getString("ui-favicon-url", "images/favicon.svg") })));
 #endif // LMS_WT_HAS_FAVICON
 
         setTitle();
