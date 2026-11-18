@@ -55,6 +55,6 @@ add_subdirectory(src)
 
 install(DIRECTORY approot DESTINATION share/lms)
 install(DIRECTORY docroot DESTINATION share/lms)
-install(FILES conf/systemd/default.service DESTINATION share/lms)
+install(FILES conf/systemd/lms.service DESTINATION share/lms)
 install(FILES conf/pam/lms DESTINATION share/lms)
 install(FILES conf/lms.conf DESTINATION share/lms)
