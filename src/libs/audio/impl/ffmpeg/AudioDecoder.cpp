@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <array>
+#include <format>
 
 extern "C"
 {
@@ -110,7 +111,10 @@ namespace lms::audio::ffmpeg
     } // namespace
 
     AudioDecoder::AudioDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
-        : _parameters{ parameters }
+        : _filePath{ filePath }
+        , _parameters{ parameters }
+        , _lastSentPacketPts{ AV_NOPTS_VALUE }
+        , _lastSentPacketBytePosition{ -1 }
     {
         if (_parameters.channelCount > AV_NUM_DATA_POINTERS)
             throw Exception{ "Channel count exceeds maximum supported channels" };
@@ -217,7 +221,11 @@ namespace lms::audio::ffmpeg
         };
     }
 
-    AudioDecoder::~AudioDecoder() = default;
+    AudioDecoder::~AudioDecoder()
+    {
+        if (_skippedPacketCount > 0)
+            LMS_LOG(AUDIO, WARNING, "Skipped " << _skippedPacketCount << " invalid packet(s) in " << _filePath);
+    }
 
     const PcmParameters& AudioDecoder::getParameters() const
     {
@@ -252,12 +260,19 @@ namespace lms::audio::ffmpeg
             {
                 _draining = true;
             }
+            else if (recvErr == AVERROR_INVALIDDATA)
+            {
+                skipInvalidPacket(recvErr);
+                continue;
+            }
             else if (recvErr < 0)
             {
                 throw FFmpegException{ "avcodec_receive_frame failed", recvErr };
             }
             else
             {
+                _frameDecoded = true;
+
                 const std::size_t outSampleCount{ resampleFrame(outputChannelBuffers, maxSamplesPerChannel, _decodedFrame.get()) };
                 ::av_frame_unref(_decodedFrame.get());
 
@@ -270,6 +285,10 @@ namespace lms::audio::ffmpeg
             // Drain resampler once decoder is drained
             if (_draining)
             {
+                // Otherwise a fully corrupt file would look like a valid empty one
+                if (!_frameDecoded && _skippedPacketCount > 0)
+                    throw FFmpegException{ "No decodable packet", AVERROR_INVALIDDATA };
+
                 try
                 {
                     const std::size_t outSampleCount{ drainResampler(outputChannelBuffers, maxSamplesPerChannel) };
@@ -332,25 +351,41 @@ namespace lms::audio::ffmpeg
 
     void AudioDecoder::sendPendingPacket()
     {
-        int sendError{ ::avcodec_send_packet(_decoderContext.get(), _inputPacket.get()) };
+        _lastSentPacketPts = _inputPacket->pts;
+        _lastSentPacketBytePosition = _inputPacket->pos;
+
+        const int sendError{ ::avcodec_send_packet(_decoderContext.get(), _inputPacket.get()) };
         if (sendError == AVERROR(EAGAIN))
             return; // On EAGAIN, leaves _inputPacket referenced: feedDecoder() retries it on the next call
 
         ::av_packet_unref(_inputPacket.get());
         if (sendError == AVERROR_INVALIDDATA)
-        {
-            // we may be close to the end of the file, abort gracefully *only* if next packet is EOF
-            const int peekError{ ::av_read_frame(_context.get(), _inputPacket.get()) };
-            ::av_packet_unref(_inputPacket.get());
-            if (peekError == AVERROR_EOF)
-            {
-                LMS_LOG(AUDIO, DEBUG, "Invalid data in packet at end of file");
-                _eof = true;
-                sendError = 0;
-            }
-        }
-        if (sendError < 0)
+            skipInvalidPacket(sendError);
+        else if (sendError < 0)
             throw FFmpegException{ "avcodec_send_packet failed", sendError };
+    }
+
+    void AudioDecoder::skipInvalidPacket(int error)
+    {
+        ++_skippedPacketCount;
+        LMS_LOG(AUDIO, DEBUG, "Skipping invalid packet at " << describeLastSentPacketPosition() << " in " << _filePath << ": " << utils::averrorToString(error));
+    }
+
+    std::string AudioDecoder::describeLastSentPacketPosition() const
+    {
+        std::string res;
+
+        if (_lastSentPacketPts != AV_NOPTS_VALUE)
+        {
+            const AVStream* stream{ _context->streams[_inputStreamIndex] };
+            const std::int64_t startTime{ stream->start_time != AV_NOPTS_VALUE ? stream->start_time : 0 };
+            res = std::format("{:.3f} s", static_cast<double>(_lastSentPacketPts - startTime) * ::av_q2d(stream->time_base));
+        }
+
+        if (_lastSentPacketBytePosition >= 0)
+            res += std::format("{}byte {}", res.empty() ? "" : ", ", _lastSentPacketBytePosition);
+
+        return res.empty() ? "unknown position" : res;
     }
 
     void AudioDecoder::feedDecoder()
@@ -368,8 +403,10 @@ namespace lms::audio::ffmpeg
         if (readError == AVERROR_EOF)
         {
             _eof = true;
-            // flush decoder
-            ::avcodec_send_packet(_decoderContext.get(), nullptr);
+            // Flushing may report the decode error of the last buffered packet
+            const int flushError{ ::avcodec_send_packet(_decoderContext.get(), nullptr) };
+            if (flushError == AVERROR_INVALIDDATA)
+                skipInvalidPacket(flushError);
         }
         else if (readError < 0)
         {
