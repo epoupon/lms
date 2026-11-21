@@ -44,6 +44,13 @@ static_assert(TAGLIB_MAJOR_VERSION >= 2);
     #define LMS_TAGLIB_HAS_SHORTEN 0
 #endif
 
+// Matroska exists since 2.2, but we require >= 2.3.2 since this is the first good enough release release
+#if LMS_TAGLIB_HAS_BUILD_CONFIG && defined(TAGLIB_WITH_MATROSKA) && ((TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 3) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION == 3 && TAGLIB_PATCH_VERSION >= 2))
+    #define LMS_TAGLIB_HAS_MATROSKA 1
+#else
+    #define LMS_TAGLIB_HAS_MATROSKA 0
+#endif
+
 #if LMS_TAGLIB_HAS_BUILD_CONFIG
     #if defined(TAGLIB_WITH_RIFF)
         #define LMS_TAGLIB_HAS_RIFF 1

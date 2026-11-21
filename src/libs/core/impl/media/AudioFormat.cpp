@@ -32,6 +32,7 @@ namespace lms::core::media
         constexpr std::array wmaExtensions{ std::string_view{ ".wma" }, std::string_view{ ".asf" } };
         constexpr std::array dsfExtensions{ std::string_view{ ".dsf" } };
         constexpr std::array flacExtensions{ std::string_view{ ".flac" } };
+        constexpr std::array matroskaExtensions{ std::string_view{ ".mka" } };
         constexpr std::array mp4AacExtensions{ std::string_view{ ".m4a" }, std::string_view{ ".m4b" }, std::string_view{ ".mp4" }, std::string_view{ ".m4r" }, std::string_view{ ".m4p" }, std::string_view{ ".3g2" }, std::string_view{ ".m4v" } };
         constexpr std::array mp4AlacExtensions{ std::string_view{ ".m4a" }, std::string_view{ ".alac" } };
         constexpr std::array mpcExtensions{ std::string_view{ ".mpc" } };
@@ -44,6 +45,7 @@ namespace lms::core::media
         constexpr std::array ttaExtensions{ std::string_view{ ".tta" } };
         constexpr std::array wavExtensions{ std::string_view{ ".wav" } };
         constexpr std::array wavPackExtensions{ std::string_view{ ".wv" } };
+        constexpr std::array webmExtensions{ std::string_view{ ".webm" } };
 
         struct AudioFormatEntry
         {
@@ -61,6 +63,17 @@ namespace lms::core::media
             AudioFormatEntry{ .format = { Container::ASF, Codec::WMA9Lossless }, .extensions = wmaExtensions },
             AudioFormatEntry{ .format = { Container::DSF, Codec::DSD }, .extensions = dsfExtensions },
             AudioFormatEntry{ .format = { Container::FLAC, Codec::FLAC }, .extensions = flacExtensions },
+            AudioFormatEntry{ .format = { Container::Matroska, Codec::AAC }, .extensions = matroskaExtensions },
+            AudioFormatEntry{ .format = { Container::Matroska, Codec::AC3 }, .extensions = matroskaExtensions },
+            AudioFormatEntry{ .format = { Container::Matroska, Codec::ALAC }, .extensions = matroskaExtensions },
+            AudioFormatEntry{ .format = { Container::Matroska, Codec::EAC3 }, .extensions = matroskaExtensions },
+            AudioFormatEntry{ .format = { Container::Matroska, Codec::FLAC }, .extensions = matroskaExtensions },
+            AudioFormatEntry{ .format = { Container::Matroska, Codec::MP3 }, .extensions = matroskaExtensions },
+            AudioFormatEntry{ .format = { Container::Matroska, Codec::Opus }, .extensions = matroskaExtensions },
+            AudioFormatEntry{ .format = { Container::Matroska, Codec::PCM }, .extensions = matroskaExtensions },
+            AudioFormatEntry{ .format = { Container::Matroska, Codec::TrueAudio }, .extensions = matroskaExtensions },
+            AudioFormatEntry{ .format = { Container::Matroska, Codec::Vorbis }, .extensions = matroskaExtensions },
+            AudioFormatEntry{ .format = { Container::Matroska, Codec::WavPack }, .extensions = matroskaExtensions },
             AudioFormatEntry{ .format = { Container::MP4, Codec::AAC }, .extensions = mp4AacExtensions },
             AudioFormatEntry{ .format = { Container::MP4, Codec::ALAC }, .extensions = mp4AlacExtensions },
             AudioFormatEntry{ .format = { Container::MP4, Codec::AC3 }, .extensions = mp4AacExtensions },
@@ -78,6 +91,8 @@ namespace lms::core::media
             AudioFormatEntry{ .format = { Container::TrueAudio, Codec::TrueAudio }, .extensions = ttaExtensions },
             AudioFormatEntry{ .format = { Container::WAV, Codec::PCM }, .extensions = wavExtensions },
             AudioFormatEntry{ .format = { Container::WavPack, Codec::WavPack }, .extensions = wavPackExtensions },
+            AudioFormatEntry{ .format = { Container::WebM, Codec::Opus }, .extensions = webmExtensions },
+            AudioFormatEntry{ .format = { Container::WebM, Codec::Vorbis }, .extensions = webmExtensions },
         };
     } // namespace
 

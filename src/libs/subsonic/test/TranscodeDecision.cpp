@@ -278,6 +278,32 @@ namespace lms::api::subsonic
                     .expected = { detail::DirectPlayResult{} },
                 },
 
+                {
+                    .name = "WebmDirectPlayMatchesWebmContainerName",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = std::nullopt,
+                        .directPlayProfiles = {
+                            { .containers = { "webm" }, .audioCodecs = { "opus" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {},
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::WebM,
+                        .codec = core::media::Codec::Opus,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 128'000,
+                        .channelCount = 2,
+                        .sampleRate = 48'000,
+                        .bitsPerSample = std::nullopt,
+                    },
+
+                    .expected = { detail::DirectPlayResult{} },
+                },
+
                 // direct play never needs the server to decode anything (the source bytes are streamed as-is),
                 // so it must succeed even for a source format this build can't decode at all
                 {
@@ -952,6 +978,35 @@ namespace lms::api::subsonic
                     },
 
                     .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::ProtocolNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = std::nullopt, .audioBitrate = 128'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
+                // WebM is a subset of Matroska, not the other way round: a WebM-only client (e.g. a browser) cannot play Matroska files
+                {
+                    .name = "MatroskaNotDirectPlayedAsWebm",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = 320'000,
+                        .maxTranscodingAudioBitrate = 320'000,
+                        .directPlayProfiles = {
+                            { .containers = { "webm" }, .audioCodecs = { "opus" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {
+                            { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = std::nullopt },
+                        },
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::Matroska,
+                        .codec = core::media::Codec::Opus,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 128'000,
+                        .channelCount = 2,
+                        .sampleRate = 48'000,
+                        .bitsPerSample = std::nullopt,
+                    },
+
+                    .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = std::nullopt, .audioBitrate = 128'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
                 },
             };
         }

@@ -60,6 +60,9 @@
     #include <taglib/dsdifffile.h>
     #include <taglib/dsffile.h>
 #endif
+#if LMS_TAGLIB_HAS_MATROSKA
+    #include <taglib/matroskafile.h>
+#endif
 
 #include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
@@ -74,7 +77,7 @@ namespace lms::audio::taglib
             { TagType::AcoustID, { "ACOUSTID_ID", "ACOUSTID ID" } },
             { TagType::Advisory, { "ITUNESADVISORY" } },
             { TagType::Album, { "ALBUM" } },
-            { TagType::AlbumArtist, { "ALBUMARTIST" } },
+            { TagType::AlbumArtist, { "ALBUMARTIST", "ALBUM_ARTIST" } }, // ALBUM_ARTIST: FFmpeg-written Matroska tags
             { TagType::AlbumArtistSortOrder, { "ALBUMARTISTSORT" } },
             { TagType::AlbumArtists, { "ALBUMARTISTS" } },
             { TagType::AlbumArtistsSortOrder, { "ALBUMARTISTSSORT" } },
@@ -433,6 +436,18 @@ namespace lms::audio::taglib
                 processID3v2Tags(*wavFile->ID3v2Tag());
         }
 #endif // LMS_TAGLIB_HAS_RIFF
+#if LMS_TAGLIB_HAS_MATROSKA
+        // Matroska / WebM
+        else if (const TagLib::Matroska::File * matroskaFile{ dynamic_cast<const TagLib::Matroska::File*>(&_file) })
+        {
+            // FFmpeg seems to write the title in the segment info instead of a TITLE tag, and tag()->title() falls back to it
+            if (!_propertyMap.contains("TITLE"))
+            {
+                if (const ::TagLib::String title{ matroskaFile->tag()->title() }; !title.isEmpty())
+                    _propertyMap["TITLE"] = title;
+            }
+        }
+#endif // LMS_TAGLIB_HAS_MATROSKA
     }
 
     TagReader::~TagReader() = default;

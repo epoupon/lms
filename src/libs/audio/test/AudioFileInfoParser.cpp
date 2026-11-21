@@ -17,10 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <memory>
 #include <ostream>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -84,13 +86,20 @@ namespace lms::audio::tests
         ASSERT_TRUE(std::filesystem::exists(path)) << path;
 
         const std::unique_ptr<IAudioFileInfoParser> parser{ createAudioFileInfoParser(testCase.backend) };
+
+        const std::span<const std::filesystem::path> supportedExtensions{ parser->getSupportedExtensions() };
+        if (std::find(std::cbegin(supportedExtensions), std::cend(supportedExtensions), path.extension()) == std::cend(supportedExtensions))
+            GTEST_SKIP() << "file extension not supported by this backend in this build";
+
         const std::unique_ptr<IAudioFileInfo> info{ parser->parse(path) };
         ASSERT_TRUE(info);
 
         const AudioProperties* properties{ info->getAudioProperties() };
         ASSERT_TRUE(properties);
 
-        EXPECT_EQ(properties->container, testCase.file.container);
+        // FFmpeg does not expose the Matroska DocType, so it reports WebM files as Matroska
+        const bool isWebMSeenAsMatroska{ testCase.backend == AudioFileInfoParserBackend::FFmpeg && testCase.file.container == core::media::Container::WebM };
+        EXPECT_EQ(properties->container, isWebMSeenAsMatroska ? core::media::Container::Matroska : testCase.file.container);
         EXPECT_EQ(properties->codec, testCase.file.codec);
         EXPECT_EQ(properties->channelCount, testCase.file.channelCount);
         EXPECT_EQ(properties->sampleRate, testCase.file.sampleRate);

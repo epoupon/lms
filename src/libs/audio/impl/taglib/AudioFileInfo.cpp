@@ -20,6 +20,9 @@
 #include "AudioFileInfo.hpp"
 
 #include <cassert>
+#include <optional>
+#include <string>
+#include <string_view>
 
 #include "TagLibDefs.hpp"
 
@@ -54,6 +57,9 @@
 #if LMS_TAGLIB_HAS_SHORTEN
     #include <taglib/shortenfile.h>
 #endif
+#if LMS_TAGLIB_HAS_MATROSKA
+    #include <taglib/matroskafile.h>
+#endif
 
 #include "core/ILogger.hpp"
 
@@ -69,6 +75,37 @@ namespace lms::audio::taglib
 {
     namespace
     {
+#if LMS_TAGLIB_HAS_MATROSKA
+        // See https://www.matroska.org/technical/codec_specs.html
+        std::optional<core::media::Codec> codecFromMatroskaCodecId(std::string_view codecId)
+        {
+            if (codecId == "A_AAC" || codecId.starts_with("A_AAC/")) // A_AAC/MPEG2/... and A_AAC/MPEG4/... are deprecated forms
+                return core::media::Codec::AAC;
+            if (codecId == "A_AC3" || codecId.starts_with("A_AC3/"))
+                return core::media::Codec::AC3;
+            if (codecId == "A_ALAC")
+                return core::media::Codec::ALAC;
+            if (codecId == "A_EAC3")
+                return core::media::Codec::EAC3;
+            if (codecId == "A_FLAC")
+                return core::media::Codec::FLAC;
+            if (codecId == "A_MPEG/L3")
+                return core::media::Codec::MP3;
+            if (codecId == "A_OPUS")
+                return core::media::Codec::Opus;
+            if (codecId.starts_with("A_PCM/"))
+                return core::media::Codec::PCM;
+            if (codecId == "A_TTA1")
+                return core::media::Codec::TrueAudio;
+            if (codecId == "A_VORBIS")
+                return core::media::Codec::Vorbis;
+            if (codecId == "A_WAVPACK4")
+                return core::media::Codec::WavPack;
+
+            return std::nullopt;
+        }
+#endif // LMS_TAGLIB_HAS_MATROSKA
+
         std::optional<AudioProperties> computeAudioProperties(const ::TagLib::File& file, const std::filesystem::path& filePath)
         {
             assert(file.audioProperties());
@@ -283,6 +320,26 @@ namespace lms::audio::taglib
                 audioProperties.bitsPerSample = shortenFile->audioProperties()->bitsPerSample();
             }
 #endif // LMS_TAGLIB_HAS_SHORTEN
+#if LMS_TAGLIB_HAS_MATROSKA
+            else if (const auto* matroskaFile{ dynamic_cast<const ::TagLib::Matroska::File*>(&file) })
+            {
+                const auto& properties{ *matroskaFile->audioProperties() };
+
+                const std::string codecId{ properties.codecName().to8Bit(true) };
+                const std::optional<core::media::Codec> codec{ codecFromMatroskaCodecId(codecId) };
+                if (!codec)
+                {
+                    LMS_LOG(AUDIO, DEBUG, "Unhandled Matroska codec '" << codecId << "' in " << filePath);
+                    return std::nullopt;
+                }
+
+                // WebM only allows Opus and Vorbis: any other codec is labelled Matroska so that WebM-only clients never get it
+                const bool isWebM{ properties.docType() == "webm" && (*codec == core::media::Codec::Opus || *codec == core::media::Codec::Vorbis) };
+                audioProperties.container = isWebM ? core::media::Container::WebM : core::media::Container::Matroska;
+                audioProperties.codec = *codec;
+                audioProperties.bitsPerSample = properties.bitsPerSample();
+            }
+#endif // LMS_TAGLIB_HAS_MATROSKA
             else
             {
                 LMS_LOG(AUDIO, DEBUG, "Unhandled file type in " << filePath);

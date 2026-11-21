@@ -21,6 +21,8 @@
 
 #include "TagLibDefs.hpp"
 
+#include <filesystem>
+
 #include <taglib/attachedpictureframe.h>
 #include <taglib/id3v2tag.h>
 #include <taglib/mpegfile.h>
@@ -47,6 +49,9 @@
 #if LMS_TAGLIB_HAS_MP4
     #include <taglib/mp4coverart.h>
     #include <taglib/mp4file.h>
+#endif
+#if LMS_TAGLIB_HAS_MATROSKA
+    #include <taglib/matroskafile.h>
 #endif
 
 #include "core/Ascii.hpp"
@@ -376,6 +381,41 @@ namespace lms::audio::taglib
     #endif // LMS_TAGLIB_HAS_APE_COMPLEX_PROPERTIES
         }
 #endif // LMS_TAGLIB_HAS_APE
+
+#if LMS_TAGLIB_HAS_MATROSKA
+        void visitMatroskaImages(const ::TagLib::Matroska::File& matroskaFile, const ImageReader::ImageVisitor& visitor)
+        {
+            // "PICTURE" only returns the image/* attachments
+            const ::TagLib::List<TagLib::VariantMap> pictureProperties{ matroskaFile.complexProperties("PICTURE") };
+            for (const ::TagLib::VariantMap& pictureProperty : pictureProperties)
+            {
+                Image image;
+                ::TagLib::ByteVector picture;
+
+                // Matroska has no picture type: by convention, the front cover is the attachment named "cover.<ext>"
+                if (auto it{ pictureProperty.find("fileName") }; it != pictureProperty.cend())
+                {
+                    const std::filesystem::path fileName{ it->second.toString().to8Bit(true) };
+                    image.type = core::ascii::caseInsensitiveEqual(fileName.stem().string(), "cover") ? core::media::ImageType::FrontCover : core::media::ImageType::Unknown;
+                }
+                if (auto it{ pictureProperty.find("mimeType") }; it != pictureProperty.cend())
+                    image.mimeType = it->second.toString().to8Bit(true);
+                if (auto it{ pictureProperty.find("description") }; it != pictureProperty.cend())
+                    image.description = it->second.toString().to8Bit(true);
+                if (auto it{ pictureProperty.find("data") }; it != pictureProperty.cend())
+                {
+                    picture = it->second.toByteVector();
+                    image.data = { reinterpret_cast<const std::byte*>(picture.data()), picture.size() };
+                }
+
+                if (!image.data.empty())
+                {
+                    if (visitor(image) == core::Break)
+                        break;
+                }
+            }
+        }
+#endif // LMS_TAGLIB_HAS_MATROSKA
     } // namespace
 
     ImageReader::ImageReader(::TagLib::File& file)
@@ -456,5 +496,12 @@ namespace lms::audio::taglib
                 visitAPEImages(*wavPackFile->APETag(), visitor);
         }
 #endif // LMS_TAGLIB_HAS_APE
+#if LMS_TAGLIB_HAS_MATROSKA
+        // Matroska / WebM
+        else if (const TagLib::Matroska::File * matroskaFile{ dynamic_cast<const TagLib::Matroska::File*>(&_file) })
+        {
+            visitMatroskaImages(*matroskaFile, visitor);
+        }
+#endif // LMS_TAGLIB_HAS_MATROSKA
     }
 } // namespace lms::audio::taglib

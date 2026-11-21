@@ -32,6 +32,7 @@ namespace lms::core::media
             Container::ASF,
             Container::DSF,
             Container::FLAC,
+            Container::Matroska,
             Container::MP4,
             Container::MPC,
             Container::MPEG,
@@ -40,6 +41,7 @@ namespace lms::core::media
             Container::TrueAudio,
             Container::WAV,
             Container::WavPack,
+            Container::WebM,
         };
     } // namespace
 
@@ -62,6 +64,8 @@ namespace lms::core::media
             return "DSF";
         case Container::FLAC:
             return "FLAC";
+        case Container::Matroska:
+            return "Matroska";
         case Container::MP4:
             return "MP4";
         case Container::MPC:
@@ -78,6 +82,8 @@ namespace lms::core::media
             return "WAV";
         case Container::WavPack:
             return "WavPack";
+        case Container::WebM:
+            return "WebM";
         }
 
         return "Unknown";

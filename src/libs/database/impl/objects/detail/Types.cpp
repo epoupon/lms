@@ -35,6 +35,8 @@ namespace lms::db::detail
             return core::media::Container::DSF;
         case Container::FLAC:
             return core::media::Container::FLAC;
+        case Container::Matroska:
+            return core::media::Container::Matroska;
         case Container::MP4:
             return core::media::Container::MP4;
         case Container::MPC:
@@ -51,6 +53,8 @@ namespace lms::db::detail
             return core::media::Container::WAV;
         case Container::WavPack:
             return core::media::Container::WavPack;
+        case Container::WebM:
+            return core::media::Container::WebM;
 
         case Container::Unknown:
             break;
@@ -73,6 +77,8 @@ namespace lms::db::detail
             return Container::DSF;
         case core::media::Container::FLAC:
             return Container::FLAC;
+        case core::media::Container::Matroska:
+            return Container::Matroska;
         case core::media::Container::MP4:
             return Container::MP4;
         case core::media::Container::MPC:
@@ -89,6 +95,8 @@ namespace lms::db::detail
             return Container::WAV;
         case core::media::Container::WavPack:
             return Container::WavPack;
+        case core::media::Container::WebM:
+            return Container::WebM;
         }
 
         return Container::Unknown;

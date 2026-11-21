@@ -61,6 +61,9 @@
 #if LMS_TAGLIB_HAS_SHORTEN
     #include <taglib/shortenfile.h>
 #endif
+#if LMS_TAGLIB_HAS_MATROSKA
+    #include <taglib/matroskafile.h>
+#endif
 
 #include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
@@ -100,6 +103,9 @@ namespace lms::audio::taglib::utils
                 return LMS_TAGLIB_HAS_DSF;
             case core::media::Container::Shorten:
                 return LMS_TAGLIB_HAS_SHORTEN;
+            case core::media::Container::Matroska:
+            case core::media::Container::WebM:
+                return LMS_TAGLIB_HAS_MATROSKA;
             }
 
             return false;
@@ -156,6 +162,11 @@ namespace lms::audio::taglib::utils
             if (container == Container::Shorten)
                 return std::make_unique<TagLib::Shorten::File>(stream, readAudioProperties, style);
 #endif // LMS_TAGLIB_HAS_SHORTEN
+#if LMS_TAGLIB_HAS_MATROSKA
+            // The actual container (Matroska or WebM) is only known from the DocType, once parsed
+            if (container == Container::Matroska || container == Container::WebM)
+                return std::make_unique<TagLib::Matroska::File>(stream, readAudioProperties, style);
+#endif // LMS_TAGLIB_HAS_MATROSKA
 
             return nullptr;
         }
@@ -306,6 +317,10 @@ namespace lms::audio::taglib::utils
         else if (TagLib::Shorten::File::isSupported(stream))
             file = std::make_unique<TagLib::Shorten::File>(stream, readAudioProperties, audioPropertiesStyle);
 #endif // LMS_TAGLIB_HAS_SHORTEN
+#if LMS_TAGLIB_HAS_MATROSKA
+        else if (TagLib::Matroska::File::isSupported(stream))
+            file = std::make_unique<TagLib::Matroska::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif // LMS_TAGLIB_HAS_MATROSKA
 
         if (file && !file->isValid())
             file.reset();

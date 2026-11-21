@@ -45,6 +45,7 @@ namespace lms::api::subsonic::detail
             constexpr std::array apeNames{ "ape"sv };
             constexpr std::array asfNames{ "asf"sv, "wma"sv };
             constexpr std::array dsfNames{ "dsf"sv };
+            constexpr std::array matroskaNames{ "mka"sv, "mkv"sv, "matroska"sv };
             constexpr std::array mpcNames{ "mpc"sv, "mpp"sv, "mp"sv };
             constexpr std::array mpegNames{ "mp3"sv, "mp2"sv, "mpeg"sv, "aac"sv, "adts"sv }; // "aac"/"adts" mean raw ADTS AAC here, not MP4-boxed AAC
             constexpr std::array oggNames{ "ogg"sv, "oga"sv };
@@ -54,6 +55,7 @@ namespace lms::api::subsonic::detail
             constexpr std::array trueAudioNames{ "tta"sv };
             constexpr std::array wavNames{ "wav"sv };
             constexpr std::array wavPackNames{ "wv"sv };
+            constexpr std::array webmNames{ "webm"sv, "webma"sv };
 
             std::span<const std::string_view> containerNames;
 
@@ -70,6 +72,9 @@ namespace lms::api::subsonic::detail
                 break;
             case core::media::Container::DSF:
                 containerNames = dsfNames;
+                break;
+            case core::media::Container::Matroska:
+                containerNames = matroskaNames;
                 break;
             case core::media::Container::MPC:
                 containerNames = mpcNames;
@@ -97,6 +102,9 @@ namespace lms::api::subsonic::detail
                 break;
             case core::media::Container::WavPack:
                 containerNames = wavPackNames;
+                break;
+            case core::media::Container::WebM:
+                containerNames = webmNames;
                 break;
             }
 
