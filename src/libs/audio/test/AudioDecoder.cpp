@@ -84,6 +84,48 @@ namespace lms::audio::tests
         EXPECT_NEAR(decodedDurationSec, std::chrono::duration<double>{ testCase.duration }.count(), 0.2);
     }
 
+    TEST_P(AudioDecoderTest, seekWhileDecodingResumesAtOffset)
+    {
+        const TestAudioFile& testCase{ GetParam() };
+        const std::filesystem::path path{ testCase.getPath() };
+        ASSERT_TRUE(std::filesystem::exists(path)) << path;
+
+        if (!isDecodingSupported(testCase.container, testCase.codec))
+            GTEST_SKIP() << "container/codec not supported by this build";
+
+        const PcmParameters params{
+            .channelCount = testCase.channelCount,
+            .sampleRate = testCase.sampleRate,
+            .sampleType = PcmSampleType::Signed16,
+            .byteOrder = std::endian::native,
+            .planar = false,
+        };
+
+        const std::unique_ptr<IAudioDecoder> decoder{ createAudioDecoder(path, std::chrono::microseconds{ 0 }, params) };
+
+        constexpr std::size_t bufferSampleCount{ 8'192 };
+        std::vector<std::byte> buffer(bufferSampleCount * testCase.channelCount * sizeof(std::int16_t));
+        std::array outputBuffers{ IAudioDecoder::WritableBuffer{ std::span{ buffer } } };
+
+        ASSERT_GT(decoder->readSamples(outputBuffers), 0U);
+
+        constexpr std::chrono::seconds offset{ 2 };
+        decoder->seek(offset);
+
+        std::size_t totalSampleCount{};
+        while (!decoder->finished())
+        {
+            const std::size_t sampleCount{ decoder->readSamples(outputBuffers) };
+            if (sampleCount == 0)
+                break;
+
+            totalSampleCount += sampleCount;
+        }
+
+        const double decodedDurationSec{ static_cast<double>(totalSampleCount) / testCase.sampleRate };
+        EXPECT_NEAR(decodedDurationSec, std::chrono::duration<double>{ testCase.duration - offset }.count(), 0.2);
+    }
+
     INSTANTIATE_TEST_SUITE_P(
         audio,
         AudioDecoderTest,

@@ -23,6 +23,7 @@
 #include <array>
 #include <bit>
 #include <cassert>
+#include <chrono>
 #include <complex>
 #include <concepts>
 #include <cstddef>
@@ -135,25 +136,28 @@ namespace lms::audio
             return decodedCount;
         }
 
-        // Skips exactly the next frameCount frames without computing FFT or invoking callbacks.
-        // Returns frameCount on success, 0 on EOF.
-        std::size_t skipFrames(std::size_t frameCount)
+        // Skips the next frameCount frames, seeking past the samples that are not buffered yet.
+        // Reaching EOF is reported by the next decodeFrames call.
+        void skipFrames(std::size_t frameCount)
         {
             if (frameCount == 0)
-                return 0;
+                return;
 
-            std::size_t skippedFrameCount{};
-            while (skippedFrameCount < frameCount)
+            const std::size_t skippedSampleCount{ frameCount * _hopSize };
+            if (skippedSampleCount < _bufferedSampleCount)
             {
-                if (!readAtLeastSamples(std::max(WindowSize, _hopSize)))
-                    break;
-
-                consumeSamples(_hopSize);
-                ++_currentFrameIndex;
-                ++skippedFrameCount;
+                consumeSamples(skippedSampleCount);
+            }
+            else
+            {
+                // Frames are centered: frame N starts at sample N * hopSize - WindowSize / 2
+                const std::size_t firstSampleIndex{ (_currentFrameIndex + frameCount) * _hopSize - WindowSize / 2 };
+                _decoder->seek(std::chrono::round<std::chrono::microseconds>(std::chrono::duration<double>{ static_cast<double>(firstSampleIndex) / _pcmParams.sampleRate }));
+                _bufferedSampleCount = 0;
+                _endOfStream = false;
             }
 
-            return skippedFrameCount;
+            _currentFrameIndex += frameCount;
         }
 
         [[nodiscard]] std::size_t currentFrameIndex() const noexcept { return _currentFrameIndex; }

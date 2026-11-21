@@ -158,32 +158,16 @@ namespace lms::audio::ffmpeg
 
         checkDecodedFormatIsSupported(*_context, *decoder, filePath);
 
-        // Lets the demuxer skip the data of the other streams (video, cover art...) instead of reading it into packets we drop
+        // Demuxers may index only some streams: Matroska Cues usually list only the video keyframes, and seeking on the audio
+        // stream then reads the file up to the target. Picked before discarding, since this lookup favors non-discarded streams
+        _seekStreamIndex = ::av_find_default_stream_index(_context.get());
+
+        // Lets the demuxer skip the data of the other streams (cover art...) instead of reading it into packets we drop.
+        // The seek stream is kept: without Cues, Matroska indexes the keyframes of the non-discarded streams only
         for (unsigned streamIndex{}; streamIndex < _context->nb_streams; ++streamIndex)
         {
-            if (streamIndex != static_cast<unsigned>(_inputStreamIndex))
+            if (streamIndex != static_cast<unsigned>(_inputStreamIndex) && streamIndex != static_cast<unsigned>(_seekStreamIndex))
                 _context->streams[streamIndex]->discard = AVDISCARD_ALL;
-        }
-
-        if (offset.count() > 0)
-        {
-            const AVStream* stream{ _context->streams[_inputStreamIndex] };
-
-            using OffsetPeriod = decltype(offset)::period;
-            constexpr AVRational offsetTimebase{ static_cast<int>(OffsetPeriod::num), static_cast<int>(OffsetPeriod::den) };
-
-            _seekTargetTimestamp = static_cast<int64_t>(av_rescale_q(offset.count(), offsetTimebase, stream->time_base));
-            if (stream->start_time != AV_NOPTS_VALUE)
-                _seekTargetTimestamp += stream->start_time;
-
-            if (const auto container{ utils::containerFromDemuxerName(_context->iformat->name) }; !container || isSeekingSupported(*container))
-            {
-                const int seekError{ ::av_seek_frame(_context.get(), _inputStreamIndex, _seekTargetTimestamp, AVSEEK_FLAG_BACKWARD) };
-                if (seekError < 0)
-                    LMS_LOG(AUDIO, WARNING, "Failed to seek to offset: " << utils::averrorToString(seekError));
-            }
-
-            _startTrimPending = true;
         }
 
         {
@@ -226,6 +210,9 @@ namespace lms::audio::ffmpeg
             static_cast<int>(_decoderContext->ch_layout.order),
             _decoderContext->ch_layout.u.mask,
         };
+
+        if (offset.count() > 0)
+            seek(offset);
     }
 
     AudioDecoder::~AudioDecoder()
@@ -318,6 +305,48 @@ namespace lms::audio::ffmpeg
     bool AudioDecoder::finished() const
     {
         return _finished;
+    }
+
+    void AudioDecoder::seek(std::chrono::microseconds offset)
+    {
+        const AVStream* stream{ _context->streams[_inputStreamIndex] };
+
+        using OffsetPeriod = decltype(offset)::period;
+        constexpr AVRational offsetTimebase{ static_cast<int>(OffsetPeriod::num), static_cast<int>(OffsetPeriod::den) };
+
+        _seekTargetTimestamp = static_cast<int64_t>(av_rescale_q(offset.count(), offsetTimebase, stream->time_base));
+        if (stream->start_time != AV_NOPTS_VALUE)
+            _seekTargetTimestamp += stream->start_time;
+
+        _startTrimPending = true;
+
+        // Samples buffered in the resampler come from before the target
+        ::swr_close(_resampleContext.get());
+        if (const int initErr{ ::swr_init(_resampleContext.get()) }; initErr < 0)
+            throw FFmpegException{ "Cannot initialize resampler", initErr };
+
+        if (const auto container{ utils::containerFromDemuxerName(_context->iformat->name) }; container && !isSeekingSupported(*container))
+            return;
+
+        // After a flush, decoders need the packets before the target to rebuild their state (MP3 bit reservoir, MDCT overlap, Opus pre-roll):
+        // seeking a bit earlier lets the trim drop these samples. Rounding down keeps the seek before the target
+        constexpr std::chrono::milliseconds seekPreroll{ 200 };
+        const std::int64_t startTime{ stream->start_time != AV_NOPTS_VALUE ? stream->start_time : 0 };
+        const std::int64_t prerollTimestamp{ std::max(startTime, _seekTargetTimestamp - ::av_rescale_q(seekPreroll.count(), AVRational{ 1, 1'000 }, stream->time_base)) };
+        const std::int64_t seekTimestamp{ ::av_rescale_q_rnd(prerollTimestamp, stream->time_base, _context->streams[_seekStreamIndex]->time_base, AV_ROUND_DOWN) };
+        const int seekError{ ::av_seek_frame(_context.get(), _seekStreamIndex, seekTimestamp, AVSEEK_FLAG_BACKWARD) };
+        if (seekError < 0)
+        {
+            LMS_LOG(AUDIO, WARNING, "Failed to seek to offset in " << _filePath << ": " << utils::averrorToString(seekError));
+            return;
+        }
+
+        // Everything read so far belongs to the previous position, including a packet left pending by EAGAIN
+        ::avcodec_flush_buffers(_decoderContext.get());
+        ::av_packet_unref(_inputPacket.get());
+        _eof = false;
+        _draining = false;
+        _finished = false;
     }
 
     std::chrono::milliseconds AudioDecoder::getEstimatedDuration() const

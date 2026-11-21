@@ -140,9 +140,7 @@ namespace lms::audio::musicnn
                 patchAccumulator->addMelRow(logMelRow, rms);
             } };
 
-            if (patchGapFrameCount > 0 && frameDecoder->skipFrames(patchGapFrameCount) == 0)
-                break;
-
+            frameDecoder->skipFrames(patchGapFrameCount);
             if (frameDecoder->decodeFrames(patchFrameCount, onFrame) < patchFrameCount)
                 break;
 

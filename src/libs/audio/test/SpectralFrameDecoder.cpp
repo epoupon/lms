@@ -17,6 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
+#include <chrono>
+#include <cmath>
 #include <cstring>
 #include <memory>
 #include <random>
@@ -74,6 +77,13 @@ namespace lms::audio::tests
             }
 
             bool finished() const override { return _finished; }
+
+            void seek(std::chrono::microseconds offset) override
+            {
+                const auto sampleIndex{ std::llround(std::chrono::duration<double>{ offset }.count() * _params.sampleRate) };
+                _currentSampleIndex = std::min(static_cast<std::size_t>(sampleIndex), _totalSampleCount);
+                _finished = false;
+            }
 
             std::chrono::milliseconds getEstimatedDuration() const override
             {
@@ -181,7 +191,7 @@ namespace lms::audio::tests
         std::vector<Frame> frames;
 
         EXPECT_EQ(frameDecoder.currentFrameIndex(), 0);
-        ASSERT_EQ(frameDecoder.skipFrames(2), 2);
+        frameDecoder.skipFrames(2);
         EXPECT_EQ(frameDecoder.currentFrameIndex(), 2);
 
         Frame lastFrame{};
@@ -197,5 +207,35 @@ namespace lms::audio::tests
             { 4.F, 5.F, 6.F, 7.F, 8.F, 9.F, 10.F, 11.F });
 
         EXPECT_EQ(frameDecoder.currentFrameIndex(), 3);
+    }
+
+    TEST(SpectralFrameDecoder, skipFramesBetweenDecodedFrames)
+    {
+        FrameDecoder frameDecoder{ std::make_unique<SequenceAudioDecoder>(32), HopSize };
+        using Frame = std::array<float, WindowSize>;
+        std::vector<Frame> frames;
+        const auto onFrame{ [&](const FrameDecoder::SpectralFrameView& frame) {
+            auto& newFrame{ frames.emplace_back() };
+            std::copy(std::cbegin(frame.rawSamples), std::cend(frame.rawSamples), std::begin(newFrame));
+        } };
+
+        ASSERT_EQ(frameDecoder.decodeFrames(1, onFrame), 1);
+        frameDecoder.skipFrames(1);
+        ASSERT_EQ(frameDecoder.decodeFrames(1, onFrame), 1);
+        frameDecoder.skipFrames(2);
+        ASSERT_EQ(frameDecoder.decodeFrames(1, onFrame), 1);
+
+        ASSERT_EQ(frames.size(), 3);
+        expectSpanEq<float, WindowSize>(frames[1], { 4.F, 5.F, 6.F, 7.F, 8.F, 9.F, 10.F, 11.F });
+        expectSpanEq<float, WindowSize>(frames[2], { 16.F, 17.F, 18.F, 19.F, 20.F, 21.F, 22.F, 23.F });
+        EXPECT_EQ(frameDecoder.currentFrameIndex(), 6);
+    }
+
+    TEST(SpectralFrameDecoder, skipFramesPastEndOfStream)
+    {
+        FrameDecoder frameDecoder{ std::make_unique<SequenceAudioDecoder>(32), HopSize };
+
+        frameDecoder.skipFrames(10);
+        EXPECT_EQ(frameDecoder.decodeFrames(1, [](const FrameDecoder::SpectralFrameView&) {}), 0);
     }
 } // namespace lms::audio::tests

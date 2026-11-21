@@ -42,6 +42,7 @@ namespace lms::audio::ffmpeg
 
         std::size_t readSamples(std::span<WritableBuffer> outputChannelBuffers) override;
         bool finished() const override;
+        void seek(std::chrono::microseconds offset) override;
 
         std::chrono::milliseconds getEstimatedDuration() const override;
 
@@ -67,6 +68,7 @@ namespace lms::audio::ffmpeg
         AVFormatContextPtr _context;
         std::chrono::milliseconds _estimatedDuration{};
         int _inputStreamIndex{};
+        int _seekStreamIndex{};
 
         // Seeking lands on the packet boundary before the requested offset: the extra samples are dropped
         std::int64_t _seekTargetTimestamp{};
