@@ -158,6 +158,13 @@ namespace lms::audio::ffmpeg
 
         checkDecodedFormatIsSupported(*_context, *decoder, filePath);
 
+        // Lets the demuxer skip the data of the other streams (video, cover art...) instead of reading it into packets we drop
+        for (unsigned streamIndex{}; streamIndex < _context->nb_streams; ++streamIndex)
+        {
+            if (streamIndex != static_cast<unsigned>(_inputStreamIndex))
+                _context->streams[streamIndex]->discard = AVDISCARD_ALL;
+        }
+
         if (offset.count() > 0)
         {
             const AVStream* stream{ _context->streams[_inputStreamIndex] };
@@ -418,6 +425,7 @@ namespace lms::audio::ffmpeg
         }
         else
         {
+            // discarded streams can actually still show up
             ::av_packet_unref(_inputPacket.get());
         }
     }
