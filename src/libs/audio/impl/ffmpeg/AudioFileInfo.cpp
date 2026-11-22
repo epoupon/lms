@@ -98,7 +98,7 @@ namespace lms::audio::ffmpeg
                     return audioProperties;
                 }
 
-                audioProperties->bitrate = static_cast<std::size_t>(std::chrono::duration_cast<std::chrono::duration<double>>(containerInfo.duration).count() / fileSize);
+                audioProperties->bitrate = static_cast<std::size_t>(static_cast<double>(fileSize) * 8 / std::chrono::duration_cast<std::chrono::duration<double>>(containerInfo.duration).count());
                 LMS_LOG(AUDIO, DEBUG, "Estimated bitrate from duration/size: " << audioProperties->bitrate << " bps in " << audioFile.getPath());
             }
             assert(audioProperties->bitrate > 0);
