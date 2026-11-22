@@ -19,6 +19,9 @@
 
 #include "AudioFileInfo.hpp"
 
+#include <cassert>
+#include <cstdint>
+
 #include "core/Service.hpp"
 
 #include "audio/AudioProperties.hpp"
@@ -62,6 +65,11 @@ namespace lms::api::subsonic
             }
         }
 
+        std::size_t computeFileBitrate(std::uint64_t fileSize, const audio::AudioProperties& audioProperties)
+        {
+            assert(audioProperties.duration.count() > 0);
+            return static_cast<std::size_t>(fileSize * 8 * 1000 / audioProperties.duration.count());
+        }
     } // namespace
 
     AudioFileInfo getAudioFileInfo(db::ISession& session, AudioFileId audioFileId)
@@ -91,6 +99,7 @@ namespace lms::api::subsonic
             {
                 res.audioProperties = getAudioProperties(res.path);
             }
+            res.fileBitrate = computeFileBitrate(track->getFileSize(), res.audioProperties);
         }
         else if (const db::PodcastEpisodeId * episodeId{ std::get_if<db::PodcastEpisodeId>(&audioFileId) })
         {
@@ -115,6 +124,7 @@ namespace lms::api::subsonic
             {
                 res.audioProperties = getAudioProperties(res.path);
             }
+            res.fileBitrate = computeFileBitrate(episode->getFileSize(), res.audioProperties);
         }
 
         return res;

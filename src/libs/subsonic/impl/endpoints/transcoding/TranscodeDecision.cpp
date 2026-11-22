@@ -528,10 +528,10 @@ namespace lms::api::subsonic::detail
             return transcodedStream;
         }
 
-        bool canDirectPlay(const ClientInfo& clientInfo, const audio::AudioProperties& source, std::vector<TranscodeReason>& transcodeReasons)
+        bool canDirectPlay(const ClientInfo& clientInfo, const audio::AudioProperties& source, std::size_t sourceFileBitrate, std::vector<TranscodeReason>& transcodeReasons)
         {
             // Check global constraints
-            if (clientInfo.maxAudioBitrate && *clientInfo.maxAudioBitrate < source.bitrate)
+            if (clientInfo.maxAudioBitrate && *clientInfo.maxAudioBitrate < sourceFileBitrate)
             {
                 transcodeReasons.push_back(TranscodeReason::AudioBitrateNotSupported);
                 return false;
@@ -599,11 +599,11 @@ namespace lms::api::subsonic::detail
         return result;
     }
 
-    TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const audio::AudioProperties& source)
+    TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const audio::AudioProperties& source, std::size_t sourceFileBitrate)
     {
         std::vector<TranscodeReason> transcodeReasons;
 
-        if (canDirectPlay(clientInfo, source, transcodeReasons))
+        if (canDirectPlay(clientInfo, source, sourceFileBitrate, transcodeReasons))
             return DirectPlayResult{};
 
         LMS_LOG(API_SUBSONIC, DEBUG, "Direct play not possible: no compatible direct play profile found");

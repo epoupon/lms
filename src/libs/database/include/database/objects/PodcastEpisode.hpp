@@ -20,6 +20,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <span>
@@ -96,6 +97,7 @@ namespace lms::db
         // getters
         ManualDownloadState getManualDownloadState() const { return _manualDownloadState; }
         const std::filesystem::path& getAudioRelativeFilePath() const { return _audioRelativeFilePath; }
+        std::uint64_t getFileSize() const { return static_cast<std::uint64_t>(_fileSize); }
 
         // Audio properties
         std::chrono::milliseconds getDuration() const { return _duration; }
@@ -125,6 +127,7 @@ namespace lms::db
         // setters
         void setManualDownloadState(ManualDownloadState state) { _manualDownloadState = state; }
         void setAudioRelativeFilePath(const std::filesystem::path& relativeFilePath) { _audioRelativeFilePath = relativeFilePath; }
+        void setFileSize(std::uint64_t fileSize) { _fileSize = static_cast<long long>(fileSize); }
 
         // Audio properties
         void setDuration(std::chrono::milliseconds duration) { _duration = duration; }
@@ -156,6 +159,7 @@ namespace lms::db
 
         ManualDownloadState _manualDownloadState{ ManualDownloadState::None };
         std::filesystem::path _audioRelativeFilePath; // relative to cache dir, only set if downloaded
+        long long _fileSize{};                        // only set if downloaded
 
         // Audio properties
         std::chrono::duration<int, std::milli> _duration{ 0 };

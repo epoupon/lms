@@ -19,6 +19,7 @@
 
 #include "DownloadEpisodesStep.hpp"
 
+#include <cstdint>
 #include <fstream>
 
 #include "core/IConfig.hpp"
@@ -42,7 +43,7 @@ namespace lms::podcast
 {
     namespace
     {
-        void updateEpisode(db::ISession& session, db::PodcastEpisodeId episodeId, const std::filesystem::path& relativeFilePath, const audio::AudioProperties& audioProperties)
+        void updateEpisode(db::ISession& session, db::PodcastEpisodeId episodeId, const std::filesystem::path& relativeFilePath, std::uint64_t fileSize, const audio::AudioProperties& audioProperties)
         {
             auto transaction{ session.createWriteTransaction() };
 
@@ -51,6 +52,7 @@ namespace lms::podcast
                 return; // may have been deleted by admin
 
             dbEpisode->setAudioRelativeFilePath(relativeFilePath);
+            dbEpisode->setFileSize(fileSize);
 
             dbEpisode->setDuration(audioProperties.duration);
             dbEpisode->setContainer(audioProperties.container);
@@ -210,7 +212,8 @@ namespace lms::podcast
                         }
                         else
                         {
-                            updateEpisode(getDb().getTLSSession(), episodeId, randomName, *audioProperties);
+                            const std::uint64_t fileSize{ std::filesystem::file_size(finalFilePath, ec) };
+                            updateEpisode(getDb().getTLSSession(), episodeId, randomName, ec ? 0 : fileSize, *audioProperties);
                             LMS_LOG(PODCAST, INFO, "Downloaded episode '" << episode->getTitle() << "'");
                         }
                     }

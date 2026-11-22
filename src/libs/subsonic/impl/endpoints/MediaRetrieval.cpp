@@ -156,9 +156,9 @@ namespace lms::api::subsonic
                 // we accept to transcode from a lossy format to a lossless one
             }
 
-            if (!requestedFormat && (maxBitRate == 0 || audioFileInfo.audioProperties.bitrate <= maxBitRate))
+            if (!requestedFormat && (maxBitRate == 0 || audioFileInfo.fileBitrate <= maxBitRate))
             {
-                LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate (" << audioFileInfo.audioProperties.bitrate << " bps) is compatible with parameters => no transcoding");
+                LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate (" << audioFileInfo.fileBitrate << " bps) is compatible with parameters => no transcoding");
                 return parameters; // no transcoding needed
             }
 
@@ -167,9 +167,9 @@ namespace lms::api::subsonic
             if (requestedFormat && requestedFormat->format.container == audioFileInfo.audioProperties.container && requestedFormat->format.codec == audioFileInfo.audioProperties.codec)
             {
                 //  same codec => check if compatible with max bitrate
-                if (maxBitRate == 0 || audioFileInfo.audioProperties.bitrate <= maxBitRate)
+                if (maxBitRate == 0 || audioFileInfo.fileBitrate <= maxBitRate)
                 {
-                    LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate (" << audioFileInfo.audioProperties.bitrate << " bps) and format are compatible with parameters => no transcoding");
+                    LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate (" << audioFileInfo.fileBitrate << " bps) and format are compatible with parameters => no transcoding");
                     return parameters; // no transcoding needed
                 }
 

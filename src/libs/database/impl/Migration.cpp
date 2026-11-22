@@ -38,7 +38,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 119 };
+        static constexpr Version LMS_DATABASE_VERSION{ 120 };
     }
 
     VersionInfo::VersionInfo()
@@ -2287,6 +2287,12 @@ GROUP BY c.canonical_id, s.backend)");
         dropIndexes(session);
     }
 
+    void migrateFromV119(Session& session)
+    {
+        // Already downloaded episodes are left with 0: they keep being sent as is whatever the client max bitrate, as before
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE podcast_episode ADD file_size BIGINT NOT NULL DEFAULT(0)");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -2382,6 +2388,7 @@ GROUP BY c.canonical_id, s.backend)");
             { 116, migrateFromV116 },
             { 117, migrateFromV117 },
             { 118, migrateFromV118 },
+            { 119, migrateFromV119 },
         };
 
         LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");

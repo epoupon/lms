@@ -53,6 +53,7 @@ namespace lms::db::dbo
         {
             Wt::Dbo::field(a, _manualDownloadState, "manual_download_state");
             Wt::Dbo::field(a, _audioRelativeFilePath, "audio_relative_file_path");
+            Wt::Dbo::field(a, _fileSize, "file_size");
 
             Wt::Dbo::field(a, _duration, "duration");
             Wt::Dbo::field(a, _container, "container");

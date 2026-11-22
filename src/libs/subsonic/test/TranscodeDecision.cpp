@@ -79,6 +79,7 @@ namespace lms::api::subsonic
 
             ClientInfo clientInfo;
             audio::AudioProperties source;
+            std::optional<std::size_t> sourceFileBitrate{}; // unset: audio-only file, costs source.bitrate
 
             detail::TranscodeDecisionResult expected;
         };
@@ -105,7 +106,7 @@ namespace lms::api::subsonic
                 }
             }
 
-            EXPECT_EQ(testCase.expected, detail::computeTranscodeDecision(testCase.clientInfo, testCase.source));
+            EXPECT_EQ(testCase.expected, detail::computeTranscodeDecision(testCase.clientInfo, testCase.source, testCase.sourceFileBitrate.value_or(testCase.source.bitrate)));
         }
 
         std::vector<TestCase> buildDirectPlayTestCases()
@@ -458,6 +459,66 @@ namespace lms::api::subsonic
                     },
 
                     .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::AudioBitrateNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "ogg", .codec = "opus", .audioChannels = std::nullopt, .audioBitrate = 320'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
+                // the global limitation applies to the whole file (here mostly video), not only to its audio stream
+                {
+                    .name = "VideoFileOverGlobalLimitation",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = 320'000,
+                        .maxTranscodingAudioBitrate = 320'000,
+                        .directPlayProfiles = {
+                            { .containers = { "mp4" }, .audioCodecs = { "aac" }, .protocols = {}, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {
+                            { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
+                        },
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::MP4,
+                        .codec = core::media::Codec::AAC,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 128'000,
+                        .channelCount = 2,
+                        .sampleRate = 44'100,
+                        .bitsPerSample = std::nullopt,
+                    },
+                    .sourceFileBitrate = 4'000'000,
+
+                    .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::AudioBitrateNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = std::nullopt, .audioBitrate = 128'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
+                // codec limitations only look at the audio stream
+                {
+                    .name = "VideoFileCodecLimitation",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = std::nullopt,
+                        .directPlayProfiles = {
+                            { .containers = { "mp4" }, .audioCodecs = { "aac" }, .protocols = {}, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {},
+                        .codecProfiles = { { .type = "AudioCodec", .name = "aac", .limitations = {
+                                                                                      { .name = Limitation::Type::AudioBitrate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "256000" }, .required = true },
+                                                                                  } } },
+                    },
+                    .source = {
+                        .container = core::media::Container::MP4,
+                        .codec = core::media::Codec::AAC,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 128'000,
+                        .channelCount = 2,
+                        .sampleRate = 44'100,
+                        .bitsPerSample = std::nullopt,
+                    },
+                    .sourceFileBitrate = 4'000'000,
+
+                    .expected = { detail::DirectPlayResult{} },
                 },
             };
         }
