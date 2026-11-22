@@ -213,6 +213,8 @@ namespace lms::scanner
             context.currentStepStats.totalElems = db::Track::getCount(dbSession, createFindTrackParams());
         }
 
+        _progressCallback(context.currentStepStats);
+
         TrackEmbeddingAssociationContainer pendingAssocs;
 
         auto processResults{ [&](std::span<std::unique_ptr<core::IJob>> jobs) {
@@ -247,7 +249,8 @@ namespace lms::scanner
         } };
 
         {
-            JobQueue queue{ getJobScheduler(), processResults, { .maxQueueSize = 50 } };
+            // Jobs are slow: results are processed as soon as they are done, the embeddings are still written by batches
+            JobQueue queue{ getJobScheduler(), processResults, { .maxQueueSize = 50, .drainThreshold = 0 } };
 
             db::TrackId lastRetrievedTrackId;
             TrackLocation trackLocation;

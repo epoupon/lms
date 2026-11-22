@@ -463,6 +463,7 @@ namespace lms::scanner
 
                 LMS_LOG(DBUPDATER, DEBUG, "Starting scan step '" << scanStep->getStepName() << "'");
                 notifyInProgress(context.currentStepStats);
+                _lastScanInProgressEmit = {};
                 scanStep->process(context);
                 notifyInProgress(context.currentStepStats);
                 LMS_LOG(DBUPDATER, DEBUG, "Completed scan step '" << scanStep->getStepName() << "'");
