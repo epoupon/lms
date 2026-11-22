@@ -19,6 +19,7 @@
 
 #include "TranscodeDecision.hpp"
 
+#include <algorithm>
 #include <array>
 
 #include "core/Ascii.hpp"
@@ -481,7 +482,7 @@ namespace lms::api::subsonic::detail
                     if (maxAudioBitrate)
                         transcodedStream.audioBitrate = maxAudioBitrate;
                     else
-                        transcodedStream.audioBitrate = 256'000; // TODO, only if no bitrate limitation found? take channel count into account?
+                        transcodedStream.audioBitrate = defaultLossyTranscodeBitrate; // TODO, only if no bitrate limitation found? take channel count into account?
                 }
                 else
                 {
@@ -498,11 +499,10 @@ namespace lms::api::subsonic::detail
                 if (core::media::getCodecDesc(transcodeFormat->codec).isLossless)
                     return std::nullopt; // not compatible with lossless codecs
 
-                // let's pick the same bitrate as the lossy source
-                transcodedStream.audioBitrate = source.bitrate;
+                transcodedStream.audioBitrate = std::min<std::size_t>(source.bitrate, maxLossyToLossyTranscodeBitrate);
             }
 
-            if (maxAudioBitrate && source.bitrate > *maxAudioBitrate)
+            if (maxAudioBitrate && transcodedStream.audioBitrate && *transcodedStream.audioBitrate > *maxAudioBitrate)
                 transcodedStream.audioBitrate = *maxAudioBitrate;
 
             if (profile.maxAudioChannels && source.channelCount > *profile.maxAudioChannels)

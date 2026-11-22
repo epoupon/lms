@@ -734,6 +734,64 @@ namespace lms::api::subsonic
                     .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = std::nullopt, .audioBitrate = 128'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
                 },
 
+                // lossy source above the lossy to lossy cap => re-encoded at the cap, not at the source bitrate
+                {
+                    .name = "LossySourceBitrateIsCapped",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = std::nullopt,
+                        .directPlayProfiles = {
+                            { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {
+                            { .container = "ogg", .audioCodec = "opus", .protocol = "http", .maxAudioChannels = std::nullopt },
+                        },
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::MP4,
+                        .codec = core::media::Codec::AAC,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 320'000,
+                        .channelCount = 2,
+                        .sampleRate = 44'100,
+                        .bitsPerSample = std::nullopt,
+                    },
+
+                    .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "ogg", .codec = "opus", .audioChannels = std::nullopt, .audioBitrate = 256'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
+                // a client max between the cap and the source bitrate must not lift the capped target back up
+                {
+                    .name = "LossySourceBitrateCapNotLiftedByClientMax",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = 300'000,
+                        .directPlayProfiles = {
+                            { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {
+                            { .container = "ogg", .audioCodec = "opus", .protocol = "http", .maxAudioChannels = std::nullopt },
+                        },
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::MP4,
+                        .codec = core::media::Codec::AAC,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 320'000,
+                        .channelCount = 2,
+                        .sampleRate = 44'100,
+                        .bitsPerSample = std::nullopt,
+                    },
+
+                    .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "ogg", .codec = "opus", .audioChannels = std::nullopt, .audioBitrate = 256'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
                 // needs transcode because codec not handled (lossless source => using max bitrate)
                 {
                     .name = "LosslessSourceUsesMaxBitrate",

@@ -35,6 +35,13 @@ namespace lms::api::subsonic
 {
     struct ClientInfo;
 
+    // Bitrate picked when encoding a lossless source to a lossy format and the client sets no limit
+    inline constexpr std::size_t defaultLossyTranscodeBitrate{ 256'000 };
+
+    // Ceiling on a lossy source bitrate reused as the target: re-encoding higher gains nothing,
+    // and some encoders reject higher rates (libopus: 256 kbps per channel)
+    inline constexpr std::size_t maxLossyToLossyTranscodeBitrate{ 256'000 };
+
     namespace detail
     {
         enum class TranscodeReason

@@ -51,6 +51,7 @@
 #include "SubsonicResponse.hpp"
 #include "responses/Lyrics.hpp"
 #include "transcoding/AudioFileInfo.hpp"
+#include "transcoding/TranscodeDecision.hpp"
 
 namespace lms::api::subsonic
 {
@@ -199,8 +200,8 @@ namespace lms::api::subsonic
                 }
                 else
                 {
-                    bitrate = audioFileInfo.audioProperties.bitrate;
-                    LMS_LOG(API_SUBSONIC, DEBUG, "Source is lossy, selecting source bitrate (" << *bitrate << " bps) for transcoding");
+                    bitrate = std::min<std::size_t>(audioFileInfo.audioProperties.bitrate, maxLossyToLossyTranscodeBitrate);
+                    LMS_LOG(API_SUBSONIC, DEBUG, "Source is lossy, selecting source bitrate capped to " << maxLossyToLossyTranscodeBitrate << " bps (" << *bitrate << " bps) for transcoding");
                 }
 
                 if (maxBitRate > 0) // Honor provided maxBitRate, if any
