@@ -804,11 +804,7 @@ namespace lms::scanner
         if (!_file->track.title.empty())
             title = _file->track.title;
         else
-        {
-            // TODO parse file name to guess track etc.
-            // For now, we just use file name as title
-            title = getFilePath().filename().string();
-        }
+            title = getFilePath().stem().string();
 
         // If file already exists, update its data
         // Otherwise, create it
