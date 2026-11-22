@@ -115,7 +115,7 @@ namespace lms::db
         std::string_view getCategory() const { return _category; }
         std::string_view getEnclosureUrl() const { return _enclosureUrl; }
         std::string_view getEnclosureContentType() const { return _enclosureContentType; }
-        std::int64_t getEnclosureLength() const { return _enclosureLength; }
+        std::uint64_t getEnclosureLength() const { return static_cast<std::uint64_t>(_enclosureLength); }
         const Wt::WDateTime& getPubDate() const { return _pubDate; }
         std::string_view getImageUrl() const { return _imageUrl; }
         std::string_view getSubtitle() const { return _subtitle; }
@@ -145,7 +145,7 @@ namespace lms::db
         void setCategory(std::string_view category) { _category = category; }
         void setEnclosureUrl(std::string_view enclosureUrl) { _enclosureUrl = enclosureUrl; }
         void setEnclosureContentType(std::string_view enclosureContentType) { _enclosureContentType = enclosureContentType; }
-        void setEnclosureLength(uint64_t enclosureLength) { _enclosureLength = enclosureLength; }
+        void setEnclosureLength(std::uint64_t enclosureLength) { _enclosureLength = static_cast<long long>(enclosureLength); }
         void setPubDate(const Wt::WDateTime& pubDate) { _pubDate = pubDate; }
         void setImageUrl(std::string_view imageUrl) { _imageUrl = imageUrl; }
         void setSubtitle(std::string_view subtitle) { _subtitle = subtitle; }
@@ -178,7 +178,7 @@ namespace lms::db
         std::string _category;
         std::string _enclosureUrl;
         std::string _enclosureContentType;
-        int _enclosureLength{ 0 };
+        long long _enclosureLength{};
         Wt::WDateTime _pubDate;
 
         // itunes fields
