@@ -47,6 +47,8 @@ namespace lms::api::subsonic
     {
         Response::Node episodeNode;
 
+        const bool isDownloaded{ !episode.getAudioRelativeFilePath().empty() };
+
         // Child attributes
         episodeNode.setAttribute("id", idToString(episode.getId()));
         episodeNode.setAttribute("title", episode.getTitle());
@@ -55,7 +57,10 @@ namespace lms::api::subsonic
         if (!episode.getEnclosureContentType().empty())
             episodeNode.setAttribute("contentType", episode.getEnclosureContentType());
         episodeNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(episode.getDuration()).count());
-        if (episode.getEnclosureLength() > 0)
+        // file size is unknown for episodes downloaded before it was stored
+        if (isDownloaded && episode.getFileSize() > 0)
+            episodeNode.setAttribute("size", episode.getFileSize());
+        else if (episode.getEnclosureLength() > 0)
             episodeNode.setAttribute("size", episode.getEnclosureLength());
         episodeNode.setAttribute("isDir", "false"); // TODO parent?
         if (!episode.getEnclosureUrl().empty())
@@ -64,15 +69,16 @@ namespace lms::api::subsonic
             if (pos != std::string_view::npos)
                 episodeNode.setAttribute("suffix", episode.getEnclosureUrl().substr(pos + 1));
         }
-        // estimated bitrate
-        if (episode.getEnclosureLength() > 0 && episode.getDuration() > std::chrono::milliseconds::zero())
-            episodeNode.setAttribute("bitrate", episode.getEnclosureLength() * 8 / std::chrono::duration_cast<std::chrono::milliseconds>(episode.getDuration()).count());
+        if (isDownloaded)
+            episodeNode.setAttribute("bitRate", episode.getBitrate() / 1000);
+        else if (episode.getEnclosureLength() > 0 && episode.getDuration() > std::chrono::milliseconds::zero()) // estimated from the feed
+            episodeNode.setAttribute("bitRate", episode.getEnclosureLength() * 8 / std::chrono::duration_cast<std::chrono::milliseconds>(episode.getDuration()).count());
         if (const db::ArtworkId artworkId{ episode.getArtworkId() }; artworkId.isValid())
             episodeNode.setAttribute("coverArt", idToString(artworkId));
 
         // Podcast specific attributes
         // Expose the streamId only if the episode is actually downloaded
-        if (!episode.getAudioRelativeFilePath().empty())
+        if (isDownloaded)
             episodeNode.setAttribute("streamId", idToString(episode.getId())); // Use this ID for streaming the podcast
         episodeNode.setAttribute("channelId", idToString(episode.getPodcastId()));
         episodeNode.setAttribute("description", episode.getDescription());
@@ -111,7 +117,7 @@ namespace lms::api::subsonic
 
         if (includeEpisodes)
         {
-            podcastNode.createEmptyArrayChild("episode ");
+            podcastNode.createEmptyArrayChild("episode");
 
             db::PodcastEpisode::FindParameters params;
             params.setPodcast(podcast.getId());
