@@ -60,7 +60,7 @@ namespace lms::api::subsonic
         episodeNode.setAttribute("id", idToString(episode.getId()));
         episodeNode.setAttribute("title", episode.getTitle());
         if (episode.getPubDate().isValid())
-            episodeNode.setAttribute("year", std::to_string(episode.getPubDate().date().year()));
+            episodeNode.setAttribute("year", episode.getPubDate().date().year());
         // Downloaded episodes report what was detected in the file, the feed's claims are not reliable
         if (isDownloaded)
         {
@@ -74,7 +74,7 @@ namespace lms::api::subsonic
         const std::uint64_t size{ isDownloaded ? episode.getFileSize() : episode.getEnclosureLength() };
         if (size > 0)
             episodeNode.setAttribute("size", size);
-        episodeNode.setAttribute("isDir", "false"); // TODO parent?
+        episodeNode.setAttribute("isDir", false); // TODO parent?
         if (isDownloaded && episode.getBitrate())
             episodeNode.setAttribute("bitRate", *episode.getBitrate() / 1000);
         else if (size > 0 && episode.getDuration() > std::chrono::milliseconds::zero()) // estimated from the reported size
@@ -108,7 +108,7 @@ namespace lms::api::subsonic
         Response::Node podcastNode;
 
         podcastNode.setAttribute("id", idToString(podcast.getId()));
-        podcastNode.setAttribute("url", podcast.getLink()); // TODO
+        podcastNode.setAttribute("url", podcast.getUrl());
         if (!podcast.getTitle().empty())
             podcastNode.setAttribute("title", podcast.getTitle());
         if (!podcast.getDescription().empty())
