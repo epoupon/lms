@@ -69,7 +69,7 @@ namespace lms::podcast
         : RefreshStep{ context, std::move(callback) }
         , _autoDownloadEpisodes{ core::Service<core::IConfig>::get()->getBool("podcast-auto-download-episodes", true) }
         , _autoDownloadEpisodesMaxAge{ core::Service<core::IConfig>::get()->getULong("podcast-auto-download-episodes-max-age-days", 30) }
-        , _audioFileInfoParser{ audio::createAudioFileInfoParser(audio::AudioFileInfoParserBackend::FFmpeg) }
+        , _audioFileInfoParser{ audio::createAudioFileInfoParser() }
     {
     }
 
@@ -210,10 +210,14 @@ namespace lms::podcast
                         {
                             LMS_LOG(PODCAST, ERROR, "Failed to rename temp file " << tmpFilePath << " to " << finalFilePath << ": " << ec.message());
                         }
+                        else if (const std::uint64_t fileSize{ std::filesystem::file_size(finalFilePath, ec) }; ec)
+                        {
+                            LMS_LOG(PODCAST, ERROR, "Failed to get file size of " << finalFilePath << ": " << ec.message());
+                            utils::removeFile(finalFilePath);
+                        }
                         else
                         {
-                            const std::uint64_t fileSize{ std::filesystem::file_size(finalFilePath, ec) };
-                            updateEpisode(getDb().getTLSSession(), episodeId, randomName, ec ? 0 : fileSize, *audioProperties);
+                            updateEpisode(getDb().getTLSSession(), episodeId, randomName, fileSize, *audioProperties);
                             LMS_LOG(PODCAST, INFO, "Downloaded episode '" << episode->getTitle() << "'");
                         }
                     }

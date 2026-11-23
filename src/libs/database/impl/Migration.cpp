@@ -2289,8 +2289,11 @@ GROUP BY c.canonical_id, s.backend)");
 
     void migrateFromV119(Session& session)
     {
-        // Already downloaded episodes are left with 0: they keep being sent as is whatever the client max bitrate, as before
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE podcast_episode ADD file_size BIGINT NOT NULL DEFAULT(0)");
+
+        // Already downloaded episodes have no file size (some not even a container/codec) -> remove them all
+        // The podcast service will remove all orphan files and download the episodes again on its next refresh
+        utils::executeCommand(*session.getDboSession(), "UPDATE podcast_episode SET audio_relative_file_path = ''");
     }
 
     bool doDbMigration(Session& session)

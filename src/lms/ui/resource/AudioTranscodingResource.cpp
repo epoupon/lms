@@ -79,7 +79,7 @@ namespace lms::ui
 
             try
             {
-                const auto parser{ audio::createAudioFileInfoParser(audio::AudioFileInfoParserBackend::FFmpeg) };
+                const auto parser{ audio::createAudioFileInfoParser() };
 
                 audio::AudioFileInfoParseOptions parseOptions;
                 parseOptions.audioPropertiesReadStyle = audio::AudioFileInfoParseOptions::AudioPropertiesReadStyle::Average;

@@ -19,12 +19,15 @@
 
 #include "Podcast.hpp"
 
+#include <cassert>
 #include <chrono>
 #include <cstdint>
 
 #include <Wt/WDate.h>
 
 #include "core/String.hpp"
+#include "core/media/AudioFormat.hpp"
+#include "core/media/MimeType.hpp"
 #include "database/objects/Podcast.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 
@@ -55,20 +58,20 @@ namespace lms::api::subsonic
         episodeNode.setAttribute("title", episode.getTitle());
         if (episode.getPubDate().isValid())
             episodeNode.setAttribute("year", std::to_string(episode.getPubDate().date().year()));
-        if (!episode.getEnclosureContentType().empty())
-            episodeNode.setAttribute("contentType", episode.getEnclosureContentType());
+        // Downloaded episodes report what was detected in the file, the feed's claims are not reliable
+        if (isDownloaded)
+        {
+            assert(episode.getContainer() && episode.getCodec());
+            const core::media::AudioFormat format{ *episode.getContainer(), *episode.getCodec() };
+            episodeNode.setAttribute("contentType", core::media::getMimeType(format.container, format.codec).str());
+            if (const core::media::ExtensionSpan extensions{ core::media::getExtensionsForAudioFormat(format) }; !extensions.empty())
+                episodeNode.setAttribute("suffix", extensions.front().substr(1) /* skip leading . */);
+        }
         episodeNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(episode.getDuration()).count());
-        // file size is unknown for episodes downloaded before it was stored
-        const std::uint64_t size{ (isDownloaded && episode.getFileSize() > 0) ? episode.getFileSize() : episode.getEnclosureLength() };
+        const std::uint64_t size{ isDownloaded ? episode.getFileSize() : episode.getEnclosureLength() };
         if (size > 0)
             episodeNode.setAttribute("size", size);
         episodeNode.setAttribute("isDir", "false"); // TODO parent?
-        if (!episode.getEnclosureUrl().empty())
-        {
-            const auto pos{ episode.getEnclosureUrl().find_last_of('.') };
-            if (pos != std::string_view::npos)
-                episodeNode.setAttribute("suffix", episode.getEnclosureUrl().substr(pos + 1));
-        }
         if (isDownloaded && episode.getBitrate())
             episodeNode.setAttribute("bitRate", *episode.getBitrate() / 1000);
         else if (size > 0 && episode.getDuration() > std::chrono::milliseconds::zero()) // estimated from the reported size

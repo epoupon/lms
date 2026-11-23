@@ -45,7 +45,7 @@ namespace lms::api::subsonic
         {
             try
             {
-                const auto parser{ audio::createAudioFileInfoParser(audio::AudioFileInfoParserBackend::FFmpeg) };
+                const auto parser{ audio::createAudioFileInfoParser() };
 
                 audio::AudioFileInfoParseOptions parseOptions;
                 parseOptions.audioPropertiesReadStyle = audio::AudioFileInfoParseOptions::AudioPropertiesReadStyle::Average;
@@ -104,26 +104,23 @@ namespace lms::api::subsonic
         else if (const db::PodcastEpisodeId * episodeId{ std::get_if<db::PodcastEpisodeId>(&audioFileId) })
         {
             const std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(session, *episodeId) };
-            if (!episode)
+            if (!episode || episode->getAudioRelativeFilePath().empty())
                 throw RequestedDataNotFoundError{};
+
+            // downloaded episodes always come with their audio properties and file size
+            assert(episode->getContainer() && episode->getCodec());
+            assert(episode->getFileSize() > 0);
 
             std::filesystem::path podcastCachePath{ core::Service<podcast::IPodcastService>::get()->getCachePath() };
 
             res.path = podcastCachePath / episode->getAudioRelativeFilePath();
-            if (episode->getContainer() && episode->getCodec())
-            {
-                res.audioProperties.container = *episode->getContainer();
-                res.audioProperties.codec = *episode->getCodec();
-                res.audioProperties.duration = episode->getDuration();
-                res.audioProperties.bitrate = episode->getBitrate();
-                res.audioProperties.channelCount = episode->getChannelCount();
-                res.audioProperties.sampleRate = episode->getSampleRate();
-                res.audioProperties.bitsPerSample = episode->getBitsPerSample();
-            }
-            else
-            {
-                res.audioProperties = getAudioProperties(res.path);
-            }
+            res.audioProperties.container = *episode->getContainer();
+            res.audioProperties.codec = *episode->getCodec();
+            res.audioProperties.duration = episode->getDuration();
+            res.audioProperties.bitrate = episode->getBitrate();
+            res.audioProperties.channelCount = episode->getChannelCount();
+            res.audioProperties.sampleRate = episode->getSampleRate();
+            res.audioProperties.bitsPerSample = episode->getBitsPerSample();
             res.fileBitrate = computeFileBitrate(episode->getFileSize(), res.audioProperties);
         }
 
