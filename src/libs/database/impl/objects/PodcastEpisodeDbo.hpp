@@ -52,6 +52,7 @@ namespace lms::db::dbo
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _manualDownloadState, "manual_download_state");
+            Wt::Dbo::field(a, _downloadFailed, "download_failed");
             Wt::Dbo::field(a, _audioRelativeFilePath, "audio_relative_file_path");
             Wt::Dbo::field(a, _fileSize, "file_size");
 

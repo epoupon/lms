@@ -121,7 +121,7 @@ namespace lms::podcast
 
         core::http::ClientGETRequestParameters params;
         params.relativeUrl = podcast->getImageUrl();
-        params.onFailureFunc = [this, podcast] {
+        params.onFailureFunc = [this, podcast](std::optional<int>) {
             LMS_LOG(PODCAST, ERROR, "Failed to download podcast image from '" << podcast->getImageUrl() << "'");
             processNext();
         };

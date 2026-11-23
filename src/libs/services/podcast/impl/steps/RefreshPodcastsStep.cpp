@@ -20,6 +20,7 @@
 #include "RefreshPodcastsStep.hpp"
 
 #include <array>
+#include <optional>
 
 #include "core/ILogger.hpp"
 #include "core/http/IClient.hpp"
@@ -218,7 +219,7 @@ namespace lms::podcast
         const std::string url{ podcast->getUrl() };
         core::http::ClientGETRequestParameters params;
         params.relativeUrl = podcast->getUrl();
-        params.onFailureFunc = [this, podcast] {
+        params.onFailureFunc = [this, podcast](std::optional<int>) {
             LMS_LOG(PODCAST, ERROR, "Failed to sync podcast from '" << podcast->getUrl() << "'");
             refreshNextPodcast();
         };

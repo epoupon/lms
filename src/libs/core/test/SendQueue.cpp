@@ -17,6 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <optional>
 #include <span>
 #include <thread>
 
@@ -84,12 +85,16 @@ namespace lms::core::http::tests
             std::vector<Call> _calls;
         };
 
-        std::unique_ptr<ClientRequest> makeGetRequest(std::string relativeUrl, bool& successCalled, bool& failureCalled)
+        std::unique_ptr<ClientRequest> makeGetRequest(std::string relativeUrl, bool& successCalled, bool& failureCalled, std::optional<int>* failureHttpStatus = nullptr)
         {
             ClientGETRequestParameters params;
             params.relativeUrl = std::move(relativeUrl);
             params.onSuccessFunc = [&successCalled](const Wt::Http::Message&) { successCalled = true; };
-            params.onFailureFunc = [&failureCalled] { failureCalled = true; };
+            params.onFailureFunc = [&failureCalled, failureHttpStatus](std::optional<int> httpStatus) {
+                failureCalled = true;
+                if (failureHttpStatus)
+                    *failureHttpStatus = httpStatus;
+            };
             return std::make_unique<ClientRequest>(std::move(params));
         }
     } // namespace
@@ -181,7 +186,8 @@ namespace lms::core::http::tests
     {
         bool successCalled{};
         bool failureCalled{};
-        _queue->sendRequest(makeGetRequest("/ok", successCalled, failureCalled));
+        std::optional<int> failureHttpStatus;
+        _queue->sendRequest(makeGetRequest("/ok", successCalled, failureCalled, &failureHttpStatus));
         pump();
         ASSERT_EQ(_httpClient->getCalls().size(), 1u);
 
@@ -193,6 +199,7 @@ namespace lms::core::http::tests
 
         EXPECT_FALSE(successCalled);
         EXPECT_TRUE(failureCalled);
+        EXPECT_EQ(failureHttpStatus, 302);
         EXPECT_EQ(_httpClient->getCalls().size(), 1u); // verified complete but non-200: fails immediately, no retry
     }
 
@@ -252,7 +259,8 @@ namespace lms::core::http::tests
     {
         bool successCalled{};
         bool failureCalled{};
-        _queue->sendRequest(makeGetRequest("/ok", successCalled, failureCalled));
+        std::optional<int> failureHttpStatus{ 0 };
+        _queue->sendRequest(makeGetRequest("/ok", successCalled, failureCalled, &failureHttpStatus));
         pump();
 
         // maxRetryCount = 2: expect 3 total attempts (1 initial + 2 retries) before giving up
@@ -266,6 +274,7 @@ namespace lms::core::http::tests
 
         EXPECT_FALSE(successCalled);
         EXPECT_TRUE(failureCalled);
+        EXPECT_EQ(failureHttpStatus, std::nullopt);    // no HTTP response
         EXPECT_EQ(_httpClient->getCalls().size(), 3u); // no further retry beyond maxRetryCount
     }
 

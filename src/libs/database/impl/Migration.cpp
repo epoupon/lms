@@ -2294,6 +2294,8 @@ GROUP BY c.canonical_id, s.backend)");
         // Already downloaded episodes have no file size (some not even a container/codec) -> remove them all
         // The podcast service will remove all orphan files and download the episodes again on its next refresh
         utils::executeCommand(*session.getDboSession(), "UPDATE podcast_episode SET audio_relative_file_path = ''");
+
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE podcast_episode ADD COLUMN download_failed BOOLEAN NOT NULL DEFAULT(false)");
     }
 
     bool doDbMigration(Session& session)

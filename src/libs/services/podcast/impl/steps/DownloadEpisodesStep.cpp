@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <fstream>
+#include <optional>
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
@@ -63,6 +64,18 @@ namespace lms::podcast
             dbEpisode->setBitsPerSample(audioProperties.bitsPerSample);
             db::PodcastEpisode::update(session, *dbEpisode);
         }
+
+        void setDownloadFailed(db::ISession& session, db::PodcastEpisodeId episodeId)
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            std::optional<db::PodcastEpisode> dbEpisode{ db::PodcastEpisode::find(session, episodeId) };
+            if (!dbEpisode)
+                return; // may have been deleted by admin
+
+            dbEpisode->setDownloadFailed(true);
+            db::PodcastEpisode::update(session, *dbEpisode);
+        }
     } // namespace
 
     DownloadEpisodesStep::DownloadEpisodesStep(RefreshContext& context, OnDoneCallback callback)
@@ -99,6 +112,9 @@ namespace lms::podcast
         db::PodcastEpisode::find(session, params, [&](const db::PodcastEpisode& episode) {
             if (!episode.getAudioRelativeFilePath().empty())
                 return; // already downloaded
+
+            if (episode.isDownloadFailed())
+                return;
 
             switch (episode.getManualDownloadState())
             {
@@ -160,9 +176,21 @@ namespace lms::podcast
         core::http::ClientGETRequestParameters params;
         const std::string url{ episode->getEnclosureUrl() };
         params.relativeUrl = url;
-        params.onFailureFunc = [this, episode, tmpFilePath] {
+        params.onFailureFunc = [this, episode, episodeId, tmpFilePath](std::optional<int> httpStatus) {
             LMS_LOG(PODCAST, ERROR, "Failed to download podcast episode from '" << episode->getEnclosureUrl() << "'");
             utils::removeFile(tmpFilePath);
+
+            // Gone for good: other errors may be transient and are retried on the next refresh
+            if (httpStatus == 410)
+            {
+                getExecutor().post([=, this] {
+                    LMS_LOG(PODCAST, WARNING, "Episode '" << episode->getTitle() << "' is no longer available on the server: it will not be downloaded again unless manually requested");
+                    setDownloadFailed(getDb().getTLSSession(), episodeId);
+                    processNext();
+                });
+                return;
+            }
+
             processNext();
         };
         params.onAttemptStarted = [tmpFilePath] {

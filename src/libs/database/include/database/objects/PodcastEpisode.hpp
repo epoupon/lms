@@ -96,6 +96,7 @@ namespace lms::db
 
         // getters
         ManualDownloadState getManualDownloadState() const { return _manualDownloadState; }
+        bool isDownloadFailed() const { return _downloadFailed; }
         const std::filesystem::path& getAudioRelativeFilePath() const { return _audioRelativeFilePath; }
         std::uint64_t getFileSize() const { return static_cast<std::uint64_t>(_fileSize); }
 
@@ -126,6 +127,7 @@ namespace lms::db
 
         // setters
         void setManualDownloadState(ManualDownloadState state) { _manualDownloadState = state; }
+        void setDownloadFailed(bool downloadFailed) { _downloadFailed = downloadFailed; }
         void setAudioRelativeFilePath(const std::filesystem::path& relativeFilePath) { _audioRelativeFilePath = relativeFilePath; }
         void setFileSize(std::uint64_t fileSize) { _fileSize = static_cast<long long>(fileSize); }
 
@@ -158,6 +160,7 @@ namespace lms::db
         PodcastEpisode() = default;
 
         ManualDownloadState _manualDownloadState{ ManualDownloadState::None };
+        bool _downloadFailed{};                       // the server reported the episode as gone: not downloaded again unless manually requested
         std::filesystem::path _audioRelativeFilePath; // relative to cache dir, only set if downloaded
         long long _fileSize{};                        // only set if downloaded
 

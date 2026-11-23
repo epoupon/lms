@@ -164,6 +164,7 @@ namespace lms::podcast
             if (episode)
             {
                 episode->setManualDownloadState(db::PodcastEpisode::ManualDownloadState::DownloadRequested);
+                episode->setDownloadFailed(false); // try again, the user may know better
                 db::PodcastEpisode::update(session, *episode);
                 res = true;
             }

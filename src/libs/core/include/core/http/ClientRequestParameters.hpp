@@ -21,6 +21,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -59,7 +60,7 @@ namespace lms::core::http
         using OnSuccessFunc = std::function<void(const Wt::Http::Message& msg)>;
         OnSuccessFunc onSuccessFunc;
 
-        using OnFailureFunc = std::function<void()>;
+        using OnFailureFunc = std::function<void(std::optional<int> httpStatus)>; // httpStatus is unset if no HTTP response was received
         OnFailureFunc onFailureFunc;
 
         using OnAbortFunc = std::function<void()>;

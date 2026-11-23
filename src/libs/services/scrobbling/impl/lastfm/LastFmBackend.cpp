@@ -20,6 +20,7 @@
 #include "LastFmBackend.hpp"
 
 #include <map>
+#include <optional>
 
 #include "core/IConfig.hpp"
 #include "core/Service.hpp"
@@ -126,7 +127,7 @@ namespace lms::scrobbling::lastFm
             const std::string authUrl{ _authBaseUrl + "/api/auth/?api_key=" + apiKeyStr + "&token=" + token };
             onSuccess(authUrl);
         };
-        request.onFailureFunc = [onFailure = std::move(onFailure)] {
+        request.onFailureFunc = [onFailure = std::move(onFailure)](std::optional<int>) {
             LMS_LOG_LASTFM(WARNING, "auth.getToken: HTTP request failed");
             onFailure();
         };
@@ -189,7 +190,7 @@ namespace lms::scrobbling::lastFm
             LMS_LOG_LASTFM(INFO, "Last.fm account linked for user " << userId.toString());
             onSuccess();
         };
-        request.onFailureFunc = [onFailure = std::move(onFailure)] {
+        request.onFailureFunc = [onFailure = std::move(onFailure)](std::optional<int>) {
             LMS_LOG_LASTFM(WARNING, "auth.getSession: HTTP request failed");
             onFailure();
         };

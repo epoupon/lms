@@ -44,6 +44,9 @@ namespace lms::api::subsonic
         if (!episode.getAudioRelativeFilePath().empty())
             return "completed";
 
+        if (episode.isDownloadFailed())
+            return "error";
+
         return "new";
     }
 

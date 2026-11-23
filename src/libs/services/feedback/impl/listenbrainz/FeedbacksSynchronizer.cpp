@@ -20,6 +20,7 @@
 #include "FeedbacksSynchronizer.hpp"
 
 #include <array>
+#include <optional>
 #include <unordered_map>
 
 #include <Wt/Json/Array.h>
@@ -350,7 +351,7 @@ namespace lms::feedback::listenBrainz
                 enqueGetFeedbackCount(context);
             }));
         };
-        request.onFailureFunc = [this, &context] {
+        request.onFailureFunc = [this, &context](std::optional<int>) {
             onImportEnded(context);
         };
 
@@ -382,7 +383,7 @@ namespace lms::feedback::listenBrainz
                     onImportEnded(context);
             }));
         };
-        request.onFailureFunc = [this, &context] {
+        request.onFailureFunc = [this, &context](std::optional<int>) {
             onImportEnded(context);
         };
 
@@ -412,7 +413,7 @@ namespace lms::feedback::listenBrainz
                 }
             }));
         };
-        request.onFailureFunc = [this, &context] {
+        request.onFailureFunc = [this, &context](std::optional<int>) {
             onImportEnded(context);
         };
 

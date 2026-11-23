@@ -123,7 +123,7 @@ namespace lms::podcast
 
         core::http::ClientGETRequestParameters params;
         params.relativeUrl = episode->getImageUrl();
-        params.onFailureFunc = [=, this] {
+        params.onFailureFunc = [=, this](std::optional<int>) {
             LMS_LOG(PODCAST, ERROR, "Failed to download episode artwork for episode '" << episode->getTitle() << "' from '" << url << "'");
             processNext();
         };

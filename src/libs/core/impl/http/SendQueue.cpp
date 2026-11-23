@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <latch>
+#include <optional>
 
 #include <boost/asio/bind_executor.hpp>
 #include <boost/asio/dispatch.hpp>
@@ -181,7 +182,7 @@ namespace lms::core::http
                 if (!sendRequest(*request))
                 {
                     if (request->getParameters().onFailureFunc)
-                        request->getParameters().onFailureFunc();
+                        request->getParameters().onFailureFunc(std::nullopt);
                     continue;
                 }
 
@@ -308,7 +309,7 @@ namespace lms::core::http
         {
             LOG(ERROR, "Too many retries, giving up operation and throttle");
             if (request->getParameters().onFailureFunc)
-                request->getParameters().onFailureFunc();
+                request->getParameters().onFailureFunc(std::nullopt);
         }
     }
 
@@ -345,7 +346,7 @@ namespace lms::core::http
             {
                 LOG(ERROR, "Send error, status = " << msg.status() << ", body = '" << msg.body() << "'");
                 if (requestParameters.onFailureFunc)
-                    requestParameters.onFailureFunc();
+                    requestParameters.onFailureFunc(msg.status());
             }
         }
 

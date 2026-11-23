@@ -20,6 +20,7 @@
 #include "ListensSynchronizer.hpp"
 
 #include <array>
+#include <optional>
 #include <unordered_map>
 
 #include <Wt/Json/Array.h>
@@ -586,7 +587,7 @@ namespace lms::scrobbling::listenBrainz
                 enqueGetListenCount(context);
             }));
         };
-        request.onFailureFunc = [this, &context] {
+        request.onFailureFunc = [this, &context](std::optional<int>) {
             onImportEnded(context);
         };
         request.onAbortFunc = [this, &context] {
@@ -625,7 +626,7 @@ namespace lms::scrobbling::listenBrainz
                 enqueGetListens(context);
             }));
         };
-        request.onFailureFunc = [this, &context] {
+        request.onFailureFunc = [this, &context](std::optional<int>) {
             onImportEnded(context);
         };
         request.onAbortFunc = [this, &context] {
@@ -656,7 +657,7 @@ namespace lms::scrobbling::listenBrainz
                 enqueGetListens(context);
             }));
         };
-        request.onFailureFunc = [this, &context] {
+        request.onFailureFunc = [this, &context](std::optional<int>) {
             onImportEnded(context);
         };
         request.onAbortFunc = [this, &context] {
