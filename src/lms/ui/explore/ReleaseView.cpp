@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <array>
 #include <map>
+#include <optional>
 #include <span>
 #include <string>
 
@@ -137,10 +138,10 @@ namespace lms::ui
                 }
             }
 
-            if (const std::size_t meanBitrate{ db::Release::getMeanBitrate(session, releaseId) })
+            if (const std::optional<std::size_t> meanBitrate{ db::Release::getMeanBitrate(session, releaseId) })
             {
                 releaseInfo->setCondition("if-has-bitrate", true);
-                releaseInfo->bindString("bitrate", std::to_string(meanBitrate / 1000) + " kbps");
+                releaseInfo->bindString("bitrate", std::to_string(*meanBitrate / 1000) + " kbps");
             }
 
             releaseInfo->bindInt("playcount", db::Listen::getCount(LmsApp->getDbSession(), LmsApp->getUserId(), releaseId));

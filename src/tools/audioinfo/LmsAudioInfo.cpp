@@ -45,7 +45,8 @@ namespace lms::audio
         os << "\tContainer: " << core::media::containerToString(audioProperties.container) << '\n';
         os << "\tCodec: " << core::media::getCodecDesc(audioProperties.codec).name << '\n';
         os << "\tMimeType: " << core::media::getMimeType(audioProperties.container, audioProperties.codec) << '\n';
-        os << "\tBitrate: " << audioProperties.bitrate << " bps" << '\n';
+        if (audioProperties.bitrate)
+            os << "\tBitrate: " << *audioProperties.bitrate << " bps" << '\n';
         if (audioProperties.bitsPerSample)
             os << "\tBitsPerSample: " << *audioProperties.bitsPerSample << '\n';
         os << "\tChannelCount: " << audioProperties.channelCount << '\n';

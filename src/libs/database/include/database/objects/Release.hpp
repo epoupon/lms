@@ -242,7 +242,7 @@ namespace lms::db
         static bool hasVariousCopyrights(ISession& session, ReleaseId id);
         static std::optional<std::string> getCopyright(ISession& session, ReleaseId id);
         static std::optional<std::string> getCopyrightURL(ISession& session, ReleaseId id);
-        static std::size_t getMeanBitrate(ISession& session, ReleaseId id);
+        static std::optional<std::size_t> getMeanBitrate(ISession& session, ReleaseId id);
         static std::vector<core::media::Codec> getCodecs(ISession& session, ReleaseId id);
         static std::chrono::milliseconds getDuration(ISession& session, ReleaseId id);
         static Wt::WDateTime getAddedTime(ISession& session, ReleaseId id);

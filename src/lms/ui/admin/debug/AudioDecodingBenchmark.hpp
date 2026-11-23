@@ -23,6 +23,7 @@
 #include <filesystem>
 #include <functional>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -49,7 +50,7 @@ namespace lms::ui
         struct TrackDecodeResult
         {
             std::filesystem::path path;
-            std::size_t bitrate{};
+            std::optional<std::size_t> bitrate;
             std::chrono::milliseconds duration;
             float realTimeFactor{};
             float speedKBs{};

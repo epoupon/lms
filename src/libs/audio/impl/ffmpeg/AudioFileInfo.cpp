@@ -20,7 +20,6 @@
 #include "AudioFileInfo.hpp"
 
 #include <filesystem>
-#include <system_error>
 
 #include "core/ILogger.hpp"
 
@@ -84,24 +83,9 @@ namespace lms::audio::ffmpeg
             audioProperties->codec = *bestStreamInfo->codec;
 
             if (bestStreamInfo->bitrate)
-                audioProperties->bitrate = *bestStreamInfo->bitrate;
+                audioProperties->bitrate = static_cast<unsigned>(*bestStreamInfo->bitrate);
             else if (containerInfo.bitrate)
-                audioProperties->bitrate = *containerInfo.bitrate;
-            else // Fallback on a bitrate based on duration/size
-            {
-                std::error_code ec;
-                const auto fileSize{ std::filesystem::file_size(audioFile.getPath(), ec) };
-                if (ec)
-                {
-                    LMS_LOG(AUDIO, DEBUG, "Cannot determine file size for " << audioFile.getPath() << ": " << ec.message());
-                    audioProperties.reset();
-                    return audioProperties;
-                }
-
-                audioProperties->bitrate = static_cast<std::size_t>(static_cast<double>(fileSize) * 8 / std::chrono::duration_cast<std::chrono::duration<double>>(containerInfo.duration).count());
-                LMS_LOG(AUDIO, DEBUG, "Estimated bitrate from duration/size: " << audioProperties->bitrate << " bps in " << audioFile.getPath());
-            }
-            assert(audioProperties->bitrate > 0);
+                audioProperties->bitrate = static_cast<unsigned>(*containerInfo.bitrate);
 
             audioProperties->channelCount = *bestStreamInfo->channelCount;
             audioProperties->sampleRate = *bestStreamInfo->sampleRate;

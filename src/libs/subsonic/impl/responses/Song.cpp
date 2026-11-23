@@ -156,7 +156,8 @@ namespace lms::api::subsonic
         }
 
         trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track.getDuration()).count());
-        trackResponse.setAttribute("bitRate", (track.getBitrate() / 1000));
+        if (const std::optional<std::size_t> bitrate{ track.getBitrate() })
+            trackResponse.setAttribute("bitRate", *bitrate / 1000);
         trackResponse.setAttribute("type", "music");
         trackResponse.setAttribute("created", core::stringUtils::toISO8601String(track.getAddedTime()));
         trackResponse.setAttribute("contentType", core::getMimeType(track.getAbsoluteFilePath().extension()));

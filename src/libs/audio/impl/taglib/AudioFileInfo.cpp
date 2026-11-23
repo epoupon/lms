@@ -121,12 +121,8 @@ namespace lms::audio::taglib
                 }
 
                 // Common properties
-                audioProperties.bitrate = static_cast<std::size_t>(properties->bitrate() * 1000);
-                if (audioProperties.bitrate == 0)
-                {
-                    LMS_LOG(AUDIO, DEBUG, "Cannot determine bitrate in " << filePath);
-                    return std::nullopt;
-                }
+                if (properties->bitrate() > 0)
+                    audioProperties.bitrate = static_cast<unsigned>(properties->bitrate()) * 1000;
 
                 audioProperties.channelCount = static_cast<std::size_t>(properties->channels());
                 if (audioProperties.channelCount == 0)
@@ -337,6 +333,9 @@ namespace lms::audio::taglib
                 const bool isWebM{ properties.docType() == "webm" && (*codec == core::media::Codec::Opus || *codec == core::media::Codec::Vorbis) };
                 audioProperties.container = isWebM ? core::media::Container::WebM : core::media::Container::Matroska;
                 audioProperties.codec = *codec;
+                // TagLib's bitrate is the whole file's (video and attachments included), and the per-track BPS
+                // statistics tags cannot be matched to the audio track since TagLib does not expose track UIDs
+                audioProperties.bitrate.reset();
                 audioProperties.bitsPerSample = properties.bitsPerSample();
             }
 #endif // LMS_TAGLIB_HAS_MATROSKA

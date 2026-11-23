@@ -1736,40 +1736,39 @@ namespace lms::db::tests
         ScopedTrack track2{ session };
         ScopedTrack track3{ session };
 
-        auto checkExpectedBitrate = [&](std::size_t bitrate) {
+        auto checkExpectedBitrate = [&](std::optional<std::size_t> bitrate) {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Release::getMeanBitrate(session, release1.getId()), bitrate);
         };
 
-        checkExpectedBitrate(0);
+        checkExpectedBitrate(std::nullopt);
 
         {
             auto transaction{ session.createWriteTransaction() };
             std::optional<Track> updatedTrack1{ track1.get() };
-            updatedTrack1->setBitrate(128);
+            updatedTrack1->setBitrate(std::nullopt);
             updatedTrack1->setRelease(release1.getId());
             Track::update(session, *updatedTrack1);
         }
-
-        checkExpectedBitrate(128);
+        checkExpectedBitrate(std::nullopt); // unknown bitrates are not taken into account
 
         {
             auto transaction{ session.createWriteTransaction() };
             std::optional<Track> updatedTrack2{ track2.get() };
-            updatedTrack2->setBitrate(256);
+            updatedTrack2->setBitrate(128);
             updatedTrack2->setRelease(release1.getId());
             Track::update(session, *updatedTrack2);
         }
-        checkExpectedBitrate(192);
+        checkExpectedBitrate(128);
 
         {
             auto transaction{ session.createWriteTransaction() };
             std::optional<Track> updatedTrack3{ track3.get() };
-            updatedTrack3->setBitrate(0);
+            updatedTrack3->setBitrate(256);
             updatedTrack3->setRelease(release1.getId());
             Track::update(session, *updatedTrack3);
         }
-        checkExpectedBitrate(192); // 0 should not be taken into account
+        checkExpectedBitrate(192);
     }
 
     TEST_F(DatabaseFixture, Release_codec)

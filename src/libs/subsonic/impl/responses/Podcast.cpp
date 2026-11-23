@@ -20,6 +20,7 @@
 #include "Podcast.hpp"
 
 #include <chrono>
+#include <cstdint>
 
 #include <Wt/WDate.h>
 
@@ -58,10 +59,9 @@ namespace lms::api::subsonic
             episodeNode.setAttribute("contentType", episode.getEnclosureContentType());
         episodeNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(episode.getDuration()).count());
         // file size is unknown for episodes downloaded before it was stored
-        if (isDownloaded && episode.getFileSize() > 0)
-            episodeNode.setAttribute("size", episode.getFileSize());
-        else if (episode.getEnclosureLength() > 0)
-            episodeNode.setAttribute("size", episode.getEnclosureLength());
+        const std::uint64_t size{ (isDownloaded && episode.getFileSize() > 0) ? episode.getFileSize() : episode.getEnclosureLength() };
+        if (size > 0)
+            episodeNode.setAttribute("size", size);
         episodeNode.setAttribute("isDir", "false"); // TODO parent?
         if (!episode.getEnclosureUrl().empty())
         {
@@ -69,10 +69,10 @@ namespace lms::api::subsonic
             if (pos != std::string_view::npos)
                 episodeNode.setAttribute("suffix", episode.getEnclosureUrl().substr(pos + 1));
         }
-        if (isDownloaded)
-            episodeNode.setAttribute("bitRate", episode.getBitrate() / 1000);
-        else if (episode.getEnclosureLength() > 0 && episode.getDuration() > std::chrono::milliseconds::zero()) // estimated from the feed
-            episodeNode.setAttribute("bitRate", episode.getEnclosureLength() * 8 / std::chrono::duration_cast<std::chrono::milliseconds>(episode.getDuration()).count());
+        if (isDownloaded && episode.getBitrate())
+            episodeNode.setAttribute("bitRate", *episode.getBitrate() / 1000);
+        else if (size > 0 && episode.getDuration() > std::chrono::milliseconds::zero()) // estimated from the reported size
+            episodeNode.setAttribute("bitRate", size * 8 / std::chrono::duration_cast<std::chrono::milliseconds>(episode.getDuration()).count());
         if (const db::ArtworkId artworkId{ episode.getArtworkId() }; artworkId.isValid())
             episodeNode.setAttribute("coverArt", idToString(artworkId));
 

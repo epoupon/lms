@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 
 #include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
@@ -325,7 +326,7 @@ namespace lms::api::subsonic::detail
             switch (limitation.name)
             {
             case Limitation::Type::AudioBitrate:
-                valueToCheck = static_cast<unsigned>(source.bitrate);
+                valueToCheck = source.bitrate;
                 break;
             case Limitation::Type::AudioChannels:
                 valueToCheck = static_cast<unsigned>(source.channelCount);
@@ -422,7 +423,7 @@ namespace lms::api::subsonic::detail
 
             case Limitation::Type::AudioBitrate:
                 {
-                    const AdjustResult adjustResult{ adjustUsingLimitation(limitation.comparison, limitation.values, transcodedStream.audioBitrate ? *transcodedStream.audioBitrate : source.bitrate) };
+                    const AdjustResult adjustResult{ adjustUsingLimitation(limitation.comparison, limitation.values, transcodedStream.audioBitrate ? *transcodedStream.audioBitrate : *source.bitrate) };
                     if (adjustResult.type == AdjustResult::Type::Adjusted)
                         transcodedStream.audioBitrate = *adjustResult.newValue;
                     return adjustResult;
@@ -461,6 +462,8 @@ namespace lms::api::subsonic::detail
 
         std::optional<StreamDetails> computeTranscodedStream(std::optional<std::size_t> maxAudioBitrate, const TranscodingProfile& profile, std::span<const CodecProfile> codecProfiles, const audio::AudioProperties& source)
         {
+            assert(source.bitrate);
+
             if (profile.protocol != "http")
                 return std::nullopt;
 
@@ -488,7 +491,7 @@ namespace lms::api::subsonic::detail
                 {
                     // If going to a lossless codec, make sure we can respect the original bitrate
                     // technically, we could have a chance to respect the bitrate if we apply limitations, but that's not easy to have a strong garantee
-                    if (maxAudioBitrate && source.bitrate > *maxAudioBitrate)
+                    if (maxAudioBitrate && *source.bitrate > *maxAudioBitrate)
                         return std::nullopt;
                 }
             }
@@ -499,7 +502,7 @@ namespace lms::api::subsonic::detail
                 if (core::media::getCodecDesc(transcodeFormat->codec).isLossless)
                     return std::nullopt; // not compatible with lossless codecs
 
-                transcodedStream.audioBitrate = std::min<std::size_t>(source.bitrate, maxLossyToLossyTranscodeBitrate);
+                transcodedStream.audioBitrate = std::min<std::size_t>(*source.bitrate, maxLossyToLossyTranscodeBitrate);
             }
 
             if (maxAudioBitrate && transcodedStream.audioBitrate && *transcodedStream.audioBitrate > *maxAudioBitrate)
@@ -601,9 +604,15 @@ namespace lms::api::subsonic::detail
 
     TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const audio::AudioProperties& source, std::size_t sourceFileBitrate)
     {
+        // An unknown audio bitrate is replaced by the whole file one: an upper bound, good enough to check max limits and to pick a target
+        audio::AudioProperties sourceWithBitrate{ source };
+        if (!sourceWithBitrate.bitrate)
+            sourceWithBitrate.bitrate = static_cast<unsigned>(sourceFileBitrate);
+        assert(*sourceWithBitrate.bitrate > 0); // an unknown audio bitrate always comes with a known file size
+
         std::vector<TranscodeReason> transcodeReasons;
 
-        if (canDirectPlay(clientInfo, source, sourceFileBitrate, transcodeReasons))
+        if (canDirectPlay(clientInfo, sourceWithBitrate, sourceFileBitrate, transcodeReasons))
             return DirectPlayResult{};
 
         LMS_LOG(API_SUBSONIC, DEBUG, "Direct play not possible: no compatible direct play profile found");
@@ -617,7 +626,7 @@ namespace lms::api::subsonic::detail
         // Check transcoding profiles, we have to select the first one we can handle, order is important
         for (const TranscodingProfile& profile : clientInfo.transcodingProfiles)
         {
-            std::optional<StreamDetails> targetStream{ computeTranscodedStream(clientInfo.maxTranscodingAudioBitrate, profile, clientInfo.codecProfiles, source) };
+            std::optional<StreamDetails> targetStream{ computeTranscodedStream(clientInfo.maxTranscodingAudioBitrate, profile, clientInfo.codecProfiles, sourceWithBitrate) };
             if (targetStream)
                 return TranscodeResult{ .reasons = transcodeReasons, .targetStreamInfo = *targetStream };
         }

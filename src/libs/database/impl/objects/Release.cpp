@@ -745,11 +745,15 @@ namespace lms::db
         return std::move(copyrights.front());
     }
 
-    std::size_t Release::getMeanBitrate(ISession& session, ReleaseId id)
+    std::optional<std::size_t> Release::getMeanBitrate(ISession& session, ReleaseId id)
     {
         checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COALESCE(AVG(t.bitrate), 0) FROM track t").where("release_id = ?").bind(id).where("bitrate > 0"));
+        const int meanBitrate{ utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COALESCE(AVG(t.bitrate), 0) FROM track t").where("release_id = ?").bind(id).where("bitrate > 0")) };
+        if (meanBitrate == 0)
+            return std::nullopt;
+
+        return static_cast<std::size_t>(meanBitrate);
     }
 
     std::vector<core::media::Codec> Release::getCodecs(ISession& session, ReleaseId id)

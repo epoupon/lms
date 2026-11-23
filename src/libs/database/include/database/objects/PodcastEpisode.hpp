@@ -103,7 +103,7 @@ namespace lms::db
         std::chrono::milliseconds getDuration() const { return _duration; }
         std::optional<core::media::Container> getContainer() const;
         std::optional<core::media::Codec> getCodec() const;
-        std::size_t getBitrate() const { return _bitrate; }
+        std::optional<std::size_t> getBitrate() const { return _bitrate > 0 ? std::optional<std::size_t>{ static_cast<std::size_t>(_bitrate) } : std::nullopt; }
         std::size_t getChannelCount() const { return _channelCount; }
         std::size_t getSampleRate() const { return _sampleRate; }
         std::optional<std::size_t> getBitsPerSample() const { return _bitsPerSample; }
@@ -133,7 +133,7 @@ namespace lms::db
         void setDuration(std::chrono::milliseconds duration) { _duration = duration; }
         void setContainer(core::media::Container container);
         void setCodec(core::media::Codec codec);
-        void setBitrate(std::size_t bitrate) { _bitrate = bitrate; }
+        void setBitrate(std::optional<std::size_t> bitrate) { _bitrate = static_cast<int>(bitrate.value_or(0)); }
         void setChannelCount(std::size_t channelCount) { _channelCount = channelCount; }
         void setSampleRate(std::size_t sampleRate) { _sampleRate = sampleRate; }
         void setBitsPerSample(std::optional<std::size_t> bitsPerSample) { _bitsPerSample = bitsPerSample; }
@@ -165,7 +165,7 @@ namespace lms::db
         std::chrono::duration<int, std::milli> _duration{ 0 };
         detail::Container _container{ detail::Container::Unknown };
         detail::Codec _codec{ detail::Codec::Unknown };
-        int _bitrate{}; // in bps
+        int _bitrate{}; // in bps, 0 if unknown
         int _channelCount{};
         int _sampleRate{};
         std::optional<int> _bitsPerSample;

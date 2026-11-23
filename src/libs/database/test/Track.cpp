@@ -519,6 +519,35 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Track_unknownBitrate)
+    {
+        ScopedTrack track{ session };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getBitrate(), std::nullopt);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setBitrate(128000);
+            Track::update(session, *updatedTrack);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            std::optional<Track> updatedTrack{ track.get() };
+            updatedTrack->setBitrate(std::nullopt);
+            Track::update(session, *updatedTrack);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getBitrate(), std::nullopt);
+        }
+    }
+
     TEST_F(DatabaseFixture, Track_comment)
     {
         ScopedTrack track{ session };

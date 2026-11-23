@@ -119,6 +119,8 @@ namespace lms::api::subsonic
             const bool estimateContentLength{ getParameterAs<bool>(context.getParameters(), "estimateContentLength").value_or(false) };
 
             const AudioFileInfo audioFileInfo{ getAudioFileInfo(context.getDbSession(), audioId) };
+            const std::size_t sourceBitrate{ audioFileInfo.audioProperties.bitrate.value_or(audioFileInfo.fileBitrate) };
+            assert(sourceBitrate > 0); // an unknown audio bitrate always comes with a known file size
 
             StreamParameters parameters;
             parameters.audioProperties = audioFileInfo.audioProperties;
@@ -151,8 +153,8 @@ namespace lms::api::subsonic
                 if (!core::media::getCodecDesc(audioFileInfo.audioProperties.codec).isLossless && maxBitRate > 0)
                     throw BadParameterGenericError{ "maxBitRate", "Cannot limit bitrate when requesting a lossless format from a lossy source" };
 
-                if (core::media::getCodecDesc(audioFileInfo.audioProperties.codec).isLossless && maxBitRate > 0 && audioFileInfo.audioProperties.bitrate > maxBitRate)
-                    throw BadParameterGenericError{ "maxBitRate", "Cannot honor maxBitRate, source is lossless with higher bitrate (" + std::to_string(audioFileInfo.audioProperties.bitrate) + " bps)" };
+                if (core::media::getCodecDesc(audioFileInfo.audioProperties.codec).isLossless && maxBitRate > 0 && sourceBitrate > maxBitRate)
+                    throw BadParameterGenericError{ "maxBitRate", "Cannot honor maxBitRate, source is lossless with higher bitrate (" + std::to_string(sourceBitrate) + " bps)" };
 
                 // we accept to transcode from a lossy format to a lossless one
             }
@@ -200,7 +202,7 @@ namespace lms::api::subsonic
                 }
                 else
                 {
-                    bitrate = std::min<std::size_t>(audioFileInfo.audioProperties.bitrate, maxLossyToLossyTranscodeBitrate);
+                    bitrate = std::min<std::size_t>(sourceBitrate, maxLossyToLossyTranscodeBitrate);
                     LMS_LOG(API_SUBSONIC, DEBUG, "Source is lossy, selecting source bitrate capped to " << maxLossyToLossyTranscodeBitrate << " bps (" << *bitrate << " bps) for transcoding");
                 }
 

@@ -66,7 +66,7 @@ namespace lms::ui
             std::filesystem::path path;
             std::chrono::milliseconds duration;
             std::size_t fileSize{};
-            std::size_t bitrate{};
+            std::optional<std::size_t> bitrate;
         };
 
         std::vector<TrackEntry> pickTracksForCodec(db::ISession& session, core::media::Codec codec)

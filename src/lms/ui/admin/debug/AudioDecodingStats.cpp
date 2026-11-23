@@ -91,7 +91,7 @@ namespace lms::ui
                     {
                         const long durationSec{ static_cast<long>(t.duration.count() / 1000) };
                         response.out() << "  " << t.path
-                                       << "  bitrate=" << t.bitrate / 1000 << " kbps"
+                                       << "  bitrate=" << (t.bitrate ? std::to_string(*t.bitrate / 1000) : "?") << " kbps"
                                        << "  duration=" << durationSec / 60 << "m" << durationSec % 60 << "s"
                                        << "  real_time_factor=" << t.realTimeFactor << "x"
                                        << "  speed=" << t.speedKBs << " KB/s\n";

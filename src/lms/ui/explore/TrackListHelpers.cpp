@@ -87,10 +87,10 @@ namespace lms::ui::trackListHelpers
         }
 
         trackInfo->bindString("duration", utils::durationToString(track->getDuration()));
-        if (track->getBitrate())
+        if (const std::optional<std::size_t> bitrate{ track->getBitrate() })
         {
             trackInfo->setCondition("if-has-bitrate", true);
-            trackInfo->bindString("bitrate", std::to_string(track->getBitrate() / 1000) + " kbps");
+            trackInfo->bindString("bitrate", std::to_string(*bitrate / 1000) + " kbps");
         }
 
         trackInfo->bindInt("playcount", db::Listen::getCount(LmsApp->getDbSession(), LmsApp->getUserId(), track->getId()));

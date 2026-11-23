@@ -21,6 +21,7 @@
 #include <chrono>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <span>
 #include <string>
@@ -128,4 +129,22 @@ namespace lms::audio::tests
         AudioFileInfoParser,
         ::testing::ValuesIn(buildParserTestCases()),
         [](const ::testing::TestParamInfo<ParserTestCase>& info) { return info.param.name; });
+
+    // TagLib's own Matroska bitrate covers the whole file (video and attachments included): reported as unknown
+    TEST(AudioFileInfoParserTagLib, matroskaBitrateUnknown)
+    {
+        const std::unique_ptr<IAudioFileInfoParser> parser{ createAudioFileInfoParser(AudioFileInfoParserBackend::TagLib) };
+
+        const std::span<const std::filesystem::path> supportedExtensions{ parser->getSupportedExtensions() };
+        if (std::find(std::cbegin(supportedExtensions), std::cend(supportedExtensions), ".mka") == std::cend(supportedExtensions))
+            GTEST_SKIP() << "file extension not supported by this backend in this build";
+
+        const std::filesystem::path dataDir{ LMS_TEST_DATA_DIR };
+        for (const char* fileName : { "sine.mka", "sine.webm" })
+        {
+            const std::unique_ptr<IAudioFileInfo> info{ parser->parse(dataDir / fileName) };
+            ASSERT_TRUE(info->getAudioProperties()) << fileName;
+            EXPECT_EQ(info->getAudioProperties()->bitrate, std::nullopt) << fileName;
+        }
+    }
 } // namespace lms::audio::tests
