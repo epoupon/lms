@@ -436,6 +436,12 @@ namespace lms::audio::taglib
                 processID3v2Tags(*wavFile->ID3v2Tag());
         }
 #endif // LMS_TAGLIB_HAS_RIFF
+#if LMS_TAGLIB_HAS_DSF
+        else if (const TagLib::DSF::File * dsfFile{ dynamic_cast<const TagLib::DSF::File*>(&_file) })
+        {
+            processID3v2Tags(*dsfFile->tag());
+        }
+#endif // LMS_TAGLIB_HAS_DSF
 #if LMS_TAGLIB_HAS_MATROSKA
         // Matroska / WebM
         else if (const TagLib::Matroska::File * matroskaFile{ dynamic_cast<const TagLib::Matroska::File*>(&_file) })

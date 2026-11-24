@@ -2296,9 +2296,22 @@ GROUP BY c.canonical_id, s.backend)");
         utils::executeCommand(*session.getDboSession(), "UPDATE podcast_episode SET audio_relative_file_path = ''");
 
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE podcast_episode ADD COLUMN download_failed BOOLEAN NOT NULL DEFAULT(false)");
+
+        // Tracks with a duplicated work title got several mbid-less works with the same name, making the next lookup of that work crash (#905)
+        // Remove these works and rescan their tracks (-1 never matches a real scan version)
+        const std::string duplicatedWorkIds{ R"(
+SELECT t_w1.work_id FROM track_work t_w1
+JOIN work w1 ON w1.id = t_w1.work_id
+JOIN track_work t_w2 ON t_w2.track_id = t_w1.track_id AND t_w2.work_id <> t_w1.work_id
+JOIN work w2 ON w2.id = t_w2.work_id
+WHERE w1.mbid IS NULL AND w2.mbid IS NULL AND w1.name = w2.name)" };
+        utils::executeCommand(*session.getDboSession(), "UPDATE track SET scan_version = -1 WHERE id IN (SELECT track_id FROM track_work WHERE work_id IN (" + duplicatedWorkIds + "))");
+        utils::executeCommand(*session.getDboSession(), "DELETE FROM work WHERE id IN (" + duplicatedWorkIds + ")");
+        // Foreign keys are disabled during migrations: no cascade
+        utils::executeCommand(*session.getDboSession(), "DELETE FROM track_work WHERE work_id NOT IN (SELECT id FROM work)");
     }
 
-    bool doDbMigration(Session& session)
+    std::optional<Version> doDbMigrationStep(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
 
@@ -2306,7 +2319,7 @@ GROUP BY c.canonical_id, s.backend)");
 
         using MigrationFunction = std::function<void(Session&)>;
 
-        const std::map<unsigned, MigrationFunction> migrationFunctions{
+        static const std::map<unsigned, MigrationFunction> migrationFunctions{
             { 33, migrateFromV33 },
             { 34, migrateFromV34 },
             { 35, migrateFromV35 },
@@ -2396,8 +2409,6 @@ GROUP BY c.canonical_id, s.backend)");
             { 119, migrateFromV119 },
         };
 
-        LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");
-
         Version version{};
         {
             auto transaction{ session.createWriteTransaction() };
@@ -2419,26 +2430,34 @@ GROUP BY c.canonical_id, s.backend)");
                 throw core::LmsException{ outdatedMsg };
         }
 
-        bool migrationPerformed{};
-        while (version < LMS_DATABASE_VERSION)
+        if (version == LMS_DATABASE_VERSION)
+            return std::nullopt;
+
+        LMS_SCOPED_TRACE_DETAILED("Database", "MigrationStep");
+        LMS_LOG(DB, INFO, "Migrating database from version " << version << " to " << version + 1 << "...");
+
+        auto itMigrationFunc{ migrationFunctions.find(version) };
+        if (itMigrationFunc == std::cend(migrationFunctions))
+            throw core::LmsException{ "No code found to upgrade database!" };
+
         {
-            LMS_SCOPED_TRACE_DETAILED("Database", "MigrationStep");
-            LMS_LOG(DB, INFO, "Migrating database from version " << version << " to " << version + 1 << "...");
-
-            auto itMigrationFunc{ migrationFunctions.find(version) };
-            if (itMigrationFunc == std::cend(migrationFunctions))
-                throw core::LmsException{ "No code found to upgrade database!" };
-
-            {
-                auto transaction{ session.createWriteTransaction() };
-                itMigrationFunc->second(session);
-                VersionInfo::get(session).modify()->setVersion(version + 1);
-            }
-            ++version;
-
-            LMS_LOG(DB, INFO, "Migration complete to version " << version);
-            migrationPerformed = true;
+            auto transaction{ session.createWriteTransaction() };
+            itMigrationFunc->second(session);
+            VersionInfo::get(session).modify()->setVersion(version + 1);
         }
+        ++version;
+
+        LMS_LOG(DB, INFO, "Migration complete to version " << version);
+        return version;
+    }
+
+    bool doDbMigration(Session& session)
+    {
+        LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");
+
+        bool migrationPerformed{};
+        while (doDbMigrationStep(session))
+            migrationPerformed = true;
 
         return migrationPerformed;
     }

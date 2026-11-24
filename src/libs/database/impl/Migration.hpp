@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include <Wt/Dbo/Dbo.h>
 
 namespace lms::db
@@ -52,6 +54,7 @@ namespace lms::db
 
     namespace migration
     {
-        bool doDbMigration(Session& session); // return true if migration was performed
-    }
+        std::optional<Version> doDbMigrationStep(Session& session); // return the version reached, nullopt if already up to date
+        bool doDbMigration(Session& session);                       // return true if migration was performed
+    } // namespace migration
 } // namespace lms::db

@@ -17,7 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Common.hpp"
+#include <functional>
+#include <map>
 
 #include "core/String.hpp"
 #include "core/UUID.hpp"
@@ -52,6 +53,11 @@
 #include "database/objects/UIState.hpp"
 #include "database/objects/User.hpp"
 
+#include "Common.hpp"
+#include "Migration.hpp"
+#include "Session.hpp"
+#include "Utils.hpp"
+
 namespace lms::db::tests
 {
     namespace
@@ -65,6 +71,19 @@ namespace lms::db::tests
                     executeStatement(session, statement);
             }
         }
+
+        template<typename T>
+        T querySingleValue(db::ISession& session, std::string_view query)
+        {
+            return utils::fetchQuerySingleResult(getDboSession(session)->query<T>(std::string{ query }));
+        }
+
+        // Each side is written against the schema of its own version, as the code only maps the latest schema
+        struct MigrationStepTest
+        {
+            std::string_view statementsBefore;
+            std::function<void(db::ISession&)> checksAfter; // raw SQL only
+        };
     } // namespace
 
     TEST(Database, migration)
@@ -381,7 +400,57 @@ VALUES
             executeStatements(session, createDummyData);
         }
 
-        // Now perform full migration
+        // Key = version the step migrates from
+        const std::map<Version, MigrationStepTest> migrationStepTests{
+            { 119,
+              { .statementsBefore = R"(
+-- Track 1 linked to two mbid-less works with the same name (#905), track 2 to a same-name work of its own
+INSERT INTO work (id, version, name, mbid) VALUES
+(1, 1, 'Work', NULL),
+(2, 1, 'Work', NULL),
+(3, 1, 'Work', NULL);
+INSERT INTO track_work (work_id, track_id) VALUES
+(1, 1),
+(2, 1),
+(3, 2);
+)",
+                .checksAfter = [](db::ISession& session) {
+                    // duplicated works are removed along with their links, their track is marked for rescan
+                    EXPECT_EQ(querySingleValue<int>(session, "SELECT COUNT(*) FROM work WHERE id IN (1, 2)"), 0);
+                    EXPECT_EQ(querySingleValue<int>(session, "SELECT COUNT(*) FROM track_work WHERE track_id = 1"), 0);
+                    EXPECT_EQ(querySingleValue<int>(session, "SELECT scan_version FROM track WHERE id = 1"), -1);
+
+                    EXPECT_EQ(querySingleValue<int>(session, "SELECT COUNT(*) FROM track_work WHERE track_id = 2 AND work_id = 3"), 1);
+                    EXPECT_EQ(querySingleValue<int>(session, "SELECT scan_version FROM track WHERE id = 2"), 1);
+                } } },
+        };
+
+        // Now perform full migration, step by step
+        Session& migrationSession{ static_cast<Session&>(session) };
+        while (true)
+        {
+            Version version{};
+            {
+                auto transaction{ session.createReadTransaction() };
+                version = VersionInfo::get(migrationSession)->getVersion();
+            }
+
+            const auto itStepTest{ migrationStepTests.find(version) };
+            if (itStepTest != std::cend(migrationStepTests))
+            {
+                auto transaction{ session.createWriteTransaction() };
+                executeStatements(session, itStepTest->second.statementsBefore);
+            }
+
+            if (!migration::doDbMigrationStep(migrationSession))
+                break;
+
+            if (itStepTest != std::cend(migrationStepTests))
+            {
+                auto transaction{ session.createReadTransaction() };
+                itStepTest->second.checksAfter(session);
+            }
+        }
         db.prepare(RecommendationEngineType::Clusters);
 
         // Now perform some dummy finds to ensure all fields are correctly mapped
