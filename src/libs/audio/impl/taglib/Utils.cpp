@@ -22,13 +22,16 @@
 #include "TagLibDefs.hpp"
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include <taglib/audioproperties.h>
 #include <taglib/id3v2framefactory.h>
 #include <taglib/mpegfile.h>
+#include <taglib/tdebuglistener.h>
 #include <taglib/tfile.h>
 #include <taglib/tfilestream.h>
+#include <taglib/tstring.h>
 
 #if LMS_TAGLIB_HAS_RIFF
     #include <taglib/aifffile.h>
@@ -68,6 +71,7 @@
 #include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
+#include "core/String.hpp"
 #include "core/media/AudioFormat.hpp"
 
 #include "audio/Exception.hpp"
@@ -190,11 +194,25 @@ namespace lms::audio::taglib::utils
 
             return result;
         }
+
+        // TagLib prints to stderr by default, only in builds without NDEBUG (or with TRACE_IN_RELEASE)
+        class LogDebugListener final : public ::TagLib::DebugListener
+        {
+        private:
+            void printMessage(const ::TagLib::String& msg) override
+            {
+                const std::string message{ msg.to8Bit(true) };
+                LMS_LOG(AUDIO, DEBUG, core::stringUtils::stringTrimEnd(message, " \t\r\n"));
+            }
+        };
     } // namespace
 
     void init()
     {
         LMS_LOG(AUDIO, INFO, "Using TagLib " << TAGLIB_MAJOR_VERSION << "." << TAGLIB_MINOR_VERSION << "." << TAGLIB_PATCH_VERSION);
+
+        static LogDebugListener debugListener;
+        ::TagLib::setDebugListener(&debugListener);
     }
 
     std::span<const std::filesystem::path> getSupportedExtensions()
