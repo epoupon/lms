@@ -19,12 +19,15 @@
 
 #include "TagReader.hpp"
 
+#include <chrono>
+#include <optional>
 #include <unordered_map>
 
 #include "TagLibDefs.hpp"
 
 #include <taglib/id3v2tag.h>
 #include <taglib/mpegfile.h>
+#include <taglib/mpegheader.h>
 #include <taglib/synchronizedlyricsframe.h>
 #include <taglib/tag.h>
 #include <taglib/tfile.h>
@@ -220,6 +223,24 @@ namespace lms::audio::taglib
                 }
             }
         }
+
+        // Frames only make sense for MPEG streams, whose frame duration depends on the layer and version
+        std::optional<std::chrono::duration<double, std::milli>> getMpegFrameDuration(::TagLib::File& file)
+        {
+            auto* mpegFile{ dynamic_cast<::TagLib::MPEG::File*>(&file) };
+            if (!mpegFile)
+                return std::nullopt;
+
+            const ::TagLib::offset_t firstFrameOffset{ mpegFile->firstFrameOffset() };
+            if (firstFrameOffset < 0)
+                return std::nullopt;
+
+            const ::TagLib::MPEG::Header header{ mpegFile, firstFrameOffset };
+            if (!header.isValid() || header.sampleRate() <= 0)
+                return std::nullopt;
+
+            return std::chrono::duration<double, std::milli>{ 1000.0 * header.samplesPerFrame() / header.sampleRate() };
+        }
     } // namespace
 
     TagReader::TagReader(::TagLib::File& file, bool enableExtraDebugLogs)
@@ -269,30 +290,29 @@ namespace lms::audio::taglib
                     continue; // TODO log or assert?
 
                 const std::string language{ lyricsFrame->language().data(), lyricsFrame->language().size() };
+
+                // unset if timestamps cannot be converted: lyrics are then kept unsynchronized rather than all at 0
+                std::optional<std::chrono::duration<double, std::milli>> timeUnit;
+                switch (lyricsFrame->timestampFormat())
+                {
+                case ::TagLib::ID3v2::SynchronizedLyricsFrame::AbsoluteMilliseconds:
+                    timeUnit = std::chrono::milliseconds{ 1 };
+                    break;
+                case ::TagLib::ID3v2::SynchronizedLyricsFrame::AbsoluteMpegFrames:
+                    timeUnit = getMpegFrameDuration(_file);
+                    break;
+                case ::TagLib::ID3v2::SynchronizedLyricsFrame::Unknown:
+                    break;
+                }
+
                 std::string lyrics;
                 for (const ::TagLib::ID3v2::SynchronizedLyricsFrame::SynchedText& synchedText : lyricsFrame->synchedText())
                 {
-                    std::chrono::milliseconds timestamp{};
-                    switch (lyricsFrame->timestampFormat())
-                    {
-                    case ::TagLib::ID3v2::SynchronizedLyricsFrame::AbsoluteMilliseconds:
-                        timestamp = std::chrono::milliseconds{ synchedText.time };
-                        break;
-                    case ::TagLib::ID3v2::SynchronizedLyricsFrame::AbsoluteMpegFrames:
-                        {
-                            const ::TagLib::AudioProperties* properties{ file.audioProperties() };
-                            if (properties && properties->sampleRate())
-                                timestamp = std::chrono::milliseconds{ synchedText.time * 1000 / properties->sampleRate() };
-                        }
-                        break;
-                    case ::TagLib::ID3v2::SynchronizedLyricsFrame::Unknown:
-                        break;
-                    }
-
                     if (!lyrics.empty())
                         lyrics += '\n';
 
-                    lyrics += core::stringUtils::formatTimestamp(timestamp);
+                    if (timeUnit)
+                        lyrics += core::stringUtils::formatTimestamp(std::chrono::duration_cast<std::chrono::milliseconds>(synchedText.time * *timeUnit));
                     lyrics += synchedText.text.to8Bit(true);
                 }
 
