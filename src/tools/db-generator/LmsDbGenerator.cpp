@@ -184,8 +184,11 @@ namespace lms
             auto transaction{ context.session.createWriteTransaction() };
             std::cout << "Generating album #" << params.releaseCount - remainingCount << " / " << params.releaseCount << std::endl;
 
-            for (std::size_t i{}; i < params.releaseCountPerBatch && remainingCount-- > 0; ++i)
+            for (std::size_t i{}; i < params.releaseCountPerBatch && remainingCount > 0; ++i)
+            {
                 generateRelease(params, context);
+                --remainingCount;
+            }
         }
     }
 
@@ -277,6 +280,9 @@ int main(int argc, char* argv[])
         genParams.languageCountPerTrack = vm["language-count-per-track"].as<unsigned>();
         genParams.moodCount = vm["mood-count"].as<unsigned>();
         genParams.moodCountPerTrack = vm["mood-count-per-track"].as<unsigned>();
+
+        if (genParams.releaseCountPerBatch == 0)
+            throw std::runtime_error{ "release-count-per-batch must be greater than 0" };
 
         if (!std::filesystem::exists(genParams.trackPath))
             throw std::runtime_error{ "File '" + genParams.trackPath.string() + "' does not exist!" };
