@@ -29,11 +29,13 @@
 #include <vector>
 
 #include <Wt/Dbo/Call.h>
+#include <Wt/Dbo/Exception.h>
 #include <Wt/Dbo/Query.h>
 #include <Wt/Dbo/Session.h>
 #include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
+#include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "database/Types.hpp"
 
@@ -117,6 +119,24 @@ namespace lms::db::utils
                 queryProfiler.resume();
             });
         }
+
+        // Wt's exception does not tell which query returned several rows
+        template<typename Query>
+        auto fetchQueryUniqueResult(const Query& query)
+        {
+            LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQuerySingleResult", "Query", query.asString());
+
+            ScopedQueryProfiler queryProfiler{ query };
+            try
+            {
+                return query.resultValue();
+            }
+            catch (const Wt::Dbo::NoUniqueResultException&)
+            {
+                LMS_LOG(DB, ERROR, "Query returned more than one result: " << query.asString());
+                throw;
+            }
+        }
     } // namespace detail
 
     template<typename Query, typename UnaryFunc>
@@ -169,19 +189,15 @@ namespace lms::db::utils
     auto fetchQuerySingleResult(const Query& query)
     {
         static_assert(!isObjectResult<typename QueryResultType<Query>::type>, "Use fetchQuerySingleObject");
-        LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQuerySingleResult", "Query", query.asString());
-        ScopedQueryProfiler queryProfiler{ query };
-        return query.resultValue();
+        return detail::fetchQueryUniqueResult(query);
     }
 
     template<typename Query>
     auto fetchQuerySingleObject(const Query& query)
     {
-        LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQuerySingleResult", "Query", query.asString());
-        ScopedQueryProfiler queryProfiler{ query };
         using ResultType = typename QueryResultType<Query>::type;
         std::optional<EntityOf<typename ResultType::pointed>> res;
-        if (const ResultType result{ query.resultValue() })
+        if (const ResultType result{ detail::fetchQueryUniqueResult(query) })
             res = toEntity(result);
 
         return res;
