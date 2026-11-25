@@ -205,6 +205,9 @@ namespace lms::api::subsonic
                 artistFindParams.setFeedbackUser(context.getUser()->getId());
                 artistFindParams.setFeedbackValue(db::FeedbackValue::Loved);
                 artistFindParams.setSortMethod(ArtistSortMethod::SortName);
+                if (mediaLibrary.isValid())
+                    artistFindParams.setFilter(FilterExpr::equal(mediaLibrary));
+
                 for (const ArtistId artistId : Artist::findIds(context.getDbSession(), artistFindParams))
                 {
                     if (auto artist{ Artist::find(context.getDbSession(), artistId) })
