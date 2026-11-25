@@ -29,50 +29,18 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
 
 ## Music discovery
 _LMS_ provides several ways to help you find the music you like:
-* Tag-based filters (ex: "_Rock_", "_Metal_ and _Aggressive_", "_Electronic_ and _Relaxed_", ...)
+* Filters on `genre`, `mood`, `grouping`, `language`, `label`, `releasetype`, `codec` and music library (ex: "_Rock_", "_Metal_ and _Aggressive_", "_Electronic_ or _Ambient_", "_Jazz_ but not _live_ releases", "_FLAC_ tracks from _Sanctuary Records_", ...). More tags, including custom ones, can be added in the database administration settings.
 * Recommendations for similar artists and albums
 * Radio mode, with endless filling of the play queue with tracks similar to what is there
 * Searches in album, artist and track names (including sort names and disc subtitles), ignoring case and accents
-* Starred Albums/Artists/Tracks
-* Random/Starred/Most played/Recently played/Recently added for Artist/Albums/Tracks, allowing you to search for things like:
-  * Recently added _Electronic_ artists
-  * Random _Metal_ and _Aggressive_ albums
-  * Most played _Relaxed_ tracks
-  * Starred _Jazz_ albums
-  * ...
+* Random, starred, most played, recently played and recently added artists, albums and tracks, all restricted by the active filters
 
 __Note__: the recommendation engine supports two modes:
 * **Audio similarity** (default): uses MusicNN embeddings. Extraction throughput depends heavily on both the number of scanner threads and the speed of your storage. Typical reported speeds range from ~1k tracks/hour on a Raspberry Pi 4 to ~25k tracks/hour on an Intel Core i5-13500.
 * **Tag-based**: uses metadata tags `genre`, `mood`, `grouping`, and `language`.
 
-## About tags
+## Tags
 _LMS_ primarily relies on tags to organize your music collection but also supports browsing by directory using the [Subsonic/OpenSubsonic API](SUBSONIC.md).
-
-## Artist information folder
-_LMS_ supports an Artist information folder to manage metadata and images for artists. This folder can be placed anywhere within the scanned libraries but is best located in a dedicated `ArtistInfo` directory in the root of a media library for maximum compatibility with other softwares.
-
-The folder must follow a structure defined by Kodi, as detailed [here](https://kodi.wiki/view/Artist_information_folder). `artist.nfo` files are used to define additional artist information such as biography, sort name, and MusicBrainz ArtistID. See the format [here](https://kodi.wiki/view/NFO_files/Artists).
-
-The canonical artist name used by _LMS_ is the one specified in the `artist.nfo` file; If an `artist.nfo` exists but does not provide a name, the name of the containing folder is used. The same goes for the sort name, when the `artist.nfo` file provides one.
-Otherwise, _LMS_ picks the artist name and sort name found in the most recent album artist tags, then in the most recent artist tags of any kind, tags matched using a MusicBrainz ArtistID first. Artists without a MusicBrainz ArtistID keep their name, as it is what identifies them.
-
-## Excluding files from scan
-Place a `.lmsignore` file at the root of a media library to exclude files or directories from scanning.
-
-The file uses a gitignore-inspired reduced syntax:
-* `*.jpg`: ignore all `.jpg` files at any depth
-* `/Unsorted/`: ignore the top-level `Unsorted/` directory only
-* `extras/`: ignore any `extras/` directory at any depth
-* `!cover.jpg`: re-include a file previously matched by a broader rule
-* `?`: matches any single character except `/`
-* `[abc]`: character class
-
-Lines starting with `#` are comments. An empty file has no effect.
-
-__Note__: only one `.lmsignore` file per library root is supported; files placed in subdirectories are ignored.
-
-### Filtering
-It is possible to apply global filters on your collection using `genre`, `mood`, `grouping`, `language`, `codec`, and by music library. More tags, including custom ones, can be added in the database administration settings.
 
 __Note__: You can use the `lms-audioinfo` tool to get an idea of the tags parsed by _LMS_.
 
@@ -106,6 +74,14 @@ For an album to be considered a match, the following conditions must be met:
 * Identical 'compilation' flag value
 * Same record labels
 * Same barcode
+
+## Artist information folder
+_LMS_ supports an Artist information folder to manage metadata and images for artists. This folder can be placed anywhere within the scanned libraries but is best located in a dedicated `ArtistInfo` directory in the root of a media library for maximum compatibility with other softwares.
+
+The folder must follow a structure defined by Kodi, as detailed [here](https://kodi.wiki/view/Artist_information_folder). `artist.nfo` files are used to define additional artist information such as biography, sort name, and MusicBrainz ArtistID. See the format [here](https://kodi.wiki/view/NFO_files/Artists).
+
+The canonical artist name used by _LMS_ is the one specified in the `artist.nfo` file; If an `artist.nfo` exists but does not provide a name, the name of the containing folder is used. The same goes for the sort name, when the `artist.nfo` file provides one.
+Otherwise, _LMS_ picks the artist name and sort name found in the most recent album artist tags, then in the most recent artist tags of any kind, tags matched using a MusicBrainz ArtistID first. Artists without a MusicBrainz ArtistID keep their name, as it is what identifies them.
 
 ## Artwork
 _LMS_ scans and serves artwork in `jpg`/`jpeg`, `png`, `bmp`, `webp` and `gif` formats, both as standalone files and embedded in track tags. `webp` and `gif` images are always served at their original size: they are never resized, even when a client requests a specific size.
@@ -144,6 +120,21 @@ _LMS_ resolves a playlist's cover image in this order:
 
 ## Lyrics support
 _LMS_ supports lyrics in `lrc` files, `txt` files, and embedded track metadata. Both synchronized and unsynchronized lyrics are supported.
+
+## Excluding files from scan
+Place a `.lmsignore` file at the root of a media library to exclude files or directories from scanning.
+
+The file uses a gitignore-inspired reduced syntax:
+* `*.jpg`: ignore all `.jpg` files at any depth
+* `/Unsorted/`: ignore the top-level `Unsorted/` directory only
+* `extras/`: ignore any `extras/` directory at any depth
+* `!cover.jpg`: re-include a file previously matched by a broader rule
+* `?`: matches any single character except `/`
+* `[abc]`: character class
+
+Lines starting with `#` are comments. An empty file has no effect.
+
+__Note__: only one `.lmsignore` file per library root is supported; files placed in subdirectories are ignored.
 
 ## Keyboard shortcuts
 * Play/pause: <kbd>Space</kbd>
