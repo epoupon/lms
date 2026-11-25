@@ -21,6 +21,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <variant>
 
 #include "audio/AudioProperties.hpp"
 #include "audio/IAudioFileInfo.hpp"
@@ -43,11 +44,12 @@ namespace lms::audio::ffmpeg
 
     private:
         const AudioProperties* getAudioProperties() const override;
+        std::optional<AudioPropertiesError> getAudioPropertiesError() const override;
         const IImageReader* getImageReader() const override;
         const ITagReader* getTagReader() const override;
 
         std::unique_ptr<AudioFile> _audioFile;
-        const std::optional<AudioProperties> _audioProperties;
+        const std::variant<AudioProperties, AudioPropertiesError> _audioProperties;
         std::unique_ptr<TagReader> _tagReader;
         std::unique_ptr<ImageReader> _imageReader;
     };

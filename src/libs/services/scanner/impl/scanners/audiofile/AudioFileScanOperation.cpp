@@ -20,6 +20,8 @@
 #include "AudioFileScanOperation.hpp"
 
 #include <array>
+#include <cassert>
+#include <chrono>
 
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
@@ -628,7 +630,18 @@ namespace lms::scanner
 
             if (!audioFileInfo->getAudioProperties())
             {
-                addError<NoAudioTrackFoundError>(getFilePath());
+                const std::optional<audio::AudioPropertiesError> error{ audioFileInfo->getAudioPropertiesError() };
+                assert(error);
+                switch (*error)
+                {
+                case audio::AudioPropertiesError::NoAudioStream:
+                case audio::AudioPropertiesError::UnsupportedFormat:
+                    addError<NoAudioTrackFoundError>(getFilePath());
+                    break;
+                case audio::AudioPropertiesError::UnknownDuration:
+                    addError<BadAudioDurationError>(getFilePath());
+                    break;
+                }
                 return;
             }
 
@@ -785,19 +798,8 @@ namespace lms::scanner
             }
         }
 
-        // We estimate this is an audio file if the duration is not null
-        if (_file->audioProperties.duration == std::chrono::milliseconds::zero())
-        {
-            addError<BadAudioDurationError>(getFilePath());
-
-            if (track)
-            {
-                removeTrack(track->getId());
-                LMS_LOG(DBUPDATER, DEBUG, "Removed track " << getFilePath());
-                return OperationResult::Removed;
-            }
-            return OperationResult::Skipped;
-        }
+        // parsers report an unknown duration as an error
+        assert(_file->audioProperties.duration > std::chrono::milliseconds::zero());
 
         // ***** Title
         std::string title;

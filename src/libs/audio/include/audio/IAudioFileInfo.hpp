@@ -19,18 +19,28 @@
 
 #pragma once
 
+#include <optional>
+
 namespace lms::audio
 {
     struct AudioProperties;
     class IImageReader;
     class ITagReader;
 
+    enum class AudioPropertiesError
+    {
+        NoAudioStream,
+        UnsupportedFormat,
+        UnknownDuration,
+    };
+
     class IAudioFileInfo
     {
     public:
         virtual ~IAudioFileInfo() = default;
 
-        virtual const AudioProperties* getAudioProperties() const = 0; // may be null even if requested, due to backend limitation
+        virtual const AudioProperties* getAudioProperties() const = 0;                   // null if the audio cannot be handled, see getAudioPropertiesError()
+        virtual std::optional<AudioPropertiesError> getAudioPropertiesError() const = 0; // set if and only if getAudioProperties() is null
         virtual const IImageReader* getImageReader() const = 0;
         virtual const ITagReader* getTagReader() const = 0;
     };

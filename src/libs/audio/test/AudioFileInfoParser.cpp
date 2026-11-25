@@ -97,6 +97,7 @@ namespace lms::audio::tests
 
         const AudioProperties* properties{ info->getAudioProperties() };
         ASSERT_TRUE(properties);
+        EXPECT_EQ(info->getAudioPropertiesError(), std::nullopt);
 
         // FFmpeg does not expose the Matroska DocType, so it reports WebM files as Matroska
         const bool isWebMSeenAsMatroska{ testCase.backend == AudioFileInfoParserBackend::FFmpeg && testCase.file.container == core::media::Container::WebM };

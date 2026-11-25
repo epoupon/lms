@@ -21,6 +21,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <variant>
 
 #include "Utils.hpp"
 #include "audio/AudioProperties.hpp"
@@ -50,12 +51,13 @@ namespace lms::audio::taglib
 
     private:
         const AudioProperties* getAudioProperties() const override;
+        std::optional<AudioPropertiesError> getAudioPropertiesError() const override;
         const IImageReader* getImageReader() const override;
         const ITagReader* getTagReader() const override;
 
         const std::filesystem::path _filePath;
         utils::FileDesc _fileDesc;
-        std::optional<AudioProperties> _audioProperties;
+        std::variant<AudioProperties, AudioPropertiesError> _audioProperties;
         std::unique_ptr<TagReader> _tagReader;
         std::unique_ptr<ImageReader> _imageReader;
     };

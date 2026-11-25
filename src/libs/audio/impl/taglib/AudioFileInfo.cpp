@@ -23,6 +23,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <variant>
 
 #include "TagLibDefs.hpp"
 
@@ -106,7 +107,7 @@ namespace lms::audio::taglib
         }
 #endif // LMS_TAGLIB_HAS_MATROSKA
 
-        std::optional<AudioProperties> computeAudioProperties(const ::TagLib::File& file, const std::filesystem::path& filePath)
+        std::variant<AudioProperties, AudioPropertiesError> computeAudioProperties(const ::TagLib::File& file, const std::filesystem::path& filePath)
         {
             assert(file.audioProperties());
 
@@ -117,33 +118,15 @@ namespace lms::audio::taglib
                 if (!properties)
                 {
                     LMS_LOG(AUDIO, DEBUG, "Cannot determine audio properties in " << filePath);
-                    return std::nullopt;
+                    return AudioPropertiesError::NoAudioStream;
                 }
 
-                // Common properties
+                // Common properties, checked once the format is known to be handled
                 if (properties->bitrate() > 0)
                     audioProperties.bitrate = static_cast<unsigned>(properties->bitrate()) * 1000;
-
                 audioProperties.channelCount = static_cast<std::size_t>(properties->channels());
-                if (audioProperties.channelCount == 0)
-                {
-                    LMS_LOG(AUDIO, DEBUG, "Cannot determine channel count in " << filePath);
-                    return std::nullopt;
-                }
-
                 audioProperties.duration = std::chrono::milliseconds{ properties->lengthInMilliseconds() };
-                if (audioProperties.duration <= decltype(audioProperties.duration)::zero())
-                {
-                    LMS_LOG(AUDIO, DEBUG, "Cannot determine duration in " << filePath);
-                    return std::nullopt;
-                }
-
                 audioProperties.sampleRate = static_cast<std::size_t>(properties->sampleRate());
-                if (audioProperties.sampleRate == 0)
-                {
-                    LMS_LOG(AUDIO, DEBUG, "Cannot determine sample rate in " << filePath);
-                    return std::nullopt;
-                }
             }
 
             // Guess container from the file type
@@ -160,7 +143,7 @@ namespace lms::audio::taglib
                 else
                 {
                     LMS_LOG(AUDIO, DEBUG, "Unhandled MPEG codec in " << filePath);
-                    return std::nullopt;
+                    return AudioPropertiesError::UnsupportedFormat;
                 }
             }
 #if LMS_TAGLIB_HAS_RIFF
@@ -200,7 +183,7 @@ namespace lms::audio::taglib
                     break;
                 default:
                     LMS_LOG(AUDIO, DEBUG, "Unhandled MPC codec version " << mpcFile->audioProperties()->mpcVersion() << " in " << filePath);
-                    return std::nullopt;
+                    return AudioPropertiesError::UnsupportedFormat;
                 }
             }
             else if (const auto* wavPackFile{ dynamic_cast<const ::TagLib::WavPack::File*>(&file) })
@@ -231,7 +214,7 @@ namespace lms::audio::taglib
                     break;
                 case ::TagLib::ASF::Properties::Codec::Unknown:
                     LMS_LOG(AUDIO, DEBUG, "Unhandled ASF codec in " << filePath);
-                    return std::nullopt;
+                    return AudioPropertiesError::UnsupportedFormat;
                 }
 
                 audioProperties.bitsPerSample = asfFile->audioProperties()->bitsPerSample();
@@ -282,11 +265,11 @@ namespace lms::audio::taglib
                     break;
                 case ::TagLib::MP4::Properties::Codec::DTS:
                     LMS_LOG(AUDIO, DEBUG, "Unhandled MP4 codec (DTS) in " << filePath);
-                    return std::nullopt;
+                    return AudioPropertiesError::UnsupportedFormat;
     #endif // LMS_TAGLIB_HAS_MP4_EXTENDED_CODECS
                 case ::TagLib::MP4::Properties::Codec::Unknown:
                     LMS_LOG(AUDIO, DEBUG, "Unhandled MP4 codec in " << filePath);
-                    return std::nullopt;
+                    return AudioPropertiesError::UnsupportedFormat;
                 }
 
                 audioProperties.bitsPerSample = mp4File->audioProperties()->bitsPerSample();
@@ -326,7 +309,7 @@ namespace lms::audio::taglib
                 if (!codec)
                 {
                     LMS_LOG(AUDIO, DEBUG, "Unhandled Matroska codec '" << codecId << "' in " << filePath);
-                    return std::nullopt;
+                    return AudioPropertiesError::UnsupportedFormat;
                 }
 
                 // WebM only allows Opus and Vorbis: any other codec is labelled Matroska so that WebM-only clients never get it
@@ -342,7 +325,25 @@ namespace lms::audio::taglib
             else
             {
                 LMS_LOG(AUDIO, DEBUG, "Unhandled file type in " << filePath);
-                return std::nullopt;
+                return AudioPropertiesError::UnsupportedFormat;
+            }
+
+            if (audioProperties.channelCount == 0)
+            {
+                LMS_LOG(AUDIO, DEBUG, "Cannot determine channel count in " << filePath);
+                return AudioPropertiesError::NoAudioStream;
+            }
+
+            if (audioProperties.sampleRate == 0)
+            {
+                LMS_LOG(AUDIO, DEBUG, "Cannot determine sample rate in " << filePath);
+                return AudioPropertiesError::NoAudioStream;
+            }
+
+            if (audioProperties.duration <= std::chrono::milliseconds::zero())
+            {
+                LMS_LOG(AUDIO, DEBUG, "Cannot determine duration in " << filePath);
+                return AudioPropertiesError::UnknownDuration;
             }
 
             if (audioProperties.bitsPerSample && *audioProperties.bitsPerSample == 0)
@@ -368,7 +369,15 @@ namespace lms::audio::taglib
 
     const AudioProperties* AudioFileInfo::getAudioProperties() const
     {
-        return _audioProperties.has_value() ? &_audioProperties.value() : nullptr;
+        return std::get_if<AudioProperties>(&_audioProperties);
+    }
+
+    std::optional<AudioPropertiesError> AudioFileInfo::getAudioPropertiesError() const
+    {
+        if (const AudioPropertiesError * error{ std::get_if<AudioPropertiesError>(&_audioProperties) })
+            return *error;
+
+        return std::nullopt;
     }
 
     const IImageReader* AudioFileInfo::getImageReader() const
