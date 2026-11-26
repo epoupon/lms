@@ -25,6 +25,7 @@
 #include "core/IJob.hpp"
 #include "core/IJobScheduler.hpp"
 #include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
 
 #include "audio/Exception.hpp"
 #include "audio/IMusicNNEmbeddingExtractor.hpp"
@@ -191,6 +192,7 @@ namespace lms::scanner
         std::unique_ptr<audio::IMusicNNEmbeddingExtractor> embeddingExtractor;
         try
         {
+            LMS_SCOPED_TRACE_DETAILED("Scanner", "LoadMusicNNModel");
             embeddingExtractor = audio::createMusicNNEmbeddingExtractor(_settings.musicnnModelPath, _settings.musicnnMaxPatchCountPerTrack);
         }
         catch (const audio::Exception& e)
