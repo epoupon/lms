@@ -51,11 +51,17 @@ namespace lms::db
         struct FindParameters
         {
             UserId user;
+            Wt::WDateTime minDateTime; // inclusive, no bound if invalid
             std::optional<Range> range;
 
             FindParameters& setUser(UserId _user)
             {
                 user = _user;
+                return *this;
+            }
+            FindParameters& setMinDateTime(const Wt::WDateTime& _minDateTime)
+            {
+                minDateTime = _minDateTime;
                 return *this;
             }
             FindParameters& setRange(Range _range)
@@ -67,6 +73,7 @@ namespace lms::db
 
         // Accessors
         static std::size_t getCount(ISession& session);
+        static std::size_t getCount(ISession& session, const FindParameters& parameters);
         static std::optional<Listen> find(ISession& session, ListenId id);
         static std::optional<Listen> find(ISession& session, UserId userId, TrackId trackId, const Wt::WDateTime& dateTime);
         static std::vector<ListenId> findIds(ISession& session, const FindParameters& parameters);

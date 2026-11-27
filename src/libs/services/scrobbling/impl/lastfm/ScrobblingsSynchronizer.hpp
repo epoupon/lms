@@ -19,15 +19,15 @@
 
 #pragma once
 
-#include <span>
+#include <unordered_map>
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/io_context_strand.hpp>
 #include <boost/asio/steady_timer.hpp>
 
-#include <Wt/WDateTime.h>
-
+#include "database/objects/ListenBackendSyncId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/UserId.hpp"
 
 #include "services/scrobbling/Listen.hpp"
 
@@ -58,23 +58,38 @@ namespace lms::scrobbling::lastFm
 
         void enqueListen(const TimedListen& listen);
         void enqueListenNow(const Listen& listen);
-        void requestImmediateExport();
+        void requestImmediateExport(db::UserId userId);
 
     private:
-        void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
         bool saveListen(const TimedListen& listen, db::SyncState syncState);
-        void skipListen(const TimedListen& listen);
-        void handleScrobbleResult(const TimedListen& listen, const utils::ScrobbleResult& result);
+        void dropListen(db::ListenBackendSyncId syncId);
+        void markListenSynchronized(db::ListenBackendSyncId syncId);
+        // returns false if the scrobble must be sent again later
+        bool handleScrobbleResult(db::ListenBackendSyncId syncId, const utils::ScrobbleResult& result);
 
-        void enquePendingListens();
-        void sendScrobbleBatch(const utils::LastFmCredentials& creds, std::span<const TimedListen> listens);
-        void scheduleSubmit(std::chrono::seconds fromNow);
+        void requestExportForEnabledUsers();
+
+        struct ExportState
+        {
+            ExportState(db::UserId id, boost::asio::io_context& ioContext)
+                : userId{ id }
+                , retryTimer{ ioContext } {}
+
+            const db::UserId userId;
+            bool exporting{}; // sending or waiting to retry
+            std::size_t consecutiveFailures{};
+            boost::asio::steady_timer retryTimer;
+        };
+        ExportState& getExportState(db::UserId userId);
+        void startExport(ExportState& exportState);
+        void sendNextScrobbleBatch(ExportState& exportState);
+        void scheduleExportRetry(ExportState& exportState);
 
         boost::asio::io_context& _ioContext;
         boost::asio::io_context::strand _strand{ _ioContext };
         db::IDb& _db;
-        std::chrono::hours _submitPeriod;
-        boost::asio::steady_timer _submitTimer{ _ioContext };
         core::http::IClient& _client;
+
+        std::unordered_map<db::UserId, ExportState> _exportStates; // only accessed in _strand
     };
 } // namespace lms::scrobbling::lastFm

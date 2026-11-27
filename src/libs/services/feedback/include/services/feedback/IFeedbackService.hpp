@@ -71,6 +71,9 @@ namespace lms::feedback
 
         // Manually trigger an on-demand export of all existing local feedback (loved/hated tracks) to the given backend for this user (if supported)
         virtual void requestImmediateExport(db::UserId userId, db::FeedbackBackend backend) = 0;
+
+        // Forget which of the user's feedbacks were sent or are waiting to be sent to the given backend
+        virtual void resetExports(db::UserId userId, db::FeedbackBackend backend) = 0;
     };
 
     std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, db::IDb& db);

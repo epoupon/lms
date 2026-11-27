@@ -33,6 +33,25 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::ListenBackendSync)
 
 namespace lms::db
 {
+    namespace
+    {
+        template<typename Query>
+        void applyFindParameters(Query& query, const ListenBackendSync::FindParameters& params)
+        {
+            if (params.user.isValid())
+            {
+                query.join("listen l ON l.id = l_b_s.listen_id");
+                query.where("l.user_id = ?").bind(params.user);
+            }
+
+            if (params.backend)
+                query.where("l_b_s.backend = ?").bind(*params.backend);
+
+            if (params.syncState)
+                query.where("l_b_s.sync_state = ?").bind(*params.syncState);
+        }
+    } // namespace
+
     ListenBackendSync::ListenBackendSync(ScrobblingBackend backend)
         : _backend{ backend }
     {
@@ -80,13 +99,8 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->query<ListenBackendSyncId>("SELECT id FROM listen_backend_sync") };
-
-        if (params.backend)
-            query.where("backend = ?").bind(*params.backend);
-
-        if (params.syncState)
-            query.where("sync_state = ?").bind(*params.syncState);
+        auto query{ getDboSession(session)->query<ListenBackendSyncId>("SELECT l_b_s.id FROM listen_backend_sync l_b_s") };
+        applyFindParameters(query, params);
 
         return utils::execRangeQuery<ListenBackendSyncId>(query, params.range);
     }
@@ -95,13 +109,8 @@ namespace lms::db
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->find<dbo::ListenBackendSync>() };
-
-        if (params.backend)
-            query.where("backend = ?").bind(*params.backend);
-
-        if (params.syncState)
-            query.where("sync_state = ?").bind(*params.syncState);
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::ListenBackendSync>>("SELECT l_b_s FROM listen_backend_sync l_b_s") };
+        applyFindParameters(query, params);
 
         utils::forEachQueryRangeObject(query, params.range, func);
     }

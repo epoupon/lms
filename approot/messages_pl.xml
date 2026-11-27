@@ -424,8 +424,7 @@
 <message id="Lms.Settings.lastfm-unlink-confirm-title">Odłącz konto Last.fm</message>
 <message id="Lms.Settings.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.listenbrainz-import-card-title">Import z ListenBrainz</message>
-<message id="Lms.Settings.listenbrainz-import-feedback">Importuj ulubione</message>
-<message id="Lms.Settings.listenbrainz-import-listens">Importuj odsłuchy</message>
+<message id="Lms.Settings.listenbrainz-import">Importuj z ListenBrainz</message>
 <message id="Lms.Settings.listenbrainz-import-started">Import rozpoczęty, może to chwilę potrwać</message>
 <message id="Lms.Settings.listenbrainz-token">ListenBrainz API token</message>
 <message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
@@ -438,6 +437,15 @@
 <message id="Lms.Settings.enable-inline-artist-relationships">Wyświetlaj powiązania artystów w albumach</message>  
 <message id="Lms.Settings.enable-transcoding-by-default">Aktywuj domyślnie transkodowanie</message>
 <message id="Lms.Settings.export-started">Eksport rozpoczęty, może to chwilę potrwać</message>
+<message id="Lms.Settings.export-listens-all">Wszystkie odsłuchy</message>
+<message id="Lms.Settings.export-listens-count">
+	<plural case="0">({1} odsłuch)</plural>
+	<plural case="1">({1} odsłuchy)</plural>
+	<plural case="2">({1} odsłuchów)</plural>
+</message>
+<message id="Lms.Settings.export-listens-desc">Które istniejące odsłuchy wysłać do {1}?</message>
+<message id="Lms.Settings.export-listens-since">Odsłuchy od</message>
+<message id="Lms.Settings.export-listens-title">Istniejące odsłuchy</message>
 <message id="Lms.Settings.inline-artist-relationships">Typy powiązań artystów do wyświetlenia</message>
 <message id="Lms.Settings.menu-ui"><i class="fa fa-fw fa-paint-brush" aria-hidden="true"></i> Interfejs użytkownika</message>
 <message id="Lms.Settings.menu-audio"><i class="fa fa-fw fa-music" aria-hidden="true"></i> Dźwięk</message>

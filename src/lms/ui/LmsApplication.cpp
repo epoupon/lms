@@ -111,6 +111,7 @@ namespace lms::ui
             res->use(appRoot + "settings-lastfm");
             res->use(appRoot + "settings-listenbrainz");
             res->use(appRoot + "settings-password");
+            res->use(appRoot + "settings-scrobbling");
             res->use(appRoot + "settings-subsonic");
             res->use(appRoot + "settings-ui");
             res->use(appRoot + "tracklist");

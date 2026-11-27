@@ -234,7 +234,7 @@ namespace lms::ui
         replayGainPreampGainIfNoInfo->setRange(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
         t->setFormWidget(AudioSettingsModel::ReplayGainPreAmpGainIfNoInfoField, std::move(replayGainPreampGainIfNoInfo));
 
-        utils::bindSaveDiscardButtons(t, model.get(), [model] { model->saveData(); }, [model] { model->loadData(); });
+        utils::bindSaveDiscardButtons(t, model.get(), [model] { model->saveData(); return true; }, [model] { model->loadData(); });
         t->updateView(model.get());
         initTooltipsForWidgetTree(*t);
     }

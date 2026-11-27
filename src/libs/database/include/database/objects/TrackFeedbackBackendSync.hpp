@@ -22,11 +22,13 @@
 #include <functional>
 #include <optional>
 #include <span>
+#include <vector>
 
 #include "database/Types.hpp"
 #include "database/objects/TrackFeedbackBackendSyncId.hpp"
 #include "database/objects/TrackFeedbackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/UserId.hpp"
 #include "database/objects/detail/Object.hpp"
 
 namespace lms::db
@@ -43,10 +45,16 @@ namespace lms::db
 
         struct FindParameters
         {
+            UserId user;
             std::optional<FeedbackBackend> backend;
             std::optional<SyncState> syncState;
             std::optional<Range> range;
 
+            FindParameters& setUser(UserId _user)
+            {
+                user = _user;
+                return *this;
+            }
             FindParameters& setBackend(FeedbackBackend _backend)
             {
                 backend = _backend;
@@ -67,6 +75,7 @@ namespace lms::db
         static std::size_t getCount(ISession& session);
         static std::optional<TrackFeedbackBackendSync> find(ISession& session, TrackFeedbackBackendSyncId id);
         static std::optional<TrackFeedbackBackendSync> find(ISession& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend);
+        static std::vector<TrackFeedbackBackendSyncId> findIds(ISession& session, const FindParameters& params);
         static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackFeedbackBackendSync&)>& func);
 
         static void update(ISession& session, const TrackFeedbackBackendSync& trackFeedbackBackendSync);

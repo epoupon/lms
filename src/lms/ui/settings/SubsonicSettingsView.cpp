@@ -174,7 +174,7 @@ namespace lms::ui
         artistListMode->setModel(model->getSubsonicArtistListModeModel());
         t->setFormWidget(SubsonicSettingsModel::SubsonicArtistListModeField, std::move(artistListMode));
 
-        utils::bindSaveDiscardButtons(t, model.get(), [model] { model->saveData(); }, [model] { model->loadData(); });
+        utils::bindSaveDiscardButtons(t, model.get(), [model] { model->saveData(); return true; }, [model] { model->loadData(); });
         t->updateView(model.get());
         initTooltipsForWidgetTree(*t);
     }

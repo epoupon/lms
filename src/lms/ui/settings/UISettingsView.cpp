@@ -169,7 +169,7 @@ namespace lms::ui
                 model->setValue(UISettingsModel::InlineArtistRelationships, artistRelationships);
             });
 
-        utils::bindSaveDiscardButtons(t, model.get(), [model] { model->saveData(); }, [model] { model->loadData(); });
+        utils::bindSaveDiscardButtons(t, model.get(), [model] { model->saveData(); return true; }, [model] { model->loadData(); });
         t->updateView(model.get());
     }
 } // namespace lms::ui

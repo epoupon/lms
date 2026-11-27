@@ -66,7 +66,7 @@ namespace lms::scrobbling::lastFm
         void addTimedListen(const TimedListen& listen) override;
         bool canBeScrobbled(db::TrackId trackId, std::optional<std::chrono::seconds> duration) const override;
         void requestImmediateImport(db::UserId userId) override;
-        void requestImmediateExport() override;
+        void requestImmediateExport(db::UserId userId) override;
 
         struct PendingAuth
         {

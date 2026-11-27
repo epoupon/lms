@@ -40,6 +40,16 @@ namespace lms::db
 {
     namespace
     {
+        template<typename Query>
+        void applyFindParameters(Query& query, const Listen::FindParameters& parameters)
+        {
+            if (parameters.user.isValid())
+                query.where("user_id = ?").bind(parameters.user);
+
+            if (parameters.minDateTime.isValid())
+                query.where("date_time >= ?").bind(parameters.minDateTime);
+        }
+
         // The listens of an artist are the ones of the tracks it is track artist of
         SqlFragment createArtistsConditions(const Listen::ArtistStatsFindParameters& params, JoinSet& joins)
         {
@@ -213,14 +223,23 @@ namespace lms::db
         return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Listen>>("SELECT l from listen l").where("l.id = ?").bind(id));
     }
 
+    std::size_t Listen::getCount(ISession& session, const FindParameters& parameters)
+    {
+        checkReadTransaction(session);
+        assert(!parameters.range);
+
+        auto query{ getDboSession(session)->query<int>("SELECT COUNT(*) FROM listen") };
+        applyFindParameters(query, parameters);
+
+        return utils::fetchQuerySingleResult(query);
+    }
+
     std::vector<ListenId> Listen::findIds(ISession& session, const FindParameters& parameters)
     {
         checkReadTransaction(session);
 
         auto query{ getDboSession(session)->query<ListenId>("SELECT id FROM listen").orderBy("date_time") };
-
-        if (parameters.user.isValid())
-            query.where("user_id = ?").bind(parameters.user);
+        applyFindParameters(query, parameters);
 
         return utils::execRangeQuery<ListenId>(query, parameters.range);
     }

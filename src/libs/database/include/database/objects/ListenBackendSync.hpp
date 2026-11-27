@@ -27,6 +27,7 @@
 #include "database/objects/ListenBackendSyncId.hpp"
 #include "database/objects/ListenId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/UserId.hpp"
 #include "database/objects/detail/Object.hpp"
 
 namespace lms::db
@@ -44,10 +45,16 @@ namespace lms::db
 
         struct FindParameters
         {
+            UserId user;
             std::optional<ScrobblingBackend> backend;
             std::optional<SyncState> syncState;
             std::optional<Range> range;
 
+            FindParameters& setUser(UserId _user)
+            {
+                user = _user;
+                return *this;
+            }
             FindParameters& setBackend(ScrobblingBackend _backend)
             {
                 backend = _backend;

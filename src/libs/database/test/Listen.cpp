@@ -102,6 +102,28 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Listen_get_minDateTime)
+    {
+        ScopedTrack track{ session };
+        ScopedUser user{ session, "MyUser" };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 2 } };
+        ScopedListen listenBefore{ session, user.getId(), track.getId(), dateTime.addSecs(-1) };
+        ScopedListen listenAt{ session, user.getId(), track.getId(), dateTime };
+        ScopedListen listenAfter{ session, user.getId(), track.getId(), dateTime.addSecs(1) };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto listens{ Listen::findIds(session, Listen::FindParameters{}.setUser(user->getId()).setMinDateTime(dateTime)) };
+            ASSERT_EQ(listens.size(), 2);
+            EXPECT_EQ(listens[0], listenAt.getId());
+            EXPECT_EQ(listens[1], listenAfter.getId());
+
+            EXPECT_EQ(Listen::getCount(session, Listen::FindParameters{}.setUser(user->getId()).setMinDateTime(dateTime)), 2);
+            EXPECT_EQ(Listen::getCount(session, Listen::FindParameters{}.setUser(user->getId())), 3);
+        }
+    }
+
     TEST_F(DatabaseFixture, Listen_get_byDateTime)
     {
         ScopedTrack track{ session };

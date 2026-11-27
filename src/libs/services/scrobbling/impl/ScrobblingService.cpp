@@ -181,16 +181,34 @@ namespace lms::scrobbling
         _scrobblingBackends[backend]->requestImmediateImport(userId);
     }
 
-    void ScrobblingService::requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend)
+    void ScrobblingService::requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend, const Wt::WDateTime& since)
     {
         if (!getUserEnabledBackends(userId).contains(backend))
             return;
 
-        markPendingExports(userId, backend);
-        _scrobblingBackends[backend]->requestImmediateExport();
+        markPendingExports(userId, backend, since);
+        _scrobblingBackends[backend]->requestImmediateExport(userId);
     }
 
-    void ScrobblingService::markPendingExports(db::UserId userId, db::ScrobblingBackend backend)
+    void ScrobblingService::resetExports(db::UserId userId, db::ScrobblingBackend backend)
+    {
+        constexpr std::size_t chunkSize{ 500 };
+        for (;;)
+        {
+            ISession& session{ _db.getTLSSession() };
+            auto transaction{ session.createWriteTransaction() };
+
+            db::ListenBackendSync::FindParameters params;
+            params.setUser(userId).setBackend(backend).setRange(db::Range{ 0, chunkSize });
+            const std::vector<db::ListenBackendSyncId> ids{ db::ListenBackendSync::findIds(session, params) };
+            db::ListenBackendSync::destroy(session, ids);
+
+            if (ids.size() < chunkSize)
+                break;
+        }
+    }
+
+    void ScrobblingService::markPendingExports(db::UserId userId, db::ScrobblingBackend backend, const Wt::WDateTime& since)
     {
         IScrobblingBackend& backendImpl{ *_scrobblingBackends[backend] };
 
@@ -203,7 +221,7 @@ namespace lms::scrobbling
                 auto transaction{ session.createReadTransaction() };
 
                 db::Listen::FindParameters params;
-                params.setUser(userId).setRange(db::Range{ offset, chunkSize });
+                params.setUser(userId).setMinDateTime(since).setRange(db::Range{ offset, chunkSize });
                 ids = db::Listen::findIds(session, params);
             }
 

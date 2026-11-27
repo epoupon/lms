@@ -75,8 +75,11 @@ namespace lms::scrobbling
         // Manually trigger an on-demand import of listen history from the given backend for this user (if supported)
         virtual void requestImmediateImport(db::UserId userId, db::ScrobblingBackend backend) = 0;
 
-        // Manually trigger an on-demand export of all existing local listens to the given backend for this user (if supported)
-        virtual void requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend) = 0;
+        // Manually trigger an on-demand export to the given backend of the user's listens recorded since `since` (all of them if invalid) not sent yet
+        virtual void requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend, const Wt::WDateTime& since) = 0;
+
+        // Forget which of the user's listens were sent or are waiting to be sent to the given backend
+        virtual void resetExports(db::UserId userId, db::ScrobblingBackend backend) = 0;
     };
 
     std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, db::IDb& db);

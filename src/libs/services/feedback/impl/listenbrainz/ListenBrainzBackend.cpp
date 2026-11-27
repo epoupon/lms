@@ -50,9 +50,9 @@ namespace lms::feedback::listenBrainz
         _feedbacksSynchronizer.requestImmediateImport(userId);
     }
 
-    void ListenBrainzBackend::requestImmediateExport()
+    void ListenBrainzBackend::requestImmediateExport(db::UserId userId)
     {
-        _feedbacksSynchronizer.requestImmediateExport();
+        _feedbacksSynchronizer.requestImmediateExport(userId);
     }
 
     bool ListenBrainzBackend::canBeFeedbacked(db::ArtistId /*artistId*/) const

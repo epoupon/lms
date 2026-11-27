@@ -45,7 +45,7 @@ namespace lms::feedback
         virtual bool canBeFeedbacked(db::TrackId trackId) const = 0;
 
         virtual void requestImmediateImport(db::UserId userId) = 0;
-        virtual void requestImmediateExport() = 0;
+        virtual void requestImmediateExport(db::UserId userId) = 0;
     };
 
     std::unique_ptr<IFeedbackBackend> createFeedbackBackend(std::string_view backendName);

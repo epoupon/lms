@@ -84,7 +84,25 @@ namespace lms::feedback
             return;
 
         markPendingExports(userId, backend);
-        _backends[backend]->requestImmediateExport();
+        _backends[backend]->requestImmediateExport(userId);
+    }
+
+    void FeedbackService::resetExports(db::UserId userId, db::FeedbackBackend backend)
+    {
+        constexpr std::size_t chunkSize{ 500 };
+        for (;;)
+        {
+            db::ISession& session{ _db.getTLSSession() };
+            auto transaction{ session.createWriteTransaction() };
+
+            db::TrackFeedbackBackendSync::FindParameters params;
+            params.setUser(userId).setBackend(backend).setRange(db::Range{ 0, chunkSize });
+            const std::vector<db::TrackFeedbackBackendSyncId> ids{ db::TrackFeedbackBackendSync::findIds(session, params) };
+            db::TrackFeedbackBackendSync::destroy(session, ids);
+
+            if (ids.size() < chunkSize)
+                break;
+        }
     }
 
     void FeedbackService::markPendingExports(db::UserId userId, db::FeedbackBackend backend)

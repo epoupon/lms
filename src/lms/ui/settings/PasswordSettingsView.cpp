@@ -173,7 +173,7 @@ namespace lms::ui
 
         auto model{ std::make_shared<PasswordSettingsModel>(*authPasswordService, withOldPassword, *core::Service<auth::IAuthTokenService>::get()) };
 
-        utils::bindSaveDiscardButtons(t, model.get(), [model] { model->saveData(); }, [model] { model->loadData(); });
+        utils::bindSaveDiscardButtons(t, model.get(), [model] { model->saveData(); return true; }, [model] { model->loadData(); });
         t->updateView(model.get());
     }
 } // namespace lms::ui

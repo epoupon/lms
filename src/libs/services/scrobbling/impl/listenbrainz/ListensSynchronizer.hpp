@@ -20,13 +20,14 @@
 #pragma once
 
 #include <optional>
-#include <span>
 #include <unordered_map>
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/io_context_strand.hpp>
 #include <boost/asio/steady_timer.hpp>
 
+#include "core/LiteralString.hpp"
+#include "database/objects/ListenBackendSyncId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
 
@@ -58,20 +59,21 @@ namespace lms::scrobbling::listenBrainz
         void enqueListen(const TimedListen& listen);
         void enqueListenNow(const Listen& listen);
         void requestImmediateImport(db::UserId userId);
-        void requestImmediateExport();
+        void requestImmediateExport(db::UserId userId);
 
     private:
-        void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
         bool saveListen(const TimedListen& listen, db::SyncState scrobblingState);
-        void skipListen(const TimedListen& listen);
+        void dropListen(db::ListenBackendSyncId syncId);
+        // returns false if the listen was already synchronized or no longer waiting to be sent
+        bool markListenSynchronized(db::ListenBackendSyncId syncId);
 
-        void enquePendingListens();
-        void sendListenBatch(const std::string& listenBrainzToken, std::span<const TimedListen> listens);
+        void requestExportForEnabledUsers();
 
         struct UserContext
         {
-            UserContext(db::UserId id)
-                : userId{ id } {}
+            UserContext(db::UserId id, boost::asio::io_context& ioContext)
+                : userId{ id }
+                , exportState{ ioContext } {}
             ~UserContext() = default;
 
             UserContext(const UserContext&) = delete;
@@ -95,13 +97,26 @@ namespace lms::scrobbling::listenBrainz
                 std::optional<std::size_t> pendingListenCount{}; // only committed to listenCount once the fetch actually completes
             };
             ImportState import;
+
+            struct ExportState
+            {
+                ExportState(boost::asio::io_context& ioContext)
+                    : retryTimer{ ioContext } {}
+
+                bool exporting{}; // sending or waiting to retry
+                std::size_t consecutiveFailures{};
+                boost::asio::steady_timer retryTimer;
+            };
+            ExportState exportState;
         };
 
         UserContext& getUserContext(db::UserId userId);
-        void scheduleDeliveryFlush(std::chrono::seconds fromNow);
-        void flushPendingDeliveries();
+        void startExport(UserContext& context);
+        void sendNextListen(UserContext& context);
+        void scheduleExportRetry(UserContext& context);
         void startImport(UserContext& context);
         void onImportEnded(UserContext& context);
+        void onImportFailed(UserContext& context, core::LiteralString failedRequest, std::optional<int> httpStatus);
         void enqueValidateToken(UserContext& context);
         void enqueGetListenCount(UserContext& context);
         void enqueGetListens(UserContext& context);
@@ -110,12 +125,10 @@ namespace lms::scrobbling::listenBrainz
         boost::asio::io_context& _ioContext;
         boost::asio::io_context::strand _strand{ _ioContext };
         db::IDb& _db;
-        boost::asio::steady_timer _syncTimer{ _ioContext };
         core::http::IClient& _client;
 
         std::unordered_map<db::UserId, UserContext> _userContexts;
 
         const std::size_t _maxSyncListenCount;
-        const std::chrono::hours _syncListensPeriod;
     };
 } // namespace lms::scrobbling::listenBrainz

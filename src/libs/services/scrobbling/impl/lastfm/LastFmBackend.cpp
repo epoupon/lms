@@ -87,9 +87,9 @@ namespace lms::scrobbling::lastFm
         // not implemented
     }
 
-    void LastFmBackend::requestImmediateExport()
+    void LastFmBackend::requestImmediateExport(db::UserId userId)
     {
-        _synchronizer.requestImmediateExport();
+        _synchronizer.requestImmediateExport(userId);
     }
 
     void LastFmBackend::initiateLastFmLink(db::UserId userId,

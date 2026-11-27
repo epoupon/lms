@@ -33,6 +33,25 @@ LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackFeedbackBackendSync)
 
 namespace lms::db
 {
+    namespace
+    {
+        template<typename Query>
+        void applyFindParameters(Query& query, const TrackFeedbackBackendSync::FindParameters& params)
+        {
+            if (params.user.isValid())
+            {
+                query.join("track_feedback t_f ON t_f.id = t_f_b_s.track_feedback_id");
+                query.where("t_f.user_id = ?").bind(params.user);
+            }
+
+            if (params.backend)
+                query.where("t_f_b_s.backend = ?").bind(*params.backend);
+
+            if (params.syncState)
+                query.where("t_f_b_s.sync_state = ?").bind(*params.syncState);
+        }
+    } // namespace
+
     TrackFeedbackBackendSync::TrackFeedbackBackendSync(FeedbackBackend backend)
         : _backend{ backend }
     {
@@ -76,17 +95,22 @@ namespace lms::db
         return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackFeedbackBackendSync>().where("track_feedback_id = ?").bind(trackFeedbackId).where("backend = ?").bind(backend));
     }
 
+    std::vector<TrackFeedbackBackendSyncId> TrackFeedbackBackendSync::findIds(ISession& session, const FindParameters& params)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<TrackFeedbackBackendSyncId>("SELECT t_f_b_s.id FROM track_feedback_backend_sync t_f_b_s") };
+        applyFindParameters(query, params);
+
+        return utils::execRangeQuery<TrackFeedbackBackendSyncId>(query, params.range);
+    }
+
     void TrackFeedbackBackendSync::find(ISession& session, const FindParameters& params, const std::function<void(const TrackFeedbackBackendSync&)>& func)
     {
         checkReadTransaction(session);
 
-        auto query{ getDboSession(session)->find<dbo::TrackFeedbackBackendSync>() };
-
-        if (params.backend)
-            query.where("backend = ?").bind(*params.backend);
-
-        if (params.syncState)
-            query.where("sync_state = ?").bind(*params.syncState);
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::TrackFeedbackBackendSync>>("SELECT t_f_b_s FROM track_feedback_backend_sync t_f_b_s") };
+        applyFindParameters(query, params);
 
         utils::forEachQueryRangeObject(query, params.range, func);
     }

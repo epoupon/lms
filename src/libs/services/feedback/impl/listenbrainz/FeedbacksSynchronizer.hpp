@@ -27,6 +27,7 @@
 #include <boost/asio/steady_timer.hpp>
 
 #include "database/objects/TrackFeedbackId.hpp"
+#include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
 
 #include "FeedbackTypes.hpp"
@@ -55,18 +56,19 @@ namespace lms::feedback::listenBrainz
 
         void enqueFeedback(db::TrackFeedbackId id);
         void requestImmediateImport(db::UserId userId);
-        void requestImmediateExport();
+        void requestImmediateExport(db::UserId userId);
 
     private:
-        void onFeedbackSent(db::TrackFeedbackId id);
-        void enquePendingFeedbacks();
-        void skipFeedback(db::TrackFeedbackId id);
-        void sendFeedback(const std::string& listenBrainzToken, db::TrackFeedbackId id, const core::UUID& recordingMBID, db::FeedbackValue value);
+        void onFeedbackSent(db::TrackFeedbackId id, db::FeedbackValue sentValue);
+        void dropFeedback(db::TrackFeedbackId id);
+
+        void requestExportForEnabledUsers();
 
         struct UserContext
         {
-            UserContext(db::UserId id)
-                : userId{ id } {}
+            UserContext(db::UserId id, boost::asio::io_context& ioContext)
+                : userId{ id }
+                , exportState{ ioContext } {}
 
             ~UserContext() = default;
             UserContext(const UserContext&) = delete;
@@ -88,11 +90,23 @@ namespace lms::feedback::listenBrainz
                 std::size_t importedFeedbackCount{};
             };
             ImportState import;
+
+            struct ExportState
+            {
+                ExportState(boost::asio::io_context& ioContext)
+                    : retryTimer{ ioContext } {}
+
+                bool exporting{}; // sending or waiting to retry
+                std::size_t consecutiveFailures{};
+                boost::asio::steady_timer retryTimer;
+            };
+            ExportState exportState;
         };
 
         UserContext& getUserContext(db::UserId userId);
-        void scheduleDeliveryFlush(std::chrono::seconds fromNow);
-        void flushPendingDeliveries();
+        void startExport(UserContext& context);
+        void sendNextFeedback(UserContext& context);
+        void scheduleExportRetry(UserContext& context);
         void startImport(UserContext& context);
         void onImportEnded(UserContext& context);
         void enqueValidateToken(UserContext& context);
@@ -104,12 +118,10 @@ namespace lms::feedback::listenBrainz
         boost::asio::io_context& _ioContext;
         boost::asio::io_context::strand _strand{ _ioContext };
         db::IDb& _db;
-        boost::asio::steady_timer _syncTimer{ _ioContext };
         core::http::IClient& _client;
 
         std::unordered_map<db::UserId, UserContext> _userContexts;
 
         const std::size_t _maxSyncFeedbackCount;
-        const std::chrono::hours _syncFeedbacksPeriod;
     };
 } // namespace lms::feedback::listenBrainz

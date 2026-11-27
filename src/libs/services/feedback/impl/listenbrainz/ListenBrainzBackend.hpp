@@ -50,7 +50,7 @@ namespace lms::feedback::listenBrainz
         bool canBeFeedbacked(db::ReleaseId releaseId) const override;
         bool canBeFeedbacked(db::TrackId trackId) const override;
         void requestImmediateImport(db::UserId userId) override;
-        void requestImmediateExport() override;
+        void requestImmediateExport(db::UserId userId) override;
 
         boost::asio::io_context& _ioContext;
         db::IDb& _db;

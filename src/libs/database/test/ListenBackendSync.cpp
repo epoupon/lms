@@ -18,6 +18,7 @@
  */
 
 #include <optional>
+#include <vector>
 
 #include "database/objects/Listen.hpp"
 #include "database/objects/ListenBackendSync.hpp"
@@ -91,6 +92,32 @@ namespace lms::db::tests
             auto allLastFm{ ListenBackendSync::findIds(session, ListenBackendSync::FindParameters{}.setBackend(ScrobblingBackend::LastFm)) };
             ASSERT_EQ(allLastFm.size(), 1);
             EXPECT_EQ(allLastFm.front(), sync3.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, ListenBackendSync_findByUser)
+    {
+        ScopedTrack track{ session };
+        ScopedUser user1{ session, "MyUser1" };
+        ScopedUser user2{ session, "MyUser2" };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
+        ScopedListen listen1{ session, user1.getId(), track.getId(), dateTime };
+        ScopedListen listen2{ session, user2.getId(), track.getId(), dateTime };
+
+        ScopedListenBackendSync sync1{ session, listen1.getId(), ScrobblingBackend::ListenBrainz };
+        ScopedListenBackendSync sync2{ session, listen2.getId(), ScrobblingBackend::ListenBrainz };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto syncIds{ ListenBackendSync::findIds(session, ListenBackendSync::FindParameters{}.setUser(user1.getId()).setBackend(ScrobblingBackend::ListenBrainz)) };
+            ASSERT_EQ(syncIds.size(), 1);
+            EXPECT_EQ(syncIds.front(), sync1.getId());
+
+            std::vector<ListenBackendSyncId> visitedIds;
+            ListenBackendSync::find(session, ListenBackendSync::FindParameters{}.setUser(user2.getId()), [&](const ListenBackendSync& sync) { visitedIds.push_back(sync.getId()); });
+            ASSERT_EQ(visitedIds.size(), 1);
+            EXPECT_EQ(visitedIds.front(), sync2.getId());
         }
     }
 

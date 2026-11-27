@@ -48,6 +48,6 @@ namespace lms::scrobbling
         virtual bool canBeScrobbled(db::TrackId trackId, std::optional<std::chrono::seconds> duration) const = 0;
 
         virtual void requestImmediateImport(db::UserId userId) = 0;
-        virtual void requestImmediateExport() = 0;
+        virtual void requestImmediateExport(db::UserId userId) = 0;
     };
 } // namespace lms::scrobbling

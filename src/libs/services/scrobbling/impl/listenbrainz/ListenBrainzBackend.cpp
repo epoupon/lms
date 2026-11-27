@@ -100,8 +100,8 @@ namespace lms::scrobbling::listenBrainz
         _listensSynchronizer.requestImmediateImport(userId);
     }
 
-    void ListenBrainzBackend::requestImmediateExport()
+    void ListenBrainzBackend::requestImmediateExport(db::UserId userId)
     {
-        _listensSynchronizer.requestImmediateExport();
+        _listensSynchronizer.requestImmediateExport(userId);
     }
 } // namespace lms::scrobbling::listenBrainz

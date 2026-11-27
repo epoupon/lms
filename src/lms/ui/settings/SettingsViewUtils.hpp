@@ -21,10 +21,22 @@
 
 #include <functional>
 
+#include <Wt/WDateTime.h>
 #include <Wt/WFormModel.h>
+#include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
+
+#include "database/objects/Types.hpp"
 
 namespace lms::ui::utils
 {
-    void bindSaveDiscardButtons(Wt::WTemplateFormView* t, Wt::WFormModel* model, const std::function<void()>& saveData, const std::function<void()>& loadData);
+    // saveData returns false when the save waits for a confirmation: it then reports the save itself
+    void bindSaveDiscardButtons(Wt::WTemplateFormView* t, Wt::WFormModel* model, const std::function<bool()>& saveData, const std::function<void()>& loadData);
+
+    // Asks which existing listens to export when turning on a scrobbling backend, cancelling aborts the save
+    void showExportListensModal(const Wt::WString& backendName, std::function<void(const Wt::WDateTime& exportSince)> onSave);
+
+    // Whether some of the current user's listens/feedbacks are waiting to be sent to the backend
+    bool hasPendingExports(db::ScrobblingBackend backend);
+    bool hasPendingExports(db::FeedbackBackend backend);
 } // namespace lms::ui::utils
