@@ -274,7 +274,13 @@ namespace lms::db
         }
     }
 
-    Db::~Db() = default;
+    Db::~Db()
+    {
+        LMS_LOG(DB, DEBUG, "Closing database...");
+        _tlsSessions.clear();
+        _connectionPool.reset();
+        LMS_LOG(DB, DEBUG, "Database closed");
+    }
 
     void Db::prepare(RecommendationEngineType defaultRecommendationEngineType)
     {
