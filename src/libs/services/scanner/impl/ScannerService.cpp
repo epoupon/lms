@@ -407,8 +407,8 @@ namespace lms::scanner
 
         {
             auto transaction{ _db.getTLSSession().createReadTransaction() };
-            const helpers::FileStats stats{ helpers::getFileStats(_db.getTLSSession()) };
-            LMS_LOG(DBUPDATER, INFO, stats.getTotalFileCount() << " total files: " << stats.artistInfoCount << " artist info, " << stats.imageCount << " images, " << stats.playListCount << " playlists, " << stats.trackCount << " tracks, " << stats.trackLyricsCount << " lyrics");
+            const helpers::FileStats fileStats{ helpers::getFileStats(_db.getTLSSession()) };
+            LMS_LOG(DBUPDATER, INFO, fileStats.getTotalFileCount() << " total files: " << fileStats.artistInfoCount << " artist info, " << fileStats.imageCount << " images, " << fileStats.playListCount << " playlists, " << fileStats.trackCount << " tracks, " << fileStats.trackLyricsCount << " lyrics");
         }
 
         if (!_abortScan)
