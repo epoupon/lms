@@ -21,32 +21,40 @@
 
 #include <functional>
 #include <optional>
+#include <span>
+#include <vector>
 
-#include <Wt/Dbo/Field.h>
-
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/TrackFeedbackBackendSyncId.hpp"
 #include "database/objects/TrackFeedbackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
+    class ISession;
     class TrackFeedback;
-    class Session;
 
     // Tracks the delivery of a single TrackFeedback to a given external feedback backend.
-    class TrackFeedbackBackendSync final : public Object<TrackFeedbackBackendSync, TrackFeedbackBackendSyncId>
+    class TrackFeedbackBackendSync : public detail::Object<TrackFeedbackBackendSync, TrackFeedbackBackendSyncId>
     {
     public:
-        TrackFeedbackBackendSync() = default;
+        static TrackFeedbackBackendSync create(ISession& session, TrackFeedbackId trackFeedback, FeedbackBackend backend);
+        static void destroy(ISession& session, std::span<const TrackFeedbackBackendSyncId> ids);
 
         struct FindParameters
         {
+            UserId user;
             std::optional<FeedbackBackend> backend;
             std::optional<SyncState> syncState;
             std::optional<Range> range;
 
+            FindParameters& setUser(UserId _user)
+            {
+                user = _user;
+                return *this;
+            }
             FindParameters& setBackend(FeedbackBackend _backend)
             {
                 backend = _backend;
@@ -64,35 +72,26 @@ namespace lms::db
             }
         };
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackFeedbackBackendSyncId id);
-        static pointer find(Session& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend);
-        static std::vector<TrackFeedbackBackendSyncId> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static std::size_t getCount(ISession& session);
+        static std::optional<TrackFeedbackBackendSync> find(ISession& session, TrackFeedbackBackendSyncId id);
+        static std::optional<TrackFeedbackBackendSync> find(ISession& session, TrackFeedbackId trackFeedbackId, FeedbackBackend backend);
+        static std::vector<TrackFeedbackBackendSyncId> findIds(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackFeedbackBackendSync&)>& func);
 
-        ObjectPtr<TrackFeedback> getTrackFeedback() const { return _trackFeedback; }
+        static void update(ISession& session, const TrackFeedbackBackendSync& trackFeedbackBackendSync);
+
+        TrackFeedbackId getTrackFeedbackId() const { return _trackFeedbackId; }
         FeedbackBackend getBackend() const { return _backend; }
         SyncState getSyncState() const { return _syncState; }
 
         void setSyncState(SyncState state) { _syncState = state; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _backend, "backend");
-            Wt::Dbo::field(a, _syncState, "sync_state");
-
-            Wt::Dbo::belongsTo(a, _trackFeedback, "track_feedback", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        TrackFeedbackBackendSync(ObjectPtr<TrackFeedback> trackFeedback, FeedbackBackend backend);
-        static pointer create(Session& session, ObjectPtr<TrackFeedback> trackFeedback, FeedbackBackend backend);
+    protected:
+        TrackFeedbackBackendSync() = default;
+        explicit TrackFeedbackBackendSync(FeedbackBackend backend);
 
         FeedbackBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };
-
-        Wt::Dbo::ptr<TrackFeedback> _trackFeedback;
+        TrackFeedbackId _trackFeedbackId;
     };
 } // namespace lms::db

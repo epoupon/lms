@@ -23,7 +23,7 @@
 
 #include "audio/IMusicNNEmbeddingExtractor.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 
 #include "audio-similarity/musicnn/MusicNNEmbeddingEngine.hpp"
 #include "tags/TagsEngine.hpp"
@@ -32,7 +32,7 @@ namespace lms::recommendation
 {
     namespace
     {
-        db::RecommendationEngineType getRecommendationEngineType(db::Session& session)
+        db::RecommendationEngineType getRecommendationEngineType(db::ISession& session)
         {
             auto transaction{ session.createReadTransaction() };
             return db::ScanSettings::find(session)->getRecommendationEngineType();

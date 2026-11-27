@@ -19,10 +19,12 @@
 
 #include "MediaLibrariesView.hpp"
 
+#include <array>
+
 #include <Wt/WPushButton.h>
 
 #include "core/Service.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "services/scanner/IScannerService.hpp"
 
@@ -47,7 +49,7 @@ namespace lms::ui
                 Wt::WTemplate* entry{ addEntry() };
                 updateEntry(newMediaLibraryId, entry);
                 // No need to stop the current scan if we add stuff
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibrary.library-created"));
+                LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibrary.library-created"));
                 LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
             });
 
@@ -74,8 +76,8 @@ namespace lms::ui
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        db::MediaLibrary::find(LmsApp->getDbSession(), [&](const db::MediaLibrary::pointer& mediaLibrary) {
-            const db::MediaLibraryId mediaLibraryId{ mediaLibrary->getId() };
+        db::MediaLibrary::find(LmsApp->getDbSession(), [&](const db::MediaLibrary& mediaLibrary) {
+            const db::MediaLibraryId mediaLibraryId{ mediaLibrary.getId() };
             Wt::WTemplate* entry{ addEntry() };
             updateEntry(mediaLibraryId, entry);
         });
@@ -92,14 +94,12 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(LmsApp->getDbSession(), mediaLibraryId) };
-                if (mediaLibrary)
-                    mediaLibrary.remove();
+                db::MediaLibrary::destroy(LmsApp->getDbSession(), std::array{ mediaLibraryId });
             }
 
             // Don't want the scanner to go on with wrong settings
             core::Service<scanner::IScannerService>::get()->requestReload();
-            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibrary.library-deleted"));
+            LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibrary.library-deleted"));
 
             _libraries->removeWidget(libraryEntry);
 
@@ -122,7 +122,7 @@ namespace lms::ui
     void MediaLibrariesView::updateEntry(db::MediaLibraryId mediaLibraryId, Wt::WTemplate* entry)
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-        db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(LmsApp->getDbSession(), mediaLibraryId) };
+        std::optional<db::MediaLibrary> mediaLibrary{ db::MediaLibrary::find(LmsApp->getDbSession(), mediaLibraryId) };
 
         entry->bindString("name", std::string{ mediaLibrary->getName() }, Wt::TextFormat::Plain);
         entry->bindString("path", std::string{ mediaLibrary->getPath() }, Wt::TextFormat::Plain);
@@ -138,7 +138,7 @@ namespace lms::ui
 
                 // Don't want the scanner to go on with wrong settings
                 core::Service<scanner::IScannerService>::get()->requestReload();
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.settings-saved"));
+                LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.settings-saved"));
 
                 LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
             });

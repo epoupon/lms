@@ -19,56 +19,47 @@
 
 #pragma once
 
+#include <cstddef>
+#include <functional>
 #include <optional>
 #include <span>
-
-#include <Wt/Dbo/Field.h>
+#include <vector>
 
 #include "database/IdType.hpp"
-#include "database/Object.hpp"
-#include "database/Types.hpp"
 #include "database/objects/TrackId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 LMS_DECLARE_IDTYPE(TrackMusicNNEmbeddingsId)
 
 namespace lms::db
 {
-    class Session;
-    class Track;
+    class ISession;
 
-    class TrackMusicNNEmbeddings final : public Object<TrackMusicNNEmbeddings, TrackMusicNNEmbeddingsId>
+    class TrackMusicNNEmbeddings : public detail::Object<TrackMusicNNEmbeddings, TrackMusicNNEmbeddingsId>
     {
     public:
-        TrackMusicNNEmbeddings() = default;
+        static TrackMusicNNEmbeddings create(ISession& session, TrackId track);
+        static void destroy(ISession& session, std::span<const TrackMusicNNEmbeddingsId> ids);
 
         // Find utilities
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackMusicNNEmbeddingsId id);
-        static pointer find(Session& session, TrackId trackId);
-        static std::vector<TrackMusicNNEmbeddingsId> find(Session& session, std::optional<Range> range = std::nullopt);
-        static void find(Session& session, std::function<void(const pointer&)> func);
-        static void removeAll(Session& session);
+        static std::size_t getCount(ISession& session);
+        static std::optional<TrackMusicNNEmbeddings> find(ISession& session, TrackMusicNNEmbeddingsId id);
+        static std::optional<TrackMusicNNEmbeddings> find(ISession& session, TrackId trackId);
+        static void find(ISession& session, const std::function<void(const TrackMusicNNEmbeddings&)>& func);
+        static void removeAll(ISession& session);
+
+        static void update(ISession& session, const TrackMusicNNEmbeddings& trackMusicNNEmbeddings);
 
         // Accessors
         std::span<const std::byte> getData() const;
-        TrackId getTrackId() const { return _track.id(); }
-        Wt::Dbo::ptr<Track> getTrack() const { return _track; }
+        TrackId getTrackId() const { return _trackId; }
 
         void setData(std::span<const std::byte> data);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _data, "data");
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        TrackMusicNNEmbeddings(ObjectPtr<Track> track);
-        static pointer create(Session& session, ObjectPtr<Track> track);
+    protected:
+        TrackMusicNNEmbeddings() = default;
 
         std::vector<unsigned char> _data;
-        Wt::Dbo::ptr<Track> _track;
+        TrackId _trackId;
     };
 } // namespace lms::db

@@ -19,27 +19,27 @@
 
 #pragma once
 
+#include <cstddef>
+#include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
-
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/GenreId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Session;
-    class Track;
+    class ISession;
 
-    class Genre final : public Object<Genre, GenreId>
+    class Genre : public detail::Object<Genre, GenreId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -79,18 +79,21 @@ namespace lms::db
             }
         };
 
-        Genre() = default;
+        static Genre create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const GenreId> ids);
 
-        static std::size_t getCount(Session& session);
-        static std::vector<GenreId> findIds(Session& session, const FindParameters& params);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
-        static pointer find(Session& session, GenreId id);
-        static pointer find(Session& session, std::string_view name);
-        static std::vector<GenreId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(ISession& session);
+        static std::vector<GenreId> findIds(ISession& session, const FindParameters& params);
+        static std::vector<Genre> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Genre&)>& func);
+        static std::optional<Genre> find(ISession& session, GenreId id);
+        static std::optional<Genre> find(ISession& session, std::string_view name);
+        static std::vector<GenreId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
-        static std::size_t computeTrackCount(Session& session, GenreId id);
-        static std::size_t computeReleaseCount(Session& session, GenreId id);
+        static std::size_t computeTrackCount(ISession& session, GenreId id);
+        static std::size_t computeReleaseCount(ISession& session, GenreId id);
+
+        static void update(ISession& session, const Genre& genre);
 
         std::string_view getName() const { return _name; }
         std::size_t getTrackCount() const { return _trackCount; }
@@ -99,25 +102,13 @@ namespace lms::db
         void setTrackCount(std::size_t count) { _trackCount = count; }
         void setReleaseCount(std::size_t count) { _releaseCount = count; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _trackCount, "track_count");
-            Wt::Dbo::field(a, _releaseCount, "release_count");
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        Genre(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
+    protected:
+        Genre() = default;
+        explicit Genre(std::string_view name);
 
         std::string _name;
         int _trackCount{};
         int _releaseCount{};
-
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
     };
 
 } // namespace lms::db

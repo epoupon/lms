@@ -24,7 +24,9 @@ add_executable(test-database
 	Mood.cpp
 	Movement.cpp
 	PlayListFile.cpp
+	PlayQueue.cpp
 	Podcast.cpp
+	QueryProfiler.cpp
 	RatedArtist.cpp
 	RatedRelease.cpp
 	RatedTrack.cpp
@@ -40,6 +42,7 @@ add_executable(test-database
 	TrackFeedback.cpp
 	TrackList.cpp
 	TrackLyrics.cpp
+	Transaction.cpp
 	User.cpp
 	Work.cpp
 	)

@@ -19,18 +19,28 @@
 
 #pragma once
 
+#include <cassert>
+#include <memory>
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 
 #include <Wt/Dbo/Call.h>
+#include <Wt/Dbo/Exception.h>
 #include <Wt/Dbo/Query.h>
 #include <Wt/Dbo/Session.h>
 #include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
+#include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "database/Types.hpp"
 
+#include "DboAccess.hpp"
+#include "Session.hpp"
 #include "profiling/ScopedQueryProfiler.hpp"
 
 namespace lms::db::utils
@@ -38,6 +48,8 @@ namespace lms::db::utils
 #define ESCAPE_CHAR_STR "\\"
     static inline constexpr char escapeChar{ '\\' };
     std::string escapeForLikeKeyword(std::string_view keywords);
+    // LIKE pattern to match a folded_* column containing the keyword
+    std::string createFoldedContainsPattern(std::string_view keyword);
 
     Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
 
@@ -86,22 +98,66 @@ namespace lms::db::utils
         using type = ResultType;
     };
 
+    // Entities must be fetched using the *Object variants, so that callers get values
+    template<typename T>
+    inline constexpr bool isObjectResult{ false };
+
+    template<MappedEntity DboType>
+    inline constexpr bool isObjectResult<Wt::Dbo::ptr<DboType>>{ true };
+
+    namespace detail
+    {
+        template<typename Query, typename UnaryFunc>
+        void forEachQueryResult(const Query& query, UnaryFunc&& func)
+        {
+            LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "ForEachQueryResult", "Query", query.asString());
+
+            ScopedQueryProfiler queryProfiler{ query };
+            forEachResult(query.resultList(), [&](const auto& result) {
+                queryProfiler.suspend();
+                func(result);
+                queryProfiler.resume();
+            });
+        }
+
+        // Wt's exception does not tell which query returned several rows
+        template<typename Query>
+        auto fetchQueryUniqueResult(const Query& query)
+        {
+            LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQuerySingleResult", "Query", query.asString());
+
+            ScopedQueryProfiler queryProfiler{ query };
+            try
+            {
+                return query.resultValue();
+            }
+            catch (const Wt::Dbo::NoUniqueResultException&)
+            {
+                LMS_LOG(DB, ERROR, "Query returned more than one result: " << query.asString());
+                throw;
+            }
+        }
+    } // namespace detail
+
     template<typename Query, typename UnaryFunc>
     void forEachQueryResult(const Query& query, UnaryFunc&& func)
     {
-        LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "ForEachQueryResult", "Query", query.asString());
+        static_assert(!isObjectResult<typename QueryResultType<Query>::type>, "Use forEachQueryObject");
+        detail::forEachQueryResult(query, std::forward<UnaryFunc>(func));
+    }
 
-        ScopedQueryProfiler queryProfiler{ query };
-        forEachResult(query.resultList(), [&](const auto& result) {
-            queryProfiler.suspend();
-            func(result);
-            queryProfiler.resume();
+    template<typename Query, typename UnaryFunc>
+    void forEachQueryObject(const Query& query, UnaryFunc&& func)
+    {
+        detail::forEachQueryResult(query, [&](const auto& result) {
+            func(toEntity(result));
         });
     }
 
     template<typename T, typename Query>
     std::vector<T> fetchQueryResults(const Query& query)
     {
+        static_assert(!isObjectResult<typename QueryResultType<Query>::type>, "Use fetchQueryObjects");
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQueryResults", "Query", query.asString());
 
         ScopedQueryProfiler queryProfiler{ query };
@@ -112,19 +168,39 @@ namespace lms::db::utils
     template<typename Query>
     std::vector<typename QueryResultType<Query>::type> fetchQueryResults(const Query& query)
     {
+        return fetchQueryResults<typename QueryResultType<Query>::type>(query);
+    }
+
+    template<typename Query>
+    auto fetchQueryObjects(const Query& query)
+    {
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQueryResults", "Query", query.asString());
 
         ScopedQueryProfiler queryProfiler{ query };
-        auto collection{ query.resultList() };
-        return std::vector<typename QueryResultType<Query>::type>(collection.begin(), collection.end());
+        using ResultType = typename QueryResultType<Query>::type;
+        std::vector<EntityOf<typename ResultType::pointed>> results;
+        for (const auto& result : query.resultList())
+            results.push_back(toEntity(result));
+
+        return results;
     }
 
     template<typename Query>
     auto fetchQuerySingleResult(const Query& query)
     {
-        LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQuerySingleResult", "Query", query.asString());
-        ScopedQueryProfiler queryProfiler{ query };
-        return query.resultValue();
+        static_assert(!isObjectResult<typename QueryResultType<Query>::type>, "Use fetchQuerySingleObject");
+        return detail::fetchQueryUniqueResult(query);
+    }
+
+    template<typename Query>
+    auto fetchQuerySingleObject(const Query& query)
+    {
+        using ResultType = typename QueryResultType<Query>::type;
+        std::optional<EntityOf<typename ResultType::pointed>> res;
+        if (const ResultType result{ detail::fetchQueryUniqueResult(query) })
+            res = toEntity(result);
+
+        return res;
     }
 
     template<typename ResultType, typename Query>
@@ -134,6 +210,13 @@ namespace lms::db::utils
         return utils::fetchQueryResults<ResultType>(query);
     }
 
+    template<typename Query>
+    auto execRangeObjectQuery(Query& query, const std::optional<Range> range)
+    {
+        applyRange(query, range);
+        return utils::fetchQueryObjects(query);
+    }
+
     template<typename Query, typename UnaryFunc>
     void forEachQueryRangeResult(Query& query, std::optional<Range> range, UnaryFunc&& func)
     {
@@ -141,6 +224,15 @@ namespace lms::db::utils
             applyRange(query, range);
 
         forEachQueryResult(query, std::forward<UnaryFunc>(func));
+    }
+
+    template<typename Query, typename UnaryFunc>
+    void forEachQueryRangeObject(Query& query, std::optional<Range> range, UnaryFunc&& func)
+    {
+        if (range)
+            applyRange(query, range);
+
+        forEachQueryObject(query, std::forward<UnaryFunc>(func));
     }
 
     template<typename... Args>
@@ -153,5 +245,59 @@ namespace lms::db::utils
             LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "ExecuteCommand", "Command", command);
             call.run();
         }
+    }
+
+    template<MappedEntity Object>
+    EntityOf<Object> addObject(ISession& session, std::unique_ptr<Object> object)
+    {
+        checkWriteTransaction(session);
+
+        if constexpr (requires { object->updateFoldedNames(); })
+            object->updateFoldedNames();
+
+        Wt::Dbo::Session& dboSession{ *getDboSession(session) };
+        const Wt::Dbo::ptr<Object> ptr{ dboSession.add(std::move(object)) };
+        dboSession.flush();
+
+        return EntityOf<Object>{ toEntity(ptr) };
+    }
+
+    // Marked as modified, the object is kept by the session until the end of the transaction
+    template<MappedEntity Object>
+    Object& modifyObject(ISession& session, typename Object::IdType id)
+    {
+        checkWriteTransaction(session);
+        assert(id.isValid());
+
+        Object& dbo{ *getDboSession(session)->load<Object>(id.getValue()).modify() };
+        dbo.syncIds();
+        return dbo;
+    }
+
+    // Entities whose foreign keys can be set apply their ids to the relations in applyIds()
+    // Entities with search/sort columns derive them from their names in updateFoldedNames(): names must only be written through addObject/updateObject
+    template<MappedEntity Object>
+    void updateObject(ISession& session, const EntityOf<Object>& entity)
+    {
+        Object& dbo{ modifyObject<Object>(session, entity.getId()) };
+        static_cast<EntityOf<Object>&>(dbo) = entity;
+        if constexpr (requires { dbo.applyIds(); })
+            dbo.applyIds();
+        if constexpr (requires { dbo.updateFoldedNames(); })
+            dbo.updateFoldedNames();
+    }
+
+    template<typename Object>
+    void destroyObjects(ISession& session, std::span<const typename Object::IdType> ids)
+    {
+        checkWriteTransaction(session);
+
+        Wt::Dbo::Session& dboSession{ *getDboSession(session) };
+        // Like Wt before its own queries: otherwise a pending update of a deleted row would be flushed later and fail
+        dboSession.flush();
+
+        const std::string query{ std::string{ "DELETE FROM " } + dboSession.tableName<Object>() + " WHERE id = ?" };
+        for (typename Object::IdType id : ids)
+            executeCommand(dboSession, query, id.getValue());
     }
 } // namespace lms::db::utils

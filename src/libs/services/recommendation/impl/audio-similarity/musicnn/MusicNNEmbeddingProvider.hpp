@@ -29,7 +29,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 }
 
 namespace lms::recommendation
@@ -40,7 +40,7 @@ namespace lms::recommendation
         static constexpr std::size_t DimCount{ 200 };
         using Vector = math::Vector<DimCount, FloatType>;
 
-        static bool getVector(db::Session& session, db::TrackId trackId, Vector& vec);
-        static void visitVectors(db::Session& session, const std::function<void(db::TrackId, Vector&)>& visitor);
+        static bool getVector(db::ISession& session, db::TrackId trackId, Vector& vec);
+        static void visitVectors(db::ISession& session, const std::function<void(db::TrackId, Vector&)>& visitor);
     };
 } // namespace lms::recommendation

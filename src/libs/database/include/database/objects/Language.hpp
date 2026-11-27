@@ -20,26 +20,23 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
-
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/LanguageId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Session;
-    class Track;
+    class ISession;
 
-    class Language final : public Object<Language, LanguageId>
+    class Language : public detail::Object<Language, LanguageId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -79,32 +76,23 @@ namespace lms::db
             }
         };
 
-        Language() = default;
+        static Language create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const LanguageId> ids);
 
-        static std::size_t getCount(Session& session);
-        static std::vector<LanguageId> findIds(Session& session, const FindParameters& params);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
-        static pointer find(Session& session, LanguageId id);
-        static pointer find(Session& session, std::string_view name);
-        static std::vector<LanguageId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(ISession& session);
+        static std::vector<LanguageId> findIds(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Language&)>& func);
+        static std::optional<Language> find(ISession& session, LanguageId id);
+        static std::optional<Language> find(ISession& session, std::string_view name);
+        static std::vector<LanguageId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         std::string_view getName() const { return _name; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_language", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        Language(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
+    protected:
+        Language() = default;
+        explicit Language(std::string_view name);
 
         std::string _name;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
     };
 
 } // namespace lms::db

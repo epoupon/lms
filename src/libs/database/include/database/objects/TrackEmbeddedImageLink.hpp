@@ -19,38 +19,41 @@
 
 #pragma once
 
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-
 #include "core/media/ImageType.hpp"
 
-#include "database/Object.hpp"
 #include "database/objects/TrackEmbeddedImageId.hpp"
 #include "database/objects/TrackEmbeddedImageLinkId.hpp"
+#include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 #include "database/objects/detail/Types.hpp"
 
 namespace lms::db
 {
-    class TrackEmbeddedImage;
-    class Session;
+    class ISession;
     class Track;
 
-    class TrackEmbeddedImageLink final : public Object<TrackEmbeddedImageLink, TrackEmbeddedImageLinkId>
+    class TrackEmbeddedImageLink : public detail::Object<TrackEmbeddedImageLink, TrackEmbeddedImageLinkId>
     {
     public:
-        TrackEmbeddedImageLink() = default;
+        static TrackEmbeddedImageLink create(ISession& session, TrackId track, TrackEmbeddedImageId image);
+        static void destroy(ISession& session, std::span<const TrackEmbeddedImageLinkId> ids);
 
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackEmbeddedImageLinkId id);
-        static void find(Session& session, TrackEmbeddedImageId trackEmbeddedImageId, std::function<void(const pointer&)> visitor);
+        static std::size_t getCount(ISession& session);
+        static std::optional<TrackEmbeddedImageLink> find(ISession& session, TrackEmbeddedImageLinkId id);
+        static void find(ISession& session, TrackEmbeddedImageId trackEmbeddedImageId, const std::function<void(const TrackEmbeddedImageLink&)>& visitor);
+
+        static void update(ISession& session, const TrackEmbeddedImageLink& trackEmbeddedImageLink);
 
         // getters
-        ObjectPtr<Track> getTrack() const;
-        ObjectPtr<TrackEmbeddedImage> getImage() const;
+        TrackId getTrackId() const { return _trackId; }
+        TrackEmbeddedImageId getImageId() const { return _imageId; }
         std::size_t getIndex() const { return _index; }
         core::media::ImageType getType() const;
         std::string_view getDescription() const { return _description; }
@@ -60,28 +63,13 @@ namespace lms::db
         void setType(core::media::ImageType type);
         void setDescription(std::string_view description) { _description = description; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _index, "index");
-            Wt::Dbo::field(a, _type, "type");
-            Wt::Dbo::field(a, _description, "description");
-
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _image, "track_embedded_image", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        TrackEmbeddedImageLink(ObjectPtr<Track> track, ObjectPtr<TrackEmbeddedImage> image);
-
-        friend class Session;
-        static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackEmbeddedImage> image);
+    protected:
+        TrackEmbeddedImageLink() = default;
 
         int _index{}; // index within the track
         detail::ImageType _type{ detail::ImageType::Unknown };
         std::string _description;
-
-        Wt::Dbo::ptr<Track> _track;
-        Wt::Dbo::ptr<TrackEmbeddedImage> _image;
+        TrackId _trackId;
+        TrackEmbeddedImageId _imageId;
     };
 } // namespace lms::db

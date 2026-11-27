@@ -29,6 +29,11 @@ namespace lms::db::utils
         return core::stringUtils::escapeString(keyword, "%_" ESCAPE_CHAR_STR, escapeChar);
     }
 
+    std::string createFoldedContainsPattern(std::string_view keyword)
+    {
+        return "%" + escapeForLikeKeyword(core::stringUtils::foldForComparison(keyword)) + "%";
+    }
+
     Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime)
     {
         // force second resolution

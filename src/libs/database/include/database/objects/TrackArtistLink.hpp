@@ -20,45 +20,71 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
-
-#include <Wt/Dbo/Field.h>
 
 #include "core/EnumSet.hpp"
 
 #include "database/IdType.hpp"
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
+#include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 LMS_DECLARE_IDTYPE(TrackArtistLinkId)
 
 namespace lms::db
 {
     class Artist;
-    class Session;
-    class Track;
+    class ISession;
 
-    class TrackArtistLink final : public Object<TrackArtistLink, TrackArtistLinkId>
+    class TrackArtistLink : public detail::Object<TrackArtistLink, TrackArtistLinkId>
     {
     public:
-        TrackArtistLink() = default;
-        TrackArtistLink(const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched);
+        struct FindParameters
+        {
+            TrackId track;                               // links of this track
+            ReleaseId release;                           // links of the tracks of this release
+            std::optional<TrackArtistLinkType> linkType; // if set, only links of this type
 
-        static void find(Session& session, TrackId trackId, const std::function<void(const pointer&, const ObjectPtr<Artist>&)>& func);
-        static pointer find(Session& session, TrackArtistLinkId linkId);
-        static std::size_t getCount(Session& session);
-        static core::EnumSet<TrackArtistLinkType> findUsedTypes(Session& session, ArtistId _artist);
-        static void findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const pointer&)>& func);
-        static void findWithArtistNameAmbiguity(Session& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func);
+            FindParameters& setTrack(TrackId _track)
+            {
+                track = _track;
+                return *this;
+            }
+            FindParameters& setRelease(ReleaseId _release)
+            {
+                release = _release;
+                return *this;
+            }
+            FindParameters& setLinkType(std::optional<TrackArtistLinkType> _linkType)
+            {
+                linkType = _linkType;
+                return *this;
+            }
+        };
+
+        static TrackArtistLink create(ISession& session, TrackId track, ArtistId artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched = false);
+
+        static void destroy(ISession& session, std::span<const TrackArtistLinkId> ids);
+        static TrackArtistLink create(ISession& session, TrackId track, ArtistId artist, TrackArtistLinkType type, bool artistMBIDMatched = false);
+
+        static void find(ISession& session, TrackId trackId, const std::function<void(const TrackArtistLink&, const Artist&)>& func);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackArtistLink&)>& func); // in tag order
+        static std::optional<TrackArtistLink> find(ISession& session, TrackArtistLinkId linkId);
+        static std::size_t getCount(ISession& session);
+        static core::EnumSet<TrackArtistLinkType> findUsedTypes(ISession& session, ArtistId _artist);
+        static void findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const TrackArtistLink&)>& func);
+        static void findWithArtistNameAmbiguity(ISession& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const TrackArtistLink&)>& func);
+
+        static void update(ISession& session, const TrackArtistLink& trackArtistLink);
 
         // accessors
-        ObjectPtr<Track> getTrack() const { return _track; }
-        ObjectPtr<Artist> getArtist() const { return _artist; }
-        ArtistId getArtistId() const { return _artist.id(); }
+        TrackId getTrackId() const { return _trackId; }
+        ArtistId getArtistId() const { return _artistId; }
         TrackArtistLinkType getType() const { return _type; }
         std::string_view getSubType() const { return _subType; }
         std::string_view getArtistName() const { return _artistName; }
@@ -66,35 +92,20 @@ namespace lms::db
         bool isArtistMBIDMatched() const { return _artistMBIDMatched; }
 
         // setters
-        void setArtist(ObjectPtr<Artist> artist);
+        void setArtist(ArtistId artist) { _artistId = artist; }
         void setArtistName(std::string_view artistName);
         void setArtistSortName(std::string_view artistSortName);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _type, "type");
-            Wt::Dbo::field(a, _subType, "subtype");
-            Wt::Dbo::field(a, _artistName, "artist_name");
-            Wt::Dbo::field(a, _artistSortName, "artist_sort_name");
-            Wt::Dbo::field(a, _artistMBIDMatched, "artist_mbid_matched");
-
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        static pointer create(Session& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched = false);
-        static pointer create(Session& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, bool artistMBIDMatched = false);
+    protected:
+        TrackArtistLink() = default;
+        TrackArtistLink(TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched);
 
         TrackArtistLinkType _type{ TrackArtistLinkType::Artist };
         std::string _subType;
         std::string _artistName;     // as it was in the tags
         std::string _artistSortName; // as it was in the tags
         bool _artistMBIDMatched{};
-
-        Wt::Dbo::ptr<Track> _track;
-        Wt::Dbo::ptr<Artist> _artist;
+        TrackId _trackId;
+        ArtistId _artistId;
     };
 } // namespace lms::db

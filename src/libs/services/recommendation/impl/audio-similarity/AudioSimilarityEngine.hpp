@@ -23,7 +23,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "database/Object.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"

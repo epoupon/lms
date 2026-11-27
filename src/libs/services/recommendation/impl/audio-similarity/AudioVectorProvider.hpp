@@ -23,13 +23,13 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 }
 
 namespace lms::recommendation
 {
     template<typename T>
-    concept AudioVectorProvider = requires(const T provider, db::Session& session, db::TrackId id, typename T::Vector& v) {
+    concept AudioVectorProvider = requires(const T provider, db::ISession& session, db::TrackId id, typename T::Vector& v) {
         typename T::Vector;
 
         { provider.getVector(session, id, v) } -> std::same_as<bool>;

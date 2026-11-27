@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "core/Service.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseId.hpp"
@@ -62,7 +62,7 @@ namespace lms::api::subsonic
             return res;
         }
 
-        ReleaseId getReleaseIdFromDirectory(Session& session, DirectoryId directory)
+        ReleaseId getReleaseIdFromDirectory(ISession& session, DirectoryId directory)
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -70,12 +70,12 @@ namespace lms::api::subsonic
             params.setDirectory(directory);
             params.setRange(Range{ 0, 1 }); // consider one directory <-> one release
 
-            Release::pointer res;
-            Release::find(session, params, [&](const Release::pointer& release) {
-                res = release;
+            ReleaseId res;
+            Release::find(session, params, [&](const Release& release) {
+                res = release.getId();
             });
 
-            return res ? res->getId() : ReleaseId{};
+            return res;
         }
 
         struct RatingParameters

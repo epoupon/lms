@@ -22,12 +22,13 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
-
+#include "DboAccess.hpp"
+#include "ServerInfoDbo.hpp"
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/UUIDTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::ServerInfo)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::ServerInfo)
 
 namespace lms::db
 {
@@ -36,21 +37,20 @@ namespace lms::db
     {
     }
 
-    ServerInfo::pointer ServerInfo::getOrCreate(Session& session)
+    ServerInfo ServerInfo::getOrCreate(ISession& session)
     {
-        session.checkWriteTransaction();
+        checkWriteTransaction(session);
 
-        pointer serverInfo{ utils::fetchQuerySingleResult(session.getDboSession()->find<ServerInfo>()) };
-        if (!serverInfo)
-            return session.getDboSession()->add(std::unique_ptr<ServerInfo>{ new ServerInfo{ core::UUID::generate() } });
+        if (std::optional<ServerInfo> serverInfo{ utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ServerInfo>()) })
+            return *serverInfo;
 
-        return serverInfo;
+        return utils::addObject(session, std::unique_ptr<dbo::ServerInfo>{ new dbo::ServerInfo{ core::UUID::generate() } });
     }
 
-    ServerInfo::pointer ServerInfo::get(Session& session)
+    std::optional<ServerInfo> ServerInfo::get(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ServerInfo>());
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ServerInfo>());
     }
 } // namespace lms::db

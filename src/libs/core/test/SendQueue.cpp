@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
+#include <optional>
 #include <span>
 #include <thread>
 
@@ -46,21 +48,22 @@ namespace lms::core::http::tests
                 };
                 Type type;
                 std::string url;
+                std::vector<Wt::Http::Message::Header> headers;
             };
 
             void setFollowRedirect(bool) override {}
             void setTimeout(std::chrono::steady_clock::duration) override {}
             void setMaximumResponseSize(std::size_t) override {}
 
-            bool get(const std::string& url, const std::vector<Wt::Http::Message::Header>&) override
+            bool get(const std::string& url, const std::vector<Wt::Http::Message::Header>& headers) override
             {
-                _calls.push_back(Call{ .type = Call::Type::Get, .url = url });
+                _calls.push_back(Call{ .type = Call::Type::Get, .url = url, .headers = headers });
                 return true;
             }
 
-            bool post(const std::string& url, const Wt::Http::Message&) override
+            bool post(const std::string& url, const Wt::Http::Message& message) override
             {
-                _calls.push_back(Call{ .type = Call::Type::Post, .url = url });
+                _calls.push_back(Call{ .type = Call::Type::Post, .url = url, .headers = message.headers() });
                 return true;
             }
 
@@ -84,12 +87,16 @@ namespace lms::core::http::tests
             std::vector<Call> _calls;
         };
 
-        std::unique_ptr<ClientRequest> makeGetRequest(std::string relativeUrl, bool& successCalled, bool& failureCalled)
+        std::unique_ptr<ClientRequest> makeGetRequest(std::string relativeUrl, bool& successCalled, bool& failureCalled, std::optional<int>* failureHttpStatus = nullptr)
         {
             ClientGETRequestParameters params;
             params.relativeUrl = std::move(relativeUrl);
             params.onSuccessFunc = [&successCalled](const Wt::Http::Message&) { successCalled = true; };
-            params.onFailureFunc = [&failureCalled] { failureCalled = true; };
+            params.onFailureFunc = [&failureCalled, failureHttpStatus](std::optional<int> httpStatus) {
+                failureCalled = true;
+                if (failureHttpStatus)
+                    *failureHttpStatus = httpStatus;
+            };
             return std::make_unique<ClientRequest>(std::move(params));
         }
     } // namespace
@@ -155,6 +162,34 @@ namespace lms::core::http::tests
         EXPECT_EQ(_httpClient->getCalls().size(), 1u);
     }
 
+    TEST_F(SendQueueTest, UserAgentAddedToRequests)
+    {
+        ClientGETRequestParameters getParams;
+        getParams.relativeUrl = "/get";
+        getParams.headers.emplace_back("Authorization", "Token foo");
+        _queue->sendRequest(std::make_unique<ClientRequest>(std::move(getParams)));
+        pump();
+
+        ClientPOSTRequestParameters postParams;
+        postParams.relativeUrl = "/post";
+        _queue->sendRequest(std::make_unique<ClientRequest>(std::move(postParams)));
+        Wt::Http::Message okMsg;
+        okMsg.setStatus(200);
+        _httpClient->simulateDone({}, okMsg);
+        pump();
+
+        ASSERT_EQ(_httpClient->getCalls().size(), 2u);
+        for (const StubWtHttpClient::Call& call : _httpClient->getCalls())
+        {
+            const auto userAgent{ std::ranges::find(call.headers, "User-Agent", &Wt::Http::Message::Header::name) };
+            ASSERT_NE(userAgent, call.headers.end()) << call.url;
+            EXPECT_TRUE(userAgent->value().starts_with("LMS/")) << userAgent->value();
+        }
+
+        const std::vector<Wt::Http::Message::Header>& getHeaders{ _httpClient->getCalls()[0].headers };
+        EXPECT_NE(std::ranges::find(getHeaders, "Authorization", &Wt::Http::Message::Header::name), getHeaders.end());
+    }
+
     TEST_F(SendQueueTest, StreamTruncatedButVerifiedComplete)
     {
         bool successCalled{};
@@ -181,7 +216,8 @@ namespace lms::core::http::tests
     {
         bool successCalled{};
         bool failureCalled{};
-        _queue->sendRequest(makeGetRequest("/ok", successCalled, failureCalled));
+        std::optional<int> failureHttpStatus;
+        _queue->sendRequest(makeGetRequest("/ok", successCalled, failureCalled, &failureHttpStatus));
         pump();
         ASSERT_EQ(_httpClient->getCalls().size(), 1u);
 
@@ -193,6 +229,7 @@ namespace lms::core::http::tests
 
         EXPECT_FALSE(successCalled);
         EXPECT_TRUE(failureCalled);
+        EXPECT_EQ(failureHttpStatus, 302);
         EXPECT_EQ(_httpClient->getCalls().size(), 1u); // verified complete but non-200: fails immediately, no retry
     }
 
@@ -252,7 +289,8 @@ namespace lms::core::http::tests
     {
         bool successCalled{};
         bool failureCalled{};
-        _queue->sendRequest(makeGetRequest("/ok", successCalled, failureCalled));
+        std::optional<int> failureHttpStatus{ 0 };
+        _queue->sendRequest(makeGetRequest("/ok", successCalled, failureCalled, &failureHttpStatus));
         pump();
 
         // maxRetryCount = 2: expect 3 total attempts (1 initial + 2 retries) before giving up
@@ -266,6 +304,48 @@ namespace lms::core::http::tests
 
         EXPECT_FALSE(successCalled);
         EXPECT_TRUE(failureCalled);
+        EXPECT_EQ(failureHttpStatus, std::nullopt);    // no HTTP response
         EXPECT_EQ(_httpClient->getCalls().size(), 3u); // no further retry beyond maxRetryCount
+    }
+
+    TEST_F(SendQueueTest, AttemptStartedOnEachRetry)
+    {
+        bool successCalled{};
+        std::size_t attemptStartedCount{};
+        std::string streamedBody;
+
+        ClientGETRequestParameters params;
+        params.relativeUrl = "/ok";
+        params.onSuccessFunc = [&](const Wt::Http::Message&) { successCalled = true; };
+        params.onAttemptStarted = [&] {
+            ++attemptStartedCount;
+            streamedBody.clear();
+        };
+        params.onChunkReceived = [&](std::span<const std::byte> chunk) {
+            streamedBody.append(reinterpret_cast<const char*>(chunk.data()), chunk.size());
+            return ClientRequestParameters::ChunckReceivedResult::Continue;
+        };
+        _queue->sendRequest(std::make_unique<ClientRequest>(std::move(params)));
+        pump();
+
+        _httpClient->simulateBodyData("0123");
+        pump();
+
+        Wt::Http::Message msg;
+        msg.setStatus(200);
+        msg.setHeader("Content-Length", "10");
+        _httpClient->simulateDone(boost::asio::error::connection_reset, msg);
+        pump();
+        ASSERT_EQ(_httpClient->getCalls().size(), 2u);
+
+        _httpClient->simulateBodyData("0123456789");
+        pump();
+
+        _httpClient->simulateDone({}, msg);
+        pump();
+
+        EXPECT_TRUE(successCalled);
+        EXPECT_EQ(attemptStartedCount, 2u);
+        EXPECT_EQ(streamedBody, "0123456789");
     }
 } // namespace lms::core::http::tests

@@ -23,12 +23,12 @@
 #include <Wt/WRandom.h>
 
 #include "internal/InternalPasswordService.hpp"
-#ifdef LMS_SUPPORT_PAM
+#if LMS_SUPPORT_PAM
     #include "pam/PAMPasswordService.hpp"
 #endif // LMS_SUPPORT_PAM
 
 #include "core/ILogger.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "services/auth/Types.hpp"
 
 namespace lms::auth
@@ -39,7 +39,7 @@ namespace lms::auth
     {
         if (backend == "internal")
             return std::make_unique<InternalPasswordService>(db, maxThrottlerEntryCount);
-#ifdef LMS_SUPPORT_PAM
+#if LMS_SUPPORT_PAM
         if (backend == "PAM")
             return std::make_unique<PAMPasswordService>(db, maxThrottlerEntryCount);
 #endif // LMS_SUPPORT_PAM

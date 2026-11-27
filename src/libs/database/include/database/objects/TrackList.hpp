@@ -19,39 +19,35 @@
 
 #pragma once
 
+#include <chrono>
+#include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/FilterExpr.hpp"
+#include "database/objects/PlayListFileId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artist;
-    class Cluster;
-    class ClusterType;
-    class PlayListFile;
-    class Release;
-    class Session;
-    class Track;
+    class ISession;
     class TrackListEntry;
-    class User;
 
-    class TrackList final : public Object<TrackList, TrackListId>
+    class TrackList : public detail::Object<TrackList, TrackListId>
     {
     public:
-        TrackList() = default;
+        static TrackList create(ISession& session, std::string_view name, TrackListType type);
+        static void destroy(ISession& session, std::span<const TrackListId> ids);
 
         enum class Visibility
         {
@@ -115,66 +111,40 @@ namespace lms::db
                 return *this;
             }
         };
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, std::string_view name, TrackListType type, UserId userId);
-        static pointer find(Session& session, TrackListId tracklistId);
-        static std::vector<TrackListId> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const TrackList::pointer&)>& func);
+        static std::size_t getCount(ISession& session);
+        static std::optional<TrackList> find(ISession& session, TrackListId tracklistId);
+        static std::optional<TrackList> find(ISession& session, PlayListFileId playListFileId); // the track list made from this playlist file
+        static std::vector<TrackListId> findIds(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackList&)>& func);
+
+        // Computed from the entries
+        static bool isEmpty(ISession& session, TrackListId id);
+        static std::size_t getTrackCount(ISession& session, TrackListId id);
+        static std::chrono::milliseconds getDuration(ISession& session, TrackListId id);
+
+        // Updates
+        static void update(ISession& session, const TrackList& trackList);
+        static void clear(ISession& session, TrackListId id);
 
         // Accessors
         std::string_view getName() const { return _name; }
         Visibility getVisibility() const { return _visibility; }
         TrackListType getType() const { return _type; }
-        ObjectPtr<User> getUser() const { return _user; }
-        UserId getUserId() const { return _user.id(); }
-        ObjectPtr<PlayListFile> getPlayListFile() const { return _playListFile; }
+        UserId getUserId() const { return _userId; }
+        PlayListFileId getPlayListFileId() const { return _playListFileId; }
         Wt::WDateTime getLastModifiedDateTime() const { return _lastModifiedDateTime; }
         Wt::WDateTime getCreationDateTime() const { return _creationDateTime; }
 
         // Modifiers
-        void setUser(ObjectPtr<User> user) { _user = getDboPtr(user); }
+        void setUser(UserId user) { _userId = user; }
+        void setPlayListFile(PlayListFileId playListFile) { _playListFileId = playListFile; }
         void setName(std::string_view name) { _name = name; }
         void setVisibility(Visibility visibility) { _visibility = visibility; }
-        void clear() { _entries.clear(); }
-
-        // Get tracks, ordered by position
-        bool isEmpty() const;
-        std::size_t getCount() const;
-        ObjectPtr<TrackListEntry> getEntry(std::size_t pos) const;
-        std::vector<ObjectPtr<TrackListEntry>> getEntries(std::optional<Range> range = {}) const;
-        ObjectPtr<TrackListEntry> getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const;
-
-        std::vector<TrackId> getTrackIds(std::optional<Range> range = {}) const;
-        void visitTracks(const std::function<void(const ObjectPtr<Track>&)>& func) const;
-        std::chrono::milliseconds getDuration() const;
-
         void setLastModifiedDateTime(const Wt::WDateTime& dateTime);
 
-        // Get clusters, order by occurence
-        std::vector<ObjectPtr<Cluster>> getClusters() const;
-
-        // Ordered from most clusters in common
-        std::vector<ObjectPtr<Track>> getSimilarTracks(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
-
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _type, "type");
-            Wt::Dbo::field(a, _visibility, "visibility");
-            Wt::Dbo::field(a, _creationDateTime, "creation_date_time");
-            Wt::Dbo::field(a, _lastModifiedDateTime, "last_modified_date_time");
-
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);                  // optional
-            Wt::Dbo::belongsTo(a, _playListFile, "playlist_file", Wt::Dbo::OnDeleteCascade); // optional
-
-            Wt::Dbo::hasMany(a, _entries, Wt::Dbo::ManyToOne, "tracklist");
-        }
-
-    private:
-        friend class Session;
+    protected:
+        TrackList() = default;
         TrackList(std::string_view name, TrackListType type);
-        static pointer create(Session& session, std::string_view name, TrackListType type);
 
         std::string _name;
         TrackListType _type{ TrackListType::PlayList };
@@ -182,15 +152,15 @@ namespace lms::db
         Wt::WDateTime _creationDateTime;
         Wt::WDateTime _lastModifiedDateTime;
 
-        Wt::Dbo::ptr<User> _user;
-        Wt::Dbo::ptr<PlayListFile> _playListFile;
-        Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _entries;
+        UserId _userId;
+        PlayListFileId _playListFileId;
     };
 
-    class TrackListEntry final : public Object<TrackListEntry, TrackListEntryId>
+    class TrackListEntry : public detail::Object<TrackListEntry, TrackListEntryId>
     {
     public:
-        TrackListEntry() = default;
+        static TrackListEntry create(ISession& session, TrackId track, TrackListId tracklist, const Wt::WDateTime& dateTime = {});
+        static void destroy(ISession& session, std::span<const TrackListEntryId> ids);
 
         // find utility
         // Search utility
@@ -210,32 +180,19 @@ namespace lms::db
                 return *this;
             }
         };
-        static pointer getById(Session& session, TrackListEntryId id);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const TrackListEntry::pointer&)>& func);
+        static std::optional<TrackListEntry> getById(ISession& session, TrackListEntryId id);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackListEntry&)>& func);
 
         // Accessors
-        TrackId getTrackId() const { return _track.id(); }
-        ObjectPtr<Track> getTrack() const { return _track; }
+        TrackId getTrackId() const { return _trackId; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _dateTime, "date_time");
-
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _tracklist, "tracklist", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime);
-        TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist);
-        static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime = {});
+    protected:
+        TrackListEntry() = default;
+        explicit TrackListEntry(const Wt::WDateTime& dateTime);
 
         Wt::WDateTime _dateTime; // optional date time
-        Wt::Dbo::ptr<Track> _track;
-        Wt::Dbo::ptr<TrackList> _tracklist;
+        TrackId _trackId;
     };
 
 } // namespace lms::db

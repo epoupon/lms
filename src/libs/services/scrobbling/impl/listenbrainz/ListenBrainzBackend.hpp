@@ -49,10 +49,7 @@ namespace lms::scrobbling::listenBrainz
         void addTimedListen(const TimedListen& listen) override;
         bool canBeScrobbled(db::TrackId trackId, std::optional<std::chrono::seconds> duration) const override;
         void requestImmediateImport(db::UserId userId) override;
-        void requestImmediateExport() override;
-
-        // Submit listens
-        void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
+        void requestImmediateExport(db::UserId userId) override;
 
         boost::asio::io_context& _ioContext;
         db::IDb& _db;

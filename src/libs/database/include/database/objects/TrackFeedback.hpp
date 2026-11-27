@@ -21,27 +21,27 @@
 
 #include <functional>
 #include <optional>
+#include <span>
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/TrackFeedbackId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Track;
-    class Session;
+    class ISession;
     class User;
 
-    class TrackFeedback final : public Object<TrackFeedback, TrackFeedbackId>
+    class TrackFeedback : public detail::Object<TrackFeedback, TrackFeedbackId>
     {
     public:
-        TrackFeedback() = default;
+        static TrackFeedback create(ISession& session, TrackId track, UserId user);
+        static void destroy(ISession& session, std::span<const TrackFeedbackId> ids);
 
         struct FindParameters
         {
@@ -73,14 +73,16 @@ namespace lms::db
         };
 
         // Search utility
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackFeedbackId id);
-        static pointer find(Session& session, TrackId trackId, UserId userId);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static std::size_t getCount(ISession& session);
+        static std::optional<TrackFeedback> find(ISession& session, TrackFeedbackId id);
+        static std::optional<TrackFeedback> find(ISession& session, TrackId trackId, UserId userId);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackFeedback&)>& func);
+
+        static void update(ISession& session, const TrackFeedback& trackFeedback);
 
         // Accessors
-        ObjectPtr<Track> getTrack() const { return _track; }
-        ObjectPtr<User> getUser() const { return _user; }
+        TrackId getTrackId() const { return _trackId; }
+        UserId getUserId() const { return _userId; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
         FeedbackValue getValue() const { return _value; }
 
@@ -88,25 +90,12 @@ namespace lms::db
         void setDateTime(const Wt::WDateTime& dateTime);
         void setValue(FeedbackValue value) { _value = value; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _dateTime, "date_time");
-            Wt::Dbo::field(a, _value, "value");
-
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        TrackFeedback(ObjectPtr<Track> track, ObjectPtr<User> user);
-        static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user);
+    protected:
+        TrackFeedback() = default;
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };
-
-        Wt::Dbo::ptr<Track> _track;
-        Wt::Dbo::ptr<User> _user;
+        TrackId _trackId;
+        UserId _userId;
     };
 } // namespace lms::db

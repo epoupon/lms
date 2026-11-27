@@ -25,7 +25,7 @@
 #include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
 
-namespace lms::image::GraphicsMagick
+namespace lms::image::graphicsMagick
 {
     RawImage::RawImage(std::span<const std::byte> encodedData)
     {
@@ -101,4 +101,4 @@ namespace lms::image::GraphicsMagick
     {
         return _image;
     }
-} // namespace lms::image::GraphicsMagick
+} // namespace lms::image::graphicsMagick

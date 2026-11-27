@@ -19,25 +19,25 @@
 
 #pragma once
 
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WTime.h>
 
 #include "database/IdType.hpp"
-#include "database/Object.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 LMS_DECLARE_IDTYPE(ScanSettingsId)
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 
-    class ScanSettings final : public Object<ScanSettings, ScanSettingsId>
+    class ScanSettings : public detail::Object<ScanSettings, ScanSettingsId>
     {
     public:
         // Do not modify values (just add)
@@ -50,10 +50,14 @@ namespace lms::db
             Hourly,
         };
 
-        ScanSettings() = default;
+        static ScanSettings create(ISession& session, std::string_view name = "");
 
-        static pointer find(Session& session, std::string_view name = "");
-        static pointer find(Session& session, ScanSettingsId id);
+        static void destroy(ISession& session, std::span<const ScanSettingsId> ids);
+
+        static std::optional<ScanSettings> find(ISession& session, std::string_view name = "");
+        static std::optional<ScanSettings> find(ISession& session, ScanSettingsId id);
+
+        static void update(ISession& session, const ScanSettings& scanSettings);
 
         // Getters
         std::size_t getAudioScanVersion() const { return _audioScanVersion; }
@@ -82,30 +86,10 @@ namespace lms::db
         void setAllowMBIDArtistMerge(bool value);
         void setArtistImageFallbackToRelease(bool value);
         void setMusicNNModelIdentifier(std::string_view identifier) { _musicnnModelIdentifier = identifier; }
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _audioScanVersion, "audio_scan_version");
-            Wt::Dbo::field(a, _artistInfoScanVersion, "artist_info_scan_version");
-            Wt::Dbo::field(a, _startTime, "start_time");
-            Wt::Dbo::field(a, _updatePeriod, "update_period");
-            Wt::Dbo::field(a, _recommendationEngineType, "recommendation_engine_type");
-            Wt::Dbo::field(a, _extraTagsToScan, "extra_tags_to_scan");
-            Wt::Dbo::field(a, _artistTagDelimiters, "artist_tag_delimiters");
-            Wt::Dbo::field(a, _artistsToNotSplit, "artists_to_not_split");
-            Wt::Dbo::field(a, _defaultTagDelimiters, "default_tag_delimiters");
-            Wt::Dbo::field(a, _skipSingleReleasePlayLists, "skip_single_release_playlists");
-            Wt::Dbo::field(a, _allowMBIDArtistMerge, "allow_mbid_artist_merge");
-            Wt::Dbo::field(a, _artistImageFallbackToRelease, "artist_image_fallback_to_release");
-            Wt::Dbo::field(a, _musicnnModelIdentifier, "musicnn_model_identifier");
-        }
 
-    private:
-        friend class Session;
-
-        ScanSettings(std::string_view name);
-        static pointer create(Session& session, std::string_view name = "");
+    protected:
+        ScanSettings() = default;
+        explicit ScanSettings(std::string_view name);
 
         void incAudioScanVersion();
 

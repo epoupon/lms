@@ -29,7 +29,7 @@
 #include <Wt/WRandom.h>
 
 #include "core/Service.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 #include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
@@ -96,8 +96,9 @@ namespace lms::ui
                 {
                     auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                    db::User::pointer user{ db::User::find(LmsApp->getDbSession(), valueText(LoginNameField).toUTF8()) };
-                    user.modify()->setLastLogin(Wt::WDateTime::currentDateTime());
+                    std::optional<db::User> user{ db::User::find(LmsApp->getDbSession(), valueText(LoginNameField).toUTF8()) };
+                    user->setLastLogin(Wt::WDateTime::currentDateTime());
+                    db::User::update(LmsApp->getDbSession(), *user);
                     _userId = user->getId();
 
                     isDemo = user->isDemo();
@@ -221,7 +222,7 @@ namespace lms::ui
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            db::User::pointer demoUser{ db::User::findDemoUser(LmsApp->getDbSession()) };
+            std::optional<db::User> demoUser{ db::User::findDemoUser(LmsApp->getDbSession()) };
             if (demoUser)
             {
                 model->setValue(AuthModel::LoginNameField, demoUser->getLoginName());

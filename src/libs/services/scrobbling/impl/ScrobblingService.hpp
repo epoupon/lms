@@ -65,15 +65,17 @@ namespace lms::scrobbling
                                 std::function<void()> onFailure) override;
 
         void requestImmediateImport(db::UserId userId, db::ScrobblingBackend backend) override;
-        void requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend) override;
+        void requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend, const Wt::WDateTime& since) override;
+        void resetExports(db::UserId userId, db::ScrobblingBackend backend) override;
 
         core::EnumSet<db::ScrobblingBackend> getUserEnabledBackends(db::UserId userId);
-        void markPendingExports(db::UserId userId, db::ScrobblingBackend backend);
+        void markPendingExports(db::UserId userId, db::ScrobblingBackend backend, const Wt::WDateTime& since);
 
         // Independent of which backends are enabled, since recording is now backend-agnostic (was previously InternalBackend's job)
         std::optional<TimedListen> recordListen(const Listen& listen, const Wt::WDateTime& listenedAt, std::optional<std::chrono::seconds> duration);
 
         void insertNowPlayingEntry(const Listen& listen);
+        Wt::WDateTime takeListenStartDateTime(const Listen& listen);
 
         db::IDb& _db;
         std::unordered_map<db::ScrobblingBackend, std::unique_ptr<IScrobblingBackend>> _scrobblingBackends;
@@ -86,6 +88,7 @@ namespace lms::scrobbling
             Clock::time_point startedAt;
             Clock::time_point expiryAt;
             db::TrackId trackId;
+            bool listenRecorded{}; // so that playing the track again starts a new listen
         };
         std::unordered_map<db::UserId, NowPlayingEntry> _nowPlayingEntries;
     };

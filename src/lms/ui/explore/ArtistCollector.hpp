@@ -23,7 +23,6 @@
 #include <optional>
 #include <vector>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 
@@ -42,7 +41,7 @@ namespace lms::ui
     public:
         using DatabaseCollectorBase::DatabaseCollectorBase;
 
-        void get(db::Range range, bool& moreResults, const std::function<void(const db::ObjectPtr<db::Artist>&)>& func);
+        void get(db::Range range, bool& moreResults, const std::function<void(const db::Artist&)>& func);
         void reset() { _randomArtists.reset(); }
         void setArtistType(ArtistType artistType) { _artistType = artistType; }
 

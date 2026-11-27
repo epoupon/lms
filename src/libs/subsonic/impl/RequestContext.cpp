@@ -43,7 +43,7 @@ namespace lms::api::subsonic
         }
     } // namespace
 
-    RequestContext::RequestContext(const Wt::Http::Request& request, db::Session& dbSession, const SubsonicResourceConfig& config)
+    RequestContext::RequestContext(const Wt::Http::Request& request, db::ISession& dbSession, const SubsonicResourceConfig& config)
         : _request{ request }
         , _dbSession{ dbSession }
         , _config{ config }
@@ -67,19 +67,14 @@ namespace lms::api::subsonic
         return _request.in();
     }
 
-    db::Session& RequestContext::getDbSession()
+    db::ISession& RequestContext::getDbSession()
     {
         return _dbSession;
     }
 
-    void RequestContext::setUser(const db::ObjectPtr<db::User>& user)
+    void RequestContext::setUser(const std::optional<db::User>& user)
     {
         _user = user;
-    }
-
-    db::ObjectPtr<db::User> RequestContext::getUser() const
-    {
-        return _user;
     }
 
     std::string RequestContext::getClientIpAddr() const

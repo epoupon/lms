@@ -33,7 +33,7 @@
 #include "core/ITraceLogger.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
@@ -150,14 +150,13 @@ namespace lms::recommendation
 
         std::vector<db::TrackId> trackIds;
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            const db::TrackList::pointer trackList{ db::TrackList::find(session, tracklistId) };
-            if (!trackList)
+            if (!db::TrackList::find(session, tracklistId))
                 return {};
 
-            trackIds = trackList->getTrackIds();
+            trackIds = db::Track::findIds(session, db::Track::FindParameters{}.setTrackList(tracklistId));
         }
 
         if (trackIds.empty())
@@ -484,7 +483,7 @@ namespace lms::recommendation
         std::array<math::StatsAccumulator<FloatType>, SourceDimCount> statsAccumulators;
 
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             Provider::visitVectors(session, [&]([[maybe_unused]] db::TrackId trackId, const SourceVector& sourceVector) {
@@ -504,7 +503,7 @@ namespace lms::recommendation
         {
             const auto calculator{ std::make_unique<math::CovarianceMatrixCalculator<SourceDimCount, FloatType>>() };
 
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             Provider::visitVectors(session, [&](db::TrackId, SourceVector& sourceVector) {
@@ -573,7 +572,7 @@ namespace lms::recommendation
 
         LOG(INFO, "computing reduced vectors... Reducing from " << SourceDimCount << " to " << ReducedDimCount << " dimensions");
 
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         _trackVectors.clear();
@@ -593,15 +592,15 @@ namespace lms::recommendation
             _trackVectors.try_emplace(trackId, &reducedVector);
         });
 
-        db::Track::find(session, db::Track::FindParameters{}, [&](const db::Track::pointer& track) {
-            const auto itVec{ _trackVectors.find(track->getId()) };
+        db::Track::find(session, db::Track::FindParameters{}, [&](const db::Track& track) {
+            const auto itVec{ _trackVectors.find(track.getId()) };
             if (itVec == _trackVectors.cend())
                 return;
 
-            auto& meta{ _trackMetadata[track->getId()] };
-            const db::ReleaseId releaseId{ track->getReleaseId() };
+            auto& meta{ _trackMetadata[track.getId()] };
+            const db::ReleaseId releaseId{ track.getReleaseId() };
             meta.releaseId = releaseId;
-            meta.recordingMBID = track->getRecordingMBID();
+            meta.recordingMBID = track.getRecordingMBID();
 
             if (releaseId.isValid())
                 _releaseVectors[releaseId].emplace_back(*itVec->second);
@@ -616,8 +615,8 @@ namespace lms::recommendation
             _releaseMedoids.try_emplace(id, calc.finalize());
         }
 
-        db::Artist::find(session, db::Artist::FindParameters{}, [&](const db::Artist::pointer& artist) {
-            const auto mbid{ artist->getMBID() };
+        db::Artist::find(session, db::Artist::FindParameters{}, [&](const db::Artist& artist) {
+            const auto mbid{ artist.getMBID() };
             // skip "Various Artists" to avoid false artist matches
             if (mbid && mbid->toString() == "89ad4ac3-39f7-470e-963a-56509c546377")
                 return;
@@ -626,7 +625,7 @@ namespace lms::recommendation
 
             {
                 db::Release::FindParameters params;
-                params.setArtist(artist->getId());
+                params.setArtist(artist.getId());
                 for (const db::ReleaseId releaseId : db::Release::findIds(session, params))
                 {
                     if (_releaseVectors.contains(releaseId))
@@ -649,12 +648,12 @@ namespace lms::recommendation
                 {
                     assert(it->second);
                     artistTrackVectors.emplace_back(*it->second);
-                    _trackMetadata[trackId].artistIds.push_back(artist->getId());
+                    _trackMetadata[trackId].artistIds.push_back(artist.getId());
                 }
             }
 
             if (!artistTrackVectors.empty())
-                _artistVectors.try_emplace(artist->getId(), std::move(artistTrackVectors));
+                _artistVectors.try_emplace(artist.getId(), std::move(artistTrackVectors));
         });
 
         for (const auto& [id, vecs] : _artistVectors)

@@ -21,90 +21,128 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "database/Session.hpp"
-#include "database/objects/Artist.hpp"
-#include "database/objects/Artwork.hpp"
-#include "database/objects/Cluster.hpp"
-#include "database/objects/Directory.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/MediaLibrary.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Movement.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/TrackArtistLink.hpp"
-#include "database/objects/TrackEmbeddedImage.hpp"
-#include "database/objects/TrackEmbeddedImageLink.hpp"
-#include "database/objects/TrackLyrics.hpp"
-#include "database/objects/Work.hpp"
+#include "core/String.hpp"
 
+#include "ArtistDbo.hpp"
+#include "ArtworkDbo.hpp"
+#include "ClusterDbo.hpp"
+#include "DboAccess.hpp"
+#include "DirectoryDbo.hpp"
+#include "GenreDbo.hpp"
+#include "GroupingDbo.hpp"
+#include "LanguageDbo.hpp"
+#include "MediaLibraryDbo.hpp"
+#include "MediumDbo.hpp"
+#include "MoodDbo.hpp"
+#include "MovementDbo.hpp"
+#include "ReleaseDbo.hpp"
+#include "Session.hpp"
+#include "TrackArtistLinkDbo.hpp"
+#include "TrackDbo.hpp"
+#include "TrackEmbeddedImageDbo.hpp"
+#include "TrackEmbeddedImageLinkDbo.hpp"
+#include "TrackLyricsDbo.hpp"
 #include "Utils.hpp"
+#include "WorkDbo.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Medium);
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Medium)
 
 namespace lms::db
 {
-    Medium::Medium(ObjectPtr<Release> release)
-        : _release(getDboPtr(release))
+    dbo::Medium::Medium(Wt::Dbo::ptr<Release> release)
+        : _release(std::move(release))
     {
     }
 
-    Medium::pointer Medium::create(Session& session, ObjectPtr<Release> release)
+    void dbo::Medium::updateFoldedNames()
     {
-        return session.getDboSession()->add(std::unique_ptr<Medium>{ new Medium{ release } });
+        _foldedName = core::stringUtils::foldForComparison(_name);
     }
 
-    std::size_t Medium::getCount(Session& session)
+    Medium Medium::create(ISession& session, ReleaseId release)
     {
-        session.checkReadTransaction();
-
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM medium"));
+        return utils::addObject(session, std::unique_ptr<dbo::Medium>{ new dbo::Medium{ getDboSession(session)->loadLazy<dbo::Release>(release.getValue()) } });
     }
 
-    Medium::pointer Medium::find(Session& session, MediumId id)
+    void Medium::destroy(ISession& session, std::span<const MediumId> ids)
     {
-        session.checkReadTransaction();
-
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Medium>>("SELECT m from medium m").where("m.id = ?").bind(id));
+        utils::destroyObjects<dbo::Medium>(session, ids);
     }
 
-    Medium::pointer Medium::find(Session& session, ReleaseId releaseId, std::optional<std::size_t> position)
+    std::size_t Medium::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM medium"));
+    }
+
+    std::optional<Medium> Medium::find(ISession& session, MediumId id)
+    {
+        checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m").where("m.id = ?").bind(id));
+    }
+
+    std::optional<Medium> Medium::find(ISession& session, ReleaseId releaseId, std::optional<std::size_t> position)
+    {
+        checkReadTransaction(session);
 
         std::optional<int> dbPosition;
         if (position)
             dbPosition = static_cast<int>(*position);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Medium>>("SELECT m from medium m") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m") };
         query.where("m.release_id = ?").bind(releaseId);
         if (position)
             query.where("m.position = ?").bind(*dbPosition);
         else
             query.where("m.position IS NULL");
 
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
-    void Medium::find(Session& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium::pointer&)>& func)
+    void Medium::find(ISession& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium&)>& func)
     {
+        checkReadTransaction(session);
+
         assert(idRange.isValid());
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Medium>>("SELECT m from medium m").orderBy("m.id").where("m.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m").orderBy("m.id").where("m.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
 
-        utils::forEachQueryResult(query, [&](const Medium::pointer& medium) {
+        utils::forEachQueryObject(query, [&](const Medium& medium) {
             func(medium);
         });
     }
 
-    IdRange<MediumId> Medium::findNextIdRange(Session& session, MediumId lastRetrievedId, std::size_t count)
+    void Medium::find(ISession& session, const FindParameters& params, const std::function<void(const Medium&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<std::tuple<MediumId, MediumId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT m.id FROM medium m WHERE m.id > ? ORDER BY m.id LIMIT ?) sub") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Medium>>("SELECT m from medium m") };
+        if (params.release.isValid())
+            query.where("m.release_id = ?").bind(params.release);
+
+        switch (params.sortMethod)
+        {
+        case MediumSortMethod::None:
+            break;
+        case MediumSortMethod::PositionAsc:
+            query.orderBy("m.position");
+            break;
+        }
+
+        utils::forEachQueryRangeObject(query, params.range, func);
+    }
+
+    IdRange<MediumId> Medium::findNextIdRange(ISession& session, MediumId lastRetrievedId, std::size_t count)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<std::tuple<MediumId, MediumId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT m.id FROM medium m WHERE m.id > ? ORDER BY m.id LIMIT ?) sub") };
         query.bind(lastRetrievedId);
         query.bind(static_cast<int>(count));
 
@@ -112,23 +150,23 @@ namespace lms::db
         return IdRange<MediumId>{ .first = std::get<0>(res), .last = std::get<1>(res) };
     }
 
-    std::vector<MediumId> Medium::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<MediumId> Medium::findOrphanIds(ISession& session, std::optional<Range> range)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         // select the mediums that have no track
-        auto query{ session.getDboSession()->query<MediumId>("select m.id from medium m LEFT OUTER JOIN track t ON m.id = t.medium_id WHERE t.id IS NULL") };
+        auto query{ getDboSession(session)->query<MediumId>("select m.id from medium m LEFT OUTER JOIN track t ON m.id = t.medium_id WHERE t.id IS NULL") };
         return utils::execRangeQuery<MediumId>(query, range);
     }
 
-    void Medium::updatePreferredArtwork(Session& session, MediumId mediumId, ArtworkId artworkId)
+    void Medium::update(ISession& session, const Medium& medium)
     {
-        session.checkWriteTransaction();
-
-        if (artworkId.isValid())
-            utils::executeCommand(*session.getDboSession(), "UPDATE medium SET preferred_artwork_id = ? WHERE id = ?", artworkId, mediumId);
-        else
-            utils::executeCommand(*session.getDboSession(), "UPDATE medium SET preferred_artwork_id = NULL WHERE id = ?", mediumId);
+        utils::updateObject<dbo::Medium>(session, medium);
     }
 
+    void Medium::updatePreferredArtwork(ISession& session, MediumId mediumId, ArtworkId artworkId)
+    {
+        dbo::Medium& medium{ utils::modifyObject<dbo::Medium>(session, mediumId) };
+        setRelation(*getDboSession(session), medium._preferredArtwork, artworkId);
+    }
 } // namespace lms::db

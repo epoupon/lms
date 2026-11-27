@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <cstdint>
+#include <string>
+
 #include "audio/IAudioDecoder.hpp"
 
 #include "FFmpegTypes.hpp"
@@ -39,12 +42,15 @@ namespace lms::audio::ffmpeg
 
         std::size_t readSamples(std::span<WritableBuffer> outputChannelBuffers) override;
         bool finished() const override;
+        void seek(std::chrono::microseconds offset) override;
 
         std::chrono::milliseconds getEstimatedDuration() const override;
 
         std::size_t computeSampleCountPerChannel(std::span<WritableBuffer> outputChannelBuffers) const;
         void feedDecoder();
         void sendPendingPacket();
+        void skipInvalidPacket(int error);
+        std::string describeLastSentPacketPosition() const;
         int computeStartTrimSampleCount(const AVFrame* frame);
         bool inputFormatChanged(const AVFrame* frame) const;
         void reinitResamplerForFrame(const AVFrame* frame);
@@ -52,6 +58,7 @@ namespace lms::audio::ffmpeg
         std::size_t drainResampler(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel);
         std::size_t getEstimatedResamplerAvailableSamples() const;
 
+        const std::filesystem::path _filePath;
         const PcmParameters _parameters;
 
         bool _finished{};
@@ -61,10 +68,18 @@ namespace lms::audio::ffmpeg
         AVFormatContextPtr _context;
         std::chrono::milliseconds _estimatedDuration{};
         int _inputStreamIndex{};
+        int _seekStreamIndex{};
 
         // Seeking lands on the packet boundary before the requested offset: the extra samples are dropped
         std::int64_t _seekTargetTimestamp{};
         bool _startTrimPending{};
+
+        // Packets with invalid data are skipped, other errors such as DRM or unimplemented features still fail
+        bool _frameDecoded{};
+        std::size_t _skippedPacketCount{};
+        // used to locate invalid data in the logs (same as AVPacket: AV_NOPTS_VALUE and -1)
+        std::int64_t _lastSentPacketPts;
+        std::int64_t _lastSentPacketBytePosition;
 
         AVCodecContextPtr _decoderContext;
         AVFramePtr _decodedFrame;

@@ -19,13 +19,14 @@
 
 #pragma once
 
+#include <chrono>
+#include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "core/EnumSet.hpp"
@@ -34,7 +35,6 @@
 #include "core/media/Codec.hpp"
 
 #include "database/IdRange.hpp"
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ArtworkId.hpp"
@@ -47,117 +47,87 @@
 #include "database/objects/ReleaseTypeId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artist;
-    class Artwork;
-    class Cluster;
-    class ClusterType;
-    class Medium;
-    class Release;
-    class ReleaseArtistLink;
-    class Session;
-    class Track;
-    class TrackArtistLink;
-    class User;
+    class ISession;
 
-    class Country final : public Object<Country, CountryId>
+    class Country : public detail::Object<Country, CountryId>
     {
     public:
+        static Country create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const CountryId> ids);
+
+        static std::size_t getCount(ISession& session);
+        static std::optional<Country> find(ISession& session, CountryId id);
+        static std::optional<Country> find(ISession& session, std::string_view name);
+        static void find(ISession& session, ReleaseId release, const std::function<void(const Country&)>& func);
+        static std::vector<CountryId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
+
+        // Accessors
+        std::string_view getName() const { return _name; }
+
+    protected:
         Country() = default;
+        static constexpr std::size_t _maxNameLength{ 1024 };
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, CountryId id);
-        static pointer find(Session& session, std::string_view name);
-        static std::vector<CountryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        explicit Country(std::string_view name);
+
+        std::string _name;
+    };
+
+    class Label : public detail::Object<Label, LabelId>
+    {
+    public:
+        static Label create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const LabelId> ids);
+
+        static std::size_t getCount(ISession& session);
+        static std::optional<Label> find(ISession& session, LabelId id);
+        static std::optional<Label> find(ISession& session, std::string_view name);
+        static void find(ISession& session, ReleaseId release, const std::function<void(const Label&)>& func);
+        static void find(ISession& session, LabelSortMethod sortMethod, const std::function<void(const Label& label)>& func);
+        static std::vector<LabelId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
         std::string_view getName() const { return _name; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::hasMany(a, _releases, Wt::Dbo::ManyToMany, "release_country", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        static constexpr std::size_t _maxNameLength{ 1024 };
-
-        friend class Session;
-        Country(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
-
-        std::string _name;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this country
-    };
-
-    class Label final : public Object<Label, LabelId>
-    {
-    public:
+    protected:
         Label() = default;
-
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, LabelId id);
-        static pointer find(Session& session, std::string_view name);
-        static void find(Session& session, LabelSortMethod sortMethod, std::function<void(const Label::pointer& label)> func);
-        static std::vector<LabelId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
-
-        // Accessors
-        std::string_view getName() const { return _name; }
-
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::hasMany(a, _releases, Wt::Dbo::ManyToMany, "release_label", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
         static constexpr std::size_t _maxNameLength{ 1024 };
 
-        friend class Session;
-        Label(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
+        explicit Label(std::string_view name);
 
         std::string _name;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this label
     };
 
-    class ReleaseType final : public Object<ReleaseType, ReleaseTypeId>
+    class ReleaseType : public detail::Object<ReleaseType, ReleaseTypeId>
     {
     public:
-        ReleaseType() = default;
+        static ReleaseType create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const ReleaseTypeId> ids);
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ReleaseTypeId id);
-        static pointer find(Session& session, std::string_view name);
-        static void find(Session& session, ReleaseTypeSortMethod sortMethod, std::function<void(const ReleaseType::pointer& releaseType)> func);
-        static std::vector<ReleaseTypeId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(ISession& session);
+        static std::optional<ReleaseType> find(ISession& session, ReleaseTypeId id);
+        static std::optional<ReleaseType> find(ISession& session, std::string_view name);
+        static void find(ISession& session, ReleaseId release, const std::function<void(const ReleaseType&)>& func);
+        static void find(ISession& session, ReleaseTypeSortMethod sortMethod, const std::function<void(const ReleaseType& releaseType)>& func);
+        static std::vector<ReleaseTypeId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
         std::string_view getName() const { return _name; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::hasMany(a, _releases, Wt::Dbo::ManyToMany, "release_release_type", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
+    protected:
+        ReleaseType() = default;
         static constexpr std::size_t _maxNameLength{ 1024 };
 
-        friend class Session;
-        ReleaseType(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
+        explicit ReleaseType(std::string_view name);
 
         std::string _name;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this type
     };
 
-    class Release final : public Object<Release, ReleaseId>
+    class Release : public detail::Object<Release, ReleaseId>
     {
     public:
         struct FindParameters
@@ -247,37 +217,49 @@ namespace lms::db
             }
         };
 
-        Release() = default;
+        static Release create(ISession& session, const std::string& name, const std::optional<core::UUID>& MBID = {});
+        static void destroy(ISession& session, std::span<const ReleaseId> ids);
 
         // Accessors
-        static std::size_t getCount(Session& session);
-        static bool exists(Session& session, ReleaseId id);
-        static pointer find(Session& session, const core::UUID& MBID);
-        static pointer find(Session& session, ReleaseId id);
-        static void find(Session& session, ReleaseId& lastRetrievedRelease, std::size_t count, const std::function<void(const Release::pointer&)>& func, MediaLibraryId library = {});
-        static void find(Session& session, const IdRange<ReleaseId>& idRange, const std::function<void(const Release::pointer&)>& func);
-        static IdRange<ReleaseId> findNextIdRange(Session& session, ReleaseId lastRetrievedId, std::size_t count);
-        static std::vector<pointer> find(Session& session, const FindParameters& parameters);
-        static void find(Session& session, const FindParameters& parameters, const std::function<void(const pointer&)>& func);
-        static std::vector<ReleaseId> findIds(Session& session, const FindParameters& parameters);
-        static std::size_t getCount(Session& session, const FindParameters& parameters);
-        static std::vector<ReleaseId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // not track related
+        static std::size_t getCount(ISession& session);
+        static bool exists(ISession& session, ReleaseId id);
+        static std::optional<Release> find(ISession& session, const core::UUID& MBID);
+        static std::optional<Release> find(ISession& session, ReleaseId id);
+        static void find(ISession& session, ReleaseId& lastRetrievedRelease, std::size_t count, const std::function<void(const Release&)>& func, MediaLibraryId library = {});
+        static void find(ISession& session, const IdRange<ReleaseId>& idRange, const std::function<void(const Release&)>& func);
+        static IdRange<ReleaseId> findNextIdRange(ISession& session, ReleaseId lastRetrievedId, std::size_t count);
+        static void find(ISession& session, const FindParameters& parameters, const std::function<void(const Release&)>& func);
+        static std::vector<ReleaseId> findIds(ISession& session, const FindParameters& parameters);
+        static std::size_t getCount(ISession& session, const FindParameters& parameters);
+        static std::vector<ReleaseId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt); // not track related
+        static bool hasArtist(ISession& session, ReleaseId id, ArtistId artistId);
+
+        // Computed from the tracks (if all tracks have the same values, which is legit to not be the case)
+        static core::PartialDateTime getDate(ISession& session, ReleaseId id);
+        static std::optional<int> getYear(ISession& session, ReleaseId id);
+        static core::PartialDateTime getOriginalDate(ISession& session, ReleaseId id);
+        static std::optional<int> getOriginalYear(ISession& session, ReleaseId id);
+        static bool hasVariousCopyrights(ISession& session, ReleaseId id);
+        static std::optional<std::string> getCopyright(ISession& session, ReleaseId id);
+        static std::optional<std::string> getCopyrightURL(ISession& session, ReleaseId id);
+        static std::optional<std::size_t> getMeanBitrate(ISession& session, ReleaseId id);
+        static std::vector<core::media::Codec> getCodecs(ISession& session, ReleaseId id);
+        static std::chrono::milliseconds getDuration(ISession& session, ReleaseId id);
+        static Wt::WDateTime getAddedTime(ISession& session, ReleaseId id);
+        static Wt::WDateTime getLastWrittenTime(ISession& session, ReleaseId id);
+        static std::size_t getTrackCount(ISession& session, ReleaseId id);
+        static core::EnumSet<Advisory> getAdvisories(ISession& session, ReleaseId id);
 
         // Updates
-        static void updatePreferredArtwork(Session& session, ReleaseId id, ArtworkId artworkId);
-
-        std::vector<ObjectPtr<Cluster>> getClusters(ClusterTypeId clusterTypeId, std::size_t maxCount) const;
-
-        // Utility functions (if all tracks have the same values, which is legit to not be the case)
-        core::PartialDateTime getDate() const;
-        std::optional<int> getYear() const;
-        core::PartialDateTime getOriginalDate() const;
-        std::optional<int> getOriginalYear() const;
-        bool hasVariousCopyrights() const;
-        std::optional<std::string> getCopyright() const;
-        std::optional<std::string> getCopyrightURL() const;
-        std::size_t getMeanBitrate() const;
-        std::vector<core::media::Codec> getCodecs() const;
+        static void update(ISession& session, const Release& release);
+        static void updatePreferredArtwork(ISession& session, ReleaseId id, ArtworkId artworkId);
+        static void clearArtistLinks(ISession& session, ReleaseId id);
+        static void clearLabels(ISession& session, ReleaseId id);
+        static void clearCountries(ISession& session, ReleaseId id);
+        static void clearReleaseTypes(ISession& session, ReleaseId id);
+        static void addLabel(ISession& session, ReleaseId id, LabelId labelId);
+        static void addCountry(ISession& session, ReleaseId id, CountryId countryId);
+        static void addReleaseType(ISession& session, ReleaseId id, ReleaseTypeId releaseTypeId);
 
         // Accessors
         std::string_view getName() const { return _name; }
@@ -285,26 +267,11 @@ namespace lms::db
         std::optional<core::UUID> getMBID() const { return _MBID; }
         std::optional<core::UUID> getGroupMBID() const { return _groupMBID; }
         std::optional<std::size_t> getTotalDisc() const { return _totalDisc; } // the number of discs this release should have if complete
-        std::chrono::milliseconds getDuration() const;
-        Wt::WDateTime getAddedTime() const;
-        Wt::WDateTime getLastWrittenTime() const;
         std::string_view getArtistDisplayName() const { return _artistDisplayName; }
         bool isCompilation() const { return _isCompilation; }
-        std::size_t getTrackCount() const;
-        std::vector<ObjectPtr<ReleaseType>> getReleaseTypes() const;
-        std::vector<std::string> getLabelNames() const;
-        std::vector<std::string> getCountryNames() const;
-        std::vector<std::string> getReleaseTypeNames() const;
-        void visitLabels(const std::function<void(const Label::pointer& label)>& _func) const;
-        core::EnumSet<Advisory> getAdvisories() const;
         std::string_view getBarcode() const { return _barcode; }
         std::string_view getComment() const { return _comment; }
-        ObjectPtr<Artwork> getPreferredArtwork() const;
-        ArtworkId getPreferredArtworkId() const;
-        std::vector<ObjectPtr<Medium>> getMediums() const;
-        std::vector<ObjectPtr<ReleaseArtistLink>> getArtistLinks() const;
-        void visitArtistLinks(const std::function<void(const ObjectPtr<ReleaseArtistLink>& artistLink)>& visitor) const;
-        void visitTrackArtistLinks(TrackArtistLinkType linkType, const std::function<void(const ObjectPtr<TrackArtistLink>& artistLink)>& visitor) const;
+        ArtworkId getPreferredArtworkId() const { return _preferredArtworkId; }
 
         // Setters
         void setName(std::string_view name) { _name = name; }
@@ -313,54 +280,13 @@ namespace lms::db
         void setGroupMBID(const std::optional<core::UUID>& mbid) { _groupMBID = mbid; }
         void setTotalDisc(std::optional<int> totalDisc) { _totalDisc = totalDisc; }
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
-        void clearArtistLinks();
-        void addArtistLink(const ObjectPtr<ReleaseArtistLink>& artistLink);
         void setCompilation(bool value) { _isCompilation = value; }
-        void clearLabels();
-        void clearCountries();
-        void clearReleaseTypes();
-        void addLabel(ObjectPtr<Label> label);
-        void addCountry(ObjectPtr<Country> country);
-        void addReleaseType(ObjectPtr<ReleaseType> releaseType);
         void setBarcode(std::string_view barcode) { _barcode = barcode; }
         void setComment(std::string_view comment) { _comment = comment; }
-        void setPreferredArtwork(ObjectPtr<Artwork> artwork);
 
-        // Get the artists of this release
-        std::vector<ObjectPtr<Artist>> getArtists() const;
-        bool hasArtist(ArtistId artistId) const;
-        std::vector<ObjectPtr<Artist>> getTrackArtists(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
-        void visitTrackArtists(TrackArtistLinkType type, std::function<void(const ObjectPtr<Artist>&)> visitor) const;
-        std::vector<ArtistId> getTrackArtistIds(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
-        bool hasVariousArtists() const;
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _sortName, "sort_name");
-            Wt::Dbo::field(a, _MBID, "mbid");
-            Wt::Dbo::field(a, _groupMBID, "group_mbid");
-            Wt::Dbo::field(a, _totalDisc, "total_disc");
-            Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
-            Wt::Dbo::field(a, _isCompilation, "is_compilation");
-            Wt::Dbo::field(a, _barcode, "barcode");
-            Wt::Dbo::field(a, _comment, "comment");
-
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
-            Wt::Dbo::hasMany(a, _releaseArtistLinks, Wt::Dbo::ManyToOne, "release");
-            Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::hasMany(a, _labels, Wt::Dbo::ManyToMany, "release_label", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _releaseTypes, Wt::Dbo::ManyToMany, "release_release_type", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _countries, Wt::Dbo::ManyToMany, "release_country", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
+    protected:
+        Release() = default;
         Release(const std::string& name, const std::optional<core::UUID>& MBID = {});
-        static pointer create(Session& session, const std::string& name, const std::optional<core::UUID>& MBID = {});
-
-        core::PartialDateTime getDate(bool original) const;
-        std::optional<int> getYear(bool original) const;
 
         static constexpr std::size_t _maxNameLength{ 512 };
 
@@ -374,12 +300,7 @@ namespace lms::db
         std::string _barcode;
         std::string _comment;
 
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
-        Wt::Dbo::collection<Wt::Dbo::ptr<ReleaseArtistLink>> _releaseArtistLinks;
-        Wt::Dbo::ptr<Artwork> _preferredArtwork;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Label>> _labels;
-        Wt::Dbo::collection<Wt::Dbo::ptr<ReleaseType>> _releaseTypes;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Country>> _countries;
+        ArtworkId _preferredArtworkId;
     };
 
 } // namespace lms::db

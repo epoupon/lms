@@ -28,9 +28,10 @@
 #include <Wt/WTemplateFormView.h>
 #include <Wt/WTextArea.h>
 
+#include "core/Ascii.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/ScanSettings.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scanner/IScannerService.hpp"
@@ -86,7 +87,7 @@ namespace lms::ui
                     return Wt::WValidator::validate(input);
 
                 std::string inputStr{ input.toUTF8() };
-                if (std::all_of(std::cbegin(inputStr), std::cend(inputStr), [](char c) { return std::isspace(c); }))
+                if (std::all_of(std::cbegin(inputStr), std::cend(inputStr), core::ascii::isSpace))
                     return Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces") };
 
                 return Wt::WValidator::Result{ Wt::ValidationState::Valid };
@@ -142,7 +143,7 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                const db::ScanSettings::pointer scanSettings{ db::ScanSettings::find(LmsApp->getDbSession()) };
+                const std::optional<db::ScanSettings> scanSettings{ db::ScanSettings::find(LmsApp->getDbSession()) };
 
                 auto periodRow{ _updatePeriodModel->getRowFromValue(scanSettings->getUpdatePeriod()) };
                 if (periodRow)
@@ -184,50 +185,52 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                db::ScanSettings::pointer scanSettings{ db::ScanSettings::find(LmsApp->getDbSession()) };
+                std::optional<db::ScanSettings> scanSettings{ db::ScanSettings::find(LmsApp->getDbSession()) };
 
                 {
                     const auto updatePeriodRow{ _updatePeriodModel->getRowFromString(valueText(UpdatePeriodField)) };
                     if (updatePeriodRow)
-                        scanSettings.modify()->setUpdatePeriod(_updatePeriodModel->getValue(*updatePeriodRow));
+                        scanSettings->setUpdatePeriod(_updatePeriodModel->getValue(*updatePeriodRow));
                 }
 
                 {
                     const auto startTimeRow{ _updateStartTimeModel->getRowFromString(valueText(UpdateStartTimeField)) };
                     if (startTimeRow)
-                        scanSettings.modify()->setUpdateStartTime(_updateStartTimeModel->getValue(*startTimeRow));
+                        scanSettings->setUpdateStartTime(_updateStartTimeModel->getValue(*startTimeRow));
                 }
 
                 {
                     const bool skipSingleReleasePlayLists{ Wt::asNumber(value(SkipSingleReleasePlayListsField)) != 0 };
-                    scanSettings.modify()->setSkipSingleReleasePlayLists(skipSingleReleasePlayLists);
+                    scanSettings->setSkipSingleReleasePlayLists(skipSingleReleasePlayLists);
                 }
 
                 {
                     const bool allowMBIDArtistMerge{ Wt::asNumber(value(AllowMBIDArtistMergeField)) != 0 };
-                    scanSettings.modify()->setAllowMBIDArtistMerge(allowMBIDArtistMerge);
+                    scanSettings->setAllowMBIDArtistMerge(allowMBIDArtistMerge);
                 }
 
                 {
                     const bool artistImageFallbackToRelease{ Wt::asNumber(value(ArtistImageFallbackToReleaseField)) != 0 };
-                    scanSettings.modify()->setArtistImageFallbackToRelease(artistImageFallbackToRelease);
+                    scanSettings->setArtistImageFallbackToRelease(artistImageFallbackToRelease);
                 }
 
                 {
                     const auto recommendationEngineTypeRow{ _recommendationEngineTypeModel->getRowFromString(valueText(RecommendationEngineTypeField)) };
                     if (recommendationEngineTypeRow)
-                        scanSettings.modify()->setRecommendationEngineType(_recommendationEngineTypeModel->getValue(*recommendationEngineTypeRow));
+                        scanSettings->setRecommendationEngineType(_recommendationEngineTypeModel->getValue(*recommendationEngineTypeRow));
                 }
 
-                scanSettings.modify()->setExtraTagsToScan(extraTagsToScan);
-                scanSettings.modify()->setArtistTagDelimiters(artistDelimiters);
-                scanSettings.modify()->setDefaultTagDelimiters(defaultDelimiters);
+                scanSettings->setExtraTagsToScan(extraTagsToScan);
+                scanSettings->setArtistTagDelimiters(artistDelimiters);
+                scanSettings->setDefaultTagDelimiters(defaultDelimiters);
 
                 {
                     const std::string artists{ valueText(ArtistsToNotSplitField).toUTF8() };
                     std::vector<std::string_view> artistsToNotSplit{ core::stringUtils::splitString(artists, '\n') };
-                    scanSettings.modify()->setArtistsToNotSplit(artistsToNotSplit);
+                    scanSettings->setArtistsToNotSplit(artistsToNotSplit);
                 }
+
+                db::ScanSettings::update(LmsApp->getDbSession(), *scanSettings);
             }
 
         private:
@@ -531,7 +534,7 @@ namespace lms::ui
                 core::Service<recommendation::IRecommendationService>::get()->requestReload();
                 // Don't want the scanner to go on with wrong settings
                 core::Service<scanner::IScannerService>::get()->requestReload();
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.settings-saved"));
+                LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.settings-saved"));
             }
 
             // Udate the view: Delete any validation message in the view, etc.

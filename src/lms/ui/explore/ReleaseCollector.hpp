@@ -25,7 +25,6 @@
 
 #include "DatabaseCollectorBase.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ReleaseId.hpp"
 
@@ -41,7 +40,7 @@ namespace lms::ui
     public:
         using DatabaseCollectorBase::DatabaseCollectorBase;
 
-        void get(db::Range range, bool& moreResults, const std::function<void(const db::ObjectPtr<db::Release>&)>& func);
+        void get(db::Range range, bool& moreResults, const std::function<void(const db::Release&)>& func);
         void reset() { _randomReleases.reset(); }
 
     private:

@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
 
 #include "audio/AudioProperties.hpp"
@@ -27,7 +28,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 }
 
 namespace lms::api::subsonic
@@ -36,7 +37,8 @@ namespace lms::api::subsonic
     {
         std::filesystem::path path;
         audio::AudioProperties audioProperties;
+        std::size_t fileBitrate{};
     };
 
-    AudioFileInfo getAudioFileInfo(db::Session& session, AudioFileId audioFileId); // throw RequestedDataNotFoundError on failure
+    AudioFileInfo getAudioFileInfo(db::ISession& session, AudioFileId audioFileId); // throw RequestedDataNotFoundError on failure
 } // namespace lms::api::subsonic

@@ -21,7 +21,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
@@ -161,7 +161,7 @@ namespace lms::scanner
 
         using IdType = typename T::IdType;
 
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
 
         std::vector<IdType> entries;
         while (!_abortScan)
@@ -178,7 +178,7 @@ namespace lms::scanner
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                session.destroy<T>(entries);
+                T::destroy(session, entries);
             }
 
             context.currentStepStats.processedElems += entries.size();

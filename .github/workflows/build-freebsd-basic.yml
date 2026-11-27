@@ -10,7 +10,7 @@ jobs:
       with:
         usesh: true
         prepare: |
-          pkg install -y cmake pkgconf boost-libs ffmpeg stb libconfig taglib libarchive xxhash wt googletest onnxruntime pugixml pulseaudio
+          pkg install -y cmake pkgconf boost-libs ffmpeg stb libconfig taglib libarchive utf8proc xxhash wt googletest onnxruntime pugixml pulseaudio
 
         run: |
           mkdir build

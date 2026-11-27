@@ -20,12 +20,13 @@
 #include "LastFmBackend.hpp"
 
 #include <map>
+#include <optional>
 
 #include "core/IConfig.hpp"
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 
@@ -64,10 +65,10 @@ namespace lms::scrobbling::lastFm
 
     bool LastFmBackend::canBeScrobbled(db::TrackId trackId, std::optional<std::chrono::seconds> duration) const
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        const db::Track::pointer track{ db::Track::find(session, trackId) };
+        const std::optional<db::Track> track{ db::Track::find(session, trackId) };
         if (!track)
             return false;
 
@@ -86,9 +87,9 @@ namespace lms::scrobbling::lastFm
         // not implemented
     }
 
-    void LastFmBackend::requestImmediateExport()
+    void LastFmBackend::requestImmediateExport(db::UserId userId)
     {
-        _synchronizer.requestImmediateExport();
+        _synchronizer.requestImmediateExport(userId);
     }
 
     void LastFmBackend::initiateLastFmLink(db::UserId userId,
@@ -126,7 +127,7 @@ namespace lms::scrobbling::lastFm
             const std::string authUrl{ _authBaseUrl + "/api/auth/?api_key=" + apiKeyStr + "&token=" + token };
             onSuccess(authUrl);
         };
-        request.onFailureFunc = [onFailure = std::move(onFailure)] {
+        request.onFailureFunc = [onFailure = std::move(onFailure)](std::optional<int>) {
             LMS_LOG_LASTFM(WARNING, "auth.getToken: HTTP request failed");
             onFailure();
         };
@@ -170,13 +171,14 @@ namespace lms::scrobbling::lastFm
             }
 
             {
-                db::Session& session{ _db.getTLSSession() };
+                db::ISession& session{ _db.getTLSSession() };
                 auto transaction{ session.createWriteTransaction() };
-                if (db::User::pointer user{ db::User::find(session, userId) })
+                if (std::optional<db::User> user{ db::User::find(session, userId) })
                 {
-                    user.modify()->setLastFmApiKey(pending.apiKey);
-                    user.modify()->setLastFmApiSecret(pending.apiSecret);
-                    user.modify()->setLastFmSessionKey(sessionKey);
+                    user->setLastFmApiKey(pending.apiKey);
+                    user->setLastFmApiSecret(pending.apiSecret);
+                    user->setLastFmSessionKey(sessionKey);
+                    db::User::update(session, *user);
                 }
             }
 
@@ -188,7 +190,7 @@ namespace lms::scrobbling::lastFm
             LMS_LOG_LASTFM(INFO, "Last.fm account linked for user " << userId.toString());
             onSuccess();
         };
-        request.onFailureFunc = [onFailure = std::move(onFailure)] {
+        request.onFailureFunc = [onFailure = std::move(onFailure)](std::optional<int>) {
             LMS_LOG_LASTFM(WARNING, "auth.getSession: HTTP request failed");
             onFailure();
         };

@@ -11,6 +11,7 @@ ARG BUILD_PACKAGES="\
 	libarchive \
 	libconfig \
 	libpulse \
+	libutf8proc \
 	make \
 	onnxruntime-cpu \
 	pkgconfig \

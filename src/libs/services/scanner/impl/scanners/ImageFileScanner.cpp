@@ -19,12 +19,13 @@
 
 #include "ImageFileScanner.hpp"
 
+#include <array>
 #include <optional>
 
 #include "core/ILogger.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/MediaLibrary.hpp"
@@ -73,14 +74,14 @@ namespace lms::scanner
 
         ImageFileScanOperation::OperationResult ImageFileScanOperation::processResult()
         {
-            db::Session& dbSession{ getDb().getTLSSession() };
-            db::Image::pointer image{ db::Image::find(dbSession, getFilePath()) };
+            db::ISession& dbSession{ getDb().getTLSSession() };
+            std::optional<db::Image> image{ db::Image::find(dbSession, getFilePath()) };
 
             if (!_parsedImage)
             {
                 if (image)
                 {
-                    image.remove();
+                    db::Image::destroy(dbSession, std::array{ image->getId() });
 
                     LMS_LOG(DBUPDATER, DEBUG, "Removed image " << getFilePath());
                     return OperationResult::Removed;
@@ -92,25 +93,26 @@ namespace lms::scanner
             const bool added{ !image };
             if (added)
             {
-                image = dbSession.create<db::Image>(getFilePath());
-                dbSession.create<db::Artwork>(image);
+                image = db::Image::create(dbSession, getFilePath());
+                db::Artwork::create(dbSession, image->getId());
             }
             else if (image->getLastWriteTime() != getLastWriteTime()
                      || image->getFileSize() != getFileSize())
             {
-                if (auto artwork{ db::Artwork::find(dbSession, image->getId()) })
-                    artwork.remove();
-                dbSession.create<db::Artwork>(image);
+                if (const std::optional<db::Artwork> artwork{ db::Artwork::find(dbSession, image->getId()) })
+                    db::Artwork::destroy(dbSession, std::array{ artwork->getId() });
+                db::Artwork::create(dbSession, image->getId());
             }
 
             const image::ImageDimensions dimensions{ _parsedImage->dimensions.value_or(image::ImageDimensions{}) };
-            image.modify()->setLastWriteTime(getLastWriteTime());
-            image.modify()->setFileSize(getFileSize());
-            image.modify()->setHeight(dimensions.height);
-            image.modify()->setWidth(dimensions.width);
-            image.modify()->setFormat(_parsedImage->format);
-            db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
-            image.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary));
+            image->setLastWriteTime(getLastWriteTime());
+            image->setFileSize(getFileSize());
+            image->setHeight(dimensions.height);
+            image->setWidth(dimensions.width);
+            image->setFormat(_parsedImage->format);
+            std::optional<db::MediaLibrary> mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
+            image->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary).getId());
+            db::Image::update(dbSession, *image);
 
             if (added)
             {
@@ -146,10 +148,10 @@ namespace lms::scanner
 
     bool ImageFileScanner::needsScan(const FileToScan& file) const
     {
-        db::Session& dbSession{ _db.getTLSSession() };
+        db::ISession& dbSession{ _db.getTLSSession() };
         auto transaction{ _db.getTLSSession().createReadTransaction() };
 
-        const db::Image::pointer image{ db::Image::find(dbSession, file.filePath) };
+        const std::optional<db::Image> image{ db::Image::find(dbSession, file.filePath) };
         return (!image || image->getLastWriteTime() != file.lastWriteTime);
     }
 

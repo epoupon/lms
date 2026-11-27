@@ -22,8 +22,9 @@
 static_assert(LMS_CHECK_TRANSACTION_ACCESSES, "File should be excluded from build");
 
 #include <cassert>
+#include <vector>
 
-#include "database/Session.hpp"
+#include <Wt/Dbo/Session.h>
 
 namespace lms::db
 {
@@ -79,19 +80,9 @@ namespace lms::db
         assert(transactionStack.back().session == &session);
     }
 
-    void TransactionChecker::checkWriteTransaction(const Session& session)
-    {
-        checkWriteTransaction(*session.getDboSession());
-    }
-
     void TransactionChecker::checkReadTransaction(const Wt::Dbo::Session& session)
     {
         assert(!transactionStack.empty());
         assert(transactionStack.back().session == &session);
-    }
-
-    void TransactionChecker::checkReadTransaction(const Session& session)
-    {
-        checkReadTransaction(*session.getDboSession());
     }
 } // namespace lms::db

@@ -19,14 +19,15 @@
 
 #include "ArtistInfoFileScanner.hpp"
 
+#include <array>
 #include <fstream>
 #include <system_error>
 
+#include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
-#include "core/String.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/MediaLibrary.hpp"
@@ -90,13 +91,13 @@ namespace lms::scanner
 
         ArtistInfoFileScanOperation::OperationResult ArtistInfoFileScanOperation::processResult()
         {
-            db::Session& dbSession{ getDb().getTLSSession() };
-            db::ArtistInfo::pointer artistInfo{ db::ArtistInfo::find(dbSession, getFilePath()) };
+            db::ISession& dbSession{ getDb().getTLSSession() };
+            std::optional<db::ArtistInfo> artistInfo{ db::ArtistInfo::find(dbSession, getFilePath()) };
             if (!_parsedArtistInfo)
             {
                 if (artistInfo)
                 {
-                    artistInfo.remove();
+                    db::ArtistInfo::destroy(dbSession, std::array{ artistInfo->getId() });
 
                     LMS_LOG(DBUPDATER, DEBUG, "Removed artist info file " << getFilePath());
                     return OperationResult::Removed;
@@ -108,27 +109,28 @@ namespace lms::scanner
             const bool added{ !artistInfo };
             if (!artistInfo)
             {
-                artistInfo = dbSession.create<db::ArtistInfo>();
-                artistInfo.modify()->setAbsoluteFilePath(getFilePath());
+                artistInfo = db::ArtistInfo::create(dbSession);
+                artistInfo->setAbsoluteFilePath(getFilePath());
             }
 
-            artistInfo.modify()->setScanVersion(getScannerSettings().artistInfoScanVersion);
-            artistInfo.modify()->setName(_parsedArtistInfo->name);
-            artistInfo.modify()->setSortName(_parsedArtistInfo->sortName);
-            artistInfo.modify()->setLastWriteTime(getLastWriteTime());
-            artistInfo.modify()->setType(_parsedArtistInfo->type);
-            artistInfo.modify()->setGender(_parsedArtistInfo->gender);
-            artistInfo.modify()->setDisambiguation(_parsedArtistInfo->disambiguation);
-            artistInfo.modify()->setBiography(_parsedArtistInfo->biography);
+            artistInfo->setScanVersion(getScannerSettings().artistInfoScanVersion);
+            artistInfo->setName(_parsedArtistInfo->name);
+            artistInfo->setSortName(_parsedArtistInfo->sortName);
+            artistInfo->setLastWriteTime(getLastWriteTime());
+            artistInfo->setType(_parsedArtistInfo->type);
+            artistInfo->setGender(_parsedArtistInfo->gender);
+            artistInfo->setDisambiguation(_parsedArtistInfo->disambiguation);
+            artistInfo->setBiography(_parsedArtistInfo->biography);
 
-            db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
-            artistInfo.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary));
+            std::optional<db::MediaLibrary> mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
+            artistInfo->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary).getId());
 
             const Artist artistMetadata{ _parsedArtistInfo->mbid, _parsedArtistInfo->name, _parsedArtistInfo->sortName.empty() ? std::nullopt : std::make_optional<std::string>(_parsedArtistInfo->sortName) };
 
-            const db::Artist::pointer artist{ helpers::getOrCreateArtist(dbSession, artistMetadata, helpers::AllowFallbackOnMBIDEntry{ getScannerSettings().allowArtistMBIDFallback }) };
-            artistInfo.modify()->setArtist(artist);
-            artistInfo.modify()->setMBIDMatched(_parsedArtistInfo->mbid.has_value() && _parsedArtistInfo->mbid == artist->getMBID());
+            const db::Artist artist{ helpers::getOrCreateArtist(dbSession, artistMetadata, helpers::AllowFallbackOnMBIDEntry{ getScannerSettings().allowArtistMBIDFallback }) };
+            artistInfo->setArtist(artist.getId());
+            artistInfo->setMBIDMatched(_parsedArtistInfo->mbid.has_value() && _parsedArtistInfo->mbid == artist.getMBID());
+            db::ArtistInfo::update(dbSession, *artistInfo);
 
             if (added)
             {
@@ -166,12 +168,12 @@ namespace lms::scanner
     {
         // Special case: only files named "artist.nfo" are compatible with this scanner
         // Hack here since the scanner framework only handle extensions (the discover count is not accurate)
-        if (!core::stringUtils::stringCaseInsensitiveEqual(file.filePath.stem().string(), "artist"))
+        if (!core::ascii::caseInsensitiveEqual(file.filePath.stem().string(), "artist"))
             return false;
 
-        db::Session& dbSession{ _db.getTLSSession() };
+        db::ISession& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
-        db::ArtistInfo::pointer artistInfo{ db::ArtistInfo::find(dbSession, file.filePath) };
+        std::optional<db::ArtistInfo> artistInfo{ db::ArtistInfo::find(dbSession, file.filePath) };
 
         return !artistInfo
             || artistInfo->getLastWriteTime() != file.lastWriteTime

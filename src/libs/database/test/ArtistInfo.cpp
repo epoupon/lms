@@ -45,13 +45,13 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const ArtistInfo::pointer dbArtistInfo{ ArtistInfo::find(session, artistInfo.getId()) };
+            const std::optional<ArtistInfo> dbArtistInfo{ ArtistInfo::find(session, artistInfo.getId()) };
 
             EXPECT_EQ(dbArtistInfo->getAbsoluteFilePath(), "");
             EXPECT_EQ(dbArtistInfo->getLastWriteTime(), Wt::WDateTime{});
 
-            EXPECT_EQ(dbArtistInfo->getArtist(), Artist::pointer{});
-            EXPECT_EQ(dbArtistInfo->getDirectory(), Directory::pointer{});
+            EXPECT_FALSE(dbArtistInfo->getArtistId().isValid());
+            EXPECT_FALSE(dbArtistInfo->getDirectoryId().isValid());
             EXPECT_EQ(dbArtistInfo->getType(), "");
             EXPECT_EQ(dbArtistInfo->getGender(), "");
             EXPECT_EQ(dbArtistInfo->getDisambiguation(), "");
@@ -66,30 +66,30 @@ namespace lms::db::tests
         // Now change some values
         {
             auto transaction{ session.createWriteTransaction() };
-            ArtistInfo::pointer dbArtistInfo{ ArtistInfo::find(session, artistInfo.getId()) };
+            std::optional<ArtistInfo> dbArtistInfo{ ArtistInfo::find(session, artistInfo.getId()) };
 
-            dbArtistInfo.modify()->setAbsoluteFilePath("/tmp/artist.nfo");
-            dbArtistInfo.modify()->setLastWriteTime(dateTime);
+            dbArtistInfo->setAbsoluteFilePath("/tmp/artist.nfo");
+            dbArtistInfo->setLastWriteTime(dateTime);
 
-            dbArtistInfo.modify()->setArtist(artist.get());
-            dbArtistInfo.modify()->setDirectory(directory.get());
-            dbArtistInfo.modify()->setType("MyType");
-            dbArtistInfo.modify()->setGender("MyGender");
-            dbArtistInfo.modify()->setDisambiguation("MyDisambiguation");
-            dbArtistInfo.modify()->setBiography("MyBiography");
+            dbArtistInfo->setArtist(artist.getId());
+            dbArtistInfo->setDirectory(directory.getId());
+            dbArtistInfo->setType("MyType");
+            dbArtistInfo->setGender("MyGender");
+            dbArtistInfo->setDisambiguation("MyDisambiguation");
+            dbArtistInfo->setBiography("MyBiography");
+            ArtistInfo::update(session, *dbArtistInfo);
         }
 
         // Check values are reflected
         {
             auto transaction{ session.createReadTransaction() };
 
-            const ArtistInfo::pointer dbArtistInfo{ ArtistInfo::find(session, artistInfo.getId()) };
+            const std::optional<ArtistInfo> dbArtistInfo{ ArtistInfo::find(session, artistInfo.getId()) };
 
             EXPECT_EQ(dbArtistInfo->getAbsoluteFilePath(), "/tmp/artist.nfo");
             EXPECT_EQ(dbArtistInfo->getLastWriteTime(), dateTime);
 
-            EXPECT_EQ(dbArtistInfo->getArtist(), artist.get());
-            EXPECT_EQ(dbArtistInfo->getDirectory(), directory.get());
+            EXPECT_EQ(dbArtistInfo->getArtistId(), artist.getId());
             EXPECT_EQ(dbArtistInfo->getDirectoryId(), directory.getId());
             EXPECT_EQ(dbArtistInfo->getType(), "MyType");
             EXPECT_EQ(dbArtistInfo->getGender(), "MyGender");
@@ -101,9 +101,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            ArtistInfo::find(session, artist.getId(), [&](const ArtistInfo::pointer& dbArtistInfo) {
-                ASSERT_NE(dbArtistInfo, ArtistInfo::pointer{});
-                EXPECT_EQ(dbArtistInfo->getId(), artistInfo.getId());
+            ArtistInfo::find(session, artist.getId(), [&](const ArtistInfo& dbArtistInfo) {
+                EXPECT_EQ(dbArtistInfo.getId(), artistInfo.getId());
                 visited = true;
             });
             EXPECT_TRUE(visited);
@@ -117,16 +116,18 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            artistInfo.get().modify()->setArtist(artist.get());
-            artistInfo.get().modify()->setName("MyArtist");
-            artistInfo.get().modify()->setMBIDMatched(false);
+            std::optional<ArtistInfo> updatedArtistInfo{ artistInfo.get() };
+            updatedArtistInfo->setArtist(artist.getId());
+            updatedArtistInfo->setName("MyArtist");
+            updatedArtistInfo->setMBIDMatched(false);
+            ArtistInfo::update(session, *updatedArtistInfo);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            ArtistInfo::findArtistNameNoLongerMatch(session, std::nullopt, [&](const ArtistInfo::pointer&) {
+            ArtistInfo::findArtistNameNoLongerMatch(session, std::nullopt, [&](const ArtistInfo&) {
                 visited = true;
             });
             ASSERT_FALSE(visited);
@@ -134,14 +135,16 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            artist.get().modify()->setName("MyArtist2");
+            std::optional<Artist> updatedArtist{ artist.get() };
+            updatedArtist->setName("MyArtist2");
+            Artist::update(session, *updatedArtist);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            ArtistInfo::findArtistNameNoLongerMatch(session, std::nullopt, [&](const ArtistInfo::pointer&) {
+            ArtistInfo::findArtistNameNoLongerMatch(session, std::nullopt, [&](const ArtistInfo&) {
                 visited = true;
             });
             ASSERT_TRUE(visited);
@@ -155,15 +158,17 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            artistInfo1.get().modify()->setArtist(artist1.get());
-            artistInfo1.get().modify()->setName("MyArtist");
+            std::optional<ArtistInfo> updatedArtistInfo1{ artistInfo1.get() };
+            updatedArtistInfo1->setArtist(artist1.getId());
+            updatedArtistInfo1->setName("MyArtist");
+            ArtistInfo::update(session, *updatedArtistInfo1);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            ArtistInfo::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const ArtistInfo::pointer&) {
+            ArtistInfo::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const ArtistInfo&) {
                 visited = true;
             });
             ASSERT_FALSE(visited);
@@ -173,7 +178,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            ArtistInfo::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const ArtistInfo::pointer&) {
+            ArtistInfo::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const ArtistInfo&) {
                 visited = true;
             });
             ASSERT_TRUE(visited);
@@ -184,15 +189,17 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            artistInfo2.get().modify()->setArtist(artist2.get());
-            artistInfo2.get().modify()->setName("MyArtist");
+            std::optional<ArtistInfo> updatedArtistInfo2{ artistInfo2.get() };
+            updatedArtistInfo2->setArtist(artist2.getId());
+            updatedArtistInfo2->setName("MyArtist");
+            ArtistInfo::update(session, *updatedArtistInfo2);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            ArtistInfo::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const ArtistInfo::pointer&) {
+            ArtistInfo::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const ArtistInfo&) {
                 visited = true;
             });
             ASSERT_TRUE(visited);
@@ -202,7 +209,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            ArtistInfo::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const ArtistInfo::pointer&) {
+            ArtistInfo::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const ArtistInfo&) {
                 visited = true;
             });
             ASSERT_TRUE(visited);
@@ -216,7 +223,9 @@ namespace lms::db::tests
         const std::filesystem::path absoluteFilePath{ "/path/to/artist.nfo" };
         {
             auto transaction{ session.createWriteTransaction() };
-            artistInfo.get().modify()->setAbsoluteFilePath(absoluteFilePath);
+            std::optional<ArtistInfo> updatedArtistInfo{ artistInfo.get() };
+            updatedArtistInfo->setAbsoluteFilePath(absoluteFilePath);
+            ArtistInfo::update(session, *updatedArtistInfo);
         }
 
         {

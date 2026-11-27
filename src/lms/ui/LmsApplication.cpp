@@ -40,7 +40,7 @@
 #include "core/String.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Release.hpp"
@@ -111,6 +111,7 @@ namespace lms::ui
             res->use(appRoot + "settings-lastfm");
             res->use(appRoot + "settings-listenbrainz");
             res->use(appRoot + "settings-password");
+            res->use(appRoot + "settings-scrobbling");
             res->use(appRoot + "settings-subsonic");
             res->use(appRoot + "settings-ui");
             res->use(appRoot + "tracklist");
@@ -194,17 +195,20 @@ namespace lms::ui
         return _db;
     }
 
-    db::Session& LmsApplication::getDbSession()
+    db::ISession& LmsApplication::getDbSession()
     {
         return _db.getTLSSession();
     }
 
-    db::User::pointer LmsApplication::getUser()
+    db::User LmsApplication::getUser()
     {
-        if (!_user)
-            return {};
+        assert(_user);
 
-        return db::User::find(getDbSession(), _user->userId);
+        std::optional<db::User> user{ db::User::find(getDbSession(), _user->userId) };
+        if (!user)
+            throw UserNotFoundException{};
+
+        return *user;
     }
 
     db::UserId LmsApplication::getUserId() const
@@ -252,7 +256,7 @@ namespace lms::ui
         require("js/mediaplayer.js");
 
 #if LMS_WT_HAS_FAVICON
-        setFavicon(std::make_unique<Wt::WUrlFavicon>(resolveRelativeUrl("images/favicon.svg")));
+        setFavicon(std::make_unique<Wt::WUrlFavicon>(resolveRelativeUrl(std::string{ core::Service<core::IConfig>::get()->getString("ui-favicon-url", "images/favicon.svg") })));
 #endif // LMS_WT_HAS_FAVICON
 
         setTitle();
@@ -380,7 +384,7 @@ namespace lms::ui
     {
         auto transaction{ getDbSession().createReadTransaction() };
 
-        const db::User::pointer user{ db::User::find(getDbSession(), userId) };
+        const std::optional<db::User> user{ db::User::find(getDbSession(), userId) };
         if (!user)
             throw core::LmsException{ "Internal error" }; // Do not put details here at it may appear on the user rendered html
 
@@ -537,7 +541,7 @@ namespace lms::ui
         if (isAdmin)
         {
             _scannerEvents.scanComplete.connect([this](const scanner::ScanStats& stats) {
-                notifyMsg(Notification::Type::Info,
+                notifyMsg(notification::Type::Info,
                           Wt::WString::tr("Lms.Admin.Database.scan-complete")
                               .arg(static_cast<unsigned>(stats.getTotalFileCount()))
                               .arg(static_cast<unsigned>(stats.additions))
@@ -598,7 +602,7 @@ namespace lms::ui
             WApplication::setTitle(title);
     }
 
-    void LmsApplication::notifyMsg(Notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration)
+    void LmsApplication::notifyMsg(notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration)
     {
         LMS_LOG(UI, INFO, "Notifying message '" << message.toUTF8() << "'");
         _notificationContainer->add(type, message, duration);

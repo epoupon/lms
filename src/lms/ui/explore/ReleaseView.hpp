@@ -19,24 +19,24 @@
 
 #pragma once
 
+#include <optional>
 #include <span>
 #include <variant>
 #include <vector>
 
-#include "database/Object.hpp"
 #include "database/objects/ArtworkId.hpp"
+#include "database/objects/Medium.hpp"
+#include "database/objects/Movement.hpp"
 #include "database/objects/ReleaseId.hpp"
+#include "database/objects/Track.hpp"
 #include "database/objects/TrackId.hpp"
+#include "database/objects/Work.hpp"
 
 #include "common/Template.hpp"
 
 namespace lms::db
 {
-    class Medium;
-    class Movement;
     class Release;
-    class Track;
-    class Work;
 } // namespace lms::db
 
 namespace lms::ui
@@ -52,35 +52,35 @@ namespace lms::ui
     private:
         void refreshView();
         void refreshArtwork(db::ArtworkId artworkId);
-        void refreshReleaseArtists(const db::ObjectPtr<db::Release>& release);
-        void refreshCopyright(const db::ObjectPtr<db::Release>& release);
-        void refreshLinks(const db::ObjectPtr<db::Release>& release);
-        void refreshOtherVersions(const db::ObjectPtr<db::Release>& release);
+        void refreshReleaseArtists(const db::Release& release);
+        void refreshCopyright(const db::Release& release);
+        void refreshLinks(const db::Release& release);
+        void refreshOtherVersions(const db::Release& release);
         void refreshRelatedReleases(std::span<const db::ReleaseId> similarReleaseIds);
 
         struct TrackInfo
         {
-            db::ObjectPtr<db::Track> track;
-            db::ObjectPtr<db::Work> work;         // first work, if any
-            db::ObjectPtr<db::Movement> movement; // first movement, if any
+            db::Track track;
+            std::optional<db::Work> work;         // first work, if any
+            std::optional<db::Movement> movement; // first movement, if any
         };
 
         using TrackInfoList = std::vector<TrackInfo>;
         struct WorkInfo
         {
-            db::ObjectPtr<db::Work> work;
+            std::optional<db::Work> work;
             TrackInfoList tracks;
         };
 
         struct DiscInfo
         {
-            db::ObjectPtr<db::Medium> medium;
+            db::Medium medium;
             using Segment = std::variant<WorkInfo, TrackInfoList>;
             std::vector<Segment> segments;
         };
-        void refreshDiscs(const db::ObjectPtr<db::Release>& release, std::span<const DiscInfo> discoInfoList);
-        static std::vector<DiscInfo> createDiscInfoList(const db::ObjectPtr<db::Release>& release);
-        static DiscInfo createDiscInfo(const db::ObjectPtr<db::Medium>& medium);
+        void refreshDiscs(const db::Release& release, std::span<const DiscInfo> discoInfoList);
+        static std::vector<DiscInfo> createDiscInfoList(const db::Release& release);
+        static DiscInfo createDiscInfo(const db::Medium& medium);
 
         static void appendTrackIds(std::vector<db::TrackId>& trackIds, const DiscInfo& disc);
         static void appendTrackIds(std::vector<db::TrackId>& trackIds, const TrackInfoList& tracks);
@@ -92,7 +92,7 @@ namespace lms::ui
         };
         void addDisc(Wt::WContainerWidget* container, const DiscInfo& discInfo, DisplayOptions displayOptions);
 
-        static TrackInfoList collectMediumTrackInfoList(const db::ObjectPtr<db::Medium>& medium);
+        static TrackInfoList collectMediumTrackInfoList(const db::Medium& medium);
 
         Wt::WContainerWidget* addSegment(Wt::WContainerWidget* container, const Wt::WString& title, db::ArtworkId artworkId, std::span<const db::TrackId> trackIds, const char* segmentTemplate);
         void addTrackEntries(Wt::WContainerWidget* container, std::span<const TrackInfo> tracks, bool displayTrackArtists);

@@ -23,7 +23,7 @@
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 #include "services/auth/Types.hpp"
 
@@ -51,10 +51,10 @@ namespace lms::auth
 
         db::User::PasswordHash passwordHash;
         {
-            db::Session& session{ getDbSession() };
+            db::ISession& session{ getDbSession() };
             auto transaction{ session.createReadTransaction() };
 
-            const db::User::pointer user{ db::User::find(session, loginName) };
+            const std::optional<db::User> user{ db::User::find(session, loginName) };
             if (!user)
             {
                 LMS_LOG(AUTH, DEBUG, "hashing random stuff");
@@ -81,11 +81,14 @@ namespace lms::auth
             const db::User::PasswordHash updatedPasswordHash{ hashPassword(password) };
 
             {
-                db::Session& session{ getDbSession() };
+                db::ISession& session{ getDbSession() };
                 auto transaction{ session.createWriteTransaction() };
 
-                if (db::User::pointer user{ db::User::find(session, loginName) })
-                    user.modify()->setPasswordHash(updatedPasswordHash);
+                if (std::optional<db::User> user{ db::User::find(session, loginName) })
+                {
+                    user->setPasswordHash(updatedPasswordHash);
+                    db::User::update(session, *user);
+                }
             }
         }
 
@@ -116,10 +119,10 @@ namespace lms::auth
         const db::User::PasswordHash passwordHash{ hashPassword(newPassword) };
 
         {
-            db::Session& session{ getDbSession() };
+            db::ISession& session{ getDbSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            db::User::pointer user{ db::User::find(session, userId) };
+            std::optional<db::User> user{ db::User::find(session, userId) };
             if (!user)
                 throw Exception{ "User not found!" };
 
@@ -133,7 +136,8 @@ namespace lms::auth
                 throw PasswordMustMatchLoginNameException{};
             }
 
-            user.modify()->setPasswordHash(passwordHash);
+            user->setPasswordHash(passwordHash);
+            db::User::update(session, *user);
         }
     }
 

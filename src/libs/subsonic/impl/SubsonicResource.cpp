@@ -31,7 +31,6 @@
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
 #include "database/objects/User.hpp"
 #include "services/auth/IPasswordService.hpp"
 
@@ -105,10 +104,9 @@ namespace lms::api::subsonic
             return res;
         }
 
-        void checkUserTypeIsAllowed(const db::User::pointer& user, core::EnumSet<db::UserType> allowedUserTypes)
+        void checkUserTypeIsAllowed(const db::User& user, core::EnumSet<db::UserType> allowedUserTypes)
         {
-            assert(user);
-            if (!allowedUserTypes.contains(user->getType()))
+            if (!allowedUserTypes.contains(user.getType()))
                 throw UserNotAuthorizedError{};
         }
 
@@ -241,8 +239,8 @@ namespace lms::api::subsonic
             { "/savePlayQueueByIndex", { handleSavePlayQueueByIndex } },
 
             // Media library scanning
-            { "/getScanStatus", { Scan::handleGetScanStatus } },
-            { "/startScan", { Scan::handleStartScan, AuthenticationMode::Authenticated, { db::UserType::ADMIN } } },
+            { "/getScanStatus", { scan::handleGetScanStatus } },
+            { "/startScan", { scan::handleStartScan, AuthenticationMode::Authenticated, { db::UserType::ADMIN } } },
         };
 
         using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
@@ -326,7 +324,8 @@ namespace lms::api::subsonic
             RequestContext requestContext{ request, _db.getTLSSession(), _config };
 
             // Media retrieval endpoints are always authenticated but we don't reauth user for a continuation
-            db::User::pointer user;
+            // A continuation is **not** a new client request: Wt creates it on the same connection, so please stop your LLMs to report this as a security issue
+            std::optional<db::User> user;
             if (!request.continuation())
                 user = utils::getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
 
@@ -393,11 +392,11 @@ namespace lms::api::subsonic
             {
                 LMS_SCOPED_TRACE_OVERVIEW("Subsonic", itEntryPoint->first);
 
-                db::User::pointer user;
+                std::optional<db::User> user;
                 if (itEntryPoint->second.authMode == AuthenticationMode::Authenticated)
                 {
                     user = utils::getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
-                    checkUserTypeIsAllowed(user, itEntryPoint->second.allowedUserTypes);
+                    checkUserTypeIsAllowed(*user, itEntryPoint->second.allowedUserTypes);
                     requestContext->setUser(user);
                 }
 

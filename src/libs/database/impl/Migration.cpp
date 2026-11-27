@@ -28,17 +28,17 @@
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
-#include "database/objects/ScanSettings.hpp"
+#include "database/IdType.hpp"
 
 #include "Db.hpp"
+#include "Session.hpp"
 #include "Utils.hpp"
 
 namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 117 };
+        static constexpr Version LMS_DATABASE_VERSION{ 120 };
     }
 
     VersionInfo::VersionInfo()
@@ -48,7 +48,7 @@ namespace lms::db
 
     VersionInfo::pointer VersionInfo::getOrCreate(Session& session)
     {
-        session.checkWriteTransaction();
+        checkWriteTransaction(session);
 
         pointer versionInfo{ utils::fetchQuerySingleResult(session.getDboSession()->find<VersionInfo>()) };
         if (!versionInfo)
@@ -59,13 +59,13 @@ namespace lms::db
 
     VersionInfo::pointer VersionInfo::get(Session& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         return utils::fetchQuerySingleResult(session.getDboSession()->find<VersionInfo>());
     }
 } // namespace lms::db
 
-namespace lms::db::Migration
+namespace lms::db::migration
 {
     class ScopedNoForeignKeys
     {
@@ -73,11 +73,11 @@ namespace lms::db::Migration
         ScopedNoForeignKeys(Db& db)
             : _db{ db }
         {
-            _db.executeSql("PRAGMA foreign_keys=OFF");
+            _db.executeOutsideTransaction("PRAGMA foreign_keys=OFF");
         }
         ~ScopedNoForeignKeys()
         {
-            _db.executeSql("PRAGMA foreign_keys=ON");
+            _db.executeOutsideTransaction("PRAGMA foreign_keys=ON");
         }
 
     private:
@@ -2194,15 +2194,132 @@ GROUP BY c.canonical_id, s.backend)");
         utils::executeCommand(*session.getDboSession(), R"(DELETE FROM ui_state WHERE item IN ('filters_media_library_id', 'filters_label_id', 'filters_release_type_id', 'filters_codec', 'filters_genre_id', 'filters_grouping_id', 'filters_language_id', 'filters_mood_id'))");
     }
 
-    bool doDbMigration(Session& session)
+    void migrateFromV117(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        // Play queues now hold their tracks in an internal track list (playqueue_track allowed no duplicates and kept no order)
+        // Existing play queues (UI and Subsonic) are just dropped, along with every internal track list
+        // Foreign keys are off during migrations: delete the entries explicitly
+        utils::executeCommand(dboSession, "DELETE FROM tracklist_entry WHERE tracklist_id IN (SELECT id FROM tracklist WHERE type = 1)");
+        utils::executeCommand(dboSession, "DELETE FROM tracklist WHERE type = 1");
+        utils::executeCommand(dboSession, "DELETE FROM ui_state WHERE item = 'player_cur_playing_track_pos'");
+
+        utils::executeCommand(dboSession, "DROP TABLE playqueue_track");
+        utils::executeCommand(dboSession, "DROP TABLE playqueue");
+        utils::executeCommand(dboSession, R"(CREATE TABLE "playqueue" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "type" integer not null,
+  "current_index" integer not null,
+  "current_position_in_track" integer,
+  "last_modified_date_time" text,
+  "user_id" bigint,
+  "tracklist_id" bigint,
+  constraint "fk_playqueue_user" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_playqueue_tracklist" foreign key ("tracklist_id") references "tracklist" ("id") on delete cascade deferrable initially deferred
+))");
+    }
+
+    void migrateFromV118(Session& session)
+    {
+        auto& dboSession{ *session.getDboSession() };
+
+        // Search and sort now use folded copies of the names
+        struct FoldedColumnInfo
+        {
+            std::string_view table;
+            std::string_view column;
+        };
+
+        constexpr std::array foldedColumns{
+            FoldedColumnInfo{ .table = "artist", .column = "name" },
+            FoldedColumnInfo{ .table = "artist", .column = "sort_name" },
+            FoldedColumnInfo{ .table = "release", .column = "name" },
+            FoldedColumnInfo{ .table = "release", .column = "sort_name" },
+            FoldedColumnInfo{ .table = "release", .column = "artist_display_name" },
+            FoldedColumnInfo{ .table = "medium", .column = "name" },
+            FoldedColumnInfo{ .table = "track", .column = "name" },
+            FoldedColumnInfo{ .table = "tracklist", .column = "name" },
+            FoldedColumnInfo{ .table = "directory", .column = "name" },
+            FoldedColumnInfo{ .table = "genre", .column = "name" },
+            FoldedColumnInfo{ .table = "grouping", .column = "name" },
+            FoldedColumnInfo{ .table = "language", .column = "name" },
+            FoldedColumnInfo{ .table = "mood", .column = "name" },
+            FoldedColumnInfo{ .table = "cluster", .column = "name" },
+            FoldedColumnInfo{ .table = "label", .column = "name" },
+            FoldedColumnInfo{ .table = "release_type", .column = "name" },
+        };
+
+        for (const FoldedColumnInfo& info : foldedColumns)
+        {
+            const std::string table{ info.table };
+            const std::string column{ info.column };
+            const std::string foldedColumn{ "folded_" + column };
+
+            LMS_LOG(DB, INFO, "Folding '" << column << "' from table '" << table << "'...");
+
+            utils::executeCommand(dboSession, R"(ALTER TABLE ")" + table + R"(" ADD COLUMN ")" + foldedColumn + R"(" text not null default '')");
+
+            // Each batch is fully read before being written back, and kept small to bound memory on large tables
+            const std::string updateSql{ R"(UPDATE ")" + table + R"(" SET ")" + foldedColumn + R"(" = ? WHERE id = ?)" };
+            using Row = std::tuple<IdType::ValueType, std::string>;
+            constexpr int batchSize{ 1000 };
+            IdType::ValueType lastId{};
+            while (true)
+            {
+                const std::vector<Row> rows{ utils::fetchQueryResults(dboSession.query<Row>(R"(SELECT id, ")" + column + R"(" FROM ")" + table + R"(")").where("id > ?").bind(lastId).orderBy("id").limit(batchSize)) };
+                for (const auto& [id, value] : rows)
+                {
+                    const std::string foldedValue{ core::stringUtils::foldForComparison(value) };
+                    if (!foldedValue.empty())
+                        utils::executeCommand(dboSession, updateSql, foldedValue, id);
+                }
+
+                if (rows.size() < static_cast<std::size_t>(batchSize))
+                    break;
+
+                lastId = std::get<0>(rows.back());
+            }
+        }
+
+        // Search and sort indexes now use the folded columns
+        dropIndexes(session);
+    }
+
+    void migrateFromV119(Session& session)
+    {
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE podcast_episode ADD file_size BIGINT NOT NULL DEFAULT(0)");
+
+        // Already downloaded episodes have no file size (some not even a container/codec) -> remove them all
+        // The podcast service will remove all orphan files and download the episodes again on its next refresh
+        utils::executeCommand(*session.getDboSession(), "UPDATE podcast_episode SET audio_relative_file_path = ''");
+
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE podcast_episode ADD COLUMN download_failed BOOLEAN NOT NULL DEFAULT(false)");
+
+        // Tracks with a duplicated work title got several mbid-less works with the same name, making the next lookup of that work crash (#905)
+        // Remove these works and rescan their tracks (-1 never matches a real scan version)
+        const std::string duplicatedWorkIds{ R"(
+SELECT t_w1.work_id FROM track_work t_w1
+JOIN work w1 ON w1.id = t_w1.work_id
+JOIN track_work t_w2 ON t_w2.track_id = t_w1.track_id AND t_w2.work_id <> t_w1.work_id
+JOIN work w2 ON w2.id = t_w2.work_id
+WHERE w1.mbid IS NULL AND w2.mbid IS NULL AND w1.name = w2.name)" };
+        utils::executeCommand(*session.getDboSession(), "UPDATE track SET scan_version = -1 WHERE id IN (SELECT track_id FROM track_work WHERE work_id IN (" + duplicatedWorkIds + "))");
+        utils::executeCommand(*session.getDboSession(), "DELETE FROM work WHERE id IN (" + duplicatedWorkIds + ")");
+        // Foreign keys are disabled during migrations: no cascade
+        utils::executeCommand(*session.getDboSession(), "DELETE FROM track_work WHERE work_id NOT IN (SELECT id FROM work)");
+    }
+
+    std::optional<Version> doDbMigrationStep(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
 
-        ScopedNoForeignKeys noPragmaKeys{ static_cast<Db&>(session.getDb()) };
+        ScopedNoForeignKeys noPragmaKeys{ session.getDb() };
 
         using MigrationFunction = std::function<void(Session&)>;
 
-        const std::map<unsigned, MigrationFunction> migrationFunctions{
+        static const std::map<unsigned, MigrationFunction> migrationFunctions{
             { 33, migrateFromV33 },
             { 34, migrateFromV34 },
             { 35, migrateFromV35 },
@@ -2287,9 +2404,10 @@ GROUP BY c.canonical_id, s.backend)");
             { 114, migrateFromV114 },
             { 115, migrateFromV115 },
             { 116, migrateFromV116 },
+            { 117, migrateFromV117 },
+            { 118, migrateFromV118 },
+            { 119, migrateFromV119 },
         };
-
-        LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");
 
         Version version{};
         {
@@ -2312,27 +2430,35 @@ GROUP BY c.canonical_id, s.backend)");
                 throw core::LmsException{ outdatedMsg };
         }
 
-        bool migrationPerformed{};
-        while (version < LMS_DATABASE_VERSION)
+        if (version == LMS_DATABASE_VERSION)
+            return std::nullopt;
+
+        LMS_SCOPED_TRACE_DETAILED("Database", "MigrationStep");
+        LMS_LOG(DB, INFO, "Migrating database from version " << version << " to " << version + 1 << "...");
+
+        auto itMigrationFunc{ migrationFunctions.find(version) };
+        if (itMigrationFunc == std::cend(migrationFunctions))
+            throw core::LmsException{ "No code found to upgrade database!" };
+
         {
-            LMS_SCOPED_TRACE_DETAILED("Database", "MigrationStep");
-            LMS_LOG(DB, INFO, "Migrating database from version " << version << " to " << version + 1 << "...");
-
-            auto itMigrationFunc{ migrationFunctions.find(version) };
-            if (itMigrationFunc == std::cend(migrationFunctions))
-                throw core::LmsException{ "No code found to upgrade database!" };
-
-            {
-                auto transaction{ session.createWriteTransaction() };
-                itMigrationFunc->second(session);
-                VersionInfo::get(session).modify()->setVersion(version + 1);
-            }
-            ++version;
-
-            LMS_LOG(DB, INFO, "Migration complete to version " << version);
-            migrationPerformed = true;
+            auto transaction{ session.createWriteTransaction() };
+            itMigrationFunc->second(session);
+            VersionInfo::get(session).modify()->setVersion(version + 1);
         }
+        ++version;
+
+        LMS_LOG(DB, INFO, "Migration complete to version " << version);
+        return version;
+    }
+
+    bool doDbMigration(Session& session)
+    {
+        LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");
+
+        bool migrationPerformed{};
+        while (doDbMigrationStep(session))
+            migrationPerformed = true;
 
         return migrationPerformed;
     }
-} // namespace lms::db::Migration
+} // namespace lms::db::migration

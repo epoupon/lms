@@ -23,14 +23,15 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/String.hpp"
-#include "database/Session.hpp"
-#include "database/objects/MediaLibrary.hpp"
 
+#include "DboAccess.hpp"
+#include "ScanSettingsDbo.hpp"
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::ScanSettings)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::ScanSettings)
 
 namespace lms::db
 {
@@ -39,23 +40,31 @@ namespace lms::db
     {
     }
 
-    ScanSettings::pointer ScanSettings::create(Session& session, std::string_view name)
+    ScanSettings ScanSettings::create(ISession& session, std::string_view name)
     {
-        return session.getDboSession()->add(std::unique_ptr<ScanSettings>(new ScanSettings{ name }));
+        return utils::addObject(session, std::unique_ptr<dbo::ScanSettings>(new dbo::ScanSettings{ name }));
     }
 
-    ScanSettings::pointer ScanSettings::find(Session& session, ScanSettingsId id)
+    void ScanSettings::destroy(ISession& session, std::span<const ScanSettingsId> ids)
     {
-        session.checkReadTransaction();
-
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ScanSettings>>("SELECT s_s from scan_settings s_s").where("s_s.id = ?").bind(id));
+        utils::destroyObjects<dbo::ScanSettings>(session, ids);
     }
 
-    ScanSettings::pointer ScanSettings::find(Session& session, std::string_view name)
+    std::optional<ScanSettings> ScanSettings::find(ISession& session, ScanSettingsId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ScanSettings>().where("name = ?").bind(name));
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ScanSettings>>("SELECT s_s from scan_settings s_s").where("s_s.id = ?").bind(id));
+    }
+
+    std::optional<ScanSettings> ScanSettings::find(ISession& session, std::string_view name)
+    {
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ScanSettings>().where("name = ?").bind(name));
     }
 
     std::vector<std::string_view> ScanSettings::getExtraTagsToScan() const
@@ -140,5 +149,10 @@ namespace lms::db
     void ScanSettings::incAudioScanVersion()
     {
         _audioScanVersion += 1;
+    }
+
+    void ScanSettings::update(ISession& session, const ScanSettings& scanSettings)
+    {
+        utils::updateObject<dbo::ScanSettings>(session, scanSettings);
     }
 } // namespace lms::db

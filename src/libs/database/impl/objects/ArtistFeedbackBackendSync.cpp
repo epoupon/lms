@@ -22,51 +22,65 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
-#include "database/objects/ArtistFeedback.hpp"
-
+#include "ArtistFeedbackBackendSyncDbo.hpp"
+#include "ArtistFeedbackDbo.hpp"
+#include "DboAccess.hpp"
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::ArtistFeedbackBackendSync)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::ArtistFeedbackBackendSync)
 
 namespace lms::db
 {
-    ArtistFeedbackBackendSync::ArtistFeedbackBackendSync(ObjectPtr<ArtistFeedback> artistFeedback, FeedbackBackend backend)
+    ArtistFeedbackBackendSync::ArtistFeedbackBackendSync(FeedbackBackend backend)
         : _backend{ backend }
-        , _artistFeedback{ getDboPtr(artistFeedback) }
     {
     }
 
-    ArtistFeedbackBackendSync::pointer ArtistFeedbackBackendSync::create(Session& session, ObjectPtr<ArtistFeedback> artistFeedback, FeedbackBackend backend)
+    dbo::ArtistFeedbackBackendSync::ArtistFeedbackBackendSync(Wt::Dbo::ptr<ArtistFeedback> artistFeedback, FeedbackBackend backend)
+        : db::ArtistFeedbackBackendSync{ backend }
+        , _artistFeedback{ std::move(artistFeedback) }
     {
-        session.checkWriteTransaction();
-        return session.getDboSession()->add(std::unique_ptr<ArtistFeedbackBackendSync>{ new ArtistFeedbackBackendSync{ artistFeedback, backend } });
     }
 
-    std::size_t ArtistFeedbackBackendSync::getCount(Session& session)
+    ArtistFeedbackBackendSync ArtistFeedbackBackendSync::create(ISession& session, ArtistFeedbackId artistFeedback, FeedbackBackend backend)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM artist_feedback_backend_sync"));
+        return utils::addObject(session, std::unique_ptr<dbo::ArtistFeedbackBackendSync>{ new dbo::ArtistFeedbackBackendSync{ getDboSession(session)->loadLazy<dbo::ArtistFeedback>(artistFeedback.getValue()), backend } });
     }
 
-    ArtistFeedbackBackendSync::pointer ArtistFeedbackBackendSync::find(Session& session, ArtistFeedbackBackendSyncId id)
+    void ArtistFeedbackBackendSync::destroy(ISession& session, std::span<const ArtistFeedbackBackendSyncId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ArtistFeedbackBackendSync>().where("id = ?").bind(id));
+        utils::destroyObjects<dbo::ArtistFeedbackBackendSync>(session, ids);
     }
 
-    ArtistFeedbackBackendSync::pointer ArtistFeedbackBackendSync::find(Session& session, ArtistFeedbackId artistFeedbackId, FeedbackBackend backend)
+    std::size_t ArtistFeedbackBackendSync::getCount(ISession& session)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ArtistFeedbackBackendSync>().where("artist_feedback_id = ?").bind(artistFeedbackId).where("backend = ?").bind(backend));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM artist_feedback_backend_sync"));
     }
 
-    std::vector<ArtistFeedbackBackendSyncId> ArtistFeedbackBackendSync::find(Session& session, const FindParameters& params)
+    std::optional<ArtistFeedbackBackendSync> ArtistFeedbackBackendSync::find(ISession& session, ArtistFeedbackBackendSyncId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<ArtistFeedbackBackendSyncId>("SELECT id FROM artist_feedback_backend_sync") };
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ArtistFeedbackBackendSync>().where("id = ?").bind(id));
+    }
+
+    std::optional<ArtistFeedbackBackendSync> ArtistFeedbackBackendSync::find(ISession& session, ArtistFeedbackId artistFeedbackId, FeedbackBackend backend)
+    {
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ArtistFeedbackBackendSync>().where("artist_feedback_id = ?").bind(artistFeedbackId).where("backend = ?").bind(backend));
+    }
+
+    void ArtistFeedbackBackendSync::find(ISession& session, const FindParameters& params, const std::function<void(const ArtistFeedbackBackendSync&)>& func)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->find<dbo::ArtistFeedbackBackendSync>() };
 
         if (params.backend)
             query.where("backend = ?").bind(*params.backend);
@@ -74,21 +88,11 @@ namespace lms::db
         if (params.syncState)
             query.where("sync_state = ?").bind(*params.syncState);
 
-        return utils::execRangeQuery<ArtistFeedbackBackendSyncId>(query, params.range);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    void ArtistFeedbackBackendSync::find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
+    void ArtistFeedbackBackendSync::update(ISession& session, const ArtistFeedbackBackendSync& artistFeedbackBackendSync)
     {
-        session.checkReadTransaction();
-
-        auto query{ session.getDboSession()->find<ArtistFeedbackBackendSync>() };
-
-        if (params.backend)
-            query.where("backend = ?").bind(*params.backend);
-
-        if (params.syncState)
-            query.where("sync_state = ?").bind(*params.syncState);
-
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::updateObject<dbo::ArtistFeedbackBackendSync>(session, artistFeedbackBackendSync);
     }
 } // namespace lms::db

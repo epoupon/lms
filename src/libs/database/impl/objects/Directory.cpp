@@ -21,26 +21,30 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "database/Session.hpp"
-#include "database/Types.hpp"
-#include "database/objects/MediaLibrary.hpp"
+#include "core/String.hpp"
 
+#include "database/Types.hpp"
+
+#include "DboAccess.hpp"
+#include "DirectoryDbo.hpp"
+#include "MediaLibraryDbo.hpp"
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Directory)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Directory)
 
 namespace lms::db
 {
     namespace
     {
-        Wt::Dbo::Query<Wt::Dbo::ptr<Directory>> createQuery(Session& session, const Directory::FindParameters& params)
+        Wt::Dbo::Query<Wt::Dbo::ptr<dbo::Directory>> createQuery(ISession& session, const Directory::FindParameters& params)
         {
-            auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Directory>>("SELECT d FROM directory d") };
+            auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d FROM directory d") };
 
             for (std::string_view keyword : params.keywords)
-                query.where("d.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
+                query.where("d.folded_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind(utils::createFoldedContainsPattern(keyword));
 
             if (params.trackArtist.isValid()
                 || params.releaseArtist.isValid()
@@ -108,7 +112,7 @@ namespace lms::db
             case DirectorySortMethod::None:
                 break;
             case DirectorySortMethod::Name:
-                query.orderBy("d.name COLLATE NOCASE");
+                query.orderBy("d.folded_name, d.id");
                 break;
             }
 
@@ -135,63 +139,65 @@ namespace lms::db
         setAbsolutePath(p);
     }
 
-    Directory::pointer Directory::create(Session& session, const std::filesystem::path& p)
+    Directory Directory::create(ISession& session, const std::filesystem::path& p)
     {
-        return session.getDboSession()->add(std::unique_ptr<Directory>{ new Directory{ p } });
+        return utils::addObject(session, std::unique_ptr<dbo::Directory>{ new dbo::Directory{ p } });
     }
 
-    std::size_t Directory::getCount(Session& session)
+    void Directory::destroy(ISession& session, std::span<const DirectoryId> ids)
     {
-        session.checkReadTransaction();
-
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM directory"));
+        utils::destroyObjects<dbo::Directory>(session, ids);
     }
 
-    Directory::pointer Directory::find(Session& session, DirectoryId id)
+    std::size_t Directory::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Directory>>("SELECT d from directory d").where("d.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM directory"));
     }
 
-    Directory::pointer Directory::find(Session& session, const std::filesystem::path& path)
+    std::optional<Directory> Directory::find(ISession& session, DirectoryId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Directory>>("SELECT d from directory d").where("d.absolute_path = ?").bind(path));
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.id = ?").bind(id));
     }
 
-    void Directory::find(Session& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory::pointer&)>& func)
+    std::optional<Directory> Directory::find(ISession& session, const std::filesystem::path& path)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Directory>>("SELECT d from directory d").orderBy("d.id").where("d.id > ?").bind(lastRetrievedDirectory).limit(static_cast<int>(count)) };
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.absolute_path = ?").bind(path));
+    }
 
-        utils::forEachQueryResult(query, [&](const Directory::pointer& image) {
+    void Directory::find(ISession& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory&)>& func)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").orderBy("d.id").where("d.id > ?").bind(lastRetrievedDirectory).limit(static_cast<int>(count)) };
+
+        utils::forEachQueryObject(query, [&](const Directory& image) {
             func(image);
-            lastRetrievedDirectory = image->getId();
+            lastRetrievedDirectory = image.getId();
         });
     }
 
-    std::vector<Directory::pointer> Directory::find(Session& session, const FindParameters& params)
+    void Directory::find(ISession& session, const FindParameters& params, const std::function<void(const Directory&)>& func)
     {
+        checkReadTransaction(session);
+
         auto query{ createQuery(session, params) };
-        return utils::execRangeQuery<Directory::pointer>(query, params.range);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    void Directory::find(Session& session, const FindParameters& params, const std::function<void(const Directory::pointer&)>& func)
+    std::vector<DirectoryId> Directory::findOrphanIds(ISession& session, std::optional<Range> range)
     {
-        auto query{ createQuery(session, params) };
-        utils::forEachQueryRangeResult(query, params.range, [&func](const Directory::pointer& dir) {
-            func(dir);
-        });
-    }
+        checkReadTransaction(session);
 
-    std::vector<DirectoryId> Directory::findOrphanIds(Session& session, std::optional<Range> range)
-    {
-        session.checkReadTransaction();
-
-        auto query{ session.getDboSession()->query<DirectoryId>("SELECT d.id FROM directory d") };
+        auto query{ getDboSession(session)->query<DirectoryId>("SELECT d.id FROM directory d") };
         query.leftJoin("directory d_child ON d.id = d_child.parent_directory_id");
         query.leftJoin("track t ON d.id = t.directory_id");
         query.leftJoin("image i ON d.id = i.directory_id");
@@ -208,21 +214,23 @@ namespace lms::db
         return utils::execRangeQuery<DirectoryId>(query, range);
     }
 
-    std::vector<DirectoryId> Directory::findMismatchedLibrary(Session& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId)
+    std::vector<DirectoryId> Directory::findMismatchedLibrary(ISession& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<DirectoryId>("SELECT d.id FROM directory d") };
+        auto query{ getDboSession(session)->query<DirectoryId>("SELECT d.id FROM directory d") };
         query.where("d.absolute_path = ? OR d.absolute_path LIKE ?").bind(rootPath).bind(getPathWithTrailingSeparator(rootPath).string() + "%");
         query.where("d.media_library_id <> ? OR d.media_library_id IS NULL").bind(expectedLibraryId);
 
         return utils::execRangeQuery<DirectoryId>(query, range);
     }
 
-    std::vector<Directory::pointer> Directory::findRootDirectories(Session& session, std::optional<Range> range)
+    std::vector<Directory> Directory::findRootDirectories(ISession& session, std::optional<Range> range)
     {
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Directory>>("SELECT d from directory d").where("d.parent_directory_id IS NULL") };
-        return utils::execRangeQuery<Directory::pointer>(query, range);
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Directory>>("SELECT d from directory d").where("d.parent_directory_id IS NULL") };
+        return utils::execRangeObjectQuery(query, range);
     }
 
     void Directory::setAbsolutePath(const std::filesystem::path& p)
@@ -241,16 +249,20 @@ namespace lms::db
         }
     }
 
-    void Directory::setParent(ObjectPtr<Directory> parent)
+    void dbo::Directory::applyIds()
     {
-#ifndef NDEBUG
-        if (parent)
-        {
-            assert(_absolutePath.has_parent_path());
-            assert(parent->getAbsolutePath() == _absolutePath.parent_path());
-        }
-#endif
+        setRelation(*session(), _mediaLibrary, _mediaLibraryId);
+        setRelation(*session(), _parent, _parentDirectoryId);
+        assert(!_parent || (_absolutePath.has_parent_path() && _parent->getAbsolutePath() == _absolutePath.parent_path()));
+    }
 
-        _parent = getDboPtr(parent);
+    void dbo::Directory::updateFoldedNames()
+    {
+        _foldedName = core::stringUtils::foldForComparison(_name);
+    }
+
+    void Directory::update(ISession& session, const Directory& directory)
+    {
+        utils::updateObject<dbo::Directory>(session, directory);
     }
 } // namespace lms::db

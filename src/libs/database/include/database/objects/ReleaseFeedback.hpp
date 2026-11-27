@@ -19,35 +19,38 @@
 
 #pragma once
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
+#include <optional>
+#include <span>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ReleaseFeedbackId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Release;
-    class Session;
+    class ISession;
     class User;
 
-    class ReleaseFeedback final : public Object<ReleaseFeedback, ReleaseFeedbackId>
+    class ReleaseFeedback : public detail::Object<ReleaseFeedback, ReleaseFeedbackId>
     {
     public:
-        ReleaseFeedback() = default;
+        static ReleaseFeedback create(ISession& session, ReleaseId release, UserId user);
+        static void destroy(ISession& session, std::span<const ReleaseFeedbackId> ids);
 
         // Search utility
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ReleaseFeedbackId id);
-        static pointer find(Session& session, ReleaseId releaseId, UserId userId);
+        static std::size_t getCount(ISession& session);
+        static std::optional<ReleaseFeedback> find(ISession& session, ReleaseFeedbackId id);
+        static std::optional<ReleaseFeedback> find(ISession& session, ReleaseId releaseId, UserId userId);
+
+        static void update(ISession& session, const ReleaseFeedback& releaseFeedback);
 
         // Accessors
-        ObjectPtr<Release> getRelease() const { return _release; }
-        ObjectPtr<User> getUser() const { return _user; }
+        ReleaseId getReleaseId() const { return _releaseId; }
+        UserId getUserId() const { return _userId; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
         FeedbackValue getValue() const { return _value; }
 
@@ -55,25 +58,12 @@ namespace lms::db
         void setDateTime(const Wt::WDateTime& dateTime);
         void setValue(FeedbackValue value) { _value = value; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _dateTime, "date_time");
-            Wt::Dbo::field(a, _value, "value");
-
-            Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        ReleaseFeedback(ObjectPtr<Release> release, ObjectPtr<User> user);
-        static pointer create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user);
+    protected:
+        ReleaseFeedback() = default;
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };
-
-        Wt::Dbo::ptr<Release> _release;
-        Wt::Dbo::ptr<User> _user;
+        ReleaseId _releaseId;
+        UserId _userId;
     };
 } // namespace lms::db

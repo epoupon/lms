@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include "database/Object.hpp"
-
 #include "SubsonicResponse.hpp"
 
 namespace lms::db
@@ -32,6 +30,6 @@ namespace lms::api::subsonic
 {
     class RequestContext;
 
-    Response::Node createLyricsNode(RequestContext& context, const db::ObjectPtr<db::TrackLyrics>& lyrics);
-    Response::Node createStructuredLyricsNode(RequestContext& context, const db::ObjectPtr<db::TrackLyrics>& lyrics);
+    Response::Node createLyricsNode(RequestContext& context, const db::TrackLyrics& lyrics);
+    Response::Node createStructuredLyricsNode(RequestContext& context, const db::TrackLyrics& lyrics);
 } // namespace lms::api::subsonic

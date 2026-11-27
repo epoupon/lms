@@ -24,11 +24,11 @@
 
 namespace lms::api::subsonic
 {
-    Response::Node createReplayGainNode(const db::Track::pointer& track, const db::Medium::pointer& medium)
+    Response::Node createReplayGainNode(const db::Track& track, const std::optional<db::Medium>& medium)
     {
         Response::Node replayGainNode;
 
-        if (const auto trackReplayGain{ track->getReplayGain() })
+        if (const auto trackReplayGain{ track.getReplayGain() })
             replayGainNode.setAttribute("trackGain", *trackReplayGain);
 
         if (medium)

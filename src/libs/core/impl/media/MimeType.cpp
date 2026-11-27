@@ -35,6 +35,8 @@ namespace lms::core::media
             return "audio/x-dsd-dsf";
         case Container::FLAC:
             return "audio/flac";
+        case Container::Matroska:
+            return "audio/x-matroska";
         case Container::MP4:
             switch (codec)
             {
@@ -73,6 +75,16 @@ namespace lms::core::media
             return "audio/wav";
         case Container::WavPack:
             return "audio/x-wavpack";
+        case Container::WebM:
+            switch (codec)
+            {
+            case Codec::Opus:
+                return "audio/webm; codecs=\"opus\"";
+            case Codec::Vorbis:
+                return "audio/webm; codecs=\"vorbis\"";
+            default:
+                return "audio/webm";
+            }
         }
 
         return "application/octet-stream";

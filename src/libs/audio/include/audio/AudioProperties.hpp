@@ -32,7 +32,7 @@ namespace lms::audio
         core::media::Container container;
         core::media::Codec codec;
         std::chrono::milliseconds duration;
-        unsigned bitrate;
+        std::optional<unsigned> bitrate; // unset if the file does not tell (thi is not the file-level bitrate!)
         unsigned channelCount;
         unsigned sampleRate;
         std::optional<unsigned> bitsPerSample;

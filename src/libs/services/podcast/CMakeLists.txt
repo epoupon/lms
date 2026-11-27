@@ -6,6 +6,7 @@ add_library(lmspodcast STATIC
 	impl/steps/DownloadPodcastArtworksStep.cpp
 	impl/steps/RefreshPodcastsStep.cpp
 	impl/steps/RemoveEpisodesStep.cpp
+	impl/steps/RemoveOrphanFilesStep.cpp
 	impl/steps/RemovePodcastsStep.cpp
 	impl/steps/Utils.cpp
 	impl/Executor.cpp

@@ -36,7 +36,7 @@
 #include "core/String.hpp"
 #include "core/media/Codec.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/FilterExpr.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/Types.hpp"
@@ -66,10 +66,10 @@ namespace lms::ui
             std::filesystem::path path;
             std::chrono::milliseconds duration;
             std::size_t fileSize{};
-            std::size_t bitrate{};
+            std::optional<std::size_t> bitrate;
         };
 
-        std::vector<TrackEntry> pickTracksForCodec(db::Session& session, core::media::Codec codec)
+        std::vector<TrackEntry> pickTracksForCodec(db::ISession& session, core::media::Codec codec)
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -78,19 +78,15 @@ namespace lms::ui
             params.setSortMethod(db::TrackSortMethod::Random);
             params.setRange(db::Range{ .offset = 0, .size = queryBatchSize });
 
-            const auto results{ db::Track::find(session, params) };
-
             std::vector<TrackEntry> entries;
-            for (const db::Track::pointer& track : results)
-            {
-                const auto trackDuration{ track->getDuration() };
+            db::Track::find(session, params, [&](const db::Track& track) {
+                if (entries.size() == maxTracksPerCodec)
+                    return;
+
+                const auto trackDuration{ track.getDuration() };
                 if (trackDuration >= minTrackDuration && trackDuration <= maxTrackDuration)
-                {
-                    entries.push_back({ track->getAbsoluteFilePath(), trackDuration, static_cast<std::size_t>(track->getFileSize()), track->getBitrate() });
-                    if (entries.size() == maxTracksPerCodec)
-                        break;
-                }
-            }
+                    entries.push_back({ track.getAbsoluteFilePath(), trackDuration, static_cast<std::size_t>(track.getFileSize()), track.getBitrate() });
+            });
 
             return entries;
         }

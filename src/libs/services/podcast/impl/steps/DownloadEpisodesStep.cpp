@@ -19,7 +19,9 @@
 
 #include "DownloadEpisodesStep.hpp"
 
+#include <cstdint>
 #include <fstream>
+#include <optional>
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
@@ -31,7 +33,7 @@
 #include "audio/IAudioFileInfo.hpp"
 #include "audio/IAudioFileInfoParser.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Podcast.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 
@@ -42,23 +44,37 @@ namespace lms::podcast
 {
     namespace
     {
-        void updateEpisode(db::Session& session, db::PodcastEpisodeId episodeId, const std::filesystem::path& relativeFilePath, const audio::AudioProperties& audioProperties)
+        void updateEpisode(db::ISession& session, db::PodcastEpisodeId episodeId, const std::filesystem::path& relativeFilePath, std::uint64_t fileSize, const audio::AudioProperties& audioProperties)
         {
             auto transaction{ session.createWriteTransaction() };
 
-            db::PodcastEpisode::pointer dbEpisode{ db::PodcastEpisode::find(session, episodeId) };
+            std::optional<db::PodcastEpisode> dbEpisode{ db::PodcastEpisode::find(session, episodeId) };
             if (!dbEpisode)
                 return; // may have been deleted by admin
 
-            dbEpisode.modify()->setAudioRelativeFilePath(relativeFilePath);
+            dbEpisode->setAudioRelativeFilePath(relativeFilePath);
+            dbEpisode->setFileSize(fileSize);
 
-            dbEpisode.modify()->setDuration(audioProperties.duration);
-            dbEpisode.modify()->setContainer(audioProperties.container);
-            dbEpisode.modify()->setCodec(audioProperties.codec);
-            dbEpisode.modify()->setBitrate(audioProperties.bitrate);
-            dbEpisode.modify()->setChannelCount(audioProperties.channelCount);
-            dbEpisode.modify()->setSampleRate(audioProperties.sampleRate);
-            dbEpisode.modify()->setBitsPerSample(audioProperties.bitsPerSample);
+            dbEpisode->setDuration(audioProperties.duration);
+            dbEpisode->setContainer(audioProperties.container);
+            dbEpisode->setCodec(audioProperties.codec);
+            dbEpisode->setBitrate(audioProperties.bitrate);
+            dbEpisode->setChannelCount(audioProperties.channelCount);
+            dbEpisode->setSampleRate(audioProperties.sampleRate);
+            dbEpisode->setBitsPerSample(audioProperties.bitsPerSample);
+            db::PodcastEpisode::update(session, *dbEpisode);
+        }
+
+        void setDownloadFailed(db::ISession& session, db::PodcastEpisodeId episodeId)
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            std::optional<db::PodcastEpisode> dbEpisode{ db::PodcastEpisode::find(session, episodeId) };
+            if (!dbEpisode)
+                return; // may have been deleted by admin
+
+            dbEpisode->setDownloadFailed(true);
+            db::PodcastEpisode::update(session, *dbEpisode);
         }
     } // namespace
 
@@ -66,7 +82,7 @@ namespace lms::podcast
         : RefreshStep{ context, std::move(callback) }
         , _autoDownloadEpisodes{ core::Service<core::IConfig>::get()->getBool("podcast-auto-download-episodes", true) }
         , _autoDownloadEpisodesMaxAge{ core::Service<core::IConfig>::get()->getULong("podcast-auto-download-episodes-max-age-days", 30) }
-        , _audioFileInfoParser{ audio::createAudioFileInfoParser(audio::AudioFileInfoParserBackend::FFmpeg) }
+        , _audioFileInfoParser{ audio::createAudioFileInfoParser() }
     {
     }
 
@@ -93,24 +109,27 @@ namespace lms::podcast
         db::PodcastEpisode::FindParameters params;
 
         _episodesToDownload.clear();
-        db::PodcastEpisode::find(session, params, [&](const db::PodcastEpisode::pointer& episode) {
-            if (!episode->getAudioRelativeFilePath().empty())
+        db::PodcastEpisode::find(session, params, [&](const db::PodcastEpisode& episode) {
+            if (!episode.getAudioRelativeFilePath().empty())
                 return; // already downloaded
 
-            switch (episode->getManualDownloadState())
+            if (episode.isDownloadFailed())
+                return;
+
+            switch (episode.getManualDownloadState())
             {
             case db::PodcastEpisode::ManualDownloadState::DownloadRequested:
 
-                LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode->getTitle() << "' from podcast '" << episode->getPodcast()->getTitle() << "' to download queue (manually requested)");
-                _episodesToDownload.push_back(episode->getId());
+                LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode.getTitle() << "' from podcast '" << db::Podcast::find(session, episode.getPodcastId())->getTitle() << "' to download queue (manually requested)");
+                _episodesToDownload.push_back(episode.getId());
 
                 break;
 
             case db::PodcastEpisode::ManualDownloadState::None:
-                if (_autoDownloadEpisodes && now < episode->getPubDate().addDays(_autoDownloadEpisodesMaxAge.count()))
+                if (_autoDownloadEpisodes && now < episode.getPubDate().addDays(_autoDownloadEpisodesMaxAge.count()))
                 {
-                    LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode->getTitle() << "' from podcast '" << episode->getPodcast()->getTitle() << "' to download queue (auto-download enabled)");
-                    _episodesToDownload.push_back(episode->getId());
+                    LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode.getTitle() << "' from podcast '" << db::Podcast::find(session, episode.getPodcastId())->getTitle() << "' to download queue (auto-download enabled)");
+                    _episodesToDownload.push_back(episode.getId());
                 }
                 break;
 
@@ -141,7 +160,7 @@ namespace lms::podcast
         auto& session{ getDb().getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        const db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, episodeId) };
+        const std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(session, episodeId) };
         if (!episode)
         {
             LMS_LOG(PODCAST, DEBUG, "Cannot find episode: removed?"); // TODO if removed, need to keep it in the db to check for new episodes...
@@ -157,9 +176,25 @@ namespace lms::podcast
         core::http::ClientGETRequestParameters params;
         const std::string url{ episode->getEnclosureUrl() };
         params.relativeUrl = url;
-        params.onFailureFunc = [this, episode] {
+        params.onFailureFunc = [this, episode, episodeId, tmpFilePath](std::optional<int> httpStatus) {
             LMS_LOG(PODCAST, ERROR, "Failed to download podcast episode from '" << episode->getEnclosureUrl() << "'");
+            utils::removeFile(tmpFilePath);
+
+            // Gone for good: other errors may be transient and are retried on the next refresh
+            if (httpStatus == 410)
+            {
+                getExecutor().post([=, this] {
+                    LMS_LOG(PODCAST, WARNING, "Episode '" << episode->getTitle() << "' is no longer available on the server: it will not be downloaded again unless manually requested");
+                    setDownloadFailed(getDb().getTLSSession(), episodeId);
+                    processNext();
+                });
+                return;
+            }
+
             processNext();
+        };
+        params.onAttemptStarted = [tmpFilePath] {
+            utils::removeFile(tmpFilePath);
         };
         params.onChunkReceived = [url, tmpFilePath](std::span<const std::byte> chunk) {
             std::ofstream file{ tmpFilePath, std::ios::binary | std::ios::app };
@@ -203,9 +238,14 @@ namespace lms::podcast
                         {
                             LMS_LOG(PODCAST, ERROR, "Failed to rename temp file " << tmpFilePath << " to " << finalFilePath << ": " << ec.message());
                         }
+                        else if (const std::uint64_t fileSize{ std::filesystem::file_size(finalFilePath, ec) }; ec)
+                        {
+                            LMS_LOG(PODCAST, ERROR, "Failed to get file size of " << finalFilePath << ": " << ec.message());
+                            utils::removeFile(finalFilePath);
+                        }
                         else
                         {
-                            updateEpisode(getDb().getTLSSession(), episodeId, randomName, *audioProperties);
+                            updateEpisode(getDb().getTLSSession(), episodeId, randomName, fileSize, *audioProperties);
                             LMS_LOG(PODCAST, INFO, "Downloaded episode '" << episode->getTitle() << "'");
                         }
                     }

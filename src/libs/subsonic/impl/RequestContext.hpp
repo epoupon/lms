@@ -20,12 +20,13 @@
 #pragma once
 
 #include <iosfwd>
+#include <optional>
 #include <string>
 #include <string_view>
 
 #include <Wt/Http/Request.h>
 
-#include "database/Object.hpp"
+#include "database/objects/User.hpp"
 
 #include "ProtocolVersion.hpp"
 #include "ResponseFormat.hpp"
@@ -33,8 +34,7 @@
 
 namespace lms::db
 {
-    class Session;
-    class User;
+    class ISession;
 } // namespace lms::db
 
 namespace lms::api::subsonic
@@ -42,7 +42,7 @@ namespace lms::api::subsonic
     class RequestContext
     {
     public:
-        RequestContext(const Wt::Http::Request& request, db::Session& dbSession, const SubsonicResourceConfig& config);
+        RequestContext(const Wt::Http::Request& request, db::ISession& dbSession, const SubsonicResourceConfig& config);
         ~RequestContext();
         RequestContext(const RequestContext&) = delete;
         RequestContext& operator=(const RequestContext&) = delete;
@@ -52,10 +52,10 @@ namespace lms::api::subsonic
         const ParameterMap& getParameters() const;
         std::istream& getBody() const;
 
-        db::Session& getDbSession();
+        db::ISession& getDbSession();
 
-        void setUser(const db::ObjectPtr<db::User>& user);
-        db::ObjectPtr<db::User> getUser() const;
+        void setUser(const std::optional<db::User>& user);
+        const std::optional<db::User>& getUser() const { return _user; }
 
         std::string getClientIpAddr() const;
         std::string_view getClientName() const;
@@ -65,8 +65,8 @@ namespace lms::api::subsonic
 
     private:
         const Wt::Http::Request& _request;
-        db::Session& _dbSession;
-        db::ObjectPtr<db::User> _user;
+        db::ISession& _dbSession;
+        std::optional<db::User> _user;
         const SubsonicResourceConfig& _config;
 
         const std::string _clientName;

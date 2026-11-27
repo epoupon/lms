@@ -36,19 +36,18 @@ namespace lms::db::tests
 
             EXPECT_EQ(Medium::getCount(session), 0);
 
-            Medium::pointer medium{ Medium::find(session, MediumId{}) };
-            ASSERT_EQ(medium, Medium::pointer{});
+            EXPECT_FALSE(Medium::find(session, MediumId{}));
         }
 
-        ScopedMedium medium{ session, release.lockAndGet() };
+        ScopedMedium medium{ session, release.getId() };
 
         {
             auto transaction{ session.createReadTransaction() };
 
             EXPECT_EQ(Medium::getCount(session), 1);
 
-            Medium::pointer foundMedium{ Medium::find(session, medium.getId()) };
-            ASSERT_NE(foundMedium, Medium::pointer{});
+            std::optional<Medium> foundMedium{ Medium::find(session, medium.getId()) };
+            ASSERT_TRUE(foundMedium);
             EXPECT_EQ(foundMedium->getReleaseId(), release.getId());
             EXPECT_EQ(foundMedium->getPosition(), std::nullopt);
             EXPECT_EQ(foundMedium->getMedia(), "");
@@ -58,16 +57,18 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            medium.get().modify()->setName("MySubtitle");
-            medium.get().modify()->setPosition(1);
-            medium.get().modify()->setMedia("MyMedia");
+            std::optional<Medium> updatedMedium{ medium.get() };
+            updatedMedium->setName("MySubtitle");
+            updatedMedium->setPosition(1);
+            updatedMedium->setMedia("MyMedia");
+            Medium::update(session, *updatedMedium);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            Medium::pointer foundMedium{ Medium::find(session, medium.getId()) };
-            ASSERT_NE(foundMedium, Medium::pointer{});
+            std::optional<Medium> foundMedium{ Medium::find(session, medium.getId()) };
+            ASSERT_TRUE(foundMedium);
             EXPECT_EQ(foundMedium->getName(), "MySubtitle");
             EXPECT_EQ(foundMedium->getPosition(), 1);
             EXPECT_EQ(foundMedium->getMedia(), "MyMedia");
@@ -81,17 +82,17 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            Medium::pointer foundMedium{ Medium::find(session, release.getId(), std::nullopt) };
-            ASSERT_EQ(foundMedium, Medium::pointer{});
+            std::optional<Medium> foundMedium{ Medium::find(session, release.getId(), std::nullopt) };
+            ASSERT_FALSE(foundMedium);
         }
 
-        ScopedMedium medium{ session, release.lockAndGet() };
+        ScopedMedium medium{ session, release.getId() };
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            Medium::pointer foundMedium{ Medium::find(session, release.getId(), std::nullopt) };
-            ASSERT_NE(foundMedium, Medium::pointer{});
+            std::optional<Medium> foundMedium{ Medium::find(session, release.getId(), std::nullopt) };
+            ASSERT_TRUE(foundMedium);
             EXPECT_EQ(foundMedium->getId(), medium.getId());
         }
     }
@@ -100,26 +101,28 @@ namespace lms::db::tests
     {
         ScopedRelease release{ session, "MyRelease" };
 
-        ScopedMedium medium{ session, release.lockAndGet() };
+        ScopedMedium medium{ session, release.getId() };
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            Medium::pointer foundMedium{ Medium::find(session, release.getId(), 1) };
-            ASSERT_EQ(foundMedium, Medium::pointer{});
+            std::optional<Medium> foundMedium{ Medium::find(session, release.getId(), 1) };
+            ASSERT_FALSE(foundMedium);
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            medium.get().modify()->setPosition(1);
+            std::optional<Medium> updatedMedium{ medium.get() };
+            updatedMedium->setPosition(1);
+            Medium::update(session, *updatedMedium);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            Medium::pointer foundMedium{ Medium::find(session, release.getId(), 1) };
-            ASSERT_NE(foundMedium, Medium::pointer{});
+            std::optional<Medium> foundMedium{ Medium::find(session, release.getId(), 1) };
+            ASSERT_TRUE(foundMedium);
             EXPECT_EQ(foundMedium->getId(), medium.getId());
         }
     }
@@ -127,7 +130,7 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Medium_findTracksByMedium)
     {
         ScopedRelease release{ session, "MyRelease" };
-        ScopedMedium medium{ session, release.lockAndGet() };
+        ScopedMedium medium{ session, release.getId() };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -137,7 +140,7 @@ namespace lms::db::tests
             params.setSortMethod(db::TrackSortMethod::TrackNumber);
 
             bool visited{};
-            db::Track::find(session, params, [&](const db::Track::pointer&) {
+            db::Track::find(session, params, [&](const db::Track&) {
                 visited = true;
             });
             EXPECT_FALSE(visited);
@@ -148,8 +151,12 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setRelease(release.get());
-            track2.get().modify()->setRelease(release.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setRelease(release.getId());
+            Track::update(session, *updatedTrack1);
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setRelease(release.getId());
+            Track::update(session, *updatedTrack2);
         }
 
         {
@@ -160,7 +167,7 @@ namespace lms::db::tests
             params.setSortMethod(db::TrackSortMethod::TrackNumber);
 
             bool visited{};
-            db::Track::find(session, params, [&](const db::Track::pointer&) {
+            db::Track::find(session, params, [&](const db::Track&) {
                 visited = true;
             });
             EXPECT_FALSE(visited);
@@ -168,11 +175,19 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setMedium(medium.get());
-            track2.get().modify()->setMedium(medium.get());
+            std::optional<Track> updatedTrack1{ track1.get() };
+            updatedTrack1->setMedium(medium.getId());
+            Track::update(session, *updatedTrack1);
+            std::optional<Track> updatedTrack2{ track2.get() };
+            updatedTrack2->setMedium(medium.getId());
+            Track::update(session, *updatedTrack2);
 
-            track1.get().modify()->setTrackNumber(3);
-            track2.get().modify()->setTrackNumber(1);
+            updatedTrack1 = track1.get();
+            updatedTrack1->setTrackNumber(3);
+            Track::update(session, *updatedTrack1);
+            updatedTrack2 = track2.get();
+            updatedTrack2->setTrackNumber(1);
+            Track::update(session, *updatedTrack2);
         }
 
         {
@@ -183,8 +198,8 @@ namespace lms::db::tests
             params.setSortMethod(db::TrackSortMethod::TrackNumber);
 
             std::vector<db::TrackId> visitedTrackIds;
-            db::Track::find(session, params, [&](const db::Track::pointer& track) {
-                visitedTrackIds.push_back(track->getId());
+            db::Track::find(session, params, [&](const db::Track& track) {
+                visitedTrackIds.push_back(track.getId());
             });
             ASSERT_EQ(visitedTrackIds.size(), 2);
             EXPECT_EQ(visitedTrackIds[0], track2.getId());

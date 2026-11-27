@@ -74,13 +74,13 @@ namespace lms::image::backend
     std::unique_ptr<IRawImage> decodeImage(std::span<const std::byte> encodedData)
     {
         LMS_SCOPED_TRACE_DETAILED("Image", "DecodeBuffer");
-        return std::make_unique<STB::RawImage>(encodedData);
+        return std::make_unique<stb::RawImage>(encodedData);
     }
 
     std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path)
     {
         LMS_SCOPED_TRACE_DETAILED("Image", "DecodeFile");
-        return std::make_unique<STB::RawImage>(path);
+        return std::make_unique<stb::RawImage>(path);
     }
 
     std::unique_ptr<IEncodedImage> encodeToJPEG(const IRawImage& rawImage, unsigned quality)
@@ -96,7 +96,7 @@ namespace lms::image::backend
             std::copy(reinterpret_cast<const std::byte*>(writeData), reinterpret_cast<const std::byte*>(writeData) + writeSize, output.data() + currentOutputSize);
         } };
 
-        if (::stbi_write_jpg_to_func(writeCb, &encodedData, rawImage.getWidth(), rawImage.getHeight(), 3, static_cast<const STB::RawImage&>(rawImage).getData(), quality) == 0)
+        if (::stbi_write_jpg_to_func(writeCb, &encodedData, rawImage.getWidth(), rawImage.getHeight(), 3, static_cast<const stb::RawImage&>(rawImage).getData(), quality) == 0)
             throw Exception{ "Failed to export in jpeg format!" };
 
         return std::make_unique<EncodedImage>(std::move(encodedData), core::media::ImageFormat::JPEG);

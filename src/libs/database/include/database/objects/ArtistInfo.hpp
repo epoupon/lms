@@ -21,47 +21,47 @@
 
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ArtistInfoId.hpp"
 #include "database/objects/DirectoryId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artist;
-    class Directory;
-    class Session;
+    class ISession;
 
-    class ArtistInfo final : public Object<ArtistInfo, ArtistInfoId>
+    class ArtistInfo : public detail::Object<ArtistInfo, ArtistInfoId>
     {
     public:
-        ArtistInfo() = default;
+        static ArtistInfo create(ISession& session);
+        static void destroy(ISession& session, std::span<const ArtistInfoId> ids);
 
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ArtistInfoId id);
-        static void find(Session& session, ArtistId id, std::optional<Range> range, const std::function<void(const pointer&)>& func);
-        static void find(Session& session, ArtistId id, const std::function<void(const pointer&)>& func);
-        static pointer find(Session& session, const std::filesystem::path& path);
-        static void find(Session& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func);
-        static void findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const pointer&)>& func);
-        static void findWithArtistNameAmbiguity(Session& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func);
-        static void findAbsoluteFilePath(Session& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(ArtistInfoId artistInfoId, const std::filesystem::path& absoluteFilePath)>& func);
+        static std::size_t getCount(ISession& session);
+        static std::optional<ArtistInfo> find(ISession& session, ArtistInfoId id);
+        static void find(ISession& session, ArtistId id, std::optional<Range> range, const std::function<void(const ArtistInfo&)>& func);
+        static void find(ISession& session, ArtistId id, const std::function<void(const ArtistInfo&)>& func);
+        static std::optional<ArtistInfo> find(ISession& session, const std::filesystem::path& path);
+        static void find(ISession& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(const ArtistInfo&)>& func);
+        static void findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const ArtistInfo&)>& func);
+        static void findWithArtistNameAmbiguity(ISession& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const ArtistInfo&)>& func);
+        static void findAbsoluteFilePath(ISession& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(ArtistInfoId artistInfoId, const std::filesystem::path& absoluteFilePath)>& func);
+
+        static void update(ISession& session, const ArtistInfo& artistInfo);
 
         // getters
         std::size_t getScanVersion() const { return _scanVersion; }
         const std::filesystem::path& getAbsoluteFilePath() const { return _absoluteFilePath; }
         const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
-        ObjectPtr<Directory> getDirectory() const;
-        ObjectPtr<Artist> getArtist() const;
-        DirectoryId getDirectoryId() const { return _directory.id(); }
+        ArtistId getArtistId() const { return _artistId; }
+        DirectoryId getDirectoryId() const { return _directoryId; }
         std::string_view getName() const { return _name; }
         std::string_view getSortName() const { return _sortName; }
         std::string_view getType() const { return _type; }
@@ -74,8 +74,8 @@ namespace lms::db
         void setScanVersion(std::size_t version) { _scanVersion = version; }
         void setAbsoluteFilePath(const std::filesystem::path& filePath);
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
-        void setDirectory(ObjectPtr<Directory> directory);
-        void setArtist(ObjectPtr<Artist> artist);
+        void setDirectory(DirectoryId directory) { _directoryId = directory; }
+        void setArtist(ArtistId artist) { _artistId = artist; }
         void setName(std::string_view name);
         void setSortName(std::string_view sortName);
         void setType(std::string_view type) { _type = type; }
@@ -84,30 +84,8 @@ namespace lms::db
         void setBiography(std::string_view biography) { _biography = biography; };
         void setMBIDMatched(bool matched) { _MBIDMatched = matched; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _scanVersion, "scan_version");
-            Wt::Dbo::field(a, _absoluteFilePath, "absolute_file_path");
-            Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
-
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _sortName, "sort_name");
-            Wt::Dbo::field(a, _type, "type");
-            Wt::Dbo::field(a, _gender, "gender");
-            Wt::Dbo::field(a, _disambiguation, "disambiguation");
-            Wt::Dbo::field(a, _biography, "biography");
-
-            Wt::Dbo::field(a, _MBIDMatched, "mbid_matched");
-
-            Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        static pointer create(Session& session);
-
+    protected:
+        ArtistInfo() = default;
         int _scanVersion{};
 
         // Set when coming from artist info file
@@ -126,8 +104,7 @@ namespace lms::db
         std::string _biography;
 
         bool _MBIDMatched{};
-
-        Wt::Dbo::ptr<Directory> _directory;
-        Wt::Dbo::ptr<Artist> _artist;
+        ArtistId _artistId;
+        DirectoryId _directoryId;
     };
 } // namespace lms::db

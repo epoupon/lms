@@ -19,11 +19,15 @@
 
 #include "Podcast.hpp"
 
+#include <cassert>
 #include <chrono>
+#include <cstdint>
 
 #include <Wt/WDate.h>
 
 #include "core/String.hpp"
+#include "core/media/AudioFormat.hpp"
+#include "core/media/MimeType.hpp"
 #include "database/objects/Podcast.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 
@@ -32,92 +36,100 @@
 
 namespace lms::api::subsonic
 {
-    std::string_view getStatus(const db::PodcastEpisode::pointer& episode)
+    std::string_view getStatus(const db::PodcastEpisode& episode)
     {
-        if (episode->getManualDownloadState() == db::PodcastEpisode::ManualDownloadState::DeleteRequested)
+        if (episode.getManualDownloadState() == db::PodcastEpisode::ManualDownloadState::DeleteRequested)
             return "deleted";
 
-        if (!episode->getAudioRelativeFilePath().empty())
+        if (!episode.getAudioRelativeFilePath().empty())
             return "completed";
+
+        if (episode.isDownloadFailed())
+            return "error";
 
         return "new";
     }
 
-    Response::Node createPodcastEpisodeNode(const db::PodcastEpisode::pointer& episode)
+    Response::Node createPodcastEpisodeNode(const db::PodcastEpisode& episode)
     {
         Response::Node episodeNode;
 
+        const bool isDownloaded{ !episode.getAudioRelativeFilePath().empty() };
+
         // Child attributes
-        episodeNode.setAttribute("id", idToString(episode->getId()));
-        episodeNode.setAttribute("title", episode->getTitle());
-        if (episode->getPubDate().isValid())
-            episodeNode.setAttribute("year", std::to_string(episode->getPubDate().date().year()));
-        if (!episode->getEnclosureContentType().empty())
-            episodeNode.setAttribute("contentType", episode->getEnclosureContentType());
-        episodeNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(episode->getDuration()).count());
-        if (episode->getEnclosureLength() > 0)
-            episodeNode.setAttribute("size", episode->getEnclosureLength());
-        episodeNode.setAttribute("isDir", "false"); // TODO parent?
-        if (!episode->getEnclosureUrl().empty())
+        episodeNode.setAttribute("id", idToString(episode.getId()));
+        episodeNode.setAttribute("title", episode.getTitle());
+        if (episode.getPubDate().isValid())
+            episodeNode.setAttribute("year", episode.getPubDate().date().year());
+        // Downloaded episodes report what was detected in the file, the feed's claims are not reliable
+        if (isDownloaded)
         {
-            const auto pos{ episode->getEnclosureUrl().find_last_of('.') };
-            if (pos != std::string_view::npos)
-                episodeNode.setAttribute("suffix", episode->getEnclosureUrl().substr(pos + 1));
+            assert(episode.getContainer() && episode.getCodec());
+            const core::media::AudioFormat format{ *episode.getContainer(), *episode.getCodec() };
+            episodeNode.setAttribute("contentType", core::media::getMimeType(format.container, format.codec).str());
+            if (const core::media::ExtensionSpan extensions{ core::media::getExtensionsForAudioFormat(format) }; !extensions.empty())
+                episodeNode.setAttribute("suffix", extensions.front().substr(1) /* skip leading . */);
         }
-        // estimated bitrate
-        if (episode->getEnclosureLength() > 0 && episode->getDuration() > std::chrono::milliseconds::zero())
-            episodeNode.setAttribute("bitrate", episode->getEnclosureLength() * 8 / std::chrono::duration_cast<std::chrono::milliseconds>(episode->getDuration()).count());
-        if (const db::ArtworkId artworkId{ episode->getArtworkId() }; artworkId.isValid())
+        episodeNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(episode.getDuration()).count());
+        const std::uint64_t size{ isDownloaded ? episode.getFileSize() : episode.getEnclosureLength() };
+        if (size > 0)
+            episodeNode.setAttribute("size", size);
+        episodeNode.setAttribute("isDir", false); // TODO parent?
+        if (isDownloaded && episode.getBitrate())
+            episodeNode.setAttribute("bitRate", *episode.getBitrate() / 1000);
+        else if (size > 0 && episode.getDuration() > std::chrono::milliseconds::zero()) // estimated from the reported size
+            episodeNode.setAttribute("bitRate", size * 8 / std::chrono::duration_cast<std::chrono::milliseconds>(episode.getDuration()).count());
+        if (const db::ArtworkId artworkId{ episode.getArtworkId() }; artworkId.isValid())
             episodeNode.setAttribute("coverArt", idToString(artworkId));
 
         // Podcast specific attributes
         // Expose the streamId only if the episode is actually downloaded
-        if (!episode->getAudioRelativeFilePath().empty())
-            episodeNode.setAttribute("streamId", idToString(episode->getId())); // Use this ID for streaming the podcast
-        episodeNode.setAttribute("channelId", idToString(episode->getPodcastId()));
-        episodeNode.setAttribute("description", episode->getDescription());
+        if (isDownloaded)
+            episodeNode.setAttribute("streamId", idToString(episode.getId())); // Use this ID for streaming the podcast
+        episodeNode.setAttribute("channelId", idToString(episode.getPodcastId()));
+        episodeNode.setAttribute("description", episode.getDescription());
         episodeNode.setAttribute("status", getStatus(episode));
-        if (episode->getPubDate().isValid())
-            episodeNode.setAttribute("publishDate", core::stringUtils::toISO8601String(episode->getPubDate()));
+        if (episode.getPubDate().isValid())
+            episodeNode.setAttribute("publishDate", core::stringUtils::toISO8601String(episode.getPubDate()));
 
         return episodeNode;
     }
 
-    std::string_view getStatus(const db::Podcast::pointer& podcast)
+    std::string_view getStatus(const db::Podcast& podcast)
     {
-        if (podcast->getTitle().empty())
+        if (podcast.getTitle().empty())
             return "new";
 
         return "completed";
     }
 
-    Response::Node createPodcastNode(RequestContext& context, const db::Podcast::pointer& podcast, bool includeEpisodes)
+    Response::Node createPodcastNode(RequestContext& context, const db::Podcast& podcast, bool includeEpisodes)
     {
         Response::Node podcastNode;
 
-        podcastNode.setAttribute("id", idToString(podcast->getId()));
-        podcastNode.setAttribute("url", podcast->getLink()); // TODO
-        if (!podcast->getTitle().empty())
-            podcastNode.setAttribute("title", podcast->getTitle());
-        if (!podcast->getDescription().empty())
-            podcastNode.setAttribute("description", podcast->getDescription());
-        if (!podcast->getImageUrl().empty())
-            podcastNode.setAttribute("originalImageUrl", podcast->getImageUrl());
+        podcastNode.setAttribute("id", idToString(podcast.getId()));
+        podcastNode.setAttribute("url", podcast.getUrl());
+        if (!podcast.getTitle().empty())
+            podcastNode.setAttribute("title", podcast.getTitle());
+        if (!podcast.getDescription().empty())
+            podcastNode.setAttribute("description", podcast.getDescription());
+        if (!podcast.getImageUrl().empty())
+            podcastNode.setAttribute("originalImageUrl", podcast.getImageUrl());
 
         podcastNode.setAttribute("status", getStatus(podcast));
 
-        if (const db::ArtworkId artworkId{ podcast->getArtworkId() }; artworkId.isValid())
+        if (const db::ArtworkId artworkId{ podcast.getArtworkId() }; artworkId.isValid())
             podcastNode.setAttribute("coverArt", idToString(artworkId));
 
         if (includeEpisodes)
         {
-            podcastNode.createEmptyArrayChild("episode ");
+            podcastNode.createEmptyArrayChild("episode");
 
             db::PodcastEpisode::FindParameters params;
-            params.setPodcast(podcast->getId());
+            params.setPodcast(podcast.getId());
             params.setSortMode(db::PodcastEpisodeSortMode::PubDateDesc);
 
-            db::PodcastEpisode::find(context.getDbSession(), params, [&](const db::PodcastEpisode::pointer& episode) {
+            db::PodcastEpisode::find(context.getDbSession(), params, [&](const db::PodcastEpisode& episode) {
                 podcastNode.addArrayChild("episode", createPodcastEpisodeNode(episode));
             });
         }

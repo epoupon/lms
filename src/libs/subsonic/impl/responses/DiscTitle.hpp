@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include "database/Object.hpp"
-
 #include "SubsonicResponse.hpp"
 
 namespace lms::db
@@ -30,5 +28,5 @@ namespace lms::db
 
 namespace lms::api::subsonic
 {
-    Response::Node createDiscTitle(const db::ObjectPtr<db::Medium>& medium);
+    Response::Node createDiscTitle(const db::Medium& medium);
 }

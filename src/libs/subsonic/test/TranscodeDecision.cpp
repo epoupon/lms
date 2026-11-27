@@ -79,6 +79,7 @@ namespace lms::api::subsonic
 
             ClientInfo clientInfo;
             audio::AudioProperties source;
+            std::optional<std::size_t> sourceFileBitrate{}; // unset: audio-only file, costs source.bitrate (which must then be set)
 
             detail::TranscodeDecisionResult expected;
         };
@@ -105,7 +106,8 @@ namespace lms::api::subsonic
                 }
             }
 
-            EXPECT_EQ(testCase.expected, detail::computeTranscodeDecision(testCase.clientInfo, testCase.source));
+            const std::size_t sourceFileBitrate{ testCase.sourceFileBitrate ? *testCase.sourceFileBitrate : testCase.source.bitrate.value() };
+            EXPECT_EQ(testCase.expected, detail::computeTranscodeDecision(testCase.clientInfo, testCase.source, sourceFileBitrate));
         }
 
         std::vector<TestCase> buildDirectPlayTestCases()
@@ -278,6 +280,32 @@ namespace lms::api::subsonic
                     .expected = { detail::DirectPlayResult{} },
                 },
 
+                {
+                    .name = "WebmDirectPlayMatchesWebmContainerName",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = std::nullopt,
+                        .directPlayProfiles = {
+                            { .containers = { "webm" }, .audioCodecs = { "opus" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {},
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::WebM,
+                        .codec = core::media::Codec::Opus,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 128'000,
+                        .channelCount = 2,
+                        .sampleRate = 48'000,
+                        .bitsPerSample = std::nullopt,
+                    },
+
+                    .expected = { detail::DirectPlayResult{} },
+                },
+
                 // direct play never needs the server to decode anything (the source bytes are streamed as-is),
                 // so it must succeed even for a source format this build can't decode at all
                 {
@@ -432,6 +460,66 @@ namespace lms::api::subsonic
                     },
 
                     .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::AudioBitrateNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "ogg", .codec = "opus", .audioChannels = std::nullopt, .audioBitrate = 320'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
+                // the global limitation applies to the whole file (here mostly video), not only to its audio stream
+                {
+                    .name = "VideoFileOverGlobalLimitation",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = 320'000,
+                        .maxTranscodingAudioBitrate = 320'000,
+                        .directPlayProfiles = {
+                            { .containers = { "mp4" }, .audioCodecs = { "aac" }, .protocols = {}, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {
+                            { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
+                        },
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::MP4,
+                        .codec = core::media::Codec::AAC,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 128'000,
+                        .channelCount = 2,
+                        .sampleRate = 44'100,
+                        .bitsPerSample = std::nullopt,
+                    },
+                    .sourceFileBitrate = 4'000'000,
+
+                    .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::AudioBitrateNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = std::nullopt, .audioBitrate = 128'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
+                // codec limitations only look at the audio stream
+                {
+                    .name = "VideoFileCodecLimitation",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = std::nullopt,
+                        .directPlayProfiles = {
+                            { .containers = { "mp4" }, .audioCodecs = { "aac" }, .protocols = {}, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {},
+                        .codecProfiles = { { .type = "AudioCodec", .name = "aac", .limitations = {
+                                                                                      { .name = Limitation::Type::AudioBitrate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "256000" }, .required = true },
+                                                                                  } } },
+                    },
+                    .source = {
+                        .container = core::media::Container::MP4,
+                        .codec = core::media::Codec::AAC,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 128'000,
+                        .channelCount = 2,
+                        .sampleRate = 44'100,
+                        .bitsPerSample = std::nullopt,
+                    },
+                    .sourceFileBitrate = 4'000'000,
+
+                    .expected = { detail::DirectPlayResult{} },
                 },
             };
         }
@@ -645,6 +733,156 @@ namespace lms::api::subsonic
                     },
 
                     .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = std::nullopt, .audioBitrate = 128'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
+                // lossy source above the lossy to lossy cap => re-encoded at the cap, not at the source bitrate
+                {
+                    .name = "LossySourceBitrateIsCapped",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = std::nullopt,
+                        .directPlayProfiles = {
+                            { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {
+                            { .container = "ogg", .audioCodec = "opus", .protocol = "http", .maxAudioChannels = std::nullopt },
+                        },
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::MP4,
+                        .codec = core::media::Codec::AAC,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 320'000,
+                        .channelCount = 2,
+                        .sampleRate = 44'100,
+                        .bitsPerSample = std::nullopt,
+                    },
+
+                    .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "ogg", .codec = "opus", .audioChannels = std::nullopt, .audioBitrate = 256'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
+                // a client max between the cap and the source bitrate must not lift the capped target back up
+                {
+                    .name = "LossySourceBitrateCapNotLiftedByClientMax",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = 300'000,
+                        .directPlayProfiles = {
+                            { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {
+                            { .container = "ogg", .audioCodec = "opus", .protocol = "http", .maxAudioChannels = std::nullopt },
+                        },
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::MP4,
+                        .codec = core::media::Codec::AAC,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 320'000,
+                        .channelCount = 2,
+                        .sampleRate = 44'100,
+                        .bitsPerSample = std::nullopt,
+                    },
+
+                    .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "ogg", .codec = "opus", .audioChannels = std::nullopt, .audioBitrate = 256'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
+                // unknown audio bitrate (e.g. Matroska without statistics tags) => the file bitrate is used as target
+                {
+                    .name = "UnknownLossySourceBitrateUsesFileBitrate",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = std::nullopt,
+                        .directPlayProfiles = {
+                            { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {
+                            { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = std::nullopt },
+                        },
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::WebM,
+                        .codec = core::media::Codec::Opus,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = std::nullopt,
+                        .channelCount = 2,
+                        .sampleRate = 48'000,
+                        .bitsPerSample = std::nullopt,
+                    },
+                    .sourceFileBitrate = 130'000,
+
+                    .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = std::nullopt, .audioBitrate = 130'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
+                // unknown audio bitrate with a big file bitrate (e.g. WebM with video) => capped like any lossy source
+                {
+                    .name = "UnknownLossySourceBitrateWithVideoIsCapped",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = std::nullopt,
+                        .directPlayProfiles = {
+                            { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {
+                            { .container = "ogg", .audioCodec = "opus", .protocol = "http", .maxAudioChannels = std::nullopt },
+                        },
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::WebM,
+                        .codec = core::media::Codec::Opus,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = std::nullopt,
+                        .channelCount = 2,
+                        .sampleRate = 48'000,
+                        .bitsPerSample = std::nullopt,
+                    },
+                    .sourceFileBitrate = 5'349'000,
+
+                    .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "ogg", .codec = "opus", .audioChannels = std::nullopt, .audioBitrate = 256'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
+                // unknown audio bitrate => a bitrate limitation is checked against the file bitrate, an upper bound of the audio one
+                {
+                    .name = "UnknownSourceBitrateLimitationUsesFileBitrate",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = std::nullopt,
+                        .maxTranscodingAudioBitrate = std::nullopt,
+                        .directPlayProfiles = {
+                            { .containers = { "webm" }, .audioCodecs = { "opus" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {
+                            { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = std::nullopt },
+                        },
+                        .codecProfiles = { { .type = "AudioCodec", .name = "opus", .limitations = {
+                                                                                       { .name = Limitation::Type::AudioBitrate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "320000" }, .required = true },
+                                                                                   } } },
+                    },
+                    .source = {
+                        .container = core::media::Container::WebM,
+                        .codec = core::media::Codec::Opus,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = std::nullopt,
+                        .channelCount = 2,
+                        .sampleRate = 48'000,
+                        .bitsPerSample = std::nullopt,
+                    },
+                    .sourceFileBitrate = 130'000,
+
+                    .expected = { detail::DirectPlayResult{} },
                 },
 
                 // needs transcode because codec not handled (lossless source => using max bitrate)
@@ -952,6 +1190,35 @@ namespace lms::api::subsonic
                     },
 
                     .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::ProtocolNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = std::nullopt, .audioBitrate = 128'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+                },
+
+                // WebM is a subset of Matroska, not the other way round: a WebM-only client (e.g. a browser) cannot play Matroska files
+                {
+                    .name = "MatroskaNotDirectPlayedAsWebm",
+                    .clientInfo = {
+                        .name = "TestClient",
+                        .platform = "TestPlatform",
+                        .maxAudioBitrate = 320'000,
+                        .maxTranscodingAudioBitrate = 320'000,
+                        .directPlayProfiles = {
+                            { .containers = { "webm" }, .audioCodecs = { "opus" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
+                        },
+                        .transcodingProfiles = {
+                            { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = std::nullopt },
+                        },
+                        .codecProfiles = {},
+                    },
+                    .source = {
+                        .container = core::media::Container::Matroska,
+                        .codec = core::media::Codec::Opus,
+                        .duration = std::chrono::seconds{ 60 },
+                        .bitrate = 128'000,
+                        .channelCount = 2,
+                        .sampleRate = 48'000,
+                        .bitsPerSample = std::nullopt,
+                    },
+
+                    .expected = { detail::TranscodeResult{ .reasons = { detail::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = std::nullopt, .audioBitrate = 128'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
                 },
             };
         }

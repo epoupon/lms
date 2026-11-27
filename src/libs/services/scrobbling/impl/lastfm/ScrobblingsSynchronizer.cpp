@@ -19,14 +19,16 @@
 
 #include "ScrobblingsSynchronizer.hpp"
 
+#include <algorithm>
+#include <array>
+#include <chrono>
+
 #include <boost/asio/bind_executor.hpp>
 #include <boost/asio/post.hpp>
 
-#include "core/IConfig.hpp"
-#include "core/Service.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Listen.hpp"
 #include "database/objects/ListenBackendSync.hpp"
@@ -34,7 +36,6 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/User.hpp"
-#include "services/scrobbling/Exception.hpp"
 
 #include "Utils.hpp"
 
@@ -44,6 +45,13 @@ namespace lms::scrobbling::lastFm
     {
         constexpr std::size_t maxBatchSize{ 50 };
 
+        // 1, 2, 4 ... 64 minutes
+        constexpr std::size_t maxExportRetryDoublings{ 6 };
+        std::chrono::minutes getExportRetryDelay(std::size_t consecutiveFailures)
+        {
+            return std::chrono::minutes{ 1 << std::min(consecutiveFailures, maxExportRetryDoublings) };
+        }
+
         struct TrackInfo
         {
             std::string artistName;
@@ -52,11 +60,11 @@ namespace lms::scrobbling::lastFm
             std::optional<std::chrono::seconds> duration;
         };
 
-        std::optional<TrackInfo> getTrackInfo(db::Session& session, const scrobbling::Listen& listen)
+        std::optional<TrackInfo> getTrackInfo(db::ISession& session, const scrobbling::Listen& listen)
         {
             auto transaction{ session.createReadTransaction() };
 
-            const db::Track::pointer track{ db::Track::find(session, listen.trackId) };
+            const std::optional<db::Track> track{ db::Track::find(session, listen.trackId) };
             if (!track)
                 return std::nullopt;
 
@@ -71,7 +79,7 @@ namespace lms::scrobbling::lastFm
             info.artistName = artistName;
             info.trackName = track->getName();
 
-            if (const auto release{ track->getRelease() })
+            if (const auto release{ db::Release::find(session, track->getReleaseId()) })
                 info.albumName = release->getName();
 
             const auto secs{ std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()) };
@@ -117,12 +125,12 @@ namespace lms::scrobbling::lastFm
     ScrobblingsSynchronizer::ScrobblingsSynchronizer(boost::asio::io_context& ioContext, db::IDb& db, core::http::IClient& client)
         : _ioContext{ ioContext }
         , _db{ db }
-        , _submitPeriod{ core::Service<core::IConfig>::get()->getULong("lastfm-submit-period-hours", 1) }
         , _client{ client }
     {
-        LMS_LOG_LASTFM(INFO, "Starting Last.fm scrobblings synchronizer, submit period = " << _submitPeriod.count() << " hours");
-        if (_submitPeriod.count() > 0)
-            scheduleSubmit(std::chrono::seconds{ 30 });
+        LMS_LOG_LASTFM(INFO, "Starting Last.fm scrobblings synchronizer");
+
+        // resume the exports interrupted by the last shutdown
+        boost::asio::post(_ioContext, [this] { requestExportForEnabledUsers(); });
     }
 
     ScrobblingsSynchronizer::~ScrobblingsSynchronizer() = default;
@@ -130,124 +138,134 @@ namespace lms::scrobbling::lastFm
     void ScrobblingsSynchronizer::enqueListen(const TimedListen& listen)
     {
         assert(listen.listenedAt.isValid());
-        enqueListen(listen, listen.listenedAt);
+
+        if (saveListen(listen, db::SyncState::PendingAdd))
+        {
+            boost::asio::post(boost::asio::bind_executor(_strand, [this, userId = listen.userId] {
+                startExport(getExportState(userId));
+            }));
+        }
     }
 
     void ScrobblingsSynchronizer::enqueListenNow(const scrobbling::Listen& listen)
     {
-        enqueListen(listen, {});
-    }
-
-    void ScrobblingsSynchronizer::requestImmediateExport()
-    {
-        if (_submitPeriod.count() == 0)
-            return;
-
-        boost::asio::post(boost::asio::bind_executor(_strand, [this] {
-            scheduleSubmit(std::chrono::seconds{ 0 });
-        }));
-    }
-
-    void ScrobblingsSynchronizer::enqueListen(const scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
-    {
         const std::optional<TrackInfo> info{ getTrackInfo(_db.getTLSSession(), listen) };
         if (!info)
-        {
-            LMS_LOG_LASTFM(DEBUG, "Cannot build scrobble params: skipping");
             return;
-        }
-
-        if (timePoint.isValid())
-            saveListen(TimedListen{ listen, timePoint }, db::SyncState::PendingAdd);
 
         const utils::LastFmCredentials creds{ utils::getLastFmCredentials(_db.getTLSSession(), listen.userId) };
         if (creds.apiKey.empty() || creds.apiSecret.empty() || creds.sessionKey.empty())
-        {
-            LMS_LOG_LASTFM(DEBUG, "Missing Last.fm credentials for user, skipping submission");
             return;
-        }
 
-        std::map<std::string, std::string> params{ timePoint.isValid() ? buildScrobbleParams(*info, timePoint, 0) : buildNowPlayingParams(*info) };
-
+        std::map<std::string, std::string> params{ buildNowPlayingParams(*info) };
         params.emplace("api_key", creds.apiKey);
         params.emplace("sk", creds.sessionKey);
         params.emplace("format", "json");
         params["api_sig"] = utils::computeApiSig(params, creds.apiSecret);
 
+        // fire and forget: a stale "now playing" is not worth a retry
         core::http::ClientPOSTRequestParameters request;
         request.relativeUrl = "/2.0/";
-
-        if (timePoint.isValid())
-        {
-            const TimedListen timedListen{ listen, timePoint };
-            request.priority = core::http::ClientRequestParameters::Priority::Normal;
-            request.onSuccessFunc = [this, timedListen](const Wt::Http::Message& msg) {
-                const auto results{ utils::parseScrobbleResults(msg.body(), 1) };
-                const utils::ScrobbleResult result{ results.size() == 1 ? results[0] : utils::ScrobbleResult{} };
-
-                boost::asio::post(boost::asio::bind_executor(_strand, [this, timedListen, result] {
-                    handleScrobbleResult(timedListen, result);
-                }));
-            };
-        }
-        else
-        {
-            request.priority = core::http::ClientRequestParameters::Priority::High;
-            // "now playing" is fire-and-forget, no retry
-        }
-
+        request.priority = core::http::ClientRequestParameters::Priority::High;
         request.message.addBodyText(utils::buildFormBody(params));
         request.message.addHeader("Content-Type", "application/x-www-form-urlencoded");
         _client.sendPOSTRequest(std::move(request));
     }
 
+    void ScrobblingsSynchronizer::requestImmediateExport(db::UserId userId)
+    {
+        boost::asio::post(boost::asio::bind_executor(_strand, [this, userId] {
+            ExportState& exportState{ getExportState(userId) };
+            // asked for by the user (backend turned on, account linked): no reason to wait for the end of a retry delay
+            if (exportState.retryTimer.cancel() > 0)
+            {
+                sendNextScrobbleBatch(exportState);
+                return;
+            }
+
+            startExport(exportState);
+        }));
+    }
+
+    void ScrobblingsSynchronizer::startExport(ExportState& exportState)
+    {
+        assert(_strand.running_in_this_thread());
+
+        // the running export picks up what was queued meanwhile, and a pending retry keeps its delay
+        if (exportState.exporting)
+            return;
+
+        exportState.exporting = true;
+        sendNextScrobbleBatch(exportState);
+    }
+
+    ScrobblingsSynchronizer::ExportState& ScrobblingsSynchronizer::getExportState(db::UserId userId)
+    {
+        assert(_strand.running_in_this_thread());
+
+        return _exportStates.try_emplace(userId, userId, _ioContext).first->second;
+    }
+
+    void ScrobblingsSynchronizer::requestExportForEnabledUsers()
+    {
+        std::vector<db::UserId> userIds;
+        {
+            db::ISession& session{ _db.getTLSSession() };
+            auto transaction{ session.createReadTransaction() };
+
+            db::User::find(session, db::User::FindParameters{}, [&](const db::User& user) {
+                if (user.getScrobblingBackends().contains(db::ScrobblingBackend::LastFm))
+                    userIds.push_back(user.getId());
+            });
+        }
+
+        for (const db::UserId userId : userIds)
+            requestImmediateExport(userId);
+    }
+
     bool ScrobblingsSynchronizer::saveListen(const TimedListen& listen, db::SyncState syncState)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
+        std::optional<db::Listen> dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
         if (!dbListen)
         {
-            const db::User::pointer user{ db::User::find(session, listen.userId) };
+            const std::optional<db::User> user{ db::User::find(session, listen.userId) };
             if (!user)
                 return false;
 
-            const db::Track::pointer track{ db::Track::find(session, listen.trackId) };
+            const std::optional<db::Track> track{ db::Track::find(session, listen.trackId) };
             if (!track)
                 return false;
 
-            dbListen = session.create<db::Listen>(user, track, listen.listenedAt);
+            dbListen = db::Listen::create(session, user->getId(), track->getId(), listen.listenedAt);
         }
 
-        db::ListenBackendSync::pointer sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::LastFm) };
+        std::optional<db::ListenBackendSync> sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::LastFm) };
         if (!sync)
-        {
-            sync = session.create<db::ListenBackendSync>(dbListen, db::ScrobblingBackend::LastFm);
-            sync.modify()->setSyncState(syncState);
-            return true;
-        }
-
-        if (sync->getSyncState() == syncState)
+            sync = db::ListenBackendSync::create(session, dbListen->getId(), db::ScrobblingBackend::LastFm);
+        else if (sync->getSyncState() == syncState)
             return false;
 
-        sync.modify()->setSyncState(syncState);
+        sync->setSyncState(syncState);
+        db::ListenBackendSync::update(session, *sync);
         return true;
     }
 
-    void ScrobblingsSynchronizer::handleScrobbleResult(const TimedListen& listen, const utils::ScrobbleResult& result)
+    bool ScrobblingsSynchronizer::handleScrobbleResult(db::ListenBackendSyncId syncId, const utils::ScrobbleResult& result)
     {
         const std::string detail{ result.ignoredMessage.empty() ? std::string{} : (": " + result.ignoredMessage) };
 
         switch (result.ignoredCode)
         {
         case utils::ScrobbleIgnoredCode::None:
-            saveListen(listen, db::SyncState::Synchronized);
-            return;
+            markListenSynchronized(syncId);
+            return true;
 
         case utils::ScrobbleIgnoredCode::DailyLimitExceeded:
             LMS_LOG_LASTFM(WARNING, "Scrobble deferred, will retry later" << detail);
-            return;
+            return false;
 
         case utils::ScrobbleIgnoredCode::ArtistIgnored:
         case utils::ScrobbleIgnoredCode::TrackIgnored:
@@ -257,94 +275,92 @@ namespace lms::scrobbling::lastFm
         }
 
         LMS_LOG_LASTFM(WARNING, "Scrobble ignored by Last.fm: " << utils::toString(result.ignoredCode) << detail);
-        saveListen(listen, db::SyncState::Synchronized);
+        markListenSynchronized(syncId);
+        return true;
     }
 
-    void ScrobblingsSynchronizer::skipListen(const TimedListen& listen)
+    void ScrobblingsSynchronizer::dropListen(db::ListenBackendSyncId syncId)
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, listen.listenedAt) };
-        if (!dbListen)
+        db::ListenBackendSync::destroy(session, std::array{ syncId });
+    }
+
+    void ScrobblingsSynchronizer::markListenSynchronized(db::ListenBackendSyncId syncId)
+    {
+        db::ISession& session{ _db.getTLSSession() };
+        auto transaction{ session.createWriteTransaction() };
+
+        // gone if the backend was turned off while the listen was being sent
+        std::optional<db::ListenBackendSync> sync{ db::ListenBackendSync::find(session, syncId) };
+        if (!sync)
             return;
 
-        if (db::ListenBackendSync::pointer sync{ db::ListenBackendSync::find(session, dbListen->getId(), db::ScrobblingBackend::LastFm) })
-        {
-            LMS_LOG_LASTFM(DEBUG, "Listen cannot be scrobbled (no artist tag): dropping sync entry");
-            sync.remove();
-        }
+        sync->setSyncState(db::SyncState::Synchronized);
+        db::ListenBackendSync::update(session, *sync);
     }
 
-    void ScrobblingsSynchronizer::enquePendingListens()
+    void ScrobblingsSynchronizer::sendNextScrobbleBatch(ExportState& exportState)
     {
-        std::map<db::UserId, std::vector<TimedListen>> pendingByUser;
+        assert(_strand.running_in_this_thread());
 
+        // not linked yet: the queue is sent once the user links their account
+        const utils::LastFmCredentials creds{ utils::getLastFmCredentials(_db.getTLSSession(), exportState.userId) };
+        if (creds.apiKey.empty() || creds.apiSecret.empty() || creds.sessionKey.empty())
         {
-            db::Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createReadTransaction() };
-
-            db::ListenBackendSync::FindParameters params;
-            params.setBackend(db::ScrobblingBackend::LastFm)
-                .setSyncState(db::SyncState::PendingAdd)
-                .setRange(db::Range{ 0, maxBatchSize * 10 });
-
-            db::ListenBackendSync::find(session, params, [&](const db::ListenBackendSync::pointer& sync) {
-                const db::Listen::pointer dbListen{ sync->getListen() };
-
-                TimedListen tl;
-                tl.listenedAt = dbListen->getDateTime();
-                tl.userId = dbListen->getUser()->getId();
-                tl.trackId = dbListen->getTrack()->getId();
-                pendingByUser[tl.userId].push_back(tl);
-            });
+            exportState.exporting = false;
+            return;
         }
 
-        for (auto& [userId, listens] : pendingByUser)
-        {
-            const utils::LastFmCredentials creds{ utils::getLastFmCredentials(_db.getTLSSession(), userId) };
-            if (creds.apiKey.empty() || creds.apiSecret.empty() || creds.sessionKey.empty())
-            {
-                LMS_LOG_LASTFM(DEBUG, "Missing Last.fm credentials for user, skipping");
-                continue;
-            }
-
-            for (std::span<const TimedListen> remaining{ listens }; !remaining.empty();)
-            {
-                const std::size_t count{ std::min(maxBatchSize, remaining.size()) };
-                sendScrobbleBatch(creds, remaining.first(count));
-                remaining = remaining.subspan(count);
-            }
-        }
-    }
-
-    void ScrobblingsSynchronizer::sendScrobbleBatch(const utils::LastFmCredentials& creds, std::span<const TimedListen> listens)
-    {
         std::map<std::string, std::string> params;
         params["method"] = "track.scrobble";
 
-        std::vector<TimedListen> validListens;
-        db::Session& session{ _db.getTLSSession() };
-
-        for (const TimedListen& listen : listens)
+        // sync rows of the listens in the batch, in the order Last.fm reports their results
+        std::vector<db::ListenBackendSyncId> batchSyncIds;
+        while (batchSyncIds.empty())
         {
-            const std::optional<TrackInfo> info{ getTrackInfo(session, listen) };
-            if (!info)
+            std::vector<std::pair<db::ListenBackendSyncId, TimedListen>> pendingListens;
             {
-                skipListen(listen);
-                continue;
+                db::ISession& session{ _db.getTLSSession() };
+                auto transaction{ session.createReadTransaction() };
+
+                db::ListenBackendSync::FindParameters findParams;
+                findParams.setUser(exportState.userId)
+                    .setBackend(db::ScrobblingBackend::LastFm)
+                    .setSyncState(db::SyncState::PendingAdd)
+                    .setRange(db::Range{ 0, maxBatchSize });
+
+                db::ListenBackendSync::find(session, findParams, [&](const db::ListenBackendSync& sync) {
+                    const std::optional<db::Listen> listen{ db::Listen::find(session, sync.getListenId()) };
+                    pendingListens.emplace_back(sync.getId(), TimedListen{ { listen->getUserId(), listen->getTrackId() }, listen->getDateTime() });
+                });
             }
 
-            auto trackParams{ buildScrobbleParams(*info, listen.listenedAt, validListens.size()) };
-            trackParams.erase("method");
-            params.merge(std::move(trackParams));
-            validListens.push_back(listen);
+            if (pendingListens.empty())
+            {
+                exportState.exporting = false;
+                return;
+            }
+
+            for (const auto& [syncId, listen] : pendingListens)
+            {
+                const std::optional<TrackInfo> info{ getTrackInfo(_db.getTLSSession(), listen) };
+                if (!info)
+                {
+                    LMS_LOG_LASTFM(DEBUG, "Listen cannot be scrobbled (no artist tag): dropping it");
+                    dropListen(syncId);
+                    continue;
+                }
+
+                auto trackParams{ buildScrobbleParams(*info, listen.listenedAt, batchSyncIds.size()) };
+                trackParams.erase("method");
+                params.merge(std::move(trackParams));
+                batchSyncIds.push_back(syncId);
+            }
         }
 
-        if (validListens.empty())
-            return;
-
-        LMS_LOG_LASTFM(DEBUG, "Sending scrobble batch of " << validListens.size() << " listens");
+        LMS_LOG_LASTFM(DEBUG, "Sending scrobble batch of " << batchSyncIds.size() << " listens");
 
         params["api_key"] = creds.apiKey;
         params["sk"] = creds.sessionKey;
@@ -356,33 +372,63 @@ namespace lms::scrobbling::lastFm
         request.priority = core::http::ClientRequestParameters::Priority::Normal;
         request.message.addBodyText(utils::buildFormBody(params));
         request.message.addHeader("Content-Type", "application/x-www-form-urlencoded");
-        request.onSuccessFunc = [this, validListens](const Wt::Http::Message& msg) {
-            const auto results{ utils::parseScrobbleResults(msg.body(), validListens.size()) };
+        request.onSuccessFunc = [this, batchSyncIds, &exportState](const Wt::Http::Message& msg) {
+            const auto results{ utils::parseScrobbleResults(msg.body(), batchSyncIds.size()) };
+            // likely not from Last.fm (proxy, captive portal...), which reports its errors with an HTTP error status
+            if (results.size() != batchSyncIds.size())
+                LMS_LOG_LASTFM(WARNING, "Cannot understand the response to a scrobble batch, will send it again: '" << std::string_view{ msg.body() }.substr(0, 200) << "'");
 
-            boost::asio::post(boost::asio::bind_executor(_strand, [this, validListens, results] {
-                for (std::size_t i{ 0 }; i < validListens.size(); ++i)
-                    handleScrobbleResult(validListens[i], i < results.size() ? results[i] : utils::ScrobbleResult{});
+            boost::asio::post(boost::asio::bind_executor(_strand, [this, batchSyncIds, results, &exportState] {
+                if (results.size() != batchSyncIds.size())
+                {
+                    scheduleExportRetry(exportState);
+                    return;
+                }
+
+                bool allHandled{ true };
+                for (std::size_t i{ 0 }; i < batchSyncIds.size(); ++i)
+                {
+                    if (!handleScrobbleResult(batchSyncIds[i], results[i]))
+                        allHandled = false;
+                }
+
+                if (!allHandled)
+                {
+                    scheduleExportRetry(exportState);
+                    return;
+                }
+
+                exportState.consecutiveFailures = 0;
+                sendNextScrobbleBatch(exportState);
+            }));
+        };
+        // Last.fm reports rejected scrobbles in a successful response: any failure is worth a retry
+        request.onFailureFunc = [this, &exportState](std::optional<int> /*httpStatus*/) {
+            boost::asio::post(boost::asio::bind_executor(_strand, [this, &exportState] {
+                scheduleExportRetry(exportState);
             }));
         };
 
         _client.sendPOSTRequest(std::move(request));
     }
 
-    void ScrobblingsSynchronizer::scheduleSubmit(std::chrono::seconds fromNow)
+    void ScrobblingsSynchronizer::scheduleExportRetry(ExportState& exportState)
     {
-        LMS_LOG_LASTFM(DEBUG, "Scheduled pending retry in " << fromNow.count() << " seconds");
-        _submitTimer.expires_after(fromNow);
-        _submitTimer.async_wait(boost::asio::bind_executor(_strand, [this](const boost::system::error_code& ec) {
-            if (ec == boost::asio::error::operation_aborted)
-                return;
-            if (ec)
-                throw Exception{ "Last.fm retry timer failure: " + std::string{ ec.message() } };
+        assert(_strand.running_in_this_thread());
 
-            if (_submitPeriod.count() > 0)
-            {
-                enquePendingListens();
-                scheduleSubmit(_submitPeriod);
-            }
+        const std::size_t failureCount{ exportState.consecutiveFailures++ };
+        const std::chrono::minutes retryDelay{ getExportRetryDelay(failureCount) };
+        if (failureCount == maxExportRetryDoublings)
+            LMS_LOG_LASTFM(WARNING, "Still cannot send scrobbles for user " << exportState.userId.toString() << ", now retrying every " << retryDelay.count() << " minutes: is Last.fm down or the account link broken?");
+        else
+            LMS_LOG_LASTFM(INFO, "Cannot send scrobbles, retrying in " << retryDelay.count() << " minutes");
+
+        exportState.retryTimer.expires_after(retryDelay);
+        exportState.retryTimer.async_wait(boost::asio::bind_executor(_strand, [this, &exportState](const boost::system::error_code& ec) {
+            if (ec)
+                return; // cancelled on shutdown or by requestImmediateExport
+
+            sendNextScrobbleBatch(exportState);
         }));
     }
 } // namespace lms::scrobbling::lastFm

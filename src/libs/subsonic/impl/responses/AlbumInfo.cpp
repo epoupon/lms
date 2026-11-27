@@ -25,11 +25,11 @@
 
 namespace lms::api::subsonic
 {
-    Response::Node createAlbumInfoNode(RequestContext& context, const db::ObjectPtr<db::Release>& release)
+    Response::Node createAlbumInfoNode(RequestContext& context, const db::Release& release)
     {
         Response::Node albumInfo;
 
-        if (const auto releaseMBID{ release->getMBID() })
+        if (const auto releaseMBID{ release.getMBID() })
         {
             switch (context.getResponseFormat())
             {

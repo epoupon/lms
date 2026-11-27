@@ -19,7 +19,7 @@
 
 #pragma once
 
-namespace lms::ui::Notification
+namespace lms::ui::notification
 {
     enum class Type
     {
@@ -27,4 +27,4 @@ namespace lms::ui::Notification
         Warning,
         Danger,
     };
-} // namespace lms::ui::Notification
+} // namespace lms::ui::notification

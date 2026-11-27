@@ -19,28 +19,30 @@
 
 #pragma once
 
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-
-#include "database/Object.hpp"
 #include "database/objects/UIStateId.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class User;
-    class Session;
+    class ISession;
 
-    class UIState final : public Object<UIState, UIStateId>
+    class UIState : public detail::Object<UIState, UIStateId>
     {
     public:
-        UIState() = default;
+        static UIState create(ISession& session, std::string_view item, UserId user);
+        static void destroy(ISession& session, std::span<const UIStateId> ids);
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, UIStateId settingId);
-        static pointer find(Session& session, std::string_view item, UserId userId);
+        static std::size_t getCount(ISession& session);
+        static std::optional<UIState> find(ISession& session, UIStateId settingId);
+        static std::optional<UIState> find(ISession& session, std::string_view item, UserId userId);
+
+        static void update(ISession& session, const UIState& uiState);
 
         // Getters
         std::string_view getValue() const { return _value; };
@@ -48,22 +50,11 @@ namespace lms::db
         // Setters
         void setValue(std::string_view value) { _value = value; };
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _item, "item");
-            Wt::Dbo::field(a, _value, "value");
-
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        UIState(std::string_view item, ObjectPtr<User> user);
-        static pointer create(Session& session, std::string_view item, ObjectPtr<User> user);
+    protected:
+        UIState() = default;
+        explicit UIState(std::string_view item);
 
         std::string _item;
         std::string _value;
-        Wt::Dbo::ptr<User> _user;
     };
 } // namespace lms::db

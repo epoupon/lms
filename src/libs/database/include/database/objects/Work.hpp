@@ -19,64 +19,56 @@
 
 #pragma once
 
+#include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
-
 #include "core/UUID.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/WorkId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Session;
-    class Track;
+    class ISession;
 
-    class Work final : public Object<Work, WorkId>
+    class Work : public detail::Object<Work, WorkId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
 
-        Work() = default;
+        static Work create(ISession& session, std::string_view name, const std::optional<core::UUID>& mbid);
+        static void destroy(ISession& session, std::span<const WorkId> ids);
 
-        static pointer find(Session& session, WorkId id);
+        static std::optional<Work> find(ISession& session, WorkId id);
         // Global lookup: MusicBrainz Work Id is a strong, unambiguous identity shared across the whole library
-        static pointer find(Session& session, const core::UUID& mbid);
+        static std::optional<Work> find(ISession& session, const core::UUID& mbid);
         // Name-only lookup, scoped to works already linked to a track of the given release: work titles are
         // often generic (e.g. "Symphony No. 5") and collide across unrelated works, so without an mbid we only
         // ever match within the same release instead of matching globally by name
-        static pointer find(Session& session, ReleaseId releaseId, std::string_view name);
-        static std::vector<WorkId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::optional<Work> find(ISession& session, ReleaseId releaseId, std::string_view name);
+        static void find(ISession& session, TrackId trackId, const std::function<void(const Work&)>& func); // in creation order
+        static std::vector<WorkId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
+
+        static void update(ISession& session, const Work& work);
 
         void setName(std::string_view name);
 
         std::string_view getName() const { return _name; }
         std::optional<core::UUID> getMBID() const { return _mbid; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _mbid, "mbid");
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_work", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
+    protected:
+        Work() = default;
         Work(std::string_view name, const std::optional<core::UUID>& mbid);
-        static pointer create(Session& session, std::string_view name, const std::optional<core::UUID>& mbid);
 
         std::string _name;
         std::optional<core::UUID> _mbid;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
     };
 
 } // namespace lms::db

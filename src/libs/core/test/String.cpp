@@ -295,34 +295,6 @@ namespace lms::core::stringUtils::tests
         EXPECT_EQ(readAs<int>("a1024a"), std::nullopt);
     }
 
-    TEST(StringUtils, capitalize)
-    {
-        struct TestCase
-        {
-            std::string input;
-            std::string expectedOutput;
-        };
-
-        TestCase tests[]{
-            { "", "" },
-            { "C", "C" },
-            { "c", "C" },
-            { " c", " C" },
-            { " cc", " Cc" },
-            { "(c", "(c" },
-            { "1c", "1c" },
-            { "&c", "&c" },
-            { "c c", "C c" }
-        };
-
-        for (const TestCase& test : tests)
-        {
-            std::string str{ test.input };
-            capitalize(str);
-            EXPECT_EQ(str, test.expectedOutput) << " str was '" << test.input << "'";
-        }
-    }
-
     TEST(Stringutils, DateToString)
     {
         {
@@ -413,16 +385,53 @@ namespace lms::core::stringUtils::tests
         EXPECT_EQ(utf8Truncate("\x80\x80\x80", 2), "");
     }
 
-    TEST(StringUtils, stringCaseInsensitiveContains)
+    TEST(StringUtils, foldForComparison_case)
     {
-        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "Bar"));
-        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "bar"));
-        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "Foo"));
-        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "foo"));
-        EXPECT_FALSE(stringCaseInsensitiveContains("something", "foo"));
-        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", ""));
-        EXPECT_TRUE(stringCaseInsensitiveContains("", ""));
-        EXPECT_FALSE(stringCaseInsensitiveContains("", "Foo"));
+        EXPECT_EQ(foldForComparison(""), "");
+        EXPECT_EQ(foldForComparison("AbC 1-2"), "abc 1-2");
+        EXPECT_EQ(foldForComparison("ΟΔΟΣ"), foldForComparison("οδος"));
+        EXPECT_EQ(foldForComparison("Straße"), "strasse");
+    }
+
+    TEST(StringUtils, foldForComparison_composedAndDecomposedAreEqual)
+    {
+        EXPECT_EQ(foldForComparison("café"), foldForComparison("café"));
+    }
+
+    TEST(StringUtils, foldForComparison_latinAccents)
+    {
+        EXPECT_EQ(foldForComparison("Janáček"), "janacek");
+        EXPECT_EQ(foldForComparison("Việt"), "viet");
+        EXPECT_EQ(foldForComparison("Ɛ́"), "ɛ");
+        EXPECT_EQ(foldForComparison("Mø"), "mo");
+        EXPECT_EQ(foldForComparison("Łódź"), "lodz");
+        EXPECT_EQ(foldForComparison("Æon"), "aeon");
+    }
+
+    TEST(StringUtils, foldForComparison_otherScriptsKeepTheirMarks)
+    {
+        EXPECT_EQ(foldForComparison("が"), "が");
+        EXPECT_EQ(foldForComparison("Й"), "й");
+    }
+
+    TEST(StringUtils, foldForComparison_compatibilityForms)
+    {
+        EXPECT_EQ(foldForComparison("Ｓｏｎｇ"), "song");
+        EXPECT_EQ(foldForComparison("ﬁne"), "fine");
+        EXPECT_EQ(foldForComparison("co­op"), "coop"); // soft hyphen
+    }
+
+    TEST(StringUtils, foldForComparison_typographicPunctuation)
+    {
+        EXPECT_EQ(foldForComparison("Leavin’ on"), "leavin' on");
+        EXPECT_EQ(foldForComparison("Penny‐Whistle"), "penny-whistle");
+        EXPECT_EQ(foldForComparison("“Heroes”"), "\"heroes\"");
+        EXPECT_EQ(foldForComparison("5″"), "5''");
+    }
+
+    TEST(StringUtils, foldForComparison_invalidUtf8)
+    {
+        EXPECT_EQ(foldForComparison("Caf\xFFé"), "caf�e");
     }
 
     TEST(StringUtils, bufferToHexString)
@@ -437,6 +446,16 @@ namespace lms::core::stringUtils::tests
         EXPECT_EQ(stringFromHex("31323334"), "1234");
         EXPECT_EQ(stringFromHex("3132333435"), "12345");
         EXPECT_EQ(stringFromHex("54657374"), "Test");
+        EXPECT_EQ(stringFromHex("6a6B"), "jk");
+        EXPECT_EQ(stringFromHex("3"), std::nullopt);
+        EXPECT_EQ(stringFromHex("3:"), std::nullopt);
+        EXPECT_EQ(stringFromHex("3G"), std::nullopt);
+    }
+
+    TEST(StringUtils, urlEncode)
+    {
+        EXPECT_EQ(urlEncode("aZ09-_.~"), "aZ09-_.~");
+        EXPECT_EQ(urlEncode("a b/\xC3\xA9"), "a%20b%2F%C3%A9");
     }
 
     TEST(StringUtils, toRomanNumeral)

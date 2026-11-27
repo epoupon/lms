@@ -24,6 +24,7 @@
 #include <string_view>
 
 #include "audio/IAudioFileInfo.hpp"
+#include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
 #include "core/PartialDateTime.hpp"
 #include "core/String.hpp"
@@ -125,7 +126,7 @@ namespace lms::scanner
                                 break;
 
                             std::string::size_type counterEnd{ prefixPos + substitutionPrefix.size() };
-                            while (std::isdigit(str[counterEnd]))
+                            while (core::ascii::isDigit(str[counterEnd]))
                                 counterEnd++;
 
                             std::string substitutionStr{ str.substr(prefixPos, counterEnd - prefixPos) };
@@ -256,14 +257,14 @@ namespace lms::scanner
                 {
                     // "PERFORMER" "artist (role)"
                     utils::PerformerArtist performer{ utils::extractPerformerAndRole(name) };
-                    core::stringUtils::capitalize(performer.role);
+                    core::ascii::capitalize(performer.role);
                     performers[performer.role].push_back(std::move(performer.artist));
                 }
                 else
                 {
                     // "PERFORMER:role", "artist" (MP3)
-                    std::string roleCapitalized{ core::stringUtils::stringToLower(role) };
-                    core::stringUtils::capitalize(roleCapitalized);
+                    std::string roleCapitalized{ core::ascii::toLower(role) };
+                    core::ascii::capitalize(roleCapitalized);
                     performers[roleCapitalized].push_back(Artist{ name });
                 }
             });

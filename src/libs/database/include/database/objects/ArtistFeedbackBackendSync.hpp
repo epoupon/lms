@@ -21,25 +21,25 @@
 
 #include <functional>
 #include <optional>
+#include <span>
 
-#include <Wt/Dbo/Field.h>
-
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistFeedbackBackendSyncId.hpp"
 #include "database/objects/ArtistFeedbackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
     class ArtistFeedback;
-    class Session;
+    class ISession;
 
     // Tracks the delivery of a single ArtistFeedback to a given external feedback backend.
-    class ArtistFeedbackBackendSync final : public Object<ArtistFeedbackBackendSync, ArtistFeedbackBackendSyncId>
+    class ArtistFeedbackBackendSync : public detail::Object<ArtistFeedbackBackendSync, ArtistFeedbackBackendSyncId>
     {
     public:
-        ArtistFeedbackBackendSync() = default;
+        static ArtistFeedbackBackendSync create(ISession& session, ArtistFeedbackId artistFeedback, FeedbackBackend backend);
+        static void destroy(ISession& session, std::span<const ArtistFeedbackBackendSyncId> ids);
 
         struct FindParameters
         {
@@ -64,35 +64,25 @@ namespace lms::db
             }
         };
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ArtistFeedbackBackendSyncId id);
-        static pointer find(Session& session, ArtistFeedbackId artistFeedbackId, FeedbackBackend backend);
-        static std::vector<ArtistFeedbackBackendSyncId> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static std::size_t getCount(ISession& session);
+        static std::optional<ArtistFeedbackBackendSync> find(ISession& session, ArtistFeedbackBackendSyncId id);
+        static std::optional<ArtistFeedbackBackendSync> find(ISession& session, ArtistFeedbackId artistFeedbackId, FeedbackBackend backend);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const ArtistFeedbackBackendSync&)>& func);
 
-        ObjectPtr<ArtistFeedback> getArtistFeedback() const { return _artistFeedback; }
+        static void update(ISession& session, const ArtistFeedbackBackendSync& artistFeedbackBackendSync);
+
+        ArtistFeedbackId getArtistFeedbackId() const { return _artistFeedbackId; }
         FeedbackBackend getBackend() const { return _backend; }
         SyncState getSyncState() const { return _syncState; }
 
         void setSyncState(SyncState state) { _syncState = state; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _backend, "backend");
-            Wt::Dbo::field(a, _syncState, "sync_state");
-
-            Wt::Dbo::belongsTo(a, _artistFeedback, "artist_feedback", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        ArtistFeedbackBackendSync(ObjectPtr<ArtistFeedback> artistFeedback, FeedbackBackend backend);
-        static pointer create(Session& session, ObjectPtr<ArtistFeedback> artistFeedback, FeedbackBackend backend);
+    protected:
+        ArtistFeedbackBackendSync() = default;
+        explicit ArtistFeedbackBackendSync(FeedbackBackend backend);
 
         FeedbackBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };
-
-        Wt::Dbo::ptr<ArtistFeedback> _artistFeedback;
+        ArtistFeedbackId _artistFeedbackId;
     };
 } // namespace lms::db

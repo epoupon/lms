@@ -264,9 +264,19 @@ namespace lms::audio::tests
 
         if (core::media::getCodecDesc(file.codec).isLossless)
         {
+            // Matroska timestamps are rounded to the millisecond by default, which bounds the seek accuracy
+            const bool isMillisecondAccurate{ file.container == core::media::Container::Matroska || file.container == core::media::Container::WebM };
+            const std::size_t maxShiftSampleCount{ isMillisecondAccurate ? helpers::durationToSampleCount(std::chrono::milliseconds{ 1 }, file.sampleRate) * file.channelCount : 0 };
+
             const std::size_t compareCount{ std::min<std::size_t>(1'000, offsetSamples.size()) };
-            for (std::size_t i{}; i < compareCount; ++i)
-                ASSERT_EQ(offsetSamples[i], groundTruth[skippedSampleCount + i]) << "sample index " << i;
+            ASSERT_GE(skippedSampleCount, maxShiftSampleCount);
+            ASSERT_LE(skippedSampleCount + maxShiftSampleCount + compareCount, groundTruth.size());
+
+            bool isAligned{};
+            for (std::size_t start{ skippedSampleCount - maxShiftSampleCount }; start <= skippedSampleCount + maxShiftSampleCount && !isAligned; start += file.channelCount)
+                isAligned = std::equal(std::cbegin(offsetSamples), std::cbegin(offsetSamples) + static_cast<std::ptrdiff_t>(compareCount), std::cbegin(groundTruth) + static_cast<std::ptrdiff_t>(start));
+
+            EXPECT_TRUE(isAligned) << "output does not match the ground truth within " << maxShiftSampleCount / file.channelCount << " samples";
         }
         else
         {

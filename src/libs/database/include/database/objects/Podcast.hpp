@@ -20,33 +20,34 @@
 #pragma once
 
 #include <functional>
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/PodcastId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artwork;
-    class PodcastEpisode;
-    class Session;
+    class ISession;
 
-    class Podcast final : public Object<Podcast, PodcastId>
+    class Podcast : public detail::Object<Podcast, PodcastId>
     {
     public:
         static const std::size_t maxMediaLength{ 64 };
 
-        Podcast() = default;
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, PodcastId id);
-        static pointer find(Session& session, std::string_view url);
-        static void find(Session& session, std::function<void(const pointer&)> func);
+        static Podcast create(ISession& session, std::string_view url);
+        static void destroy(ISession& session, std::span<const PodcastId> ids);
+        static std::size_t getCount(ISession& session);
+        static std::optional<Podcast> find(ISession& session, PodcastId id);
+        static std::optional<Podcast> find(ISession& session, std::string_view url);
+        static void find(ISession& session, const std::function<void(const Podcast&)>& func);
+
+        static void update(ISession& session, const Podcast& podcast);
 
         // getters
         std::string_view getUrl() const { return _url; }
@@ -66,8 +67,7 @@ namespace lms::db
         std::string_view getOwnerName() const { return _ownerName; }
         std::string_view getSubtitle() const { return _subtitle; }
         std::string_view getSummary() const { return _summary; }
-        ObjectPtr<Artwork> getArtwork() const;
-        ArtworkId getArtworkId() const;
+        ArtworkId getArtworkId() const { return _artworkId; }
 
         // setters
         void setUrl(std::string_view url) { _url = url; }
@@ -87,38 +87,11 @@ namespace lms::db
         void setOwnerName(std::string_view ownerName) { _ownerName = ownerName; }
         void setSubtitle(std::string_view subtitle) { _subtitle = subtitle; }
         void setSummary(std::string_view summary) { _summary = summary; }
-        void setArtwork(ObjectPtr<Artwork> artwork);
+        void setArtwork(ArtworkId artwork) { _artworkId = artwork; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _url, "url");
-
-            Wt::Dbo::field(a, _deleteRequested, "delete_requested");
-            Wt::Dbo::field(a, _title, "title");
-            Wt::Dbo::field(a, _link, "link");
-            Wt::Dbo::field(a, _description, "description");
-            Wt::Dbo::field(a, _language, "language");
-            Wt::Dbo::field(a, _copyright, "copyright");
-            Wt::Dbo::field(a, _lastBuildDate, "last_build_date");
-
-            Wt::Dbo::field(a, _author, "author");
-            Wt::Dbo::field(a, _category, "category");
-            Wt::Dbo::field(a, _explicit, "explicit");
-            Wt::Dbo::field(a, _imageUrl, "image_url");
-            Wt::Dbo::field(a, _ownerEmail, "owner_email");
-            Wt::Dbo::field(a, _ownerName, "owner_name");
-            Wt::Dbo::field(a, _subtitle, "subtitle");
-            Wt::Dbo::field(a, _summary, "summary");
-
-            Wt::Dbo::belongsTo(a, _artwork, "artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::hasMany(a, _episodes, Wt::Dbo::ManyToOne, "podcast");
-        }
-
-    private:
-        friend class Session;
-        Podcast(std::string_view url);
-        static pointer create(Session& session, std::string_view url);
+    protected:
+        Podcast() = default;
+        explicit Podcast(std::string_view url);
 
         std::string _url;
 
@@ -139,8 +112,6 @@ namespace lms::db
         std::string _ownerName;
         std::string _subtitle;
         std::string _summary;
-
-        Wt::Dbo::ptr<Artwork> _artwork;
-        Wt::Dbo::collection<Wt::Dbo::ptr<PodcastEpisode>> _episodes;
+        ArtworkId _artworkId;
     };
 } // namespace lms::db

@@ -32,6 +32,7 @@ namespace lms::core::media
         ASF, // Advanced Systems Format
         DSF,
         FLAC,
+        Matroska,
         MP4,
         MPC, // Musepack
         MPEG,
@@ -40,6 +41,7 @@ namespace lms::core::media
         TrueAudio,
         WAV,
         WavPack,
+        WebM, // Matroska restricted to Opus/Vorbis (DocType "webm")
     };
 
     void visitContainers(const std::function<void(Container)>& visitor);

@@ -24,30 +24,31 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
-#include "database/objects/Artist.hpp"
-#include "database/objects/Artwork.hpp"
-#include "database/objects/Cluster.hpp"
-#include "database/objects/Directory.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/MediaLibrary.hpp"
-#include "database/objects/Medium.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Movement.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/TrackArtistLink.hpp"
-#include "database/objects/TrackEmbeddedImage.hpp"
-#include "database/objects/TrackEmbeddedImageLink.hpp"
-#include "database/objects/TrackLyrics.hpp"
-
+#include "ArtistDbo.hpp"
+#include "ArtworkDbo.hpp"
+#include "ClusterDbo.hpp"
+#include "DboAccess.hpp"
+#include "DirectoryDbo.hpp"
+#include "GenreDbo.hpp"
+#include "GroupingDbo.hpp"
+#include "LanguageDbo.hpp"
+#include "MediaLibraryDbo.hpp"
+#include "MediumDbo.hpp"
+#include "MoodDbo.hpp"
+#include "MovementDbo.hpp"
+#include "ReleaseDbo.hpp"
+#include "Session.hpp"
+#include "TrackArtistLinkDbo.hpp"
+#include "TrackDbo.hpp"
+#include "TrackEmbeddedImageDbo.hpp"
+#include "TrackEmbeddedImageLinkDbo.hpp"
+#include "TrackLyricsDbo.hpp"
 #include "Utils.hpp"
+#include "WorkDbo.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/UUIDTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Work)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Work)
 
 namespace lms::db
 {
@@ -57,38 +58,60 @@ namespace lms::db
         setName(name);
     }
 
+    void Work::update(ISession& session, const Work& work)
+    {
+        utils::updateObject<dbo::Work>(session, work);
+    }
+
     void Work::setName(std::string_view name)
     {
         _name = core::stringUtils::utf8Truncate(name, maxNameLength);
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Work name too long, truncated to '" << _name << "'");
     }
 
-    Work::pointer Work::create(Session& session, std::string_view name, const std::optional<core::UUID>& mbid)
+    Work Work::create(ISession& session, std::string_view name, const std::optional<core::UUID>& mbid)
     {
-        return session.getDboSession()->add(std::unique_ptr<Work>{ new Work{ name, mbid } });
+        return utils::addObject(session, std::unique_ptr<dbo::Work>{ new dbo::Work{ name, mbid } });
     }
 
-    Work::pointer Work::find(Session& session, WorkId id)
+    void Work::destroy(ISession& session, std::span<const WorkId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Work>().where("id = ?").bind(id));
+        utils::destroyObjects<dbo::Work>(session, ids);
     }
 
-    Work::pointer Work::find(Session& session, const core::UUID& mbid)
+    std::optional<Work> Work::find(ISession& session, WorkId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Work>().where("mbid = ?").bind(mbid));
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Work>().where("id = ?").bind(id));
     }
 
-    Work::pointer Work::find(Session& session, ReleaseId releaseId, std::string_view name)
+    std::optional<Work> Work::find(ISession& session, const core::UUID& mbid)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Work>().where("mbid = ?").bind(mbid));
+    }
+
+    void Work::find(ISession& session, TrackId trackId, const std::function<void(const Work&)>& func)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Work>>("SELECT w FROM work w").join("track_work t_w ON t_w.work_id = w.id").where("t_w.track_id = ?").bind(trackId).orderBy("w.id") };
+        utils::forEachQueryObject(query, func);
+    }
+
+    std::optional<Work> Work::find(ISession& session, ReleaseId releaseId, std::string_view name)
+    {
+        checkReadTransaction(session);
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
         auto query{
-            session.getDboSession()->query<Wt::Dbo::ptr<Work>>("SELECT w FROM work w")
+            getDboSession(session)->query<Wt::Dbo::ptr<dbo::Work>>("SELECT w FROM work w")
                 // clang-format off
                 .join("track_work t_w ON t_w.work_id = w.id")
                 .join("track t ON t.id = t_w.track_id")
@@ -99,13 +122,13 @@ namespace lms::db
             // clang-format on
         };
 
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
-    std::vector<WorkId> Work::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<WorkId> Work::findOrphanIds(ISession& session, std::optional<Range> range)
     {
-        session.checkReadTransaction();
-        auto query{ session.getDboSession()->query<WorkId>("SELECT w.id FROM work w WHERE NOT EXISTS (SELECT 1 FROM track_work t_w WHERE t_w.work_id = w.id)") };
+        checkReadTransaction(session);
+        auto query{ getDboSession(session)->query<WorkId>("SELECT w.id FROM work w WHERE NOT EXISTS (SELECT 1 FROM track_work t_w WHERE t_w.work_id = w.id)") };
         return utils::execRangeQuery<WorkId>(query, range);
     }
 

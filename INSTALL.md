@@ -38,7 +38,7 @@ __Notes__:
 * ffmpeg version 7.1 minimum is required (only the libraries: the `ffmpeg` command line tool is not used)
 * the `libavcodec` build must provide the `libmp3lame`, `libopus` and `libvorbis` encoders in order to transcode to these formats
 ```sh
-apt-get install build-essential cmake libboost-program-options-dev libboost-system-dev libavcodec-dev libavutil-dev libavformat-dev libswresample-dev libconfig++-dev libstb-dev libtag-dev libpugixml-dev libgtest-dev libarchive-dev libxxhash-dev libssl-dev
+apt-get install build-essential cmake libboost-program-options-dev libboost-system-dev libavcodec-dev libavutil-dev libavformat-dev libswresample-dev libconfig++-dev libstb-dev libtag-dev libpugixml-dev libgtest-dev libarchive-dev libutf8proc-dev libxxhash-dev libssl-dev
 ```
 __Optional dependencies__:
 * `libpam0g-dev`: used to handle PAM authentication

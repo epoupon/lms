@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(lms VERSION 3.82.0)
+project(lms VERSION 3.83.0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules/)
 
@@ -55,6 +55,6 @@ add_subdirectory(src)
 
 install(DIRECTORY approot DESTINATION share/lms)
 install(DIRECTORY docroot DESTINATION share/lms)
-install(FILES conf/systemd/default.service DESTINATION share/lms)
+install(FILES conf/systemd/lms.service DESTINATION share/lms)
 install(FILES conf/pam/lms DESTINATION share/lms)
 install(FILES conf/lms.conf DESTINATION share/lms)

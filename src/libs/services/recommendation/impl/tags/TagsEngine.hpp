@@ -34,7 +34,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 }
 
 namespace lms::recommendation
@@ -92,8 +92,8 @@ namespace lms::recommendation
         ArtistResults findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
         TrackResults greedySelect(std::vector<db::TrackId> candidates, std::vector<db::TrackId> selectedTracks, std::size_t maxCount) const;
-        void buildTrackTags(db::Session& session);
-        void buildTrackMetadata(db::Session& session);
+        void buildTrackTags(db::ISession& session);
+        void buildTrackMetadata(db::ISession& session);
         void buildReleaseTags();
         void buildArtistTags();
 

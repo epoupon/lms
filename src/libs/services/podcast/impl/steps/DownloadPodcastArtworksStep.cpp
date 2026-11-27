@@ -27,7 +27,7 @@
 #include "core/ILogger.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Podcast.hpp"
 #include "image/Exception.hpp"
@@ -40,16 +40,19 @@ namespace lms::podcast
 {
     namespace
     {
-        void createPodcastArtwork(db::Session& session, db::PodcastId podcastId, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
+        void createPodcastArtwork(db::ISession& session, db::PodcastId podcastId, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
         {
             auto transaction{ session.createWriteTransaction() };
 
-            db::Podcast::pointer dbPodcast{ db::Podcast::find(session, podcastId) };
+            std::optional<db::Podcast> dbPodcast{ db::Podcast::find(session, podcastId) };
             if (!dbPodcast)
                 return; // may have been deleted by admin
 
-            if (db::Artwork::pointer artwork{ utils::createArtworkFromImage(session, filePath, probedImage) })
-                dbPodcast.modify()->setArtwork(artwork);
+            if (std::optional<db::Artwork> artwork{ utils::createArtworkFromImage(session, filePath, probedImage) })
+            {
+                dbPodcast->setArtwork(artwork->getId());
+                db::Podcast::update(session, *dbPodcast);
+            }
         }
     } // namespace
 
@@ -64,14 +67,14 @@ namespace lms::podcast
         auto transaction{ session.createReadTransaction() };
 
         _podcastArtworksToDownload.clear();
-        db::Podcast::find(session, [&](const db::Podcast::pointer& podcast) {
-            if (podcast->getImageUrl().empty() || podcast->getTitle().empty())
+        db::Podcast::find(session, [&](const db::Podcast& podcast) {
+            if (podcast.getImageUrl().empty() || podcast.getTitle().empty())
                 return;
 
-            if (podcast->getArtworkId().isValid())
+            if (podcast.getArtworkId().isValid())
                 return;
 
-            _podcastArtworksToDownload.push_back(podcast->getId());
+            _podcastArtworksToDownload.push_back(podcast.getId());
         });
 
         processNext();
@@ -118,7 +121,7 @@ namespace lms::podcast
 
         core::http::ClientGETRequestParameters params;
         params.relativeUrl = podcast->getImageUrl();
-        params.onFailureFunc = [this, podcast] {
+        params.onFailureFunc = [this, podcast](std::optional<int>) {
             LMS_LOG(PODCAST, ERROR, "Failed to download podcast image from '" << podcast->getImageUrl() << "'");
             processNext();
         };

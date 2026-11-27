@@ -62,15 +62,4 @@ namespace lms::db
             subRange.size = std::min(subRangeSize, range.size - (subRange.offset - range.offset));
         }
     }
-
-    struct FileStats
-    {
-        std::size_t trackCount;
-        std::size_t imageCount;
-        std::size_t trackLyricsCount;
-        std::size_t playListCount;
-        std::size_t artistInfoCount;
-
-        std::size_t getTotalFileCount() const { return trackCount + imageCount + trackLyricsCount + playListCount + artistInfoCount; }
-    };
 } // namespace lms::db

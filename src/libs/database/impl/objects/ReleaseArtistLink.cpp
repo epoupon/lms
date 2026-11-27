@@ -24,68 +24,83 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
-#include "database/objects/Artist.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-
+#include "ArtistDbo.hpp"
+#include "DboAccess.hpp"
+#include "ReleaseArtistLinkDbo.hpp"
+#include "ReleaseDbo.hpp"
+#include "Session.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::ReleaseArtistLink)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::ReleaseArtistLink)
 
 namespace lms::db
 {
-    ReleaseArtistLink::ReleaseArtistLink(const ObjectPtr<Release>& release, const ObjectPtr<Artist>& artist, bool artistMBIDMatched)
+    ReleaseArtistLink::ReleaseArtistLink(bool artistMBIDMatched)
         : _artistMBIDMatched{ artistMBIDMatched }
-        , _release{ getDboPtr(release) }
-        , _artist{ getDboPtr(artist) }
     {
     }
 
-    ReleaseArtistLink::pointer ReleaseArtistLink::create(Session& session, const ObjectPtr<Release>& release, const ObjectPtr<Artist>& artist, bool artistMBIDMatched)
+    dbo::ReleaseArtistLink::ReleaseArtistLink(Wt::Dbo::ptr<Release> release, Wt::Dbo::ptr<Artist> artist, bool artistMBIDMatched)
+        : db::ReleaseArtistLink{ artistMBIDMatched }
+        , _release{ std::move(release) }
+        , _artist{ std::move(artist) }
     {
-        session.checkWriteTransaction();
-        return session.getDboSession()->add(std::make_unique<ReleaseArtistLink>(release, artist, artistMBIDMatched));
     }
 
-    std::size_t ReleaseArtistLink::getCount(Session& session)
+    ReleaseArtistLink ReleaseArtistLink::create(ISession& session, ReleaseId release, ArtistId artist, bool artistMBIDMatched)
     {
-        session.checkReadTransaction();
-
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_artist_link"));
+        return utils::addObject(session, std::make_unique<dbo::ReleaseArtistLink>(getDboSession(session)->loadLazy<dbo::Release>(release.getValue()), getDboSession(session)->loadLazy<dbo::Artist>(artist.getValue()), artistMBIDMatched));
     }
 
-    ReleaseArtistLink::pointer ReleaseArtistLink::find(Session& session, ReleaseArtistLinkId id)
+    void ReleaseArtistLink::destroy(ISession& session, std::span<const ReleaseArtistLinkId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l").where("r_a_l.id = ?").bind(id));
+        utils::destroyObjects<dbo::ReleaseArtistLink>(session, ids);
     }
 
-    void ReleaseArtistLink::findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const ReleaseArtistLink::pointer&)>& func)
+    std::size_t ReleaseArtistLink::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l") };
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM release_artist_link"));
+    }
+
+    std::optional<ReleaseArtistLink> ReleaseArtistLink::find(ISession& session, ReleaseArtistLinkId id)
+    {
+        checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l").where("r_a_l.id = ?").bind(id));
+    }
+
+    void ReleaseArtistLink::find(ISession& session, ReleaseId release, const std::function<void(const ReleaseArtistLink&)>& func)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l").where("r_a_l.release_id = ?").bind(release) };
+        utils::forEachQueryObject(query, func);
+    }
+
+    void ReleaseArtistLink::findArtistNameNoLongerMatch(ISession& session, std::optional<Range> range, const std::function<void(const ReleaseArtistLink&)>& func)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l") };
         query.join("artist a ON r_a_l.artist_id = a.id");
         query.where("r_a_l.artist_mbid_matched = FALSE");
         query.where("r_a_l.artist_name <> a.name");
 
         utils::applyRange(query, range);
-        utils::forEachQueryResult(query, [&](const ReleaseArtistLink::pointer& link) {
-            func(link);
-        });
+        utils::forEachQueryObject(query, func);
     }
 
-    void ReleaseArtistLink::findWithArtistNameAmbiguity(Session& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const ReleaseArtistLink::pointer&)>& func)
+    void ReleaseArtistLink::findWithArtistNameAmbiguity(ISession& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const ReleaseArtistLink&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l") };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::ReleaseArtistLink>>("SELECT r_a_l from release_artist_link r_a_l") };
         query.join("artist a ON r_a_l.artist_id = a.id");
         query.where("r_a_l.artist_mbid_matched = FALSE");
         if (!allowArtistMBIDFallback)
@@ -100,14 +115,7 @@ namespace lms::db
         }
 
         utils::applyRange(query, range);
-        utils::forEachQueryResult(query, [&](const ReleaseArtistLink::pointer& link) {
-            func(link);
-        });
-    }
-
-    void ReleaseArtistLink::setArtist(ObjectPtr<Artist> artist)
-    {
-        _artist = getDboPtr(artist);
+        utils::forEachQueryObject(query, func);
     }
 
     void ReleaseArtistLink::setArtistName(std::string_view artistName)
@@ -120,5 +128,14 @@ namespace lms::db
     {
         _artistSortName = core::stringUtils::utf8Truncate(artistSortName, Artist::maxNameLength);
         LMS_LOG_IF(DB, WARNING, artistSortName.size() > Artist::maxNameLength, "Artist link sort name too long, truncated to '" << _artistSortName << "'");
+    }
+
+    void ReleaseArtistLink::update(ISession& session, const ReleaseArtistLink& releaseArtistLink)
+    {
+        utils::updateObject<dbo::ReleaseArtistLink>(session, releaseArtistLink);
+    }
+    void dbo::ReleaseArtistLink::applyIds()
+    {
+        setRelation(*session(), _artist, _artistId);
     }
 } // namespace lms::db

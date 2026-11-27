@@ -22,6 +22,7 @@
 #include <cassert>
 #include <regex>
 
+#include "core/Ascii.hpp"
 #include "core/String.hpp"
 
 namespace lms::scanner
@@ -54,7 +55,7 @@ namespace lms::scanner
                 return false;
 
             // check for timestamps
-            if (std::any_of(tagType.begin(), tagType.end(), [](char c) { return std::isdigit(c); }))
+            if (std::any_of(tagType.begin(), tagType.end(), core::ascii::isDigit))
                 return false;
 
             if (tagType == "ar")

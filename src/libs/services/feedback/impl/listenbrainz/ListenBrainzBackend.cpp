@@ -23,7 +23,7 @@
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 
 #include "Utils.hpp"
@@ -50,9 +50,9 @@ namespace lms::feedback::listenBrainz
         _feedbacksSynchronizer.requestImmediateImport(userId);
     }
 
-    void ListenBrainzBackend::requestImmediateExport()
+    void ListenBrainzBackend::requestImmediateExport(db::UserId userId)
     {
-        _feedbacksSynchronizer.requestImmediateExport();
+        _feedbacksSynchronizer.requestImmediateExport(userId);
     }
 
     bool ListenBrainzBackend::canBeFeedbacked(db::ArtistId /*artistId*/) const
@@ -69,7 +69,7 @@ namespace lms::feedback::listenBrainz
 
     bool ListenBrainzBackend::canBeFeedbacked(db::TrackId trackId) const
     {
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         return utils::canBeFeedbacked(session, trackId);
     }
 

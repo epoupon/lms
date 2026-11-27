@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Settings.template.export-listens">
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">${tr:Lms.Settings.export-listens-title}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p>${desc}</p>
+					<div class="form-check d-flex align-items-center gap-2">
+						${all-btn class="form-check-input"}
+						<label class="form-check-label" for="${id:all-btn}">${tr:Lms.Settings.export-listens-all}</label>
+						${all-count class="text-muted text-nowrap"}
+					</div>
+					<div class="form-check d-flex align-items-center gap-2">
+						${since-btn class="form-check-input"}
+						<label class="form-check-label text-nowrap" for="${id:since-btn}">${tr:Lms.Settings.export-listens-since}</label>
+						${since-date class="form-control form-control-sm w-auto"}
+						${since-count class="text-muted text-nowrap"}
+					</div>
+				</div>
+				<div class="modal-footer">
+					${save-btn class="btn btn-primary me-1"}${cancel-btn class="btn btn-secondary"}
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+</messages>

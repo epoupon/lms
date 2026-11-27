@@ -34,25 +34,25 @@ namespace lms::ui
         class NotificationWidget : public Wt::WTemplate
         {
         public:
-            NotificationWidget(Notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration);
+            NotificationWidget(notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration);
             Wt::JSignal<> closed{ this, "closed" };
         };
     } // namespace
 
-    NotificationWidget::NotificationWidget(Notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration)
+    NotificationWidget::NotificationWidget(notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration)
         : Wt::WTemplate{ Wt::WString::tr("Lms.notifications.template.entry") }
     {
         switch (type)
         {
-        case Notification::Type::Info:
+        case notification::Type::Info:
             bindString("bg-color", "bg-primary");
             bindString("text-color", "white");
             break;
-        case Notification::Type::Warning:
+        case notification::Type::Warning:
             bindString("bg-color", "bg-warning");
             bindString("text-color", "dark");
             break;
-        case Notification::Type::Danger:
+        case notification::Type::Danger:
             bindString("bg-color", "bg-danger");
             bindString("text-color", "white");
             break;
@@ -77,7 +77,7 @@ namespace lms::ui
         doJavaScript(oss.str());
     }
 
-    void NotificationContainer::add(Notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration)
+    void NotificationContainer::add(notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration)
     {
         NotificationWidget* notification{ addNew<NotificationWidget>(type, message, duration) };
 

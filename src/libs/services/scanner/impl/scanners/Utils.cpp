@@ -22,26 +22,26 @@
 #include <system_error>
 
 #include "core/Path.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/MediaLibrary.hpp"
 
 namespace lms::scanner::utils
 {
-    db::Directory::pointer getOrCreateDirectory(db::Session& session, const std::filesystem::path& path, const db::MediaLibrary::pointer& mediaLibrary)
+    db::Directory getOrCreateDirectory(db::ISession& session, const std::filesystem::path& path, const std::optional<db::MediaLibrary>& mediaLibrary)
     {
-        db::Directory::pointer directory{ db::Directory::find(session, path) };
-        if (!directory)
-        {
-            db::Directory::pointer parentDirectory;
-            if (path != mediaLibrary->getPath())
-                parentDirectory = getOrCreateDirectory(session, path.parent_path(), mediaLibrary);
-
-            directory = session.create<db::Directory>(path);
-            directory.modify()->setParent(parentDirectory);
-            directory.modify()->setMediaLibrary(mediaLibrary);
-        }
         // Don't update library if it does not match, will be updated elsewhere
+        if (std::optional<db::Directory> directory{ db::Directory::find(session, path) })
+            return *directory;
+
+        db::DirectoryId parentDirectoryId;
+        if (path != mediaLibrary->getPath())
+            parentDirectoryId = getOrCreateDirectory(session, path.parent_path(), mediaLibrary).getId();
+
+        db::Directory directory{ db::Directory::create(session, path) };
+        directory.setParent(parentDirectoryId);
+        directory.setMediaLibrary(mediaLibrary->getId());
+        db::Directory::update(session, directory);
 
         return directory;
     }

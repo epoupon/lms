@@ -21,7 +21,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Listen.hpp"
 #include "database/objects/ListenBackendSync.hpp"
 #include "database/objects/Track.hpp"
@@ -71,7 +71,7 @@ namespace lms::scrobbling
 
     void ScrobblingService::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
     {
-        const std::optional<TimedListen> recordedListen{ recordListen(listen, Wt::WDateTime::currentDateTime(), duration) };
+        const std::optional<TimedListen> recordedListen{ recordListen(listen, takeListenStartDateTime(listen), duration) };
         if (!recordedListen)
             return;
 
@@ -97,10 +97,10 @@ namespace lms::scrobbling
 
     std::optional<TimedListen> ScrobblingService::recordListen(const Listen& listen, const Wt::WDateTime& listenedAt, std::optional<std::chrono::seconds> duration)
     {
-        Session& session{ _db.getTLSSession() };
+        ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        const Track::pointer track{ Track::find(session, listen.trackId) };
+        const std::optional<Track> track{ Track::find(session, listen.trackId) };
         if (!track)
             return std::nullopt;
 
@@ -111,11 +111,11 @@ namespace lms::scrobbling
 
         if (!db::Listen::find(session, listen.userId, listen.trackId, listenedAt))
         {
-            const User::pointer user{ User::find(session, listen.userId) };
+            const std::optional<User> user{ User::find(session, listen.userId) };
             if (!user)
                 return std::nullopt;
 
-            session.create<db::Listen>(user, track, listenedAt);
+            db::Listen::create(session, user->getId(), track->getId(), listenedAt);
         }
 
         return TimedListen{ listen, listenedAt };
@@ -165,9 +165,9 @@ namespace lms::scrobbling
     {
         core::EnumSet<ScrobblingBackend> backends;
 
-        Session& session{ _db.getTLSSession() };
+        ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
-        if (const User::pointer user{ User::find(session, userId) })
+        if (const std::optional<User> user{ User::find(session, userId) })
             backends = user->getScrobblingBackends();
 
         return backends;
@@ -181,16 +181,34 @@ namespace lms::scrobbling
         _scrobblingBackends[backend]->requestImmediateImport(userId);
     }
 
-    void ScrobblingService::requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend)
+    void ScrobblingService::requestImmediateExport(db::UserId userId, db::ScrobblingBackend backend, const Wt::WDateTime& since)
     {
         if (!getUserEnabledBackends(userId).contains(backend))
             return;
 
-        markPendingExports(userId, backend);
-        _scrobblingBackends[backend]->requestImmediateExport();
+        markPendingExports(userId, backend, since);
+        _scrobblingBackends[backend]->requestImmediateExport(userId);
     }
 
-    void ScrobblingService::markPendingExports(db::UserId userId, db::ScrobblingBackend backend)
+    void ScrobblingService::resetExports(db::UserId userId, db::ScrobblingBackend backend)
+    {
+        constexpr std::size_t chunkSize{ 500 };
+        for (;;)
+        {
+            ISession& session{ _db.getTLSSession() };
+            auto transaction{ session.createWriteTransaction() };
+
+            db::ListenBackendSync::FindParameters params;
+            params.setUser(userId).setBackend(backend).setRange(db::Range{ 0, chunkSize });
+            const std::vector<db::ListenBackendSyncId> ids{ db::ListenBackendSync::findIds(session, params) };
+            db::ListenBackendSync::destroy(session, ids);
+
+            if (ids.size() < chunkSize)
+                break;
+        }
+    }
+
+    void ScrobblingService::markPendingExports(db::UserId userId, db::ScrobblingBackend backend, const Wt::WDateTime& since)
     {
         IScrobblingBackend& backendImpl{ *_scrobblingBackends[backend] };
 
@@ -199,19 +217,19 @@ namespace lms::scrobbling
         {
             std::vector<db::ListenId> ids;
             {
-                Session& session{ _db.getTLSSession() };
+                ISession& session{ _db.getTLSSession() };
                 auto transaction{ session.createReadTransaction() };
 
                 db::Listen::FindParameters params;
-                params.setUser(userId).setRange(db::Range{ offset, chunkSize });
-                ids = db::Listen::find(session, params);
+                params.setUser(userId).setMinDateTime(since).setRange(db::Range{ offset, chunkSize });
+                ids = db::Listen::findIds(session, params);
             }
 
             if (ids.empty())
                 break;
 
             {
-                Session& session{ _db.getTLSSession() };
+                ISession& session{ _db.getTLSSession() };
                 auto transaction{ session.createWriteTransaction() };
 
                 for (const db::ListenId id : ids)
@@ -219,11 +237,11 @@ namespace lms::scrobbling
                     if (db::ListenBackendSync::find(session, id, backend))
                         continue; // already pending or synchronized: leave untouched
 
-                    const db::Listen::pointer listen{ db::Listen::find(session, id) };
-                    if (!listen || !backendImpl.canBeScrobbled(listen->getTrack()->getId(), std::nullopt))
+                    const std::optional<db::Listen> listen{ db::Listen::find(session, id) };
+                    if (!listen || !backendImpl.canBeScrobbled(listen->getTrackId(), std::nullopt))
                         continue;
 
-                    session.create<db::ListenBackendSync>(listen, backend);
+                    db::ListenBackendSync::create(session, listen->getId(), backend);
                 }
             }
 
@@ -234,17 +252,41 @@ namespace lms::scrobbling
 
     void ScrobblingService::insertNowPlayingEntry(const Listen& listen)
     {
-        Session& session{ _db.getTLSSession() };
+        ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        if (const db::Track::pointer track{ db::Track::find(session, listen.trackId) })
+        if (const std::optional<db::Track> track{ db::Track::find(session, listen.trackId) })
         {
             const Clock::time_point now{ Clock::now() };
 
             std::unique_lock lock{ _nowPlayingEntriesMutex };
 
+            // Players report the track again when resuming after a pause: keep when it started
+            const auto it{ _nowPlayingEntries.find(listen.userId) };
+            const bool isResume{ it != _nowPlayingEntries.end() && it->second.trackId == listen.trackId && !it->second.listenRecorded && it->second.expiryAt > now };
+
             // Add an extra delay to ensure the listen is not purged too early
-            _nowPlayingEntries.insert_or_assign(listen.userId, NowPlayingEntry{ .startedAt = now, .expiryAt = now + track->getDuration() + std::chrono::seconds{ 5 }, .trackId = listen.trackId });
+            _nowPlayingEntries.insert_or_assign(listen.userId, NowPlayingEntry{ .startedAt = isResume ? it->second.startedAt : now, .expiryAt = now + track->getDuration() + std::chrono::seconds{ 5 }, .trackId = listen.trackId, .listenRecorded = false });
         }
+    }
+
+    // Listens are dated when they started playing, as Last.fm and ListenBrainz expect. Dated now if the start of this track was not reported (or too long ago)
+    Wt::WDateTime ScrobblingService::takeListenStartDateTime(const Listen& listen)
+    {
+        const Clock::time_point now{ Clock::now() };
+        const std::chrono::system_clock::time_point systemNow{ std::chrono::system_clock::now() };
+
+        std::unique_lock lock{ _nowPlayingEntriesMutex };
+
+        const auto it{ _nowPlayingEntries.find(listen.userId) };
+        if (it == _nowPlayingEntries.end())
+            return Wt::WDateTime{ systemNow };
+
+        NowPlayingEntry& entry{ it->second };
+        if (entry.trackId != listen.trackId || entry.listenRecorded || entry.expiryAt <= now)
+            return Wt::WDateTime{ systemNow };
+
+        entry.listenRecorded = true;
+        return Wt::WDateTime{ systemNow - std::chrono::duration_cast<std::chrono::system_clock::duration>(now - entry.startedAt) };
     }
 } // namespace lms::scrobbling

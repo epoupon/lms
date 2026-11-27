@@ -97,13 +97,13 @@ namespace lms::image::backend
     std::unique_ptr<IRawImage> decodeImage(std::span<const std::byte> encodedData)
     {
         LMS_SCOPED_TRACE_DETAILED("Image", "DecodeBuffer");
-        return std::make_unique<GraphicsMagick::RawImage>(encodedData);
+        return std::make_unique<graphicsMagick::RawImage>(encodedData);
     }
 
     std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path)
     {
         LMS_SCOPED_TRACE_DETAILED("Image", "DecodeFile");
-        return std::make_unique<GraphicsMagick::RawImage>(path);
+        return std::make_unique<graphicsMagick::RawImage>(path);
     }
 
     std::unique_ptr<IEncodedImage> encodeToJPEG(const IRawImage& rawImage, unsigned quality)
@@ -112,7 +112,7 @@ namespace lms::image::backend
 
         try
         {
-            Magick::Image image{ static_cast<const GraphicsMagick::RawImage&>(rawImage).getMagickImage() };
+            Magick::Image image{ static_cast<const graphicsMagick::RawImage&>(rawImage).getMagickImage() };
             image.magick("JPEG");
             image.quality(quality);
 

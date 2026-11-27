@@ -22,27 +22,34 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
-#include "database/objects/Artist.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/User.hpp"
-
+#include "ArtistDbo.hpp"
+#include "DboAccess.hpp"
 #include "JoinSet.hpp"
+#include "ListenDbo.hpp"
+#include "ReleaseDbo.hpp"
+#include "Session.hpp"
+#include "TrackDbo.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "objects/FilterExprCompiler.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Listen)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Listen)
 
 namespace lms::db
 {
     namespace
     {
+        template<typename Query>
+        void applyFindParameters(Query& query, const Listen::FindParameters& parameters)
+        {
+            if (parameters.user.isValid())
+                query.where("user_id = ?").bind(parameters.user);
+
+            if (parameters.minDateTime.isValid())
+                query.where("date_time >= ?").bind(parameters.minDateTime);
+        }
+
         // The listens of an artist are the ones of the tracks it is track artist of
         SqlFragment createArtistsConditions(const Listen::ArtistStatsFindParameters& params, JoinSet& joins)
         {
@@ -70,15 +77,15 @@ namespace lms::db
                     {
                         if (!clauses.isEmpty())
                             clauses.append(" AND ");
-                        clauses.append(std::string{ column } + " LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" });
+                        clauses.append(std::string{ column } + " LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { utils::createFoldedContainsPattern(keyword) });
                     }
                     return clauses;
                 } };
 
                 SqlFragment keywords{ "(" };
-                keywords.append(createKeywordClauses("a.name"));
+                keywords.append(createKeywordClauses("a.folded_name"));
                 keywords.append(") OR (");
-                keywords.append(createKeywordClauses("a.sort_name"));
+                keywords.append(createKeywordClauses("a.folded_sort_name"));
                 keywords.append(")");
                 res.combineWithAnd(keywords);
             }
@@ -92,12 +99,12 @@ namespace lms::db
             return res;
         }
 
-        Wt::Dbo::Query<ArtistId> createArtistsQuery(Session& session, const Listen::ArtistStatsFindParameters& params)
+        Wt::Dbo::Query<ArtistId> createArtistsQuery(ISession& session, const Listen::ArtistStatsFindParameters& params)
         {
             JoinSet joins;
             const SqlFragment where{ createArtistsConditions(params, joins) };
 
-            auto query{ session.getDboSession()->query<ArtistId>("SELECT a.id from artist a") };
+            auto query{ getDboSession(session)->query<ArtistId>("SELECT a.id from artist a") };
             joins.apply(query);
             applyWhereFragment(query, where);
 
@@ -121,7 +128,7 @@ namespace lms::db
             }
 
             for (const std::string_view keyword : params.keywords)
-                res.combineWithAnd({ "r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" } });
+                res.combineWithAnd({ "r.folded_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { utils::createFoldedContainsPattern(keyword) } });
 
             if (params.filter)
                 res.combineWithAnd(compileFilterExpr(*params.filter, params.filterUser));
@@ -129,12 +136,12 @@ namespace lms::db
             return res;
         }
 
-        Wt::Dbo::Query<ReleaseId> createReleasesQuery(Session& session, const Listen::StatsFindParameters& params)
+        Wt::Dbo::Query<ReleaseId> createReleasesQuery(ISession& session, const Listen::StatsFindParameters& params)
         {
             JoinSet joins;
             const SqlFragment where{ createReleasesConditions(params, joins) };
 
-            auto query{ session.getDboSession()->query<ReleaseId>("SELECT r.id from release r") };
+            auto query{ getDboSession(session)->query<ReleaseId>("SELECT r.id from release r") };
             joins.apply(query);
             applyWhereFragment(query, where);
 
@@ -157,7 +164,7 @@ namespace lms::db
             }
 
             for (const std::string_view keyword : params.keywords)
-                res.combineWithAnd({ "t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { "%" + utils::escapeForLikeKeyword(keyword) + "%" } });
+                res.combineWithAnd({ "t.folded_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'", { utils::createFoldedContainsPattern(keyword) } });
 
             if (params.filter)
                 res.combineWithAnd(compileFilterExpr(*params.filter, params.filterUser));
@@ -165,12 +172,12 @@ namespace lms::db
             return res;
         }
 
-        Wt::Dbo::Query<TrackId> createTracksQuery(Session& session, const Listen::StatsFindParameters& params)
+        Wt::Dbo::Query<TrackId> createTracksQuery(ISession& session, const Listen::StatsFindParameters& params)
         {
             JoinSet joins;
             const SqlFragment where{ createTracksConditions(params, joins) };
 
-            auto query{ session.getDboSession()->query<TrackId>("SELECT t.id from track t") };
+            auto query{ getDboSession(session)->query<TrackId>("SELECT t.id from track t") };
             joins.apply(query);
             applyWhereFragment(query, where);
 
@@ -178,134 +185,156 @@ namespace lms::db
         }
     } // namespace
 
-    Listen::Listen(ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime)
+    Listen::Listen(const Wt::WDateTime& dateTime)
         : _dateTime{ Wt::WDateTime::fromTime_t(dateTime.toTime_t()) }
-        , _user{ getDboPtr(user) }
-        , _track{ getDboPtr(track) }
     {
     }
 
-    Listen::pointer Listen::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, const Wt::WDateTime& dateTime)
+    dbo::Listen::Listen(Wt::Dbo::ptr<User> user, Wt::Dbo::ptr<Track> track, const Wt::WDateTime& dateTime)
+        : db::Listen{ dateTime }
+        , _user{ std::move(user) }
+        , _track{ std::move(track) }
     {
-        session.checkWriteTransaction();
-        return session.getDboSession()->add(std::unique_ptr<Listen>{ new Listen{ user, track, dateTime } });
     }
 
-    std::size_t Listen::getCount(Session& session)
+    Listen Listen::create(ISession& session, UserId user, TrackId track, const Wt::WDateTime& dateTime)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM listen"));
+        return utils::addObject(session, std::unique_ptr<dbo::Listen>{ new dbo::Listen{ getDboSession(session)->loadLazy<dbo::User>(user.getValue()), getDboSession(session)->loadLazy<dbo::Track>(track.getValue()), dateTime } });
     }
 
-    Listen::pointer Listen::find(Session& session, ListenId id)
+    void Listen::destroy(ISession& session, std::span<const ListenId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l").where("l.id = ?").bind(id));
+        utils::destroyObjects<dbo::Listen>(session, ids);
     }
 
-    std::vector<ListenId> Listen::find(Session& session, const FindParameters& parameters)
+    std::size_t Listen::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM listen"));
+    }
 
-        auto query{ session.getDboSession()->query<ListenId>("SELECT id FROM listen").orderBy("date_time") };
+    std::optional<Listen> Listen::find(ISession& session, ListenId id)
+    {
+        checkReadTransaction(session);
 
-        if (parameters.user.isValid())
-            query.where("user_id = ?").bind(parameters.user);
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::Listen>>("SELECT l from listen l").where("l.id = ?").bind(id));
+    }
+
+    std::size_t Listen::getCount(ISession& session, const FindParameters& parameters)
+    {
+        checkReadTransaction(session);
+        assert(!parameters.range);
+
+        auto query{ getDboSession(session)->query<int>("SELECT COUNT(*) FROM listen") };
+        applyFindParameters(query, parameters);
+
+        return utils::fetchQuerySingleResult(query);
+    }
+
+    std::vector<ListenId> Listen::findIds(ISession& session, const FindParameters& parameters)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<ListenId>("SELECT id FROM listen").orderBy("date_time") };
+        applyFindParameters(query, parameters);
 
         return utils::execRangeQuery<ListenId>(query, parameters.range);
     }
 
-    Listen::pointer Listen::find(Session& session, UserId userId, TrackId trackId, const Wt::WDateTime& dateTime)
+    std::optional<Listen> Listen::find(ISession& session, UserId userId, TrackId trackId, const Wt::WDateTime& dateTime)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Listen>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId).where("date_time = ?").bind(Wt::WDateTime::fromTime_t(dateTime.toTime_t())));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Listen>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId).where("date_time = ?").bind(Wt::WDateTime::fromTime_t(dateTime.toTime_t())));
     }
 
-    std::vector<ArtistId> Listen::getTopArtists(Session& session, const ArtistStatsFindParameters& params)
+    std::vector<ArtistId> Listen::getTopArtists(ISession& session, const ArtistStatsFindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createArtistsQuery(session, params).orderBy("COUNT(a.id) DESC").groupBy("a.id") };
         return utils::execRangeQuery<ArtistId>(query, params.range);
     }
 
-    std::vector<ReleaseId> Listen::getTopReleases(Session& session, const StatsFindParameters& params)
+    std::vector<ReleaseId> Listen::getTopReleases(ISession& session, const StatsFindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createReleasesQuery(session, params).orderBy("COUNT(r.id) DESC").groupBy("r.id") };
         return utils::execRangeQuery<ReleaseId>(query, params.range);
     }
 
-    std::vector<TrackId> Listen::getTopTracks(Session& session, const StatsFindParameters& params)
+    std::vector<TrackId> Listen::getTopTracks(ISession& session, const StatsFindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createTracksQuery(session, params).orderBy("COUNT(t.id) DESC").groupBy("t.id") };
         return utils::execRangeQuery<TrackId>(query, params.range);
     }
 
-    std::vector<ArtistId> Listen::getRecentArtists(Session& session, const ArtistStatsFindParameters& params)
+    std::vector<ArtistId> Listen::getRecentArtists(ISession& session, const ArtistStatsFindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createArtistsQuery(session, params).groupBy("a.id").having("l.date_time = MAX(l.date_time)").orderBy("l.date_time DESC") };
         return utils::execRangeQuery<ArtistId>(query, params.range);
     }
 
-    std::vector<ReleaseId> Listen::getRecentReleases(Session& session, const StatsFindParameters& params)
+    std::vector<ReleaseId> Listen::getRecentReleases(ISession& session, const StatsFindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createReleasesQuery(session, params).groupBy("r.id").having("l.date_time = MAX(l.date_time)").orderBy("l.date_time DESC") };
         return utils::execRangeQuery<ReleaseId>(query, params.range);
     }
 
-    std::vector<TrackId> Listen::getRecentTracks(Session& session, const StatsFindParameters& params)
+    std::vector<TrackId> Listen::getRecentTracks(ISession& session, const StatsFindParameters& params)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createTracksQuery(session, params).groupBy("t.id").having("l.date_time = MAX(l.date_time)").orderBy("l.date_time DESC") };
         return utils::execRangeQuery<TrackId>(query, params.range);
     }
 
-    void Listen::getTopArtists(Session& session, const ArtistStatsFindParameters& params, const std::function<void(const ObjectPtr<Artist>&)>& func)
+    void Listen::getTopArtists(ISession& session, const ArtistStatsFindParameters& params, const std::function<void(const Artist&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createArtistsQuery(session, params)
                         .orderBy("COUNT(a.id) DESC")
                         .groupBy("a.id") };
 
         utils::forEachQueryRangeResult(query, params.range, [&](const ArtistId& id) {
             if (const auto artist{ Artist::find(session, id) })
-                func(artist);
+                func(*artist);
         });
     }
 
-    void Listen::getTopReleases(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Release>&)>& func)
+    void Listen::getTopReleases(ISession& session, const StatsFindParameters& params, const std::function<void(const Release&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createReleasesQuery(session, params)
                         .orderBy("COUNT(r.id) DESC")
                         .groupBy("r.id") };
 
         utils::forEachQueryRangeResult(query, params.range, [&](const ReleaseId& id) {
             if (const auto release{ Release::find(session, id) })
-                func(release);
+                func(*release);
         });
     }
 
-    void Listen::getTopTracks(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Track>&)>& func)
+    void Listen::getTopTracks(ISession& session, const StatsFindParameters& params, const std::function<void(const Track&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createTracksQuery(session, params)
                         .orderBy("COUNT(t.id) DESC")
                         .groupBy("t.id") };
 
         utils::forEachQueryRangeResult(query, params.range, [&](const TrackId& id) {
             if (const auto track{ Track::find(session, id) })
-                func(track);
+                func(*track);
         });
     }
 
-    void Listen::getRecentArtists(Session& session, const ArtistStatsFindParameters& params, const std::function<void(const ObjectPtr<Artist>&)>& func)
+    void Listen::getRecentArtists(ISession& session, const ArtistStatsFindParameters& params, const std::function<void(const Artist&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createArtistsQuery(session, params)
                         .groupBy("a.id")
                         .having("l.date_time = MAX(l.date_time)")
@@ -313,13 +342,13 @@ namespace lms::db
 
         utils::forEachQueryRangeResult(query, params.range, [&](const ArtistId& id) {
             if (const auto artist{ Artist::find(session, id) })
-                func(artist);
+                func(*artist);
         });
     }
 
-    void Listen::getRecentReleases(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Release>&)>& func)
+    void Listen::getRecentReleases(ISession& session, const StatsFindParameters& params, const std::function<void(const Release&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createReleasesQuery(session, params)
                         .groupBy("r.id")
                         .having("l.date_time = MAX(l.date_time)")
@@ -327,13 +356,13 @@ namespace lms::db
 
         utils::forEachQueryRangeResult(query, params.range, [&](const ReleaseId& id) {
             if (const auto release{ Release::find(session, id) })
-                func(release);
+                func(*release);
         });
     }
 
-    void Listen::getRecentTracks(Session& session, const StatsFindParameters& params, const std::function<void(const ObjectPtr<Track>&)>& func)
+    void Listen::getRecentTracks(ISession& session, const StatsFindParameters& params, const std::function<void(const Track&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
         auto query{ createTracksQuery(session, params)
                         .groupBy("t.id")
                         .having("l.date_time = MAX(l.date_time)")
@@ -341,39 +370,39 @@ namespace lms::db
 
         utils::forEachQueryRangeResult(query, params.range, [&](const TrackId& id) {
             if (const auto track{ Track::find(session, id) })
-                func(track);
+                func(*track);
         });
     }
 
-    std::size_t Listen::getCount(Session& session, UserId userId, TrackId trackId)
+    std::size_t Listen::getCount(ISession& session, UserId userId, TrackId trackId)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) from listen l").where("l.track_id = ?").bind(trackId).where("l.user_id = ?").bind(userId));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) from listen l").where("l.track_id = ?").bind(trackId).where("l.user_id = ?").bind(userId));
     }
 
-    std::size_t Listen::getCount(Session& session, UserId userId, ReleaseId releaseId)
+    std::size_t Listen::getCount(ISession& session, UserId userId, ReleaseId releaseId)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>(
-                                                                        "SELECT IFNULL(MIN(count_result), 0)"
-                                                                        " FROM ("
-                                                                        " SELECT COUNT(l.track_id) AS count_result"
-                                                                        " FROM track t"
-                                                                        " LEFT JOIN listen l ON t.id = l.track_id AND l.user_id = ?"
-                                                                        " WHERE t.release_id = ?"
-                                                                        " GROUP BY t.id)")
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>(
+                                                                       "SELECT IFNULL(MIN(count_result), 0)"
+                                                                       " FROM ("
+                                                                       " SELECT COUNT(l.track_id) AS count_result"
+                                                                       " FROM track t"
+                                                                       " LEFT JOIN listen l ON t.id = l.track_id AND l.user_id = ?"
+                                                                       " WHERE t.release_id = ?"
+                                                                       " GROUP BY t.id)")
                                                  .bind(userId)
                                                  .bind(releaseId));
     }
 
-    Listen::pointer Listen::getMostRecentListen(Session& session, UserId userId, ReleaseId releaseId)
+    std::optional<Listen> Listen::getMostRecentListen(ISession& session, UserId userId, ReleaseId releaseId)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         // clang-format off
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Listen>>("SELECT l from listen l")
                         .join("track t ON l.track_id = t.id")
                         .where("t.release_id = ?").bind(releaseId)
                         .where("l.user_id = ?").bind(userId)
@@ -382,15 +411,15 @@ namespace lms::db
         };
         // clang-format on
 
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
-    Listen::pointer Listen::getMostRecentListen(Session& session, UserId userId, TrackId trackId)
+    std::optional<Listen> Listen::getMostRecentListen(ISession& session, UserId userId, TrackId trackId)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         // clang-format off
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::Listen>>("SELECT l from listen l")
                         .where("l.track_id = ?").bind(trackId)
                         .where("l.user_id = ?").bind(userId)
                         .orderBy("l.date_time DESC")
@@ -398,6 +427,6 @@ namespace lms::db
         };
         // clang-format on
 
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 } // namespace lms::db

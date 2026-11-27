@@ -20,15 +20,13 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ClusterId.hpp"
@@ -36,14 +34,14 @@
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Track;
+    class ISession;
     class ClusterType;
-    class Session;
 
-    class Cluster final : public Object<Cluster, ClusterId>
+    class Cluster : public detail::Object<Cluster, ClusterId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -101,83 +99,64 @@ namespace lms::db
             }
         };
 
-        Cluster() = default;
+        static Cluster create(ISession& session, ClusterTypeId type, std::string_view name);
+        static void destroy(ISession& session, std::span<const ClusterId> ids);
 
         // Find utility
-        static std::size_t getCount(Session& session);
-        static std::vector<ClusterId> findIds(Session& session, const FindParameters& params);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer& cluster)> _func);
-        static pointer find(Session& session, ClusterId id);
-        static std::vector<ClusterId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(ISession& session);
+        static std::vector<ClusterId> findIds(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Cluster& cluster)>& func);
+        static std::optional<Cluster> find(ISession& session, ClusterId id);
+        static std::optional<Cluster> find(ISession& session, ClusterTypeId type, std::string_view name);
+        static std::vector<ClusterId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         // May be very slow
-        static std::size_t computeTrackCount(Session& session, ClusterId id);
-        static std::size_t computeReleaseCount(Session& session, ClusterId id);
+        static std::size_t computeTrackCount(ISession& session, ClusterId id);
+        static std::size_t computeReleaseCount(ISession& session, ClusterId id);
+
+        // Updates
+        static void addTrack(ISession& session, ClusterId id, TrackId track);
 
         // Accessors
         std::string_view getName() const { return _name; }
-        ObjectPtr<ClusterType> getType() const { return _clusterType; }
-        std::vector<TrackId> getTracks(std::optional<Range> range = std::nullopt) const;
-        void addTrack(ObjectPtr<Track> track);
+        ClusterTypeId getTypeId() const { return _typeId; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-
-            Wt::Dbo::belongsTo(a, _clusterType, "cluster_type", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        Cluster(ObjectPtr<ClusterType> type, std::string_view name);
-        static pointer create(Session& session, ObjectPtr<ClusterType> type, std::string_view name);
+    protected:
+        Cluster() = default;
+        explicit Cluster(std::string_view name);
 
         std::string _name;
 
-        Wt::Dbo::ptr<ClusterType> _clusterType;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
+        ClusterTypeId _typeId;
     };
 
-    class ClusterType final : public Object<ClusterType, ClusterTypeId>
+    class ClusterType : public detail::Object<ClusterType, ClusterTypeId>
     {
     public:
-        ClusterType() = default;
+        static ClusterType create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const ClusterTypeId> ids);
 
         static constexpr std::size_t maxNameLength{ 512 };
 
         // Getters
-        static std::size_t getCount(Session& session);
-        static std::vector<ClusterTypeId> findIds(Session& session, std::optional<Range> range = std::nullopt);
-        static void find(Session& session, const std::function<void(const pointer&)>& func);
-        static pointer find(Session& session, std::string_view name);
-        static pointer find(Session& session, ClusterTypeId id);
-        static std::vector<ClusterTypeId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
-        static std::vector<ClusterTypeId> findUsed(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(ISession& session);
+        static std::vector<ClusterTypeId> findIds(ISession& session, std::optional<Range> range = std::nullopt);
+        static void find(ISession& session, const std::function<void(const ClusterType&)>& func);
+        static std::optional<ClusterType> find(ISession& session, std::string_view name);
+        static std::optional<ClusterType> find(ISession& session, ClusterTypeId id);
+        static std::vector<ClusterTypeId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
+        static std::vector<ClusterTypeId> findUsed(ISession& session, std::optional<Range> range = std::nullopt);
 
-        static void remove(Session& session, const std::string& name);
+        static void remove(ISession& session, const std::string& name);
 
         // Accessors
         std::string_view getName() const { return _name; }
-        std::vector<Cluster::pointer> getClusters() const;
-        Cluster::pointer getCluster(const std::string& name) const;
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToOne, "cluster_type");
-        }
-
-    private:
-        friend class Session;
-        ClusterType(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
+    protected:
+        ClusterType() = default;
+        explicit ClusterType(std::string_view name);
 
         std::string _name;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;
     };
 
 } // namespace lms::db

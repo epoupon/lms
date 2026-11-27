@@ -23,92 +23,93 @@
 
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
+#include "core/Utils.hpp"
 
-#include "database/Session.hpp"
-#include "database/objects/Artist.hpp"
-#include "database/objects/Artwork.hpp"
-#include "database/objects/Cluster.hpp"
-#include "database/objects/Directory.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/MediaLibrary.hpp"
-#include "database/objects/Medium.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Movement.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/TrackArtistLink.hpp"
-#include "database/objects/TrackEmbeddedImage.hpp"
-#include "database/objects/TrackEmbeddedImageLink.hpp"
-#include "database/objects/TrackLyrics.hpp"
-#include "database/objects/Work.hpp"
-
+#include "ArtistDbo.hpp"
+#include "ArtworkDbo.hpp"
+#include "ClusterDbo.hpp"
+#include "DboAccess.hpp"
+#include "DirectoryDbo.hpp"
+#include "GenreDbo.hpp"
+#include "GroupingDbo.hpp"
+#include "LanguageDbo.hpp"
+#include "MediaLibraryDbo.hpp"
+#include "MediumDbo.hpp"
+#include "MoodDbo.hpp"
+#include "MovementDbo.hpp"
+#include "ReleaseDbo.hpp"
+#include "Session.hpp"
+#include "TrackArtistLinkDbo.hpp"
+#include "TrackDbo.hpp"
+#include "TrackEmbeddedImageDbo.hpp"
+#include "TrackEmbeddedImageLinkDbo.hpp"
+#include "TrackLyricsDbo.hpp"
 #include "Utils.hpp"
+#include "WorkDbo.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::Language)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::Language)
 
 namespace lms::db
 {
     namespace
     {
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Language::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createQuery(ISession& session, std::string_view itemToSelect, const Language::FindParameters& params)
         {
-            session.checkReadTransaction();
+            checkReadTransaction(session);
 
-            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM language l") };
+            auto query{ getDboSession(session)->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM language l") };
 
-            if (params.artist.isValid() || params.track.isValid() || params.release.isValid()
-                || params.sortMethod == LanguageSortMethod::TrackCountDesc)
+            const bool joinTracks{ params.artist.isValid() || params.track.isValid() || params.release.isValid()
+                                   || params.sortMethod == LanguageSortMethod::TrackCountDesc };
+            if (joinTracks)
                 query.join("track_language t_l ON t_l.language_id = l.id");
 
             if (params.track.isValid())
                 query.where("t_l.track_id = ?").bind(params.track);
 
-            if (params.release.isValid() || params.artist.isValid())
-                query.join("track t ON t.id = t_l.track_id");
-
             if (params.release.isValid())
-                query.where("t.release_id = ?").bind(params.release);
-
-            if (params.artist.isValid())
             {
-                query.join("track_artist_link t_a_l ON t_a_l.track_id = t.id");
-                query.where("t_a_l.artist_id = ?").bind(params.artist);
+                query.join("track t ON t.id = t_l.track_id");
+                query.where("t.release_id = ?").bind(params.release);
             }
+
+            // An artist can be linked several times to a track (once per link type): a membership test does not duplicate the tracks
+            if (params.artist.isValid())
+                query.where("t_l.track_id IN (SELECT t_a_l.track_id FROM track_artist_link t_a_l WHERE t_a_l.artist_id = ?)").bind(params.artist);
 
             switch (params.sortMethod)
             {
             case LanguageSortMethod::None:
                 break;
             case LanguageSortMethod::Name:
-                query.orderBy("l.name COLLATE NOCASE");
+                query.orderBy("l.folded_name, l.id");
                 break;
             case LanguageSortMethod::TrackCountDesc:
                 query.orderBy("COUNT(t_l.track_id) DESC");
                 break;
             }
 
-            // track_language has a UNIQUE constraint on (track_id, language_id), so no duplicates when filtering by track
-            if (!params.track.isValid())
+            // Only the track_language join duplicates languages, and not when filtering by track: track_language has a UNIQUE constraint on (track_id, language_id)
+            if (joinTracks && !params.track.isValid())
                 query.groupBy("l.id");
 
             return query;
         }
 
         template<typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, const Language::FindParameters& params)
+        Wt::Dbo::Query<ResultType> createQuery(ISession& session, const Language::FindParameters& params)
         {
             std::string_view itemToSelect;
 
             if constexpr (std::is_same_v<ResultType, LanguageId>)
                 itemToSelect = "l.id";
-            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Language>>)
+            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<dbo::Language>>)
                 itemToSelect = "l";
             else
-                static_assert("Unhandled type");
+                static_assert(core::utils::dependent_false_v<ResultType>, "Unhandled type");
 
             return createQuery<ResultType>(session, itemToSelect, params);
         }
@@ -120,57 +121,64 @@ namespace lms::db
         LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Language name too long, truncated to '" << _name << "'");
     }
 
-    Language::pointer Language::create(Session& session, std::string_view name)
+    void dbo::Language::updateFoldedNames()
     {
-        return session.getDboSession()->add(std::unique_ptr<Language>{ new Language{ name } });
+        _foldedName = core::stringUtils::foldForComparison(_name);
     }
 
-    std::size_t Language::getCount(Session& session)
+    Language Language::create(ISession& session, std::string_view name)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM language"));
+        return utils::addObject(session, std::unique_ptr<dbo::Language>{ new dbo::Language{ name } });
     }
 
-    std::vector<LanguageId> Language::findIds(Session& session, const FindParameters& params)
+    void Language::destroy(ISession& session, std::span<const LanguageId> ids)
     {
-        session.checkReadTransaction();
+        utils::destroyObjects<dbo::Language>(session, ids);
+    }
+
+    std::size_t Language::getCount(ISession& session)
+    {
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM language"));
+    }
+
+    std::vector<LanguageId> Language::findIds(ISession& session, const FindParameters& params)
+    {
+        checkReadTransaction(session);
         auto query{ createQuery<LanguageId>(session, params) };
         return utils::execRangeQuery<LanguageId>(query, params.range);
     }
 
-    std::vector<Language::pointer> Language::find(Session& session, const FindParameters& params)
+    void Language::find(ISession& session, const FindParameters& params, const std::function<void(const Language&)>& func)
     {
-        session.checkReadTransaction();
-        auto query{ createQuery<Wt::Dbo::ptr<Language>>(session, params) };
-        return utils::execRangeQuery<Language::pointer>(query, params.range);
+        checkReadTransaction(session);
+        auto query{ createQuery<Wt::Dbo::ptr<dbo::Language>>(session, params) };
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
-    void Language::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    std::optional<Language> Language::find(ISession& session, LanguageId id)
     {
-        session.checkReadTransaction();
-        auto query{ createQuery<Wt::Dbo::ptr<Language>>(session, params) };
-        utils::forEachQueryRangeResult(query, params.range, func);
+        checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Language>().where("id = ?").bind(id));
     }
 
-    Language::pointer Language::find(Session& session, LanguageId id)
+    std::optional<Language> Language::find(ISession& session, std::string_view name)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Language>().where("id = ?").bind(id));
-    }
-
-    Language::pointer Language::find(Session& session, std::string_view name)
-    {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
         name = core::stringUtils::utf8Truncate(name, maxNameLength);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Language>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::Language>().where("name = ?").bind(name));
     }
 
-    std::vector<LanguageId> Language::findOrphanIds(Session& session, std::optional<Range> range)
+    std::vector<LanguageId> Language::findOrphanIds(ISession& session, std::optional<Range> range)
     {
-        session.checkReadTransaction();
-        auto query{ session.getDboSession()->query<LanguageId>("SELECT l.id FROM language l WHERE NOT EXISTS (SELECT 1 FROM track_language t_l WHERE t_l.language_id = l.id)") };
+        checkReadTransaction(session);
+        auto query{ getDboSession(session)->query<LanguageId>("SELECT l.id FROM language l WHERE NOT EXISTS (SELECT 1 FROM track_language t_l WHERE t_l.language_id = l.id)") };
         return utils::execRangeQuery<LanguageId>(query, range);
     }
 

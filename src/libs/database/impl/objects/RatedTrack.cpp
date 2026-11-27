@@ -22,64 +22,75 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/User.hpp"
-
+#include "DboAccess.hpp"
+#include "RatedTrackDbo.hpp"
+#include "Session.hpp"
+#include "TrackDbo.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::RatedTrack)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::RatedTrack)
 
 namespace lms::db
 {
-    RatedTrack::RatedTrack(ObjectPtr<Track> track, ObjectPtr<User> user)
-        : _track{ getDboPtr(track) }
-        , _user{ getDboPtr(user) }
+    dbo::RatedTrack::RatedTrack(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<User> user)
+        : _track{ std::move(track) }
+        , _user{ std::move(user) }
     {
     }
 
-    RatedTrack::pointer RatedTrack::create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user)
+    RatedTrack RatedTrack::create(ISession& session, TrackId track, UserId user)
     {
-        return session.getDboSession()->add(std::unique_ptr<RatedTrack>{ new RatedTrack{ track, user } });
+        return utils::addObject(session, std::unique_ptr<dbo::RatedTrack>{ new dbo::RatedTrack{ getDboSession(session)->loadLazy<dbo::Track>(track.getValue()), getDboSession(session)->loadLazy<dbo::User>(user.getValue()) } });
     }
 
-    std::size_t RatedTrack::getCount(Session& session)
+    void RatedTrack::destroy(ISession& session, std::span<const RatedTrackId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM rated_track"));
+        utils::destroyObjects<dbo::RatedTrack>(session, ids);
     }
 
-    RatedTrack::pointer RatedTrack::find(Session& session, RatedTrackId id)
+    std::size_t RatedTrack::getCount(ISession& session)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<RatedTrack>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM rated_track"));
     }
 
-    RatedTrack::pointer RatedTrack::find(Session& session, TrackId trackId, UserId userId)
+    std::optional<RatedTrack> RatedTrack::find(ISession& session, RatedTrackId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<RatedTrack>().where("track_id = ?").bind(trackId).where("user_id = ?").bind(userId));
+        checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::RatedTrack>().where("id = ?").bind(id));
     }
 
-    void RatedTrack::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    std::optional<RatedTrack> RatedTrack::find(ISession& session, TrackId trackId, UserId userId)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::RatedTrack>().where("track_id = ?").bind(trackId).where("user_id = ?").bind(userId));
+    }
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<RatedTrack>>("SELECT r_t FROM rated_track r_t") };
+    void RatedTrack::find(ISession& session, const FindParameters& params, const std::function<void(const RatedTrack&)>& func)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::RatedTrack>>("SELECT r_t FROM rated_track r_t") };
 
         if (params.user.isValid())
             query.where("r_t.user_id = ?").bind(params.user);
 
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     void RatedTrack::setLastUpdated(const Wt::WDateTime& lastUpdated)
     {
         _lastUpdated = utils::normalizeDateTime(lastUpdated);
+    }
+
+    void RatedTrack::update(ISession& session, const RatedTrack& ratedTrack)
+    {
+        utils::updateObject<dbo::RatedTrack>(session, ratedTrack);
     }
 } // namespace lms::db

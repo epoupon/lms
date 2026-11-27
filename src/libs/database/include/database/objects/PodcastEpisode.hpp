@@ -20,33 +20,32 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "core/media/Codec.hpp"
 #include "core/media/Container.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/PodcastEpisodeId.hpp"
 #include "database/objects/PodcastId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 #include "database/objects/detail/Types.hpp"
 
 namespace lms::db
 {
-    class Artwork;
+    class ISession;
     class Podcast;
-    class Session;
 
-    class PodcastEpisode final : public Object<PodcastEpisode, PodcastEpisodeId>
+    class PodcastEpisode : public detail::Object<PodcastEpisode, PodcastEpisodeId>
     {
     public:
         enum class ManualDownloadState
@@ -85,21 +84,27 @@ namespace lms::db
             }
         };
 
-        PodcastEpisode() = default;
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, PodcastEpisodeId id);
-        static pointer findNewtestEpisode(Session& session, PodcastId id);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
+        static PodcastEpisode create(ISession& session, PodcastId podcast);
+
+        static void destroy(ISession& session, std::span<const PodcastEpisodeId> ids);
+        static std::size_t getCount(ISession& session);
+        static std::optional<PodcastEpisode> find(ISession& session, PodcastEpisodeId id);
+        static std::optional<PodcastEpisode> findNewtestEpisode(ISession& session, PodcastId id);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const PodcastEpisode&)>& func);
+
+        static void update(ISession& session, const PodcastEpisode& podcastEpisode);
 
         // getters
         ManualDownloadState getManualDownloadState() const { return _manualDownloadState; }
+        bool isDownloadFailed() const { return _downloadFailed; }
         const std::filesystem::path& getAudioRelativeFilePath() const { return _audioRelativeFilePath; }
+        std::uint64_t getFileSize() const { return static_cast<std::uint64_t>(_fileSize); }
 
         // Audio properties
         std::chrono::milliseconds getDuration() const { return _duration; }
         std::optional<core::media::Container> getContainer() const;
         std::optional<core::media::Codec> getCodec() const;
-        std::size_t getBitrate() const { return _bitrate; }
+        std::optional<std::size_t> getBitrate() const { return _bitrate > 0 ? std::optional<std::size_t>{ static_cast<std::size_t>(_bitrate) } : std::nullopt; }
         std::size_t getChannelCount() const { return _channelCount; }
         std::size_t getSampleRate() const { return _sampleRate; }
         std::optional<std::size_t> getBitsPerSample() const { return _bitsPerSample; }
@@ -111,26 +116,26 @@ namespace lms::db
         std::string_view getCategory() const { return _category; }
         std::string_view getEnclosureUrl() const { return _enclosureUrl; }
         std::string_view getEnclosureContentType() const { return _enclosureContentType; }
-        std::int64_t getEnclosureLength() const { return _enclosureLength; }
+        std::uint64_t getEnclosureLength() const { return static_cast<std::uint64_t>(_enclosureLength); }
         const Wt::WDateTime& getPubDate() const { return _pubDate; }
         std::string_view getImageUrl() const { return _imageUrl; }
         std::string_view getSubtitle() const { return _subtitle; }
         std::string_view getSummary() const { return _summary; }
         bool isExplicit() const { return _explicit; }
-        ObjectPtr<Podcast> getPodcast() const { return _podcast; }
-        PodcastId getPodcastId() const { return _podcast.id(); }
-        ObjectPtr<Artwork> getArtwork() const;
-        ArtworkId getArtworkId() const;
+        PodcastId getPodcastId() const { return _podcastId; }
+        ArtworkId getArtworkId() const { return _artworkId; }
 
         // setters
         void setManualDownloadState(ManualDownloadState state) { _manualDownloadState = state; }
+        void setDownloadFailed(bool downloadFailed) { _downloadFailed = downloadFailed; }
         void setAudioRelativeFilePath(const std::filesystem::path& relativeFilePath) { _audioRelativeFilePath = relativeFilePath; }
+        void setFileSize(std::uint64_t fileSize) { _fileSize = static_cast<long long>(fileSize); }
 
         // Audio properties
         void setDuration(std::chrono::milliseconds duration) { _duration = duration; }
         void setContainer(core::media::Container container);
         void setCodec(core::media::Codec codec);
-        void setBitrate(std::size_t bitrate) { _bitrate = bitrate; }
+        void setBitrate(std::optional<std::size_t> bitrate) { _bitrate = static_cast<int>(bitrate.value_or(0)); }
         void setChannelCount(std::size_t channelCount) { _channelCount = channelCount; }
         void setSampleRate(std::size_t sampleRate) { _sampleRate = sampleRate; }
         void setBitsPerSample(std::optional<std::size_t> bitsPerSample) { _bitsPerSample = bitsPerSample; }
@@ -142,60 +147,28 @@ namespace lms::db
         void setCategory(std::string_view category) { _category = category; }
         void setEnclosureUrl(std::string_view enclosureUrl) { _enclosureUrl = enclosureUrl; }
         void setEnclosureContentType(std::string_view enclosureContentType) { _enclosureContentType = enclosureContentType; }
-        void setEnclosureLength(uint64_t enclosureLength) { _enclosureLength = enclosureLength; }
+        void setEnclosureLength(std::uint64_t enclosureLength) { _enclosureLength = static_cast<long long>(enclosureLength); }
         void setPubDate(const Wt::WDateTime& pubDate) { _pubDate = pubDate; }
         void setImageUrl(std::string_view imageUrl) { _imageUrl = imageUrl; }
         void setSubtitle(std::string_view subtitle) { _subtitle = subtitle; }
         void setSummary(std::string_view summary) { _summary = summary; }
         void setExplicit(bool explicit_) { _explicit = explicit_; }
         void setDuration(std::chrono::duration<int, std::milli> duration) { _duration = duration; }
-        void setArtwork(ObjectPtr<Artwork> artwork);
+        void setArtwork(ArtworkId artwork) { _artworkId = artwork; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _manualDownloadState, "manual_download_state");
-            Wt::Dbo::field(a, _audioRelativeFilePath, "audio_relative_file_path");
-
-            Wt::Dbo::field(a, _duration, "duration");
-            Wt::Dbo::field(a, _container, "container");
-            Wt::Dbo::field(a, _codec, "codec");
-            Wt::Dbo::field(a, _bitrate, "bitrate");
-            Wt::Dbo::field(a, _channelCount, "channel_count");
-            Wt::Dbo::field(a, _sampleRate, "sample_rate");
-            Wt::Dbo::field(a, _bitsPerSample, "bits_per_sample");
-
-            Wt::Dbo::field(a, _title, "title");
-            Wt::Dbo::field(a, _link, "link");
-            Wt::Dbo::field(a, _description, "description");
-            Wt::Dbo::field(a, _author, "author");
-            Wt::Dbo::field(a, _category, "category");
-            Wt::Dbo::field(a, _enclosureUrl, "enclosure_url");
-            Wt::Dbo::field(a, _enclosureContentType, "enclosure_content_type");
-            Wt::Dbo::field(a, _enclosureLength, "enclosure_size");
-            Wt::Dbo::field(a, _pubDate, "pub_date");
-            Wt::Dbo::field(a, _imageUrl, "image_url");
-            Wt::Dbo::field(a, _subtitle, "subtitle");
-            Wt::Dbo::field(a, _summary, "summary");
-            Wt::Dbo::field(a, _explicit, "explicit");
-
-            Wt::Dbo::belongsTo(a, _artwork, "artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::belongsTo(a, _podcast, "podcast", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        PodcastEpisode(ObjectPtr<Podcast> podcast);
-        static pointer create(Session& session, ObjectPtr<Podcast> podcast);
+    protected:
+        PodcastEpisode() = default;
 
         ManualDownloadState _manualDownloadState{ ManualDownloadState::None };
+        bool _downloadFailed{};                       // the server reported the episode as gone: not downloaded again unless manually requested
         std::filesystem::path _audioRelativeFilePath; // relative to cache dir, only set if downloaded
+        long long _fileSize{};                        // only set if downloaded
 
         // Audio properties
         std::chrono::duration<int, std::milli> _duration{ 0 };
         detail::Container _container{ detail::Container::Unknown };
         detail::Codec _codec{ detail::Codec::Unknown };
-        int _bitrate{}; // in bps
+        int _bitrate{}; // in bps, 0 if unknown
         int _channelCount{};
         int _sampleRate{};
         std::optional<int> _bitsPerSample;
@@ -208,7 +181,7 @@ namespace lms::db
         std::string _category;
         std::string _enclosureUrl;
         std::string _enclosureContentType;
-        int _enclosureLength{ 0 };
+        long long _enclosureLength{};
         Wt::WDateTime _pubDate;
 
         // itunes fields
@@ -216,8 +189,7 @@ namespace lms::db
         std::string _subtitle;
         std::string _summary;
         bool _explicit{};
-
-        Wt::Dbo::ptr<Artwork> _artwork;
-        Wt::Dbo::ptr<Podcast> _podcast;
+        ArtworkId _artworkId;
+        PodcastId _podcastId;
     };
 } // namespace lms::db

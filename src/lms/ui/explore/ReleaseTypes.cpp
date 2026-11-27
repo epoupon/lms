@@ -22,6 +22,7 @@
 #include <tuple>
 #include <unordered_map>
 
+#include "core/Ascii.hpp"
 #include "core/String.hpp"
 
 namespace lms::core::stringUtils
@@ -37,7 +38,7 @@ namespace lms::core::stringUtils
             { "other", ui::PicardReleaseType::PrimaryType::Other },
         };
 
-        const auto it{ entries.find(stringToLower(stringTrim(str))) };
+        const auto it{ entries.find(ascii::toLower(stringTrim(str))) };
         if (it == std::cend(entries))
             return std::nullopt;
 
@@ -62,7 +63,7 @@ namespace lms::core::stringUtils
             { "field recording", ui::PicardReleaseType::SecondaryType::FieldRecording },
         };
 
-        const auto it{ entries.find(stringToLower(stringTrim(str))) };
+        const auto it{ entries.find(ascii::toLower(stringTrim(str))) };
         if (it == std::cend(entries))
             return std::nullopt;
 

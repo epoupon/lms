@@ -50,6 +50,10 @@ namespace lms::audio
         virtual std::size_t readSamples(std::span<WritableBuffer> outputChannelBuffers) = 0;
         virtual bool finished() const = 0;
 
+        // Drops the pending samples and resumes decoding at offset, counted from the start like the creation offset
+        // Containers that cannot seek decode and drop the samples up to offset instead: offset must then not be before the current position
+        virtual void seek(std::chrono::microseconds offset) = 0;
+
         virtual std::chrono::milliseconds getEstimatedDuration() const = 0; // initial offset is taken into account, 0 if unknown
     };
 

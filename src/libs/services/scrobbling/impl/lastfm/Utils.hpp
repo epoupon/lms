@@ -33,7 +33,7 @@
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 }
 
 namespace lms::scrobbling::lastFm::utils
@@ -45,7 +45,7 @@ namespace lms::scrobbling::lastFm::utils
         std::string sessionKey;
     };
 
-    LastFmCredentials getLastFmCredentials(db::Session& session, db::UserId userId);
+    LastFmCredentials getLastFmCredentials(db::ISession& session, db::UserId userId);
 
     std::string computeApiSig(const std::map<std::string, std::string>& params, std::string_view secret);
     std::string buildFormBody(const std::map<std::string, std::string>& params);

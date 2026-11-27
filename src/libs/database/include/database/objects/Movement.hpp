@@ -19,51 +19,41 @@
 
 #pragma once
 
+#include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-
-#include "database/Object.hpp"
 #include "database/objects/MovementId.hpp"
 #include "database/objects/TrackId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Session;
-    class Track;
+    class ISession;
 
-    class Movement final : public Object<Movement, MovementId>
+    class Movement : public detail::Object<Movement, MovementId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
 
-        Movement() = default;
+        static Movement create(ISession& session, std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, TrackId track);
 
-        static pointer create(Session& session, std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<Track>& track);
+        static void destroy(ISession& session, std::span<const MovementId> ids);
+        static void find(ISession& session, TrackId trackId, const std::function<void(const Movement&)>& func); // in creation order
 
         std::string_view getName() const { return _name; }
         std::optional<std::size_t> getNumber() const { return _number; }
         std::optional<std::size_t> getCount() const { return _count; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _number, "number");
-            Wt::Dbo::field(a, _count, "count");
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        Movement(std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count, const ObjectPtr<Track>& track);
+    protected:
+        Movement() = default;
+        Movement(std::string_view name, std::optional<std::size_t> number, std::optional<std::size_t> count);
 
         std::string _name;
         std::optional<int> _number;
         std::optional<int> _count;
-        Wt::Dbo::ptr<Track> _track;
     };
 
 } // namespace lms::db

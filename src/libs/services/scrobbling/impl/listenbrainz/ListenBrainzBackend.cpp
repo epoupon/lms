@@ -23,7 +23,7 @@
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 
@@ -65,14 +65,18 @@ namespace lms::scrobbling::listenBrainz
 
     bool ListenBrainzBackend::canBeScrobbled(TrackId trackId, std::optional<std::chrono::seconds> duration) const
     {
-        Session& session{ _db.getTLSSession() };
+        ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        const Track::pointer track{ Track::find(session, trackId) };
+        const std::optional<Track> track{ Track::find(session, trackId) };
         if (!track)
             return false;
 
-        if (track->getArtistLinks(TrackArtistLinkType::Artist).empty())
+        bool hasArtist{};
+        TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(trackId).setLinkType(TrackArtistLinkType::Artist), [&](const TrackArtistLink&) {
+            hasArtist = true;
+        });
+        if (!hasArtist)
         {
             LMS_LOG_LISTENBRAINZ(DEBUG, "Track cannot be scrobbled: no artist");
             return false;
@@ -96,8 +100,8 @@ namespace lms::scrobbling::listenBrainz
         _listensSynchronizer.requestImmediateImport(userId);
     }
 
-    void ListenBrainzBackend::requestImmediateExport()
+    void ListenBrainzBackend::requestImmediateExport(db::UserId userId)
     {
-        _listensSynchronizer.requestImmediateExport();
+        _listensSynchronizer.requestImmediateExport(userId);
     }
 } // namespace lms::scrobbling::listenBrainz

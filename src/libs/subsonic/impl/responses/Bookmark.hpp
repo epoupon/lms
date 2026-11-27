@@ -19,16 +19,15 @@
 
 #pragma once
 
-#include "database/Object.hpp"
-
 #include "SubsonicResponse.hpp"
 
 namespace lms::db
 {
+    class ISession;
     class TrackBookmark;
-}
+} // namespace lms::db
 
 namespace lms::api::subsonic
 {
-    Response::Node createBookmarkNode(const db::ObjectPtr<db::TrackBookmark>& bookmark);
+    Response::Node createBookmarkNode(db::ISession& session, const db::TrackBookmark& bookmark);
 }

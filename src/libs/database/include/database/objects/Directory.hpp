@@ -22,15 +22,13 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-
 #include "core/EnumSet.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/DirectoryId.hpp"
@@ -38,16 +36,17 @@
 #include "database/objects/MediumId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Session;
-    class MediaLibrary;
+    class ISession;
 
-    class Directory final : public Object<Directory, DirectoryId>
+    class Directory : public detail::Object<Directory, DirectoryId>
     {
     public:
-        Directory() = default;
+        static Directory create(ISession& session, const std::filesystem::path& p);
+        static void destroy(ISession& session, std::span<const DirectoryId> ids);
 
         struct FindParameters
         {
@@ -118,47 +117,35 @@ namespace lms::db
         };
 
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, DirectoryId id);
-        static pointer find(Session& session, const std::filesystem::path& path);
-        static void find(Session& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory::pointer&)>& func);
-        static std::vector<Directory::pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const Directory::pointer&)>& func);
-        static std::vector<DirectoryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
-        static std::vector<DirectoryId> findMismatchedLibrary(Session& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId);
-        static std::vector<pointer> findRootDirectories(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(ISession& session);
+        static std::optional<Directory> find(ISession& session, DirectoryId id);
+        static std::optional<Directory> find(ISession& session, const std::filesystem::path& path);
+        static void find(ISession& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory&)>& func);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Directory&)>& func);
+        static std::vector<DirectoryId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
+        static std::vector<DirectoryId> findMismatchedLibrary(ISession& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId);
+        static std::vector<Directory> findRootDirectories(ISession& session, std::optional<Range> range = std::nullopt);
+
+        static void update(ISession& session, const Directory& directory);
 
         // getters
         const std::filesystem::path& getAbsolutePath() const { return _absolutePath; }
         std::string_view getName() const { return _name; }
-        ObjectPtr<Directory> getParentDirectory() const { return _parent; }
-        DirectoryId getParentDirectoryId() const { return _parent.id(); }
-        ObjectPtr<MediaLibrary> getMediaLibrary() const { return _mediaLibrary; }
+        DirectoryId getParentDirectoryId() const { return _parentDirectoryId; }
+        MediaLibraryId getMediaLibraryId() const { return _mediaLibraryId; }
 
         // setters
         void setAbsolutePath(const std::filesystem::path& p);
-        void setParent(ObjectPtr<Directory> parent);
-        void setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
+        void setParent(DirectoryId parent) { _parentDirectoryId = parent; }
+        void setMediaLibrary(MediaLibraryId mediaLibrary) { _mediaLibraryId = mediaLibrary; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _absolutePath, "absolute_path");
-            Wt::Dbo::field(a, _name, "name");
-
-            Wt::Dbo::belongsTo(a, _parent, "parent_directory", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete directories on media library removal, we want to wait for the next scan to have a chance to migrate files
-        }
-
-    private:
-        friend class Session;
-        Directory(const std::filesystem::path& p);
-        static pointer create(Session& session, const std::filesystem::path& p);
+    protected:
+        Directory() = default;
+        explicit Directory(const std::filesystem::path& p);
 
         std::filesystem::path _absolutePath;
         std::string _name;
-
-        Wt::Dbo::ptr<Directory> _parent;
-        Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
+        DirectoryId _parentDirectoryId;
+        MediaLibraryId _mediaLibraryId;
     };
 } // namespace lms::db

@@ -25,7 +25,7 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 
 #include "LmsApplication.hpp"
@@ -40,7 +40,7 @@ namespace lms::ui
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) };
+            const std::optional<db::Track> track{ db::Track::find(LmsApp->getDbSession(), trackId) };
             if (!track)
             {
                 AUDIO_RESOURCE_LOG(ERROR, "Missing track");

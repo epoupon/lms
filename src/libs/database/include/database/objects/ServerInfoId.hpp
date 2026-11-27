@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,16 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/Object.hpp"
+#pragma once
 
-#include "TransactionChecker.hpp"
+#include "database/IdType.hpp"
 
-namespace lms::db
-{
-    void ObjectPtrBase::checkWriteTransaction([[maybe_unused]] Wt::Dbo::Session& session)
-    {
-#if LMS_CHECK_TRANSACTION_ACCESSES
-        TransactionChecker::checkWriteTransaction(session);
-#endif
-    }
-} // namespace lms::db
+LMS_DECLARE_IDTYPE(ServerInfoId)

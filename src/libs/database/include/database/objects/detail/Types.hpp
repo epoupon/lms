@@ -66,6 +66,8 @@ namespace lms::db::detail
         TrueAudio = 11,
         WAV = 12,
         WavPack = 13,
+        Matroska = 14,
+        WebM = 15,
     };
 
     enum class Codec

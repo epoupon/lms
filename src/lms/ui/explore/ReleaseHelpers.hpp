@@ -26,13 +26,10 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplate.h>
 
-#include "database/Object.hpp"
-
 #include "ReleaseTypes.hpp"
 
 namespace lms::db
 {
-    class Artist;
     class Release;
 } // namespace lms::db
 
@@ -45,7 +42,7 @@ namespace lms::ui::releaseListHelpers
         ShowYear,
     };
 
-    std::unique_ptr<Wt::WTemplate> createEntry(const db::ObjectPtr<db::Release>& release, core::EnumSet<DisplayOptions> options);
+    std::unique_ptr<Wt::WTemplate> createEntry(const db::Release& release, core::EnumSet<DisplayOptions> options);
 } // namespace lms::ui::releaseListHelpers
 
 namespace lms::ui::releaseHelpers

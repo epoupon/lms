@@ -20,53 +20,42 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
+#include <span>
 #include <variant>
 
-#include <Wt/Dbo/Field.h>
-
-#include "database/Object.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/ImageId.hpp"
 #include "database/objects/TrackEmbeddedImageId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Image;
-    class Session;
-    class TrackEmbeddedImage;
+    class ISession;
 
-    class Artwork final : public Object<Artwork, ArtworkId>
+    class Artwork : public detail::Object<Artwork, ArtworkId>
     {
     public:
-        Artwork() = default;
+        static Artwork create(ISession& session, TrackEmbeddedImageId trackEmbeddedImage);
+        static Artwork create(ISession& session, ImageId image);
+        static void destroy(ISession& session, std::span<const ArtworkId> ids);
 
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ArtworkId id);
-        static pointer find(Session& session, TrackEmbeddedImageId id);
-        static pointer find(Session& session, ImageId id);
+        static std::size_t getCount(ISession& session);
+        static std::optional<Artwork> find(ISession& session, ArtworkId id);
+        static std::optional<Artwork> find(ISession& session, TrackEmbeddedImageId id);
+        static std::optional<Artwork> find(ISession& session, ImageId id);
+        static std::filesystem::path getAbsoluteFilePath(ISession& session, ArtworkId id);
 
         // getters
         using UnderlyingId = std::variant<std::monostate, TrackEmbeddedImageId, ImageId>;
         UnderlyingId getUnderlyingId() const;
-        std::filesystem::path getAbsoluteFilePath() const;
-        ObjectPtr<Image> getImage() const;
-        ImageId getImageId() const;
+        ImageId getImageId() const { return _imageId; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::belongsTo(a, _trackEmbeddedImage, "track_embedded_image", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _image, "image", Wt::Dbo::OnDeleteCascade);
-        }
+    protected:
+        Artwork() = default;
 
-    private:
-        friend class Session;
-        Artwork(ObjectPtr<TrackEmbeddedImage> trackEmbeddedImage);
-        Artwork(ObjectPtr<Image> image);
-        static pointer create(Session& session, ObjectPtr<TrackEmbeddedImage> trackEmbeddedImage);
-        static pointer create(Session& session, ObjectPtr<Image> image);
-        Wt::Dbo::ptr<TrackEmbeddedImage> _trackEmbeddedImage;
-        Wt::Dbo::ptr<Image> _image;
+        TrackEmbeddedImageId _trackEmbeddedImageId;
+        ImageId _imageId;
     };
 } // namespace lms::db

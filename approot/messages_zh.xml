@@ -32,7 +32,10 @@
 <message id="Lms.quit-other-session">另一个会话已打开，重新打开这一个？</message>
 <message id="Lms.save">保存</message>
 <message id="Lms.settings-saved">设置已保存！</message>
-<message id="Lms.track-count">{1} 首曲目</message>
+<message id="Lms.track-count">
+	<plural case="0">{1} 首曲目</plural>
+	<plural case="1">{1} 首曲目</plural>
+</message>
 <message id="Lms.user">用户</message>
 <message id="Lms.uuid-invalid">无效的 UUID</message>
 
@@ -212,8 +215,14 @@
 <message id="Lms.Explore.artists">歌手</message>
 <message id="Lms.Explore.bitrate">比特率</message>
 <message id="Lms.Explore.codec">编码器</message>
-<message id="Lms.Explore.composer">作曲者</message>
-<message id="Lms.Explore.conductor">指挥</message>
+<message id="Lms.Explore.composer">
+	<plural case="0">作曲者</plural>
+	<plural case="1">作曲者</plural>
+</message>
+<message id="Lms.Explore.conductor">
+	<plural case="0">指挥</plural>
+	<plural case="1">指挥</plural>
+</message>
 <message id="Lms.Explore.copyright">版权所有</message>
 <message id="Lms.Explore.cover-art">封面</message>
 <message id="Lms.Explore.download">下载</message>
@@ -225,40 +234,73 @@
 <message id="Lms.Explore.filter-or">{1} 或 {2}</message>
 <message id="Lms.Explore.filter-tooltip">{1}：{2}</message>
 <message id="Lms.Explore.filters">过滤器</message>
-<message id="Lms.Explore.genre">流派</message>
-<message id="Lms.Explore.grouping">分组</message>
+<message id="Lms.Explore.genre">
+	<plural case="0">流派</plural>
+	<plural case="1">流派</plural>
+</message>
+<message id="Lms.Explore.grouping">
+	<plural case="0">分组</plural>
+	<plural case="1">分组</plural>
+</message>
 <message id="Lms.Explore.label">厂牌</message>
-<message id="Lms.Explore.language">语言</message>
+<message id="Lms.Explore.language">
+	<plural case="0">语言</plural>
+	<plural case="1">语言</plural>
+</message>
 <message id="Lms.Explore.limit-reached">已达到显示上限 — 请精简搜索条件以查看更多结果</message>
-<message id="Lms.Explore.lyricist">作词者</message>
+<message id="Lms.Explore.lyricist">
+	<plural case="0">作词者</plural>
+	<plural case="1">作词者</plural>
+</message>
 <message id="Lms.Explore.media-library">音乐库</message>
-<message id="Lms.Explore.mixer">混音师</message>
-<message id="Lms.Explore.mood">情绪</message>
+<message id="Lms.Explore.mixer">
+	<plural case="0">混音师</plural>
+	<plural case="1">混音师</plural>
+</message>
+<message id="Lms.Explore.mood">
+	<plural case="0">情绪</plural>
+	<plural case="1">情绪</plural>
+</message>
 <message id="Lms.Explore.most-played">播放最多</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz 歌手</message>
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz 专辑</message>
 <message id="Lms.Explore.no-results">未找到结果</message>
-<message id="Lms.Explore.performer">表演者</message>
+<message id="Lms.Explore.performer">
+	<plural case="0">表演者</plural>
+	<plural case="1">表演者</plural>
+</message>
 <message id="Lms.Explore.play">播放</message>
 <message id="Lms.Explore.play-last">最后播放</message>
 <message id="Lms.Explore.play-next">下一首播放</message>
 <message id="Lms.Explore.play-shuffled">随机播放</message>
 <message id="Lms.Explore.playcount">播放次数</message>
-<message id="Lms.Explore.producer">制作人</message>
+<message id="Lms.Explore.producer">
+	<plural case="0">制作人</plural>
+	<plural case="1">制作人</plural>
+</message>
 <message id="Lms.Explore.random">随机</message>
 <message id="Lms.Explore.recently-added">最近添加</message>
 <message id="Lms.Explore.recently-modified">最近更改</message>
 <message id="Lms.Explore.recently-played">最近播放</message>
-<message id="Lms.Explore.release-artist">专辑艺术家</message>
+<message id="Lms.Explore.release-artist">
+	<plural case="0">专辑艺术家</plural>
+	<plural case="1">专辑艺术家</plural>
+</message>
 <message id="Lms.Explore.release-info">专辑信息</message>
 <message id="Lms.Explore.release-type">专辑类型</message>
 <message id="Lms.Explore.releases">专辑</message>
-<message id="Lms.Explore.remixer">混音师</message>
+<message id="Lms.Explore.remixer">
+	<plural case="0">混音师</plural>
+	<plural case="1">混音师</plural>
+</message>
 <message id="Lms.Explore.search">搜索</message>
 <message id="Lms.Explore.star">收藏</message>
 <message id="Lms.Explore.star-item">将 {1} 加入收藏</message>
 <message id="Lms.Explore.starred">已收藏</message>
-<message id="Lms.Explore.track-artist">曲目艺术家</message>
+<message id="Lms.Explore.track-artist">
+	<plural case="0">曲目艺术家</plural>
+	<plural case="1">曲目艺术家</plural>
+</message>
 <message id="Lms.Explore.track-info">曲目信息</message>
 <message id="Lms.Explore.track-lyrics">歌词</message>
 <message id="Lms.Explore.tracklists">播放列表</message>
@@ -353,8 +395,7 @@
 <message id="Lms.Settings.lastfm-unlink-confirm-title">取消关联 Last.fm 账户</message>
 <message id="Lms.Settings.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.listenbrainz-import-card-title">ListenBrainz 导入</message>
-<message id="Lms.Settings.listenbrainz-import-feedback">导入喜爱曲目</message>
-<message id="Lms.Settings.listenbrainz-import-listens">导入收听记录</message>
+<message id="Lms.Settings.listenbrainz-import">从 ListenBrainz 导入</message>
 <message id="Lms.Settings.listenbrainz-import-started">导入已开始，可能需要一些时间</message>
 <message id="Lms.Settings.listenbrainz-token">ListenBrainz API 令牌</message>
 <message id="Lms.Settings.menu-listenbrainz">ListenBrainz</message>
@@ -367,6 +408,14 @@
 <message id="Lms.Settings.enable-inline-artist-relationships">在专辑中内联显示艺术家关系</message>
 <message id="Lms.Settings.enable-transcoding-by-default">默认启用转码</message>
 <message id="Lms.Settings.export-started">导出已开始，可能需要一些时间</message>
+<message id="Lms.Settings.export-listens-all">全部收听记录</message>
+<message id="Lms.Settings.export-listens-count">
+	<plural case="0">（{1} 条）</plural>
+	<plural case="1">（{1} 条）</plural>
+</message>
+<message id="Lms.Settings.export-listens-desc">要将哪些已有的收听记录发送到 {1}？</message>
+<message id="Lms.Settings.export-listens-since">从此日期起的收听记录</message>
+<message id="Lms.Settings.export-listens-title">已有的收听记录</message>
 <message id="Lms.Settings.inline-artist-relationships">要显示的艺术家关系类型</message>
 <message id="Lms.Settings.menu-ui"><i class="fa fa-fw fa-paint-brush" aria-hidden="true"></i> 用户界面</message>
 <message id="Lms.Settings.menu-audio"><i class="fa fa-fw fa-music" aria-hidden="true"></i> 音频</message>

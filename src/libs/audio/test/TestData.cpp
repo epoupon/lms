@@ -47,6 +47,8 @@ namespace lms::audio::tests
             TestAudioFile{ .name = "wma", .fileName = "sine.wma", .container = core::media::Container::ASF, .codec = core::media::Codec::WMA2, .channelCount = 2, .sampleRate = 44'100, .duration = std::chrono::milliseconds{ 3'000 }, .hasCoverArt = false },
             TestAudioFile{ .name = "wavpack", .fileName = "sine.wv", .container = core::media::Container::WavPack, .codec = core::media::Codec::WavPack, .channelCount = 2, .sampleRate = 44'100, .duration = std::chrono::milliseconds{ 3'000 }, .hasCoverArt = false },
             TestAudioFile{ .name = "tta", .fileName = "sine.tta", .container = core::media::Container::TrueAudio, .codec = core::media::Codec::TrueAudio, .channelCount = 2, .sampleRate = 44'100, .duration = std::chrono::milliseconds{ 3'000 }, .hasCoverArt = false },
+            TestAudioFile{ .name = "matroska", .fileName = "sine.mka", .container = core::media::Container::Matroska, .codec = core::media::Codec::FLAC, .channelCount = 2, .sampleRate = 44'100, .duration = std::chrono::milliseconds{ 3'000 }, .hasCoverArt = true },
+            TestAudioFile{ .name = "webm", .fileName = "sine.webm", .container = core::media::Container::WebM, .codec = core::media::Codec::Opus, .channelCount = 2, .sampleRate = 48'000, .duration = std::chrono::milliseconds{ 3'000 }, .hasCoverArt = false }, // WebM has no attachments
         };
         return files;
     }

@@ -22,7 +22,7 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Release.hpp"
 
 #include "LmsApplication.hpp"
@@ -119,7 +119,7 @@ namespace lms::ui
         bool moreResults{};
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            _releaseCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }, moreResults, [&](const db::Release::pointer& release) {
+            _releaseCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }, moreResults, [&](const db::Release& release) {
                 _container->add(releaseListHelpers::createEntry(release, { releaseListHelpers::DisplayOptions::ShowArtist }));
             });
         }
@@ -132,8 +132,8 @@ namespace lms::ui
         bool moreResults{};
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            _releaseCollector.get(db::Range{ 0, _maxCount }, moreResults, [&](const db::Release::pointer& release) {
-                ids.push_back(release->getId());
+            _releaseCollector.get(db::Range{ 0, _maxCount }, moreResults, [&](const db::Release& release) {
+                ids.push_back(release.getId());
             });
         }
         return ids;

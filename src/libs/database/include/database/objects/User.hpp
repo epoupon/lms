@@ -22,24 +22,20 @@
 #include <optional>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "core/EnumSet.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class AuthToken;
-    class Session;
-    class UIState;
+    class ISession;
 
-    class User final : public Object<User, UserId>
+    class User : public detail::Object<User, UserId>
     {
     public:
         struct PasswordHash
@@ -69,20 +65,23 @@ namespace lms::db
         static inline constexpr ReleaseSortMethod _defaultUIArtistReleaseSortMethod{ ReleaseSortMethod::OriginalDateDesc };
         static inline constexpr SubsonicArtistListMode defaultSubsonicArtistListMode{ SubsonicArtistListMode::AllArtists };
 
-        User() = default;
+        static User create(ISession& session, std::string_view loginName);
+        static void destroy(ISession& session, std::span<const UserId> ids);
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, UserId id);
-        static pointer find(Session& session, std::string_view loginName);
-        static std::vector<UserId> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
-        static pointer findDemoUser(Session& session);
+        static std::size_t getCount(ISession& session);
+        static std::optional<User> find(ISession& session, UserId id);
+        static std::optional<User> find(ISession& session, std::string_view loginName);
+        static std::vector<UserId> findIds(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const User&)>& func);
+        static std::optional<User> findDemoUser(ISession& session);
+        static std::size_t getAuthTokensCount(ISession& session, UserId id);
+
+        static void update(ISession& session, const User& user);
 
         // accessors
         const std::string& getLoginName() const { return _loginName; }
         PasswordHash getPasswordHash() const { return PasswordHash{ .bcryptRoundCount = static_cast<std::size_t>(_bcryptRoundCount), .salt = _passwordSalt, .hash = _passwordHash }; }
         const Wt::WDateTime& getLastLogin() const { return _lastLogin; }
-        std::size_t getAuthTokensCount() const { return _authTokens.size(); }
 
         // write
         void setLastLogin(const Wt::WDateTime& dateTime) { _lastLogin = dateTime; }
@@ -127,38 +126,9 @@ namespace lms::db
         std::string_view getLastFmApiSecret() const { return _lastFmApiSecret; }
         std::string_view getLastFmSessionKey() const { return _lastFmSessionKey; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _type, "type");
-            Wt::Dbo::field(a, _loginName, "login_name");
-            Wt::Dbo::field(a, _bcryptRoundCount, "bcrypt_round_count");
-            Wt::Dbo::field(a, _passwordSalt, "password_salt");
-            Wt::Dbo::field(a, _passwordHash, "password_hash");
-            Wt::Dbo::field(a, _lastLogin, "last_login");
-            Wt::Dbo::field(a, _subsonicEnableTranscodingByDefault, "subsonic_enable_transcoding_by_default");
-            Wt::Dbo::field(a, _subsonicDefaultTranscodingOutputFormat, "subsonic_default_transcode_format");
-            Wt::Dbo::field(a, _subsonicDefaultTranscodingOutputBitrate, "subsonic_default_transcode_bitrate");
-            Wt::Dbo::field(a, _subsonicArtistListMode, "subsonic_artist_list_mode");
-            Wt::Dbo::field(a, _uiTheme, "ui_theme");
-            Wt::Dbo::field(a, _uiArtistReleaseSortMethod, "ui_artist_release_sort_method");
-            Wt::Dbo::field(a, _uiEnableInlineArtistRelationships, "ui_enable_inline_artist_relationships");
-            Wt::Dbo::field(a, _uiInlineArtistRelationships, "ui_inline_artist_relationships");
-            Wt::Dbo::field(a, _feedbackBackends, "feedback_backends");
-            Wt::Dbo::field(a, _scrobblingBackends, "scrobbling_backends");
-            Wt::Dbo::field(a, _listenbrainzToken, "listenbrainz_token");
-            Wt::Dbo::field(a, _lastFmApiKey, "lastfm_api_key");
-            Wt::Dbo::field(a, _lastFmApiSecret, "lastfm_api_secret");
-            Wt::Dbo::field(a, _lastFmSessionKey, "lastfm_session_key");
-
-            Wt::Dbo::hasMany(a, _authTokens, Wt::Dbo::ManyToOne, "user");
-            Wt::Dbo::hasMany(a, _uiStates, Wt::Dbo::ManyToOne, "user");
-        }
-
-    private:
-        friend class Session;
-        User(std::string_view loginName);
-        static pointer create(Session& session, std::string_view loginName);
+    protected:
+        User() = default;
+        explicit User(std::string_view loginName);
 
         std::string _loginName;
         int _bcryptRoundCount{};
@@ -184,8 +154,5 @@ namespace lms::db
         bool _subsonicEnableTranscodingByDefault{ defaultSubsonicEnableTranscodingByDefault };
         TranscodingOutputFormat _subsonicDefaultTranscodingOutputFormat{ defaultSubsonicTranscodingOutputFormat };
         int _subsonicDefaultTranscodingOutputBitrate{ defaultSubsonicTranscodingOutputBitrate };
-
-        Wt::Dbo::collection<Wt::Dbo::ptr<AuthToken>> _authTokens;
-        Wt::Dbo::collection<Wt::Dbo::ptr<UIState>> _uiStates;
     };
 } // namespace lms::db

@@ -27,7 +27,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            User::find(session, User::FindParameters{}, [&](const User::pointer&) {
+            User::find(session, User::FindParameters{}, [&](const User&) {
                 visited = true;
             });
             EXPECT_FALSE(visited);
@@ -40,8 +40,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             std::vector<UserId> visitedUsers;
-            User::find(session, User::FindParameters{}, [&](const User::pointer& user) {
-                visitedUsers.push_back(user->getId());
+            User::find(session, User::FindParameters{}, [&](const User& user) {
+                visitedUsers.push_back(user.getId());
             });
             EXPECT_EQ(visitedUsers.size(), 2);
             EXPECT_EQ(visitedUsers[0], user1->getId());
@@ -60,7 +60,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            user.get().modify()->setScrobblingBackends({ ScrobblingBackend::ListenBrainz });
+            std::optional<User> updatedUser{ user.get() };
+            updatedUser->setScrobblingBackends({ ScrobblingBackend::ListenBrainz });
+            User::update(session, *updatedUser);
         }
         {
             auto transaction{ session.createReadTransaction() };
@@ -71,7 +73,9 @@ namespace lms::db::tests
         // setting the backends must not be additive: it replaces the whole set
         {
             auto transaction{ session.createWriteTransaction() };
-            user.get().modify()->setScrobblingBackends({ ScrobblingBackend::LastFm });
+            std::optional<User> updatedUser{ user.get() };
+            updatedUser->setScrobblingBackends({ ScrobblingBackend::LastFm });
+            User::update(session, *updatedUser);
         }
         {
             auto transaction{ session.createReadTransaction() };
@@ -81,7 +85,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            user.get().modify()->setScrobblingBackends({ ScrobblingBackend::ListenBrainz, ScrobblingBackend::LastFm });
+            std::optional<User> updatedUser{ user.get() };
+            updatedUser->setScrobblingBackends({ ScrobblingBackend::ListenBrainz, ScrobblingBackend::LastFm });
+            User::update(session, *updatedUser);
         }
         {
             auto transaction{ session.createReadTransaction() };
@@ -91,7 +97,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            user.get().modify()->setScrobblingBackends({});
+            std::optional<User> updatedUser{ user.get() };
+            updatedUser->setScrobblingBackends({});
+            User::update(session, *updatedUser);
         }
         {
             auto transaction{ session.createReadTransaction() };
@@ -110,7 +118,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            user.get().modify()->setFeedbackBackends({ FeedbackBackend::ListenBrainz });
+            std::optional<User> updatedUser{ user.get() };
+            updatedUser->setFeedbackBackends({ FeedbackBackend::ListenBrainz });
+            User::update(session, *updatedUser);
         }
         {
             auto transaction{ session.createReadTransaction() };
@@ -119,7 +129,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            user.get().modify()->setFeedbackBackends({});
+            std::optional<User> updatedUser{ user.get() };
+            updatedUser->setFeedbackBackends({});
+            User::update(session, *updatedUser);
         }
         {
             auto transaction{ session.createReadTransaction() };

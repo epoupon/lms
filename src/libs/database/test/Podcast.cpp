@@ -20,6 +20,7 @@
 #include "Common.hpp"
 
 #include "database/objects/Artwork.hpp"
+#include "database/objects/Directory.hpp"
 #include "database/objects/Podcast.hpp"
 
 namespace lms::db::tests
@@ -40,8 +41,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Podcast::getCount(session), 1);
 
-            Podcast::pointer p{ Podcast::find(session, podcast.getId()) };
-            ASSERT_NE(p, Podcast::pointer{});
+            std::optional<Podcast> p{ Podcast::find(session, podcast.getId()) };
+            ASSERT_TRUE(p);
             EXPECT_EQ(p->getUrl(), "podcastUrl");
             EXPECT_EQ(p->getTitle(), "");
             EXPECT_EQ(p->getLink(), "");
@@ -58,28 +59,29 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            Podcast::pointer p{ Podcast::find(session, podcast.getId()) };
-            ASSERT_NE(p, Podcast::pointer{});
-            p.modify()->setUrl("newPodcastUrl");
-            p.modify()->setTitle("newTitle");
-            p.modify()->setLink("newLink");
-            p.modify()->setDescription("newDescription");
-            p.modify()->setLanguage("newLanguage");
-            p.modify()->setCopyright("newCopyright");
-            p.modify()->setLastBuildDate(Wt::WDateTime::currentDateTime());
-            p.modify()->setAuthor("newAuthor");
-            p.modify()->setCategory("newCategory");
-            p.modify()->setExplicit(true);
-            p.modify()->setImageUrl("newImageUrl");
-            p.modify()->setOwnerEmail("newOwnerEmail");
-            p.modify()->setOwnerName("newOwnerName");
+            std::optional<Podcast> p{ Podcast::find(session, podcast.getId()) };
+            ASSERT_TRUE(p);
+            p->setUrl("newPodcastUrl");
+            p->setTitle("newTitle");
+            p->setLink("newLink");
+            p->setDescription("newDescription");
+            p->setLanguage("newLanguage");
+            p->setCopyright("newCopyright");
+            p->setLastBuildDate(Wt::WDateTime::currentDateTime());
+            p->setAuthor("newAuthor");
+            p->setCategory("newCategory");
+            p->setExplicit(true);
+            p->setImageUrl("newImageUrl");
+            p->setOwnerEmail("newOwnerEmail");
+            p->setOwnerName("newOwnerName");
+            Podcast::update(session, *p);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            Podcast::pointer img{ Podcast::find(session, podcast.getId()) };
-            ASSERT_NE(img, Podcast::pointer{});
+            std::optional<Podcast> img{ Podcast::find(session, podcast.getId()) };
+            ASSERT_TRUE(img);
             EXPECT_EQ(img->getUrl(), "newPodcastUrl");
             EXPECT_EQ(img->getTitle(), "newTitle");
             EXPECT_EQ(img->getLink(), "newLink");

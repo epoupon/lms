@@ -17,6 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <atomic>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -28,7 +29,7 @@
 #include "core/PartialDateTime.hpp"
 #include "core/ScopedTmpDirectory.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Track.hpp"
@@ -56,10 +57,7 @@ namespace lms::scanner::tests
             static void SetUpTestSuite()
             {
                 _tmpDb = std::make_unique<db::tests::TmpDatabase>();
-
-                db::Session& session{ _tmpDb->getDb().getTLSSession() };
-                session.prepareTablesIfNeeded();
-                session.createIndexesIfNeeded();
+                _tmpDb->createTablesAndIndexes();
             }
 
             static void TearDownTestSuite()
@@ -72,37 +70,40 @@ namespace lms::scanner::tests
             {
                 {
                     auto transaction{ session.createWriteTransaction() };
-                    session.execute("DELETE FROM track_artist_link");
-                    session.execute("DELETE FROM track");
-                    session.execute("DELETE FROM artist_info");
-                    session.execute("DELETE FROM directory");
-                    session.execute("DELETE FROM media_library");
-                    session.execute("DELETE FROM artist");
+                    db::tests::executeStatement(session, "DELETE FROM track_artist_link");
+                    db::tests::executeStatement(session, "DELETE FROM track");
+                    db::tests::executeStatement(session, "DELETE FROM artist_info");
+                    db::tests::executeStatement(session, "DELETE FROM directory");
+                    db::tests::executeStatement(session, "DELETE FROM media_library");
+                    db::tests::executeStatement(session, "DELETE FROM artist");
                 }
 
                 auto transaction{ session.createReadTransaction() };
-                EXPECT_TRUE(session.areAllTablesEmpty());
+                EXPECT_TRUE(db::tests::areAllTablesEmpty(session));
             }
 
             db::ArtistId createArtist(std::string_view name, const std::optional<core::UUID>& mbid, std::string_view sortName)
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                db::Artist::pointer artist{ session.create<db::Artist>(std::string{ name }, mbid) };
-                artist.modify()->setSortName(sortName);
-                return artist->getId();
+                db::Artist artist{ db::Artist::create(session, std::string{ name }, mbid) };
+                artist.setSortName(sortName);
+                db::Artist::update(session, artist);
+                return artist.getId();
             }
 
             void createTrackArtistLink(db::ArtistId artistId, int year, bool mbidMatched, std::string_view name, std::string_view sortName)
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                db::Track::pointer track{ session.create<db::Track>() };
-                track.modify()->setDate(core::PartialDateTime{ year });
+                db::Track track{ db::Track::create(session) };
+                track.setDate(core::PartialDateTime{ year });
+                db::Track::update(session, track);
 
-                db::TrackArtistLink::pointer link{ session.create<db::TrackArtistLink>(track, db::Artist::find(session, artistId), db::TrackArtistLinkType::Artist, mbidMatched) };
-                link.modify()->setArtistName(name);
-                link.modify()->setArtistSortName(sortName);
+                db::TrackArtistLink link{ db::TrackArtistLink::create(session, track.getId(), artistId, db::TrackArtistLinkType::Artist, mbidMatched) };
+                link.setArtistName(name);
+                link.setArtistSortName(sortName);
+                db::TrackArtistLink::update(session, link);
             }
 
             std::string getArtistName(db::ArtistId artistId)
@@ -130,9 +131,9 @@ namespace lms::scanner::tests
                 {
                     auto transaction{ session.createWriteTransaction() };
 
-                    db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(session, _rootDirectory.getPath()) };
+                    std::optional<db::MediaLibrary> mediaLibrary{ db::MediaLibrary::find(session, _rootDirectory.getPath()) };
                     if (!mediaLibrary)
-                        mediaLibrary = session.create<db::MediaLibrary>("Test", _rootDirectory.getPath());
+                        mediaLibrary = db::MediaLibrary::create(session, "Test", _rootDirectory.getPath());
                     mediaLibraryId = mediaLibrary->getId();
                 }
 
@@ -149,7 +150,7 @@ namespace lms::scanner::tests
             void reconcileArtists()
             {
                 const ScannerSettings settings;
-                bool abortScan{};
+                std::atomic<bool> abortScan{};
                 const FileScanners fileScanners;
                 const std::filesystem::path cachePath;
                 const std::unique_ptr<core::IJobScheduler> jobScheduler{ core::createJobScheduler("Scanner", 1) };
@@ -175,7 +176,7 @@ namespace lms::scanner::tests
             const core::ScopedTmpDirectory _rootDirectory{ "lms-scanner-test-" };
 
         protected:
-            db::Session& session{ _tmpDb->getDb().getTLSSession() };
+            db::ISession& session{ _tmpDb->getDb().getTLSSession() };
         };
     } // namespace
 
@@ -231,9 +232,9 @@ namespace lms::scanner::tests
         EXPECT_EQ(getArtistName(artistId), "New Artist");
 
         auto transaction{ session.createReadTransaction() };
-        const std::vector<db::Artist::pointer> oldArtists{ db::Artist::find(session, "Old Artist") };
+        const std::vector<db::Artist> oldArtists{ db::Artist::find(session, "Old Artist") };
         ASSERT_EQ(oldArtists.size(), 1);
-        EXPECT_FALSE(oldArtists[0]->hasMBID());
-        EXPECT_EQ(oldArtists[0]->getSortName(), "Artist, Recent Tag");
+        EXPECT_FALSE(oldArtists[0].hasMBID());
+        EXPECT_EQ(oldArtists[0].getSortName(), "Artist, Recent Tag");
     }
 } // namespace lms::scanner::tests

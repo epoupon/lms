@@ -19,12 +19,17 @@
 
 #include "AudioFileInfo.hpp"
 
+#include <cassert>
+#include <cstdint>
+
+#include "core/Service.hpp"
+
 #include "audio/AudioProperties.hpp"
 #include "audio/Exception.hpp"
 #include "audio/IAudioFileInfo.hpp"
 #include "audio/IAudioFileInfoParser.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 #include "database/objects/Track.hpp"
 
@@ -40,7 +45,7 @@ namespace lms::api::subsonic
         {
             try
             {
-                const auto parser{ audio::createAudioFileInfoParser(audio::AudioFileInfoParserBackend::FFmpeg) };
+                const auto parser{ audio::createAudioFileInfoParser() };
 
                 audio::AudioFileInfoParseOptions parseOptions;
                 parseOptions.audioPropertiesReadStyle = audio::AudioFileInfoParseOptions::AudioPropertiesReadStyle::Average;
@@ -60,9 +65,14 @@ namespace lms::api::subsonic
             }
         }
 
+        std::size_t computeFileBitrate(std::uint64_t fileSize, const audio::AudioProperties& audioProperties)
+        {
+            assert(audioProperties.duration.count() > 0);
+            return static_cast<std::size_t>(fileSize * 8 * 1000 / audioProperties.duration.count());
+        }
     } // namespace
 
-    AudioFileInfo getAudioFileInfo(db::Session& session, AudioFileId audioFileId)
+    AudioFileInfo getAudioFileInfo(db::ISession& session, AudioFileId audioFileId)
     {
         AudioFileInfo res;
 
@@ -70,7 +80,7 @@ namespace lms::api::subsonic
 
         if (const db::TrackId * trackId{ std::get_if<db::TrackId>(&audioFileId) })
         {
-            const db::Track::pointer track{ db::Track::find(session, *trackId) };
+            const std::optional<db::Track> track{ db::Track::find(session, *trackId) };
             if (!track)
                 throw RequestedDataNotFoundError{};
 
@@ -89,30 +99,29 @@ namespace lms::api::subsonic
             {
                 res.audioProperties = getAudioProperties(res.path);
             }
+            res.fileBitrate = computeFileBitrate(track->getFileSize(), res.audioProperties);
         }
         else if (const db::PodcastEpisodeId * episodeId{ std::get_if<db::PodcastEpisodeId>(&audioFileId) })
         {
-            const db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, *episodeId) };
-            if (!episode)
+            const std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(session, *episodeId) };
+            if (!episode || episode->getAudioRelativeFilePath().empty())
                 throw RequestedDataNotFoundError{};
+
+            // downloaded episodes always come with their audio properties and file size
+            assert(episode->getContainer() && episode->getCodec());
+            assert(episode->getFileSize() > 0);
 
             std::filesystem::path podcastCachePath{ core::Service<podcast::IPodcastService>::get()->getCachePath() };
 
             res.path = podcastCachePath / episode->getAudioRelativeFilePath();
-            if (episode->getContainer() && episode->getCodec())
-            {
-                res.audioProperties.container = *episode->getContainer();
-                res.audioProperties.codec = *episode->getCodec();
-                res.audioProperties.duration = episode->getDuration();
-                res.audioProperties.bitrate = episode->getBitrate();
-                res.audioProperties.channelCount = episode->getChannelCount();
-                res.audioProperties.sampleRate = episode->getSampleRate();
-                res.audioProperties.bitsPerSample = episode->getBitsPerSample();
-            }
-            else
-            {
-                res.audioProperties = getAudioProperties(res.path);
-            }
+            res.audioProperties.container = *episode->getContainer();
+            res.audioProperties.codec = *episode->getCodec();
+            res.audioProperties.duration = episode->getDuration();
+            res.audioProperties.bitrate = episode->getBitrate();
+            res.audioProperties.channelCount = episode->getChannelCount();
+            res.audioProperties.sampleRate = episode->getSampleRate();
+            res.audioProperties.bitsPerSample = episode->getBitsPerSample();
+            res.fileBitrate = computeFileBitrate(episode->getFileSize(), res.audioProperties);
         }
 
         return res;

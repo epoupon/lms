@@ -22,13 +22,16 @@
 #include "TagLibDefs.hpp"
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include <taglib/audioproperties.h>
 #include <taglib/id3v2framefactory.h>
 #include <taglib/mpegfile.h>
+#include <taglib/tdebuglistener.h>
 #include <taglib/tfile.h>
 #include <taglib/tfilestream.h>
+#include <taglib/tstring.h>
 
 #if LMS_TAGLIB_HAS_RIFF
     #include <taglib/aifffile.h>
@@ -61,7 +64,11 @@
 #if LMS_TAGLIB_HAS_SHORTEN
     #include <taglib/shortenfile.h>
 #endif
+#if LMS_TAGLIB_HAS_MATROSKA
+    #include <taglib/matroskafile.h>
+#endif
 
+#include "core/Ascii.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
@@ -100,6 +107,9 @@ namespace lms::audio::taglib::utils
                 return LMS_TAGLIB_HAS_DSF;
             case core::media::Container::Shorten:
                 return LMS_TAGLIB_HAS_SHORTEN;
+            case core::media::Container::Matroska:
+            case core::media::Container::WebM:
+                return LMS_TAGLIB_HAS_MATROSKA;
             }
 
             return false;
@@ -156,6 +166,11 @@ namespace lms::audio::taglib::utils
             if (container == Container::Shorten)
                 return std::make_unique<TagLib::Shorten::File>(stream, readAudioProperties, style);
 #endif // LMS_TAGLIB_HAS_SHORTEN
+#if LMS_TAGLIB_HAS_MATROSKA
+            // The actual container (Matroska or WebM) is only known from the DocType, once parsed
+            if (container == Container::Matroska || container == Container::WebM)
+                return std::make_unique<TagLib::Matroska::File>(stream, readAudioProperties, style);
+#endif // LMS_TAGLIB_HAS_MATROSKA
 
             return nullptr;
         }
@@ -179,11 +194,25 @@ namespace lms::audio::taglib::utils
 
             return result;
         }
+
+        // TagLib prints to stderr by default, only in builds without NDEBUG (or with TRACE_IN_RELEASE)
+        class LogDebugListener final : public ::TagLib::DebugListener
+        {
+        private:
+            void printMessage(const ::TagLib::String& msg) override
+            {
+                const std::string message{ msg.to8Bit(true) };
+                LMS_LOG(AUDIO, DEBUG, core::stringUtils::stringTrimEnd(message, " \t\r\n"));
+            }
+        };
     } // namespace
 
     void init()
     {
         LMS_LOG(AUDIO, INFO, "Using TagLib " << TAGLIB_MAJOR_VERSION << "." << TAGLIB_MINOR_VERSION << "." << TAGLIB_PATCH_VERSION);
+
+        static LogDebugListener debugListener;
+        ::TagLib::setDebugListener(&debugListener);
     }
 
     std::span<const std::filesystem::path> getSupportedExtensions()
@@ -237,7 +266,7 @@ namespace lms::audio::taglib::utils
         if (extension.empty())
             return file;
 
-        const std::string ext{ core::stringUtils::stringToLower(extension.string()) };
+        const std::string ext{ core::ascii::toLower(extension.string()) };
 
         // Extensions can be ambiguous (e.g. .oga is both Ogg+FLAC and Ogg+Vorbis): try every candidate
         // pairing for this extension, in table order, until one actually validates
@@ -306,6 +335,10 @@ namespace lms::audio::taglib::utils
         else if (TagLib::Shorten::File::isSupported(stream))
             file = std::make_unique<TagLib::Shorten::File>(stream, readAudioProperties, audioPropertiesStyle);
 #endif // LMS_TAGLIB_HAS_SHORTEN
+#if LMS_TAGLIB_HAS_MATROSKA
+        else if (TagLib::Matroska::File::isSupported(stream))
+            file = std::make_unique<TagLib::Matroska::File>(stream, readAudioProperties, audioPropertiesStyle);
+#endif // LMS_TAGLIB_HAS_MATROSKA
 
         if (file && !file->isValid())
             file.reset();

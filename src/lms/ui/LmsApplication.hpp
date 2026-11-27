@@ -28,7 +28,6 @@
 
 #include "core/UUID.hpp"
 
-#include "database/Object.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
 #include "services/scanner/ScannerEvents.hpp"
@@ -39,7 +38,7 @@
 namespace lms::db
 {
     class IDb;
-    class Session;
+    class ISession;
     class User;
 } // namespace lms::db
 
@@ -66,9 +65,9 @@ namespace lms::ui
         // Session application data
         std::shared_ptr<ArtworkResource> getArtworkResource() { return _artworkResource; }
         db::IDb& getDb();
-        db::Session& getDbSession(); // always thread safe
+        db::ISession& getDbSession(); // always thread safe
 
-        db::ObjectPtr<db::User> getUser();
+        db::User getUser(); // user must be logged in prior this call
         db::UserId getUserId() const;
         bool isUserAuthStrong() const;             // user must be logged in prior this call
         db::UserType getUserType() const;          // user must be logged in prior this call
@@ -88,7 +87,7 @@ namespace lms::ui
         void setTitle(const Wt::WString& title = "");
 
         // Used to classify the message sent to the user
-        void notifyMsg(Notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds{ 5000 });
+        void notifyMsg(notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds{ 5000 });
 
         MediaPlayer& getMediaPlayer() const { return *_mediaPlayer; }
         PlayQueue& getPlayQueue() const { return *_playQueue; }

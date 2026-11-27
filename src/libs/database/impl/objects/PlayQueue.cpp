@@ -22,93 +22,93 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
-#include "database/objects/Artist.hpp"
-#include "database/objects/Artwork.hpp"
-#include "database/objects/Cluster.hpp"
-#include "database/objects/Directory.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/MediaLibrary.hpp"
-#include "database/objects/Medium.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Movement.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/TrackArtistLink.hpp"
-#include "database/objects/TrackEmbeddedImage.hpp"
-#include "database/objects/TrackEmbeddedImageLink.hpp"
-#include "database/objects/TrackLyrics.hpp"
-#include "database/objects/User.hpp"
-#include "database/objects/Work.hpp"
+#include "database/objects/TrackList.hpp"
 
+#include "DboAccess.hpp"
+#include "PlayQueueDbo.hpp"
+#include "Session.hpp"
+#include "TrackListDbo.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
-#include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::PlayQueue)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::PlayQueue)
 
 namespace lms::db
 {
-    PlayQueue::PlayQueue(const ObjectPtr<User>& user, std::string_view name)
-        : _name{ name }
-        , _user{ getDboPtr(user) }
+    PlayQueue::PlayQueue(PlayQueueType type)
+        : _type{ type }
     {
     }
 
-    PlayQueue::pointer PlayQueue::create(Session& session, const ObjectPtr<User>& user, std::string_view name)
+    dbo::PlayQueue::PlayQueue(Wt::Dbo::ptr<User> user, PlayQueueType type, Wt::Dbo::ptr<TrackList> trackList)
+        : db::PlayQueue{ type }
+        , _user{ std::move(user) }
+        , _trackList{ std::move(trackList) }
     {
-        return session.getDboSession()->add(std::unique_ptr<PlayQueue>{ new PlayQueue{ user, name } });
     }
 
-    std::size_t PlayQueue::getCount(Session& session)
+    PlayQueue PlayQueue::create(ISession& session, UserId user, PlayQueueType type)
     {
-        session.checkReadTransaction();
+        TrackList trackList{ TrackList::create(session, "", TrackListType::Internal) };
+        trackList.setUser(user);
+        TrackList::update(session, trackList);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM playqueue"));
+        Wt::Dbo::Session& dboSession{ *getDboSession(session) };
+        return utils::addObject(session, std::unique_ptr<dbo::PlayQueue>{ new dbo::PlayQueue{ dboSession.loadLazy<dbo::User>(user.getValue()), type, dboSession.loadLazy<dbo::TrackList>(trackList.getId().getValue()) } });
     }
 
-    PlayQueue::pointer PlayQueue::find(Session& session, PlayQueueId id)
+    void PlayQueue::destroy(ISession& session, std::span<const PlayQueueId> ids)
     {
-        session.checkReadTransaction();
+        std::vector<TrackListId> trackListIds;
+        trackListIds.reserve(ids.size());
+        for (const PlayQueueId id : ids)
+        {
+            if (const std::optional<PlayQueue> playQueue{ find(session, id) })
+                trackListIds.push_back(playQueue->getTrackListId());
+        }
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<PlayQueue>>("SELECT p from playqueue p").where("p.id = ?").bind(id));
+        utils::destroyObjects<dbo::PlayQueue>(session, ids);
+        TrackList::destroy(session, trackListIds);
     }
 
-    PlayQueue::pointer PlayQueue::find(Session& session, UserId userId, std::string_view name)
+    std::size_t PlayQueue::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<PlayQueue>>("SELECT p from playqueue p") };
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM playqueue"));
+    }
+
+    std::optional<PlayQueue> PlayQueue::find(ISession& session, PlayQueueId id)
+    {
+        checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayQueue>>("SELECT p from playqueue p").where("p.id = ?").bind(id));
+    }
+
+    std::optional<PlayQueue> PlayQueue::find(ISession& session, UserId userId, PlayQueueType type)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayQueue>>("SELECT p from playqueue p") };
         query.where("p.user_id = ?").bind(userId);
-        query.where("p.name = ?").bind(name);
+        query.where("p.type = ?").bind(type);
 
-        return utils::fetchQuerySingleResult(query);
+        return utils::fetchQuerySingleObject(query);
     }
 
-    void PlayQueue::clear()
+    std::vector<PlayQueueId> PlayQueue::findIds(ISession& session, UserId userId)
     {
-        _tracks.clear();
+        checkReadTransaction(session);
+
+        return utils::fetchQueryResults(getDboSession(session)->query<PlayQueueId>("SELECT id FROM playqueue").where("user_id = ?").bind(userId).orderBy("id"));
     }
 
-    void PlayQueue::addTrack(const ObjectPtr<Track>& track)
+    void PlayQueue::update(ISession& session, const PlayQueue& playQueue)
     {
-        _tracks.insert(getDboPtr(track));
+        utils::updateObject<dbo::PlayQueue>(session, playQueue);
     }
-
-    Track::pointer PlayQueue::getTrackAtCurrentIndex() const
-    {
-        auto query{ _tracks.find() };
-        query.offset(_currentIndex);
-        query.limit(1);
-
-        return utils::fetchQuerySingleResult(query);
-    }
-
-    void PlayQueue::visitTracks(const std::function<void(const ObjectPtr<Track>& track)>& visitor) const
-    {
-        utils::forEachQueryResult(_tracks.find(), visitor);
-    }
-
 } // namespace lms::db

@@ -37,7 +37,7 @@ namespace lms::audio
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
 }
 
 namespace lms::artwork

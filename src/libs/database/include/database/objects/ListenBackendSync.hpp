@@ -21,33 +21,40 @@
 
 #include <functional>
 #include <optional>
+#include <span>
 
-#include <Wt/Dbo/Field.h>
-
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ListenBackendSyncId.hpp"
 #include "database/objects/ListenId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
+    class ISession;
     class Listen;
-    class Session;
 
     // Tracks the delivery of a single Listen to a given external scrobbling backend.
     // Never created for local/internal recording: recording a Listen row is itself that behavior.
-    class ListenBackendSync final : public Object<ListenBackendSync, ListenBackendSyncId>
+    class ListenBackendSync : public detail::Object<ListenBackendSync, ListenBackendSyncId>
     {
     public:
-        ListenBackendSync() = default;
+        static ListenBackendSync create(ISession& session, ListenId listen, ScrobblingBackend backend);
+        static void destroy(ISession& session, std::span<const ListenBackendSyncId> ids);
 
         struct FindParameters
         {
+            UserId user;
             std::optional<ScrobblingBackend> backend;
             std::optional<SyncState> syncState;
             std::optional<Range> range;
 
+            FindParameters& setUser(UserId _user)
+            {
+                user = _user;
+                return *this;
+            }
             FindParameters& setBackend(ScrobblingBackend _backend)
             {
                 backend = _backend;
@@ -65,35 +72,26 @@ namespace lms::db
             }
         };
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ListenBackendSyncId id);
-        static pointer find(Session& session, ListenId listenId, ScrobblingBackend backend);
-        static std::vector<ListenBackendSyncId> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static std::size_t getCount(ISession& session);
+        static std::optional<ListenBackendSync> find(ISession& session, ListenBackendSyncId id);
+        static std::optional<ListenBackendSync> find(ISession& session, ListenId listenId, ScrobblingBackend backend);
+        static std::vector<ListenBackendSyncId> findIds(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const ListenBackendSync&)>& func);
 
-        ObjectPtr<Listen> getListen() const { return _listen; }
+        static void update(ISession& session, const ListenBackendSync& listenBackendSync);
+
+        ListenId getListenId() const { return _listenId; }
         ScrobblingBackend getBackend() const { return _backend; }
         SyncState getSyncState() const { return _syncState; }
 
         void setSyncState(SyncState state) { _syncState = state; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _backend, "backend");
-            Wt::Dbo::field(a, _syncState, "sync_state");
-
-            Wt::Dbo::belongsTo(a, _listen, "listen", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        ListenBackendSync(ObjectPtr<Listen> listen, ScrobblingBackend backend);
-        static pointer create(Session& session, ObjectPtr<Listen> listen, ScrobblingBackend backend);
+    protected:
+        ListenBackendSync() = default;
+        explicit ListenBackendSync(ScrobblingBackend backend);
 
         ScrobblingBackend _backend;
         SyncState _syncState{ SyncState::PendingAdd };
-
-        Wt::Dbo::ptr<Listen> _listen;
+        ListenId _listenId;
     };
 } // namespace lms::db

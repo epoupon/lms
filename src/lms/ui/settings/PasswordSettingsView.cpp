@@ -26,7 +26,7 @@
 
 #include "core/Service.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 #include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
@@ -69,9 +69,9 @@ namespace lms::ui
                 if (!valueText(PasswordField).empty())
                 {
                     auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-                    const db::User::pointer user{ LmsApp->getUser() };
-                    _authPasswordService.setPassword(user->getId(), valueText(PasswordField).toUTF8());
-                    _authTokenService.clearAuthTokens("ui", user->getId());
+                    const db::User user{ LmsApp->getUser() };
+                    _authPasswordService.setPassword(user.getId(), valueText(PasswordField).toUTF8());
+                    _authTokenService.clearAuthTokens("ui", user.getId());
                 }
             }
 
@@ -173,7 +173,7 @@ namespace lms::ui
 
         auto model{ std::make_shared<PasswordSettingsModel>(*authPasswordService, withOldPassword, *core::Service<auth::IAuthTokenService>::get()) };
 
-        utils::bindSaveDiscardButtons(t, model.get(), [model] { model->saveData(); }, [model] { model->loadData(); });
+        utils::bindSaveDiscardButtons(t, model.get(), [model] { model->saveData(); return true; }, [model] { model->loadData(); });
         t->updateView(model.get());
     }
 } // namespace lms::ui

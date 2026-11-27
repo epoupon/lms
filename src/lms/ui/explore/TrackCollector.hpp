@@ -23,7 +23,6 @@
 #include <optional>
 #include <vector>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/TrackId.hpp"
 
@@ -41,7 +40,7 @@ namespace lms::ui
     public:
         using DatabaseCollectorBase::DatabaseCollectorBase;
 
-        void get(db::Range range, bool& moreResults, const std::function<void(const db::ObjectPtr<db::Track>&)>& func);
+        void get(db::Range range, bool& moreResults, const std::function<void(const db::Track&)>& func);
         void reset() { _randomTracks.reset(); }
 
     private:

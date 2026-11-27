@@ -32,6 +32,7 @@ ARG	BUILD_PACKAGES=" \
 	pulseaudio-dev \
 	nasm \
 	sqlite-dev \
+	utf8proc-dev \
 	utfcpp \
 	xxhash-dev \
 	yasm \
@@ -69,9 +70,9 @@ RUN \
 	--enable-libvorbis \
 	--enable-zlib \
 	--disable-everything \
-	--enable-decoder=aac*,ac3*,alac,als,ape,asf,dsd*,flac,libopus,pcm*,libvorbis,mp3*,mpc7,mpc8,shorten,tta,wavpack,wma*,libopenjpg,png \
+	--enable-decoder=aac*,ac3*,eac3,alac,als,ape,asf,dsd*,flac,libopus,pcm*,libvorbis,mp3*,mpc7,mpc8,shorten,tta,wavpack,wma*,libopenjpg,png \
 	--enable-encoder=flac,libmp3lame,libopus,libvorbis \
-	--enable-demuxer=aac,aiff,ape,asf,dsf,flac,m4a,mp3,mov,mpc,mpc8,ogg,shn,tta,wav,wv \
+	--enable-demuxer=aac,aiff,ape,asf,dsf,flac,m4a,matroska,mp3,mov,mpc,mpc8,ogg,shn,tta,wav,wv \
 	--enable-muxer=flac,mp3,ogg \
 	--enable-protocol=file,pipe \
 	--enable-filter=aresample \
@@ -110,7 +111,7 @@ RUN \
 
 RUN \
 	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
-	CXXFLAGS="-I/usr/include/utf8cpp" cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=ON -DBUILD_EXAMPLES=OFF -DBUILD_BINDINGS=OFF -DBUILD_TESTING=OFF -DTRACE_IN_RELEASE=OFF -DWITH_ZLIB=ON  && \
+	CXXFLAGS="-I/usr/include/utf8cpp" cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=ON -DBUILD_EXAMPLES=OFF -DBUILD_BINDINGS=OFF -DBUILD_TESTING=OFF -DTRACE_IN_RELEASE=OFF -DWITH_ZLIB=ON -DWITH_MOD=OFF && \
 	make -j$(nproc) install
 
 # LMS
@@ -167,6 +168,7 @@ ARG	RUNTIME_PACKAGES=" \
 	opus \
 	pugixml \
 	sqlite-libs \
+	utf8proc \
 	zlib"
 
 ARG	LMS_USER=lms

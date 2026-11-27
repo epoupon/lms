@@ -20,11 +20,12 @@
 #pragma once
 
 #include <memory>
+#include <span>
 
 #include <gtest/gtest.h>
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
@@ -34,6 +35,7 @@
 #include "database/objects/Listen.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Mood.hpp"
+#include "database/objects/PlayQueue.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ScanSettings.hpp"
 #include "database/objects/Track.hpp"
@@ -53,24 +55,19 @@ namespace lms::db::tests
         using IdType = typename T::IdType;
 
         template<typename... Args>
-        ScopedEntity(db::Session& session, Args&&... args)
+        ScopedEntity(db::ISession& session, Args&&... args)
             : _session{ session }
         {
             auto transaction{ _session.createWriteTransaction() };
 
-            auto entity{ _session.create<T>(std::forward<Args>(args)...) };
-            EXPECT_TRUE(entity);
-            _id = entity->getId();
+            _id = T::create(_session, std::forward<Args>(args)...).getId();
         }
 
         ~ScopedEntity()
         {
             auto transaction{ _session.createWriteTransaction() };
 
-            auto entity{ T::find(_session, _id) };
-            // could not be here due to "on delete cascade" constraints...
-            if (entity)
-                entity.remove();
+            T::destroy(_session, std::span{ &_id, 1 });
         }
 
         ScopedEntity(const ScopedEntity&) = delete;
@@ -78,22 +75,20 @@ namespace lms::db::tests
         ScopedEntity& operator=(const ScopedEntity&) = delete;
         ScopedEntity& operator=(ScopedEntity&&) = delete;
 
-        typename T::pointer lockAndGet()
+        auto lockAndGet()
         {
             auto transaction{ _session.createReadTransaction() };
             return get();
         }
 
-        typename T::pointer get()
+        auto get()
         {
-            _session.checkReadTransaction();
-
             auto entity{ T::find(_session, _id) };
             EXPECT_TRUE(entity);
             return entity;
         }
 
-        typename T::pointer operator->()
+        auto operator->()
         {
             return get();
         }
@@ -101,7 +96,7 @@ namespace lms::db::tests
         IdType getId() const { return _id; }
 
     private:
-        db::Session& _session;
+        db::ISession& _session;
         IdType _id{};
     };
 
@@ -109,6 +104,7 @@ namespace lms::db::tests
     using ScopedCluster = ScopedEntity<db::Cluster>;
     using ScopedClusterType = ScopedEntity<db::ClusterType>;
     using ScopedMediaLibrary = ScopedEntity<db::MediaLibrary>;
+    using ScopedPlayQueue = ScopedEntity<db::PlayQueue>;
     using ScopedRelease = ScopedEntity<db::Release>;
     using ScopedTrack = ScopedEntity<db::Track>;
     using ScopedTrackList = ScopedEntity<db::TrackList>;
@@ -127,7 +123,12 @@ namespace lms::db::tests
 
         static inline std::unique_ptr<TmpDatabase> _tmpDb{};
 
+        const std::unique_ptr<ISession> _session{ _tmpDb->getDb().createSession() };
+
+    protected:
+        static IDb& getDb() { return _tmpDb->getDb(); }
+
     public:
-        db::Session session{ _tmpDb->getDb() };
+        db::ISession& session{ *_session };
     };
 } // namespace lms::db::tests

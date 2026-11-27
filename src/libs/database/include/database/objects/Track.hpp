@@ -21,14 +21,13 @@
 
 #include <chrono>
 #include <filesystem>
+#include <functional>
 #include <optional>
-#include <ostream>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "core/EnumSet.hpp"
@@ -38,7 +37,6 @@
 #include "core/media/Container.hpp"
 
 #include "database/IdRange.hpp"
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ArtworkId.hpp"
@@ -54,35 +52,18 @@
 #include "database/objects/MovementId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
+#include "database/objects/TrackListId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
 #include "database/objects/WorkId.hpp"
+#include "database/objects/detail/Object.hpp"
 #include "database/objects/detail/Types.hpp"
 
 namespace lms::db
 {
-    class Artist;
-    class Artwork;
-    class Cluster;
-    class ClusterType;
-    class Directory;
-    class Genre;
-    class Grouping;
-    class Language;
-    class Medium;
-    class Movement;
-    class Mood;
-    class TrackEmbeddedImageLink;
-    class MediaLibrary;
-    class Release;
-    class Session;
-    class TrackArtistLink;
-    class TrackLyrics;
-    class TrackStats;
-    class User;
-    class Work;
+    class ISession;
 
-    class Track final : public Object<Track, TrackId>
+    class Track : public detail::Object<Track, TrackId>
     {
     public:
         struct FindParameters
@@ -100,6 +81,7 @@ namespace lms::db
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes; //    and for these link types
             bool nonRelease{};                                       // only tracks that do not belong to a release
             MediumId medium;                                         // matching this medium
+            TrackListId trackList;                                   // in this track list, in list order unless sorted (once per entry)
             ReleaseId release;                                       // matching this release
             std::string releaseName;                                 // matching this release name
             std::optional<int> trackNumber;                          // matching this track number
@@ -161,6 +143,11 @@ namespace lms::db
                 nonRelease = _nonRelease;
                 return *this;
             }
+            FindParameters& setTrackList(TrackListId _trackList)
+            {
+                trackList = _trackList;
+                return *this;
+            }
             FindParameters& setMedium(MediumId _medium)
             {
                 medium = _medium;
@@ -203,33 +190,48 @@ namespace lms::db
             }
         };
 
-        Track() = default;
+        static Track create(ISession& session);
+        static void destroy(ISession& session, std::span<const TrackId> ids);
 
         // Find utility functions
-        static std::size_t getCount(Session& session);
-        static pointer findByPath(Session& session, const std::filesystem::path& p);
-        static std::optional<FileInfo> findFileInfo(Session& session, const std::filesystem::path& p);
-        static pointer find(Session& session, TrackId id);
-        static void find(Session& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(const Track::pointer&)>& func, MediaLibraryId library = {});
-        static void find(Session& session, const IdRange<TrackId>& idRange, const std::function<void(const Track::pointer&)>& func);
-        static IdRange<TrackId> findNextIdRange(Session& session, TrackId lastRetrievedId, std::size_t count);
+        static std::size_t getCount(ISession& session);
+        static std::optional<Track> findByPath(ISession& session, const std::filesystem::path& p);
+        static std::optional<FileInfo> findFileInfo(ISession& session, const std::filesystem::path& p);
+        static std::optional<Track> find(ISession& session, TrackId id);
+        static void find(ISession& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(const Track&)>& func, MediaLibraryId library = {});
+        static void find(ISession& session, const IdRange<TrackId>& idRange, const std::function<void(const Track&)>& func);
+        static IdRange<TrackId> findNextIdRange(ISession& session, TrackId lastRetrievedId, std::size_t count);
 
         using TrackLocationVisitor = std::function<void(TrackId trackId, const std::filesystem::path& absoluteFilePath)>;
-        static void findAbsoluteFilePath(Session& session, TrackId& lastRetrievedId, std::size_t count, const TrackLocationVisitor& func);
-        static void findAbsoluteFilePath(Session& session, const FindParameters& params, const TrackLocationVisitor& func);
+        static void findAbsoluteFilePath(ISession& session, TrackId& lastRetrievedId, std::size_t count, const TrackLocationVisitor& func);
+        static void findAbsoluteFilePath(ISession& session, const FindParameters& params, const TrackLocationVisitor& func);
 
-        static bool exists(Session& session, TrackId id);
-        static std::vector<pointer> findByRecordingMBID(Session& session, const core::UUID& MBID);
-        static std::vector<pointer> findByMBID(Session& session, const core::UUID& MBID);
-        static std::vector<TrackId> findIds(Session& session, const FindParameters& params);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const Track::pointer&)>& func);
-        static std::size_t getCount(Session& session, const FindParameters& params);
-        static std::vector<TrackId> findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range = std::nullopt);
+        static bool exists(ISession& session, TrackId id);
+        static std::vector<Track> findByRecordingMBID(ISession& session, const core::UUID& MBID);
+        static std::vector<Track> findByMBID(ISession& session, const core::UUID& MBID);
+        static std::vector<TrackId> findIds(ISession& session, const FindParameters& params);
+        static std::vector<Track> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Track&)>& func);
+        static std::size_t getCount(ISession& session, const FindParameters& params);
+        static std::vector<TrackId> findIdsTrackMBIDDuplicates(ISession& session, std::optional<Range> range = std::nullopt);
+        static bool hasLyrics(ISession& session, TrackId id);
+        static bool hasWork(ISession& session, TrackId id);
+        static bool hasMovement(ISession& session, TrackId id);
 
         // Update utility functions
-        static void updatePreferredArtwork(Session& session, TrackId trackId, ArtworkId artworkId);
-        static void updatePreferredMediaArtwork(Session& session, TrackId trackId, ArtworkId artworkId);
+        static void update(ISession& session, const Track& track);
+        static void updatePreferredArtwork(ISession& session, TrackId trackId, ArtworkId artworkId);
+        static void updatePreferredMediaArtwork(ISession& session, TrackId trackId, ArtworkId artworkId);
+        static void clearArtistLinks(ISession& session, TrackId id);
+        static void setClusters(ISession& session, TrackId id, std::span<const ClusterId> clusters);
+        static void setGenres(ISession& session, TrackId id, std::span<const GenreId> genres);
+        static void setGroupings(ISession& session, TrackId id, std::span<const GroupingId> groupings);
+        static void setLanguages(ISession& session, TrackId id, std::span<const LanguageId> languages);
+        static void setMoods(ISession& session, TrackId id, std::span<const MoodId> moods);
+        static void setWorks(ISession& session, TrackId id, std::span<const WorkId> works);
+        static void clearMovements(ISession& session, TrackId id);
+        static void clearEmbeddedLyrics(ISession& session, TrackId id);
+        static void clearEmbeddedImageLinks(ISession& session, TrackId id);
 
         // Setters
         void setScanVersion(std::size_t version) { _scanVersion = version; }
@@ -244,7 +246,7 @@ namespace lms::db
         void setDuration(std::chrono::milliseconds duration) { _duration = duration; }
         void setContainer(core::media::Container container);
         void setCodec(core::media::Codec codec);
-        void setBitrate(std::size_t bitrate) { _bitrate = bitrate; }
+        void setBitrate(std::optional<std::size_t> bitrate) { _bitrate = static_cast<int>(bitrate.value_or(0)); }
         void setChannelCount(std::size_t channelCount) { _channelCount = channelCount; }
         void setSampleRate(std::size_t sampleRate) { _sampleRate = sampleRate; }
         void setBitsPerSample(std::optional<std::size_t> bitsPerSample) { _bitsPerSample = bitsPerSample; }
@@ -262,26 +264,12 @@ namespace lms::db
         void setAdvisory(Advisory advisory) { _advisory = advisory; }
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
         void setComment(std::string_view comment) { _comment = comment; }
-        void clearArtistLinks();
-        void addArtistLink(const ObjectPtr<TrackArtistLink>& artistLink);
-        void setRelease(ObjectPtr<Release> release) { _release = getDboPtr(release); }
-        void setMedium(ObjectPtr<Medium> medium) { _medium = getDboPtr(medium); }
-        void setClusters(const std::vector<ObjectPtr<Cluster>>& clusters);
-        void setGenres(std::span<const ObjectPtr<Genre>> genres);
-        void setGroupings(std::span<const ObjectPtr<Grouping>> groupings);
-        void setLanguages(std::span<const ObjectPtr<Language>> languages);
-        void setMoods(std::span<const ObjectPtr<Mood>> moods);
-        void setWorks(std::span<const ObjectPtr<Work>> works);
-        void clearMovements();
-        void clearLyrics();
-        void clearEmbeddedLyrics();
-        void addLyrics(const ObjectPtr<TrackLyrics>& lyrics);
-        void clearEmbeddedImageLinks();
-        void addEmbeddedImageLink(const ObjectPtr<TrackEmbeddedImageLink>& link);
-        void setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary);
-        void setDirectory(ObjectPtr<Directory> directory);
-        void setPreferredArtwork(ObjectPtr<Artwork> artwork);
-        void setPreferredMediaArtwork(ObjectPtr<Artwork> artwork);
+        void setRelease(ReleaseId release) { _releaseId = release; }
+        void setMedium(MediumId medium) { _mediumId = medium; }
+        void setMediaLibrary(MediaLibraryId mediaLibrary) { _mediaLibraryId = mediaLibrary; }
+        void setDirectory(DirectoryId directory) { _directoryId = directory; }
+        void setPreferredArtwork(ArtworkId artwork) { _preferredArtworkId = artwork; }
+        void setPreferredMediaArtwork(ArtworkId artwork) { _preferredMediaArtworkId = artwork; }
 
         // Getters
         std::size_t getScanVersion() const { return _scanVersion; }
@@ -296,7 +284,7 @@ namespace lms::db
         std::chrono::milliseconds getDuration() const { return _duration; }
         std::optional<core::media::Container> getContainer() const;
         std::optional<core::media::Codec> getCodec() const;
-        std::size_t getBitrate() const { return _bitrate; }
+        std::optional<std::size_t> getBitrate() const { return _bitrate > 0 ? std::optional<std::size_t>{ static_cast<std::size_t>(_bitrate) } : std::nullopt; }
         std::size_t getChannelCount() const { return _channelCount; }
         std::size_t getSampleRate() const { return _sampleRate; }
         std::optional<std::size_t> getBitsPerSample() const { return _bitsPerSample; }
@@ -310,101 +298,24 @@ namespace lms::db
         const core::PartialDateTime& getOriginalDate() const { return _originalDate; }
         std::optional<int> getOriginalYear() const;
         const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
-        bool hasLyrics() const;
         std::optional<core::UUID> getTrackMBID() const { return _trackMBID; }
         std::optional<core::UUID> getRecordingMBID() const { return _recordingMBID; }
-        std::string_view getCopyright() const;
-        std::string_view getCopyrightURL() const;
+        std::string_view getCopyright() const { return _copyright; }
+        std::string_view getCopyrightURL() const { return _copyrightURL; }
         std::string_view getArtistDisplayName() const { return _artistDisplayName; }
         std::string_view getComment() const { return _comment; }
         Advisory getAdvisory() const { return _advisory; }
 
-        // no artistLinkTypes means get all
-        std::vector<ObjectPtr<Artist>> getArtists(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
-        std::vector<ArtistId> getArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const;        // no type means all
-        std::vector<ObjectPtr<TrackArtistLink>> getArtistLinks() const;
-        void visitArtistLinks(const std::function<void(const ObjectPtr<TrackArtistLink>& artistLink)>& visitor) const;
-        std::vector<ObjectPtr<TrackArtistLink>> getArtistLinks(TrackArtistLinkType type) const;
-        void visitArtistLinks(TrackArtistLinkType type, const std::function<void(const ObjectPtr<TrackArtistLink>& artistLink)>& visitor) const;
+        // Relations
+        ReleaseId getReleaseId() const { return _releaseId; }
+        MediumId getMediumId() const { return _mediumId; }
+        MediaLibraryId getMediaLibraryId() const { return _mediaLibraryId; }
+        DirectoryId getDirectoryId() const { return _directoryId; }
+        ArtworkId getPreferredArtworkId() const { return _preferredArtworkId; }
+        ArtworkId getPreferredMediaArtworkId() const { return _preferredMediaArtworkId; }
 
-        ReleaseId getReleaseId() const { return _release.id(); }
-        ObjectPtr<Release> getRelease() const { return _release; }
-        MediumId getMediumId() const { return _medium.id(); }
-        ObjectPtr<Medium> getMedium() const { return _medium; }
-        std::vector<ObjectPtr<Cluster>> getClusters() const;
-        std::vector<ClusterId> getClusterIds() const;
-        std::vector<ObjectPtr<Genre>> getGenres() const;
-        std::vector<GenreId> getGenreIds() const;
-        std::vector<ObjectPtr<Grouping>> getGroupings() const;
-        std::vector<GroupingId> getGroupingIds() const;
-        std::vector<ObjectPtr<Language>> getLanguages() const;
-        std::vector<LanguageId> getLanguageIds() const;
-        std::vector<ObjectPtr<Mood>> getMoods() const;
-        std::vector<MoodId> getMoodIds() const;
-        std::vector<ObjectPtr<Work>> getWorks() const;
-        bool hasWork() const;
-        std::vector<ObjectPtr<Movement>> getMovements() const;
-        bool hasMovement() const;
-        ObjectPtr<MediaLibrary> getMediaLibrary() const;
-        ObjectPtr<Directory> getDirectory() const;
-        ObjectPtr<Artwork> getPreferredArtwork() const;
-        ArtworkId getPreferredArtworkId() const;
-        ObjectPtr<Artwork> getPreferredMediaArtwork() const;
-        ArtworkId getPreferredMediaArtworkId() const;
-
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _scanVersion, "scan_version");
-
-            Wt::Dbo::field(a, _absoluteFilePath, "absolute_file_path");
-            Wt::Dbo::field(a, _fileSize, "file_size");
-            Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
-            Wt::Dbo::field(a, _fileAdded, "file_added");
-
-            Wt::Dbo::field(a, _duration, "duration");
-            Wt::Dbo::field(a, _container, "container");
-            Wt::Dbo::field(a, _codec, "codec");
-            Wt::Dbo::field(a, _bitrate, "bitrate");
-            Wt::Dbo::field(a, _channelCount, "channel_count");
-            Wt::Dbo::field(a, _sampleRate, "sample_rate");
-            Wt::Dbo::field(a, _bitsPerSample, "bits_per_sample");
-            Wt::Dbo::field(a, _replayGain, "replay_gain");
-
-            Wt::Dbo::field(a, _trackNumber, "track_number");
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _date, "date");
-            Wt::Dbo::field(a, _originalDate, "original_date");
-            Wt::Dbo::field(a, _trackMBID, "mbid");
-            Wt::Dbo::field(a, _recordingMBID, "recording_mbid");
-            Wt::Dbo::field(a, _copyright, "copyright");
-            Wt::Dbo::field(a, _copyrightURL, "copyright_url");
-            Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
-            Wt::Dbo::field(a, _comment, "comment"); // TODO: move in a dedicated table?
-            Wt::Dbo::field(a, _advisory, "advisory");
-
-            Wt::Dbo::belongsTo(a, _medium, "medium", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete track on media library removal, we want to wait for the next scan to have a chance to migrate files
-            Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::belongsTo(a, _preferredMediaArtwork, "preferred_media_artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::hasMany(a, _movements, Wt::Dbo::ManyToOne, "track");
-            Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "track");
-            Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _genres, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _groupings, Wt::Dbo::ManyToMany, "track_grouping", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _languages, Wt::Dbo::ManyToMany, "track_language", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _moods, Wt::Dbo::ManyToMany, "track_mood", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _works, Wt::Dbo::ManyToMany, "track_work", "", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _trackLyrics, Wt::Dbo::ManyToOne, "track");
-            Wt::Dbo::hasMany(a, _embeddedImageLinks, Wt::Dbo::ManyToOne, "track");
-        }
-
-    private:
-        friend class Session;
-        static pointer create(Session& session);
-
+    protected:
+        Track() = default;
         static constexpr std::size_t _maxNameLength{ 512 };
         static constexpr std::size_t _maxCopyrightLength{ 512 };
         static constexpr std::size_t _maxCopyrightURLLength{ 512 };
@@ -421,7 +332,7 @@ namespace lms::db
         std::chrono::duration<int, std::milli> _duration{};
         detail::Container _container{ detail::Container::Unknown };
         detail::Codec _codec{ detail::Codec::Unknown };
-        int _bitrate{}; // in bps
+        int _bitrate{}; // in bps, 0 if unknown
         int _channelCount{};
         int _sampleRate{};
         std::optional<int> _bitsPerSample;
@@ -439,31 +350,12 @@ namespace lms::db
         std::string _artistDisplayName;
         std::string _comment;
         Advisory _advisory{ Advisory::UnSet };
-        Wt::Dbo::ptr<Medium> _medium;
-        Wt::Dbo::ptr<Release> _release;
-        Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
-        Wt::Dbo::ptr<Directory> _directory;
-        Wt::Dbo::ptr<Artwork> _preferredArtwork;
-        Wt::Dbo::ptr<Artwork> _preferredMediaArtwork;
-        Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Genre>> _genres;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Grouping>> _groupings;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Language>> _languages;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Mood>> _moods;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Work>> _works;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Movement>> _movements;
-        Wt::Dbo::collection<Wt::Dbo::ptr<TrackLyrics>> _trackLyrics;
-        Wt::Dbo::collection<Wt::Dbo::ptr<TrackEmbeddedImageLink>> _embeddedImageLinks;
-    };
 
-    namespace Debug
-    {
-        struct TrackInfo
-        {
-            Session& session;
-            TrackId trackId;
-        };
-        std::ostream& operator<<(std::ostream& os, const TrackInfo& trackInfo);
-    } // namespace Debug
+        ReleaseId _releaseId;
+        MediumId _mediumId;
+        MediaLibraryId _mediaLibraryId;
+        DirectoryId _directoryId;
+        ArtworkId _preferredArtworkId;
+        ArtworkId _preferredMediaArtworkId;
+    };
 } // namespace lms::db

@@ -19,10 +19,13 @@
 
 #include "RefreshPodcastsStep.hpp"
 
+#include <array>
+#include <optional>
+
 #include "core/ILogger.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/Podcast.hpp"
@@ -37,58 +40,59 @@ namespace lms::podcast
 {
     namespace
     {
-        void removeArtwork(const db::Artwork::pointer& artwork)
+        void removeArtwork(db::ISession& session, const db::Artwork& artwork)
         {
-            db::Image::pointer image{ artwork->getImage() };
-            assert(image); // these artworks can only be an image
+            assert(artwork.getImageId().isValid()); // these artworks can only be an image
 
+            const std::filesystem::path filePath{ db::Artwork::getAbsoluteFilePath(session, artwork.getId()) };
             std::error_code ec;
-            std::filesystem::remove(artwork->getAbsoluteFilePath(), ec);
+            std::filesystem::remove(filePath, ec);
             if (ec)
-                LMS_LOG(PODCAST, WARNING, "Failed to remove old podcast artwork file '" << artwork->getAbsoluteFilePath() << "': " << ec.message());
+                LMS_LOG(PODCAST, WARNING, "Failed to remove old podcast artwork file '" << filePath << "': " << ec.message());
 
-            image.remove();
+            db::Image::destroy(session, std::array{ artwork.getImageId() });
         }
 
-        void addEpisode(db::Session& session, const db::Podcast::pointer& dbPodcast, const PodcastEpisode& episode)
+        void addEpisode(db::ISession& session, const db::Podcast& dbPodcast, const PodcastEpisode& episode)
         {
-            LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode.title << "' to podcast '" << dbPodcast->getTitle() << "'");
+            LMS_LOG(PODCAST, DEBUG, "Adding episode '" << episode.title << "' to podcast '" << dbPodcast.getTitle() << "'");
 
-            auto dbEpisode{ session.create<db::PodcastEpisode>(dbPodcast) };
+            db::PodcastEpisode dbEpisode{ db::PodcastEpisode::create(session, dbPodcast.getId()) };
 
-            dbEpisode.modify()->setAuthor(episode.author);
-            dbEpisode.modify()->setCategory(episode.category);
-            dbEpisode.modify()->setDescription(episode.description);
+            dbEpisode.setAuthor(episode.author);
+            dbEpisode.setCategory(episode.category);
+            dbEpisode.setDescription(episode.description);
 
             if (isAllowedPodcastUrl(episode.enclosureUrl.url))
             {
-                dbEpisode.modify()->setEnclosureUrl(episode.enclosureUrl.url);
-                dbEpisode.modify()->setEnclosureContentType(episode.enclosureUrl.type);
-                dbEpisode.modify()->setEnclosureLength(episode.enclosureUrl.length);
+                dbEpisode.setEnclosureUrl(episode.enclosureUrl.url);
+                dbEpisode.setEnclosureContentType(episode.enclosureUrl.type);
+                dbEpisode.setEnclosureLength(episode.enclosureUrl.length);
             }
             else
             {
                 LMS_LOG(PODCAST, WARNING, "Episode '" << episode.title << "' : ignoring enclosure URL '" << episode.enclosureUrl.url << "' (bad URL)");
             }
 
-            dbEpisode.modify()->setExplicit(episode.explicitContent ? *episode.explicitContent : false);
-            dbEpisode.modify()->setLink(episode.link);
-            dbEpisode.modify()->setPubDate(episode.pubDate);
-            dbEpisode.modify()->setTitle(episode.title);
+            dbEpisode.setExplicit(episode.explicitContent ? *episode.explicitContent : false);
+            dbEpisode.setLink(episode.link);
+            dbEpisode.setPubDate(episode.pubDate);
+            dbEpisode.setTitle(episode.title);
 
             if (isAllowedPodcastUrl(episode.imageUrl))
-                dbEpisode.modify()->setImageUrl(episode.imageUrl);
+                dbEpisode.setImageUrl(episode.imageUrl);
             else if (!episode.imageUrl.empty())
                 LMS_LOG(PODCAST, WARNING, "Episode '" << episode.title << "' : ignoring image URL '" << episode.imageUrl << "' (bad URL)");
 
-            dbEpisode.modify()->setDuration(episode.duration);
+            dbEpisode.setDuration(episode.duration);
+            db::PodcastEpisode::update(session, dbEpisode);
         }
 
-        void updatePodcast(db::Session& session, db::PodcastId podcastId, const Podcast& podcast)
+        void updatePodcast(db::ISession& session, db::PodcastId podcastId, const Podcast& podcast)
         {
             auto transaction{ session.createWriteTransaction() };
 
-            db::Podcast::pointer dbPodcast{ db::Podcast::find(session, podcastId) };
+            std::optional<db::Podcast> dbPodcast{ db::Podcast::find(session, podcastId) };
             if (!dbPodcast)
                 return; // may have been deleted by admin
 
@@ -100,38 +104,38 @@ namespace lms::podcast
                 if (isAllowedPodcastUrl(podcast.newUrl))
                 {
                     LMS_LOG(PODCAST, INFO, "Podcast '" << podcast.title << "' : URL changed from '" << dbPodcast->getUrl() << "' to '" << podcast.newUrl << "'");
-                    dbPodcast.modify()->setUrl(podcast.newUrl);
+                    dbPodcast->setUrl(podcast.newUrl);
                 }
                 else
                 {
                     LMS_LOG(PODCAST, WARNING, "Podcast '" << podcast.title << "' : ignoring new podcast URL '" << podcast.newUrl << "' (bad URL)");
                 }
             }
-            dbPodcast.modify()->setAuthor(podcast.author);
-            dbPodcast.modify()->setCategory(podcast.category);
-            dbPodcast.modify()->setCopyright(podcast.copyright);
-            dbPodcast.modify()->setDescription(podcast.description);
-            dbPodcast.modify()->setExplicit(podcast.explicitContent ? *podcast.explicitContent : false);
-            dbPodcast.modify()->setLanguage(podcast.language);
-            dbPodcast.modify()->setLastBuildDate(podcast.lastBuildDate);
-            dbPodcast.modify()->setLink(podcast.link);
-            dbPodcast.modify()->setOwnerEmail(podcast.ownerEmail);
-            dbPodcast.modify()->setOwnerName(podcast.ownerName);
-            dbPodcast.modify()->setSubtitle(podcast.subtitle);
-            dbPodcast.modify()->setSummary(podcast.summary);
-            dbPodcast.modify()->setTitle(podcast.title);
+            dbPodcast->setAuthor(podcast.author);
+            dbPodcast->setCategory(podcast.category);
+            dbPodcast->setCopyright(podcast.copyright);
+            dbPodcast->setDescription(podcast.description);
+            dbPodcast->setExplicit(podcast.explicitContent ? *podcast.explicitContent : false);
+            dbPodcast->setLanguage(podcast.language);
+            dbPodcast->setLastBuildDate(podcast.lastBuildDate);
+            dbPodcast->setLink(podcast.link);
+            dbPodcast->setOwnerEmail(podcast.ownerEmail);
+            dbPodcast->setOwnerName(podcast.ownerName);
+            dbPodcast->setSubtitle(podcast.subtitle);
+            dbPodcast->setSummary(podcast.summary);
+            dbPodcast->setTitle(podcast.title);
             if (std::string previousUrl{ dbPodcast->getImageUrl() }; !previousUrl.empty() && previousUrl != podcast.imageUrl)
             {
                 if (isAllowedPodcastUrl(podcast.imageUrl))
                 {
                     LMS_LOG(PODCAST, INFO, "Podcast '" << podcast.title << "' : image url changed from '" << previousUrl << "' to '" << podcast.imageUrl << "'");
-                    if (db::Artwork::pointer currentArtwork{ dbPodcast->getArtwork() })
+                    if (const std::optional<db::Artwork> currentArtwork{ db::Artwork::find(session, dbPodcast->getArtworkId()) })
                     {
-                        removeArtwork(currentArtwork);
-                        dbPodcast.modify()->setArtwork({});
+                        removeArtwork(session, *currentArtwork);
+                        dbPodcast->setArtwork(db::ArtworkId{});
                     }
 
-                    dbPodcast.modify()->setImageUrl(podcast.imageUrl);
+                    dbPodcast->setImageUrl(podcast.imageUrl);
                 }
                 else
                 {
@@ -139,10 +143,12 @@ namespace lms::podcast
                 }
             }
 
+            db::Podcast::update(session, *dbPodcast);
+
             // Only create episodes if they are new, do not modify/update existing entries for now
             // TODO: update existing episodes, remove artwork if url changed
             Wt::WDateTime previousNewestEpisodeDateTime{};
-            if (db::PodcastEpisode::pointer dbEpisode{ db::PodcastEpisode::findNewtestEpisode(session, podcastId) })
+            if (std::optional<db::PodcastEpisode> dbEpisode{ db::PodcastEpisode::findNewtestEpisode(session, podcastId) })
                 previousNewestEpisodeDateTime = dbEpisode->getPubDate();
 
             // TODO: mark for deletion old episodes that are no longer referenced!!
@@ -151,7 +157,7 @@ namespace lms::podcast
                 if (previousNewestEpisodeDateTime.isValid() && episode.pubDate <= previousNewestEpisodeDateTime)
                     continue; // consider already in db
 
-                addEpisode(session, dbPodcast, episode);
+                addEpisode(session, *dbPodcast, episode);
             }
         }
     } // namespace
@@ -166,9 +172,9 @@ namespace lms::podcast
         auto& session{ getDb().getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        db::Podcast::find(session, [this](const db::Podcast::pointer& podcast) {
-            LMS_LOG(PODCAST, DEBUG, "Found podcast to refresh at '" << podcast->getUrl() << "'");
-            podcastsToRefresh.push(podcast->getId());
+        db::Podcast::find(session, [this](const db::Podcast& podcast) {
+            LMS_LOG(PODCAST, DEBUG, "Found podcast to refresh at '" << podcast.getUrl() << "'");
+            podcastsToRefresh.push(podcast.getId());
         });
 
         refreshNextPodcast();
@@ -201,7 +207,7 @@ namespace lms::podcast
         auto& session{ getDb().getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        const db::Podcast::pointer podcast{ db::Podcast::find(session, podcastId) };
+        const std::optional<db::Podcast> podcast{ db::Podcast::find(session, podcastId) };
         if (!podcast)
         {
             refreshNextPodcast(); // maybe removed in the meantime by admin
@@ -213,7 +219,7 @@ namespace lms::podcast
         const std::string url{ podcast->getUrl() };
         core::http::ClientGETRequestParameters params;
         params.relativeUrl = podcast->getUrl();
-        params.onFailureFunc = [this, podcast] {
+        params.onFailureFunc = [this, podcast](std::optional<int>) {
             LMS_LOG(PODCAST, ERROR, "Failed to sync podcast from '" << podcast->getUrl() << "'");
             refreshNextPodcast();
         };

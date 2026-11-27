@@ -92,7 +92,7 @@ namespace lms::api::subsonic
             transcodeNode.addChild("sourceStream", createStreamDetails(sourceStream));
         }
 
-        const detail::TranscodeDecisionResult transcodeDecision{ detail::computeTranscodeDecision(clientInfo, audioFileInfo.audioProperties) };
+        const detail::TranscodeDecisionResult transcodeDecision{ detail::computeTranscodeDecision(clientInfo, audioFileInfo.audioProperties, audioFileInfo.fileBitrate) };
 
         std::visit(core::utils::overloads{
                        [&](const detail::DirectPlayResult&) {

@@ -19,6 +19,8 @@
 
 #include "ReleaseHelpers.hpp"
 
+#include <optional>
+
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
 #include <Wt/WText.h>
@@ -26,15 +28,15 @@
 #include "core/EnumSet.hpp"
 #include "core/Utils.hpp"
 
-#include "database/objects/Artist.hpp"
 #include "database/objects/Release.hpp"
 
+#include "LmsApplication.hpp"
 #include "Utils.hpp"
 #include "explore/ReleaseTypes.hpp"
 
 namespace lms::ui::releaseListHelpers
 {
-    std::unique_ptr<Wt::WTemplate> createEntry(const db::Release::pointer& release, core::EnumSet<DisplayOptions> options)
+    std::unique_ptr<Wt::WTemplate> createEntry(const db::Release& release, core::EnumSet<DisplayOptions> options)
     {
         auto entry{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.entry-grid")) };
 
@@ -45,8 +47,8 @@ namespace lms::ui::releaseListHelpers
             Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(release, false)) };
 
             std::unique_ptr<Wt::WImage> image;
-            if (release->getPreferredArtworkId().isValid())
-                image = utils::createArtworkImage(release->getPreferredArtworkId(), ArtworkResource::DefaultArtworkType::Release, ArtworkResource::Size::Large);
+            if (release.getPreferredArtworkId().isValid())
+                image = utils::createArtworkImage(release.getPreferredArtworkId(), ArtworkResource::DefaultArtworkType::Release, ArtworkResource::Size::Large);
             else
                 image = utils::createDefaultArtworkImage(ArtworkResource::DefaultArtworkType::Release);
 
@@ -64,7 +66,7 @@ namespace lms::ui::releaseListHelpers
 
         if (options.contains(DisplayOptions::ShowYearAndOriginalYear))
         {
-            Wt::WString year{ releaseHelpers::buildReleaseYearString(release->getYear(), release->getOriginalYear()) };
+            Wt::WString year{ releaseHelpers::buildReleaseYearString(db::Release::getYear(LmsApp->getDbSession(), release.getId()), db::Release::getOriginalYear(LmsApp->getDbSession(), release.getId())) };
             if (!year.empty())
             {
                 entry->setCondition("if-has-year", true);
@@ -73,10 +75,10 @@ namespace lms::ui::releaseListHelpers
         }
         else if (options.contains(DisplayOptions::ShowYear))
         {
-            if (release->getYear())
+            if (const std::optional<int> year{ db::Release::getYear(LmsApp->getDbSession(), release.getId()) })
             {
                 entry->setCondition("if-has-year", true);
-                entry->bindInt("year", *release->getYear());
+                entry->bindInt("year", *year);
             }
         }
 

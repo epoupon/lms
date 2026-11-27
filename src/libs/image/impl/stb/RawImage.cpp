@@ -26,7 +26,7 @@
 #include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
 
-namespace lms::image::STB
+namespace lms::image::stb
 {
     namespace
     {
@@ -109,4 +109,4 @@ namespace lms::image::STB
         assert(_data);
         return reinterpret_cast<const std::byte*>(_data.get());
     }
-} // namespace lms::image::STB
+} // namespace lms::image::stb

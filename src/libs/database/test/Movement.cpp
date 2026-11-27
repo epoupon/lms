@@ -30,19 +30,22 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            Movement::create(session, "Allegro con brio", std::size_t{ 1 }, std::size_t{ 4 }, track.get());
+            Movement::create(session, "Allegro con brio", std::size_t{ 1 }, std::size_t{ 4 }, track.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto movements{ track->getMovements() };
+            std::vector<Movement> movements;
+            Movement::find(session, track.getId(), [&](const Movement& movement) {
+                movements.push_back(movement);
+            });
             ASSERT_EQ(movements.size(), 1);
-            ASSERT_FALSE(movements[0]->getName().empty());
-            EXPECT_EQ(movements[0]->getName(), "Allegro con brio");
-            ASSERT_TRUE(movements[0]->getNumber());
-            EXPECT_EQ(*movements[0]->getNumber(), std::size_t{ 1 });
-            ASSERT_TRUE(movements[0]->getCount());
-            EXPECT_EQ(*movements[0]->getCount(), std::size_t{ 4 });
+            ASSERT_FALSE(movements[0].getName().empty());
+            EXPECT_EQ(movements[0].getName(), "Allegro con brio");
+            ASSERT_TRUE(movements[0].getNumber());
+            EXPECT_EQ(*movements[0].getNumber(), std::size_t{ 1 });
+            ASSERT_TRUE(movements[0].getCount());
+            EXPECT_EQ(*movements[0].getCount(), std::size_t{ 4 });
         }
     }
 
@@ -52,16 +55,19 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            Movement::create(session, "", std::nullopt, std::nullopt, track.get());
+            Movement::create(session, "", std::nullopt, std::nullopt, track.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto movements{ track->getMovements() };
+            std::vector<Movement> movements;
+            Movement::find(session, track.getId(), [&](const Movement& movement) {
+                movements.push_back(movement);
+            });
             ASSERT_EQ(movements.size(), 1);
-            EXPECT_TRUE(movements[0]->getName().empty());
-            EXPECT_FALSE(movements[0]->getNumber());
-            EXPECT_FALSE(movements[0]->getCount());
+            EXPECT_TRUE(movements[0].getName().empty());
+            EXPECT_FALSE(movements[0].getNumber());
+            EXPECT_FALSE(movements[0].getCount());
         }
     }
 
@@ -71,14 +77,17 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            Movement::create(session, "Allegro con brio", std::size_t{ 1 }, std::size_t{ 4 }, track.get());
-            Movement::create(session, "Andante con moto", std::size_t{ 2 }, std::size_t{ 4 }, track.get());
-            Movement::create(session, "Scherzo. Allegro", std::size_t{ 3 }, std::size_t{ 4 }, track.get());
+            Movement::create(session, "Allegro con brio", std::size_t{ 1 }, std::size_t{ 4 }, track.getId());
+            Movement::create(session, "Andante con moto", std::size_t{ 2 }, std::size_t{ 4 }, track.getId());
+            Movement::create(session, "Scherzo. Allegro", std::size_t{ 3 }, std::size_t{ 4 }, track.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto movements{ track->getMovements() };
+            std::vector<Movement> movements;
+            Movement::find(session, track.getId(), [&](const Movement& movement) {
+                movements.push_back(movement);
+            });
             EXPECT_EQ(movements.size(), 3);
         }
     }
@@ -89,12 +98,16 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            Movement::create(session, "Allegro", std::size_t{ 1 }, std::nullopt, track.get());
+            Movement::create(session, "Allegro", std::size_t{ 1 }, std::nullopt, track.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(track->getMovements().size(), 1);
+            std::vector<Movement> movements;
+            Movement::find(session, track.getId(), [&](const Movement& movement) {
+                movements.push_back(movement);
+            });
+            EXPECT_EQ(movements.size(), 1);
         }
 
         // track goes out of scope here — movements are cascade deleted
@@ -106,23 +119,31 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            Movement::create(session, "Allegro", std::size_t{ 1 }, std::size_t{ 2 }, track.get());
-            Movement::create(session, "Andante", std::size_t{ 2 }, std::size_t{ 2 }, track.get());
+            Movement::create(session, "Allegro", std::size_t{ 1 }, std::size_t{ 2 }, track.getId());
+            Movement::create(session, "Andante", std::size_t{ 2 }, std::size_t{ 2 }, track.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(track->getMovements().size(), 2);
+            std::vector<Movement> movements;
+            Movement::find(session, track.getId(), [&](const Movement& movement) {
+                movements.push_back(movement);
+            });
+            EXPECT_EQ(movements.size(), 2);
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->clearMovements();
+            Track::clearMovements(session, track.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(track->getMovements().size(), 0);
+            bool visited{};
+            Movement::find(session, track.getId(), [&](const Movement&) {
+                visited = true;
+            });
+            EXPECT_FALSE(visited);
         }
     }
 
@@ -132,21 +153,24 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            Movement::create(session, "OldMovement", std::size_t{ 1 }, std::nullopt, track.get());
+            Movement::create(session, "OldMovement", std::size_t{ 1 }, std::nullopt, track.getId());
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->clearMovements();
-            Movement::create(session, "NewMovement", std::size_t{ 1 }, std::nullopt, track.get());
+            Track::clearMovements(session, track.getId());
+            Movement::create(session, "NewMovement", std::size_t{ 1 }, std::nullopt, track.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto movements{ track->getMovements() };
+            std::vector<Movement> movements;
+            Movement::find(session, track.getId(), [&](const Movement& movement) {
+                movements.push_back(movement);
+            });
             ASSERT_EQ(movements.size(), 1);
-            ASSERT_FALSE(movements[0]->getName().empty());
-            EXPECT_EQ(movements[0]->getName(), "NewMovement");
+            ASSERT_FALSE(movements[0].getName().empty());
+            EXPECT_EQ(movements[0].getName(), "NewMovement");
         }
     }
 
@@ -156,17 +180,20 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            Movement::create(session, "", std::size_t{ 42 }, std::size_t{ 100 }, track.get());
+            Movement::create(session, "", std::size_t{ 42 }, std::size_t{ 100 }, track.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto movements{ track->getMovements() };
+            std::vector<Movement> movements;
+            Movement::find(session, track.getId(), [&](const Movement& movement) {
+                movements.push_back(movement);
+            });
             ASSERT_EQ(movements.size(), 1);
-            ASSERT_TRUE(movements[0]->getNumber());
-            EXPECT_EQ(*movements[0]->getNumber(), std::size_t{ 42 });
-            ASSERT_TRUE(movements[0]->getCount());
-            EXPECT_EQ(*movements[0]->getCount(), std::size_t{ 100 });
+            ASSERT_TRUE(movements[0].getNumber());
+            EXPECT_EQ(*movements[0].getNumber(), std::size_t{ 42 });
+            ASSERT_TRUE(movements[0].getCount());
+            EXPECT_EQ(*movements[0].getCount(), std::size_t{ 100 });
         }
     }
 } // namespace lms::db::tests

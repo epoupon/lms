@@ -20,26 +20,23 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
-
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/MoodId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Session;
-    class Track;
+    class ISession;
 
-    class Mood final : public Object<Mood, MoodId>
+    class Mood : public detail::Object<Mood, MoodId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -79,32 +76,23 @@ namespace lms::db
             }
         };
 
-        Mood() = default;
+        static Mood create(ISession& session, std::string_view name);
+        static void destroy(ISession& session, std::span<const MoodId> ids);
 
-        static std::size_t getCount(Session& session);
-        static std::vector<MoodId> findIds(Session& session, const FindParameters& params);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
-        static pointer find(Session& session, MoodId id);
-        static pointer find(Session& session, std::string_view name);
-        static std::vector<MoodId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(ISession& session);
+        static std::vector<MoodId> findIds(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Mood&)>& func);
+        static std::optional<Mood> find(ISession& session, MoodId id);
+        static std::optional<Mood> find(ISession& session, std::string_view name);
+        static std::vector<MoodId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         std::string_view getName() const { return _name; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_mood", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        Mood(std::string_view name);
-        static pointer create(Session& session, std::string_view name);
+    protected:
+        Mood() = default;
+        explicit Mood(std::string_view name);
 
         std::string _name;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
     };
 
 } // namespace lms::db

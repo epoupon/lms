@@ -23,6 +23,7 @@
 #include <iostream>
 #include <random>
 #include <sstream>
+#include <thread>
 
 #include <boost/program_options.hpp>
 
@@ -33,7 +34,7 @@
 #include "core/SystemPaths.hpp"
 #include "core/UUID.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
@@ -44,7 +45,7 @@
 
 namespace lms
 {
-    void dumpTracksRecommendation(db::Session session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxCount)
+    void dumpTracksRecommendation(db::ISession& session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxCount)
     {
         std::vector<db::TrackId> trackIds;
 
@@ -52,7 +53,7 @@ namespace lms
         {
             auto transaction{ session.createReadTransaction() };
             for (const auto& track : db::Track::findByMBID(session, *mbid))
-                trackIds.push_back(track->getId());
+                trackIds.push_back(track.getId());
         }
         else
         {
@@ -68,16 +69,17 @@ namespace lms
         {
             auto trackToString = [&](const db::TrackId trackId) {
                 auto transaction{ session.createReadTransaction() };
-                const db::Track::pointer track{ db::Track::find(session, trackId) };
+                const std::optional<db::Track> track{ db::Track::find(session, trackId) };
 
                 std::ostringstream oss;
                 oss << "'" << track->getName() << "'";
-                if (track->getRelease())
-                    oss << " [" << track->getRelease()->getName() << "]";
+                if (const std::optional<db::Release> release{ db::Release::find(session, track->getReleaseId()) })
+                    oss << " [" << release->getName() << "]";
                 if (std::string_view artistDisplayName{ track->getArtistDisplayName() }; !artistDisplayName.empty())
                     oss << " by '" << artistDisplayName << "'";
-                for (const auto& cluster : track->getClusters())
-                    oss << " {" << cluster->getType()->getName() << "-" << cluster->getName() << "}";
+                db::Cluster::find(session, db::Cluster::FindParameters{}.setTrack(trackId), [&](const db::Cluster& cluster) {
+                    oss << " {" << db::ClusterType::find(session, cluster.getTypeId())->getName() << "-" << cluster.getName() << "}";
+                });
                 oss << " - '" + track->getAbsoluteFilePath().string() << "'";
 
                 return oss.str();
@@ -90,7 +92,7 @@ namespace lms
         }
     }
 
-    void dumpReleasesRecommendation(db::Session session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxCount)
+    void dumpReleasesRecommendation(db::ISession& session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxCount)
     {
         std::vector<db::ReleaseId> releaseIds;
 
@@ -115,7 +117,7 @@ namespace lms
             auto releaseToString = [&](db::ReleaseId releaseId) -> std::string {
                 auto transaction{ session.createReadTransaction() };
 
-                const db::Release::pointer release{ db::Release::find(session, releaseId) };
+                const std::optional<db::Release> release{ db::Release::find(session, releaseId) };
 
                 std::ostringstream oss;
 
@@ -132,7 +134,7 @@ namespace lms
         }
     }
 
-    void dumpArtistsRecommendation(db::Session session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxCount)
+    void dumpArtistsRecommendation(db::ISession& session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxCount)
     {
         std::vector<db::ArtistId> artistIds;
 
@@ -157,7 +159,7 @@ namespace lms
             auto artistToString = [&](db::ArtistId artistId) {
                 auto transaction{ session.createReadTransaction() };
 
-                db::Artist::pointer artist{ db::Artist::find(session, artistId) };
+                std::optional<db::Artist> artist{ db::Artist::find(session, artistId) };
                 return artist->getName();
             };
 
@@ -168,7 +170,7 @@ namespace lms
     }
 
     void dumpRandomTracksRecommendation(
-        db::Session session,
+        db::ISession& session,
         recommendation::IRecommendationService& recommendationService,
         std::size_t randomTrackCount,
         unsigned seed,
@@ -181,8 +183,8 @@ namespace lms
         {
             auto transaction{ session.createReadTransaction() };
             trackIds.reserve(db::TrackMusicNNEmbeddings::getCount(session));
-            db::TrackMusicNNEmbeddings::find(session, [&](const db::TrackMusicNNEmbeddings::pointer& features) {
-                trackIds.push_back(features->getTrackId());
+            db::TrackMusicNNEmbeddings::find(session, [&](const db::TrackMusicNNEmbeddings& features) {
+                trackIds.push_back(features.getTrackId());
             });
         }
 
@@ -200,12 +202,12 @@ namespace lms
 
         auto trackToString = [&](const db::TrackId trackId) {
             auto transaction{ session.createReadTransaction() };
-            const db::Track::pointer track{ db::Track::find(session, trackId) };
+            const std::optional<db::Track> track{ db::Track::find(session, trackId) };
 
             std::ostringstream oss;
             oss << "'" << track->getName() << "'";
-            if (track->getRelease())
-                oss << " [" << track->getRelease()->getName() << "]";
+            if (const std::optional<db::Release> release{ db::Release::find(session, track->getReleaseId()) })
+                oss << " [" << release->getName() << "]";
             if (std::string_view artistDisplayName{ track->getArtistDisplayName() }; !artistDisplayName.empty())
                 oss << " by '" << artistDisplayName << "'";
 
@@ -234,7 +236,7 @@ namespace lms
     }
 
     void dumpRandomReleasesRecommendation(
-        db::Session session,
+        db::ISession& session,
         recommendation::IRecommendationService& recommendationService,
         std::size_t randomReleaseCount,
         unsigned seed,
@@ -263,7 +265,7 @@ namespace lms
 
         auto releaseToString = [&](const db::ReleaseId releaseId) -> std::string {
             auto transaction{ session.createReadTransaction() };
-            const db::Release::pointer release{ db::Release::find(session, releaseId) };
+            const std::optional<db::Release> release{ db::Release::find(session, releaseId) };
 
             std::ostringstream oss;
             oss << "'" << release->getName() << "'";
@@ -295,7 +297,7 @@ namespace lms
     }
 
     void dumpRandomArtistsRecommendation(
-        db::Session session,
+        db::ISession& session,
         recommendation::IRecommendationService& recommendationService,
         std::size_t randomArtistCount,
         unsigned seed,
@@ -324,7 +326,7 @@ namespace lms
 
         auto artistToString = [&](const db::ArtistId artistId) {
             auto transaction{ session.createReadTransaction() };
-            const db::Artist::pointer artist{ db::Artist::find(session, artistId) };
+            const std::optional<db::Artist> artist{ db::Artist::find(session, artistId) };
             return artist->getName();
         };
 
@@ -350,7 +352,7 @@ namespace lms
     }
 
     void dumpTrackPaths(
-        db::Session session,
+        db::ISession& session,
         recommendation::IRecommendationService& recommendationService,
         std::string_view fromName,
         std::string_view toName,
@@ -364,7 +366,7 @@ namespace lms
         {
             auto transaction{ session.createReadTransaction() };
             for (const auto& track : db::Track::findByMBID(session, *mbid))
-                fromTrackIds.push_back(track->getId());
+                fromTrackIds.push_back(track.getId());
         }
         else
         {
@@ -380,7 +382,7 @@ namespace lms
         {
             auto transaction{ session.createReadTransaction() };
             for (const auto& track : db::Track::findByMBID(session, *mbid))
-                toTrackIds.push_back(track->getId());
+                toTrackIds.push_back(track.getId());
         }
         else
         {
@@ -400,12 +402,12 @@ namespace lms
 
         auto trackToString = [&](const db::TrackId trackId) {
             auto transaction{ session.createReadTransaction() };
-            const db::Track::pointer track{ db::Track::find(session, trackId) };
+            const std::optional<db::Track> track{ db::Track::find(session, trackId) };
 
             std::ostringstream oss;
             oss << "'" << track->getName() << "'";
-            if (track->getRelease())
-                oss << " [" << track->getRelease()->getName() << "]";
+            if (const std::optional<db::Release> release{ db::Release::find(session, track->getReleaseId()) })
+                oss << " [" << release->getName() << "]";
             if (std::string_view artistDisplayName{ track->getArtistDisplayName() }; !artistDisplayName.empty())
                 oss << " by '" << artistDisplayName << "'";
 
@@ -482,7 +484,7 @@ int main(int argc, char* argv[])
         core::Service<core::IConfig> config{ core::createConfig(vm["conf"].as<std::string>()) };
 
         auto db{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db") };
-        db::Session session{ *db };
+        const auto session{ db->createSession() };
 
         const auto recommendationService{ recommendation::createRecommendationService(*db) };
 
@@ -498,25 +500,25 @@ int main(int argc, char* argv[])
         unsigned maxCount{ vm["max"].as<unsigned>() };
 
         if (vm.count("track"))
-            dumpTracksRecommendation(*db, *recommendationService, vm["track"].as<std::string>(), maxCount);
+            dumpTracksRecommendation(*session, *recommendationService, vm["track"].as<std::string>(), maxCount);
 
         if (vm.count("release"))
-            dumpReleasesRecommendation(*db, *recommendationService, vm["release"].as<std::string>(), maxCount);
+            dumpReleasesRecommendation(*session, *recommendationService, vm["release"].as<std::string>(), maxCount);
 
         if (vm.count("artist"))
-            dumpArtistsRecommendation(*db, *recommendationService, vm["artist"].as<std::string>(), maxCount);
+            dumpArtistsRecommendation(*session, *recommendationService, vm["artist"].as<std::string>(), maxCount);
 
         if (vm.count("track-path-from") && vm.count("track-path-to"))
-            dumpTrackPaths(*db, *recommendationService, vm["track-path-from"].as<std::string>(), vm["track-path-to"].as<std::string>(), maxCount);
+            dumpTrackPaths(*session, *recommendationService, vm["track-path-from"].as<std::string>(), vm["track-path-to"].as<std::string>(), maxCount);
 
         if (vm.count("random-tracks"))
-            dumpRandomTracksRecommendation(*db, *recommendationService, vm["random-tracks"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
+            dumpRandomTracksRecommendation(*session, *recommendationService, vm["random-tracks"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
 
         if (vm.count("random-releases"))
-            dumpRandomReleasesRecommendation(*db, *recommendationService, vm["random-releases"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
+            dumpRandomReleasesRecommendation(*session, *recommendationService, vm["random-releases"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
 
         if (vm.count("random-artists"))
-            dumpRandomArtistsRecommendation(*db, *recommendationService, vm["random-artists"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
+            dumpRandomArtistsRecommendation(*session, *recommendationService, vm["random-artists"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
     }
     catch (std::exception& e)
     {

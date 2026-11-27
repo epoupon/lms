@@ -24,8 +24,6 @@
 #include <string>
 #include <vector>
 
-#include <Wt/Dbo/SqlConnectionPool.h>
-
 #include "core/RecursiveSharedMutex.hpp"
 
 #include "database/IDb.hpp"
@@ -33,6 +31,7 @@
 namespace lms::db
 {
     class ConnectionPool;
+    class Session;
 
     class Db : public IDb
     {
@@ -40,7 +39,7 @@ namespace lms::db
         Db(const std::filesystem::path& dbPath);
         ~Db() override;
 
-        void executeSql(const std::string& sql);
+        void executeOutsideTransaction(const std::string& sql);
 
     private:
         Db(const Db&) = delete;
@@ -48,35 +47,14 @@ namespace lms::db
 
         friend class Session;
 
-        Session& getTLSSession() override;
+        ISession& getTLSSession() override;
+        std::unique_ptr<ISession> createSession() override;
+        void prepare(RecommendationEngineType defaultRecommendationEngineType) override;
+        void analyze(const ProgressCallback& onProgress, const ShouldAbortCallback& shouldAbort) override;
+        void vacuum() override;
 
         core::RecursiveSharedMutex& getMutex() { return _sharedMutex; }
         ConnectionPool& getConnectionPool() { return *_connectionPool; }
-
-        void logPageSize();
-        void logCacheSize();
-        void logMmapSize();
-        void logCompileOptions();
-        void performQuickCheck();
-        void performIntegrityCheck();
-        void performForeignKeyConstraintsCheck();
-
-        class ScopedConnection
-        {
-        public:
-            ScopedConnection(Wt::Dbo::SqlConnectionPool& pool);
-            ~ScopedConnection();
-
-            Wt::Dbo::SqlConnection* operator->() const;
-            Wt::Dbo::SqlConnection& operator*() const { return *_connection; }
-
-        private:
-            ScopedConnection(const ScopedConnection&) = delete;
-            ScopedConnection& operator=(const ScopedConnection&) = delete;
-
-            Wt::Dbo::SqlConnectionPool& _connectionPool;
-            std::unique_ptr<Wt::Dbo::SqlConnection> _connection;
-        };
 
         core::RecursiveSharedMutex _sharedMutex;
         std::unique_ptr<ConnectionPool> _connectionPool;

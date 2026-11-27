@@ -20,14 +20,11 @@
 #pragma once
 
 #include <optional>
-
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
+#include <span>
 
 #include "core/media/ImageFormat.hpp"
 #include "core/media/ImageType.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/MediumId.hpp"
 #include "database/objects/ReleaseId.hpp"
@@ -35,18 +32,18 @@
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 #include "database/objects/detail/Types.hpp"
 
 namespace lms::db
 {
-    class TrackEmbeddedImageLink;
-    class Session;
-    class Track;
+    class ISession;
 
-    class TrackEmbeddedImage final : public Object<TrackEmbeddedImage, TrackEmbeddedImageId>
+    class TrackEmbeddedImage : public detail::Object<TrackEmbeddedImage, TrackEmbeddedImageId>
     {
     public:
-        TrackEmbeddedImage() = default;
+        static TrackEmbeddedImage create(ISession& session);
+        static void destroy(ISession& session, std::span<const TrackEmbeddedImageId> ids);
 
         struct FindParameters
         {
@@ -96,11 +93,13 @@ namespace lms::db
         };
 
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackEmbeddedImageId id);
-        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
-        static pointer find(Session& session, std::size_t size, ImageHashType hash);
-        static std::vector<TrackEmbeddedImageId> findOrphanIds(Session& session, std::optional<Range> range);
+        static std::size_t getCount(ISession& session);
+        static std::optional<TrackEmbeddedImage> find(ISession& session, TrackEmbeddedImageId id);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const TrackEmbeddedImage&)>& func);
+        static std::optional<TrackEmbeddedImage> find(ISession& session, std::size_t size, ImageHashType hash);
+        static std::vector<TrackEmbeddedImageId> findOrphanIds(ISession& session, std::optional<Range> range);
+
+        static void update(ISession& session, const TrackEmbeddedImage& trackEmbeddedImage);
 
         // getters
         ImageHashType getHash() const { return _hash; }
@@ -116,29 +115,12 @@ namespace lms::db
         void setHeight(std::size_t height) { _height = static_cast<int>(height); }
         void setFormat(core::media::ImageFormat format);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _hash, "hash");
-            Wt::Dbo::field(a, _size, "size");
-            Wt::Dbo::field(a, _width, "width");
-            Wt::Dbo::field(a, _height, "height");
-            Wt::Dbo::field(a, _format, "format");
-
-            Wt::Dbo::hasMany(a, _links, Wt::Dbo::ManyToOne, "track_embedded_image");
-        }
-
-    private:
-        friend class Session;
-
-        static pointer create(Session& session);
-
+    protected:
+        TrackEmbeddedImage() = default;
         ImageHashType _hash;
         int _size{};
         int _width{};
         int _height{};
         detail::ImageFormat _format{ detail::ImageFormat::Unknown };
-
-        Wt::Dbo::collection<Wt::Dbo::ptr<TrackEmbeddedImageLink>> _links;
     };
 } // namespace lms::db

@@ -26,12 +26,12 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
+#include "core/Ascii.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/IOContextRunner.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
-#include "core/String.hpp"
 #include "core/SystemPaths.hpp"
 #include "core/UUID.hpp"
 
@@ -39,7 +39,7 @@
 #include "audio/IMusicNNEmbeddingExtractor.hpp"
 #include "audio/Init.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/ServerInfo.hpp"
 #include "database/profiling/IQueryProfiler.hpp"
 #include "image/Image.hpp"
@@ -74,7 +74,7 @@ namespace lms
 
         ui::AuthenticationBackend getUIAuthenticationBackend()
         {
-            const std::string backend{ core::stringUtils::stringToLower(core::Service<core::IConfig>::get()->getString("authentication-backend", "internal")) };
+            const std::string backend{ core::ascii::toLower(core::Service<core::IConfig>::get()->getString("authentication-backend", "internal")) };
             if (backend == "internal")
                 return ui::AuthenticationBackend::Internal;
             if (backend == "pam")
@@ -113,7 +113,7 @@ namespace lms
             throw core::LmsException{ "Invalid config value for 'jukebox-audio-backend'" };
         }
 
-        core::UUID getServerInstanceId(db::Session& session)
+        core::UUID getServerInstanceId(db::ISession& session)
         {
             auto transaction{ session.createReadTransaction() };
             return db::ServerInfo::get(session)->getInstanceId();
@@ -403,12 +403,6 @@ namespace lms
             if (const auto level{ getTracingLevel() })
                 traceLogger.assign(core::tracing::createTraceLogger(level.value(), config->getULong("tracing-buffer-size", core::tracing::MinBufferSizeInMBytes)));
 
-            // use system locale. libarchive relies on this to write filenames
-            if (char* locale{ ::setlocale(LC_ALL, "") })
-                LMS_LOG(MAIN, INFO, "locale set to '" << locale << "'");
-            else
-                LMS_LOG(MAIN, WARNING, "Cannot set locale from system");
-
             audio::init();
 
             // Make sure the working directory exists
@@ -449,22 +443,12 @@ namespace lms
                 QueryProfiler.assign(db::createQueryProfiler());
 
             auto database{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db") };
+            database->prepare(audio::canExtractMusicNNEmbeddings() ? db::RecommendationEngineType::AudioSimilarity : db::RecommendationEngineType::Clusters);
+
             core::UUID serverInstanceId;
             {
-                db::Session session{ *database };
-                session.prepareTablesIfNeeded();
-                bool migrationPerformed{ session.migrateSchemaIfNeeded() };
-                session.createScanSettingsIfNeeded(audio::canExtractMusicNNEmbeddings() ? db::RecommendationEngineType::AudioSimilarity : db::RecommendationEngineType::Clusters);
-                session.createServerInfoIfNeeded();
-                session.createIndexesIfNeeded();
-
-                serverInstanceId = getServerInstanceId(session);
-
-                // As this may be quite long, we only do it during startup
-                if (migrationPerformed)
-                    session.vacuum();
-                else
-                    session.vacuumIfNeeded();
+                const auto session{ database->createSession() };
+                serverInstanceId = getServerInstanceId(*session);
             }
 
             ui::LmsApplicationManager appManager;
@@ -472,7 +456,7 @@ namespace lms
             const std::size_t loginThrottlerMaxEntries{ config->getULong("login-throttler-max-entries", 10'000) };
             // Service initialization order is important (reverse-order for deinit)
             const ui::AuthenticationBackend uiAuthenticationBackend{ getUIAuthenticationBackend() };
-            core::Service<auth::IAuthTokenService> authTokenService{ auth::createAuthTokenService(*database, config->getULong("login-throttler-max-entriees", 10'000)) };
+            core::Service<auth::IAuthTokenService> authTokenService{ auth::createAuthTokenService(*database, loginThrottlerMaxEntries) };
             core::Service<auth::IPasswordService> authPasswordService;
             core::Service<auth::IEnvService> authEnvService;
 

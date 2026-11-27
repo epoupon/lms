@@ -1,6 +1,7 @@
 include(GoogleTest)
 
 add_executable(test-core
+	Ascii.cpp
 	Codec.cpp
 	EnumSet.cpp
 	Hash.cpp
@@ -17,6 +18,7 @@ add_executable(test-core
 	TraceLogger.cpp
 	UUID.cpp
 	XxHash3.cpp
+	Zipper.cpp
 	)
 
 target_include_directories(test-core PRIVATE

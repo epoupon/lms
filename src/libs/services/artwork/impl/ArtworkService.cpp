@@ -30,7 +30,7 @@
 #include "audio/IAudioFileInfoParser.hpp"
 #include "audio/IImageReader.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
@@ -158,23 +158,27 @@ namespace lms::artwork
         db::ArtworkId artworkId;
 
         // Iterate over all tracks and stop when we find an artwork
-        db::Session& session{ _db.getTLSSession() };
+        db::ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        db::TrackList::pointer trackList{ db::TrackList::find(session, trackListId) };
+        std::optional<db::TrackList> trackList{ db::TrackList::find(session, trackListId) };
         if (!trackList)
             return artworkId;
 
-        if (const auto playListFile{ trackList->getPlayListFile() })
+        if (const std::optional<db::PlayListFile> playListFile{ db::PlayListFile::find(session, trackList->getPlayListFileId()) })
         {
             if (const db::ArtworkId id{ playListFile->getPreferredArtworkId() }; id.isValid())
                 return id;
         }
 
-        const auto entries{ trackList->getEntries(db::Range{ 0, 10 }) };
+        std::vector<db::TrackListEntry> entries;
+        db::TrackListEntry::find(session, db::TrackListEntry::FindParameters{}.setTrackList(trackListId).setRange(db::Range{ 0, 10 }), [&](const db::TrackListEntry& entry) {
+            entries.push_back(entry);
+        });
         for (const auto& entry : entries)
         {
-            const auto track{ entry->getTrack() };
+            const std::optional<db::Track> track{ db::Track::find(session, entry.getTrackId()) };
+            assert(track);
             if (track->getPreferredMediaArtworkId().isValid())
             {
                 artworkId = track->getPreferredMediaArtworkId();
@@ -202,10 +206,10 @@ namespace lms::artwork
         db::Artwork::UnderlyingId underlyingArtworkId;
 
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            db::Artwork::pointer artwork{ db::Artwork::find(session, artworkId) };
+            std::optional<db::Artwork> artwork{ db::Artwork::find(session, artworkId) };
             if (artwork)
                 underlyingArtworkId = artwork->getUnderlyingId();
         }
@@ -228,10 +232,10 @@ namespace lms::artwork
         std::filesystem::path imageFile;
         std::optional<core::media::ImageFormat> format;
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            const db::Image::pointer image{ db::Image::find(session, imageId) };
+            const std::optional<db::Image> image{ db::Image::find(session, imageId) };
             if (!image)
                 return nullptr;
 
@@ -253,10 +257,10 @@ namespace lms::artwork
         std::shared_ptr<image::IEncodedImage> image;
 
         {
-            db::Session& session{ _db.getTLSSession() };
+            db::ISession& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            const db::TrackEmbeddedImage::pointer trackEmbeddedImage{ db::TrackEmbeddedImage::find(session, trackEmbeddedImageId) };
+            const std::optional<db::TrackEmbeddedImage> trackEmbeddedImage{ db::TrackEmbeddedImage::find(session, trackEmbeddedImageId) };
             if (!trackEmbeddedImage)
                 return image;
 
@@ -268,9 +272,9 @@ namespace lms::artwork
             }
 
             // TODO: could be put outside transaction
-            db::TrackEmbeddedImageLink::find(session, trackEmbeddedImageId, [&](const db::TrackEmbeddedImageLink::pointer& link) {
+            db::TrackEmbeddedImageLink::find(session, trackEmbeddedImageId, [&](const db::TrackEmbeddedImageLink& link) {
                 if (!image)
-                    image = getFromTrackImage(link->getTrack()->getAbsoluteFilePath(), link->getIndex(), *format, width);
+                    image = getFromTrackImage(db::Track::find(session, link.getTrackId())->getAbsoluteFilePath(), link.getIndex(), *format, width);
             });
         }
 

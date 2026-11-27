@@ -19,18 +19,33 @@
 
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
+#include <functional>
 #include <memory>
+
+#include "database/objects/Types.hpp"
 
 namespace lms::db
 {
-    class Session;
+    class ISession;
     class IDb
     {
     public:
+        using ProgressCallback = std::function<void(std::size_t processedEntries, std::size_t totalEntries)>;
+        using ShouldAbortCallback = std::function<bool()>;
+
         virtual ~IDb() = default;
 
-        virtual Session& getTLSSession() = 0;
+        virtual ISession& getTLSSession() = 0;
+        virtual std::unique_ptr<ISession> createSession() = 0;
+
+        // The methods below open their own transactions: none must be open on the calling thread
+
+        // To be called once at startup, before any other use of the database
+        virtual void prepare(RecommendationEngineType defaultRecommendationEngineType) = 0;
+        virtual void analyze(const ProgressCallback& onProgress = {}, const ShouldAbortCallback& shouldAbort = {}) = 0;
+        virtual void vacuum() = 0;
     };
 
     std::unique_ptr<IDb> createDb(const std::filesystem::path& dbPath);

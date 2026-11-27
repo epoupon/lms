@@ -20,34 +20,37 @@
 #pragma once
 
 #include <chrono>
+#include <functional>
 #include <optional>
-
-#include <Wt/Dbo/Field.h>
+#include <span>
+#include <string>
+#include <string_view>
 
 #include "database/IdType.hpp"
-#include "database/Object.hpp"
-#include "database/Types.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 LMS_DECLARE_IDTYPE(TrackBookmarkId)
 
 namespace lms::db
 {
-    class Session;
-    class Track;
+    class ISession;
     class User;
 
-    class TrackBookmark final : public Object<TrackBookmark, TrackBookmarkId>
+    class TrackBookmark : public detail::Object<TrackBookmark, TrackBookmarkId>
     {
     public:
-        TrackBookmark() = default;
+        static TrackBookmark create(ISession& session, UserId user, TrackId track);
+        static void destroy(ISession& session, std::span<const TrackBookmarkId> ids);
 
         // Find utility functions
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackBookmarkId id);
-        static std::vector<TrackBookmarkId> find(Session& session, UserId userId, std::optional<Range> range = std::nullopt);
-        static pointer find(Session& session, UserId userId, TrackId trackId);
+        static std::size_t getCount(ISession& session);
+        static std::optional<TrackBookmark> find(ISession& session, TrackBookmarkId id);
+        static void find(ISession& session, UserId userId, const std::function<void(const TrackBookmark&)>& func);
+        static std::optional<TrackBookmark> find(ISession& session, UserId userId, TrackId trackId);
+
+        static void update(ISession& session, const TrackBookmark& trackBookmark);
 
         // Setters
         void setOffset(std::chrono::milliseconds offset) { _offset = offset; }
@@ -56,30 +59,18 @@ namespace lms::db
         // Getters
         std::chrono::milliseconds getOffset() const { return _offset; }
         std::string_view getComment() const { return _comment; }
-        ObjectPtr<Track> getTrack() const { return _track; }
-        ObjectPtr<User> getUser() const { return _user; }
+        TrackId getTrackId() const { return _trackId; }
+        UserId getUserId() const { return _userId; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _offset, "offset");
-            Wt::Dbo::field(a, _comment, "comment");
-            Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        TrackBookmark(ObjectPtr<User> user, ObjectPtr<Track> track);
-        static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track);
+    protected:
+        TrackBookmark() = default;
 
         static const std::size_t _maxCommentLength = 128;
 
         std::chrono::duration<int, std::milli> _offset;
         std::string _comment;
-
-        Wt::Dbo::ptr<User> _user;
-        Wt::Dbo::ptr<Track> _track;
+        TrackId _trackId;
+        UserId _userId;
     };
 
 } // namespace lms::db

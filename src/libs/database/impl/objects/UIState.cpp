@@ -21,44 +21,67 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "database/Session.hpp"
-#include "database/objects/User.hpp"
-
+#include "DboAccess.hpp"
+#include "Session.hpp"
+#include "UIStateDbo.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::UIState)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::UIState)
 
 namespace lms::db
 {
-    UIState::UIState(std::string_view item, ObjectPtr<User> user)
+    UIState::UIState(std::string_view item)
         : _item{ item }
-        , _user{ getDboPtr(user) }
     {
     }
 
-    UIState::pointer UIState::create(Session& session, std::string_view item, ObjectPtr<User> user)
+    dbo::UIState::UIState(std::string_view item, Wt::Dbo::ptr<User> user)
+        : db::UIState{ item }
+        , _user{ std::move(user) }
     {
-        return session.getDboSession()->add(std::unique_ptr<UIState>{ new UIState{ item, user } });
     }
 
-    std::size_t UIState::getCount(Session& session)
+    UIState UIState::create(ISession& session, std::string_view item, UserId user)
     {
-        session.checkReadTransaction();
-
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM ui_state"));
+        return utils::addObject(session, std::unique_ptr<dbo::UIState>{ new dbo::UIState{ item, getDboSession(session)->loadLazy<dbo::User>(user.getValue()) } });
     }
 
-    UIState::pointer UIState::find(Session& session, UIStateId settingId)
+    void UIState::destroy(ISession& session, std::span<const UIStateId> ids)
     {
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<UIState>>("SELECT ui_s from ui_state ui_s").where("ui_s.id = ?").bind(settingId) };
-        return utils::fetchQuerySingleResult(query);
+        utils::destroyObjects<dbo::UIState>(session, ids);
     }
 
-    UIState::pointer UIState::find(Session& session, std::string_view item, UserId userId)
+    std::size_t UIState::getCount(ISession& session)
     {
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<UIState>>("SELECT ui_s from ui_state ui_s").where("ui_s.item = ?").bind(item).where("ui_s.user_id = ?").bind(userId) };
-        return utils::fetchQuerySingleResult(query);
+        checkReadTransaction(session);
+
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM ui_state"));
+    }
+
+    std::optional<UIState> UIState::find(ISession& session, UIStateId settingId)
+    {
+        checkReadTransaction(session);
+
+        if (!settingId.isValid())
+            return std::nullopt;
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::UIState>>("SELECT ui_s from ui_state ui_s").where("ui_s.id = ?").bind(settingId) };
+        return utils::fetchQuerySingleObject(query);
+    }
+
+    std::optional<UIState> UIState::find(ISession& session, std::string_view item, UserId userId)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::UIState>>("SELECT ui_s from ui_state ui_s").where("ui_s.item = ?").bind(item).where("ui_s.user_id = ?").bind(userId) };
+        return utils::fetchQuerySingleObject(query);
+    }
+
+    void UIState::update(ISession& session, const UIState& uiState)
+    {
+        utils::updateObject<dbo::UIState>(session, uiState);
     }
 } // namespace lms::db

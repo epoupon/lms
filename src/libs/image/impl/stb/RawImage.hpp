@@ -25,7 +25,7 @@
 
 #include "image/IRawImage.hpp"
 
-namespace lms::image::STB
+namespace lms::image::stb
 {
     class RawImage : public IRawImage
     {
@@ -50,4 +50,4 @@ namespace lms::image::STB
         using UniquePtrFree = std::unique_ptr<unsigned char, decltype(&std::free)>;
         UniquePtrFree _data{ nullptr, std::free };
     };
-} // namespace lms::image::STB
+} // namespace lms::image::stb

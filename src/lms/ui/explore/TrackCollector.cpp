@@ -27,7 +27,7 @@
 
 namespace lms::ui
 {
-    void TrackCollector::get(db::Range requestedRange, bool& moreResults, const std::function<void(const db::ObjectPtr<db::Track>&)>& func)
+    void TrackCollector::get(db::Range requestedRange, bool& moreResults, const std::function<void(const db::Track&)>& func)
     {
         const db::Range range{ getActualRange(requestedRange) };
 
@@ -51,7 +51,7 @@ namespace lms::ui
                 for (const auto id : slice)
                 {
                     if (const auto track{ db::Track::find(LmsApp->getDbSession(), id) })
-                        func(track);
+                        func(*track);
                 }
                 break;
             }

@@ -19,35 +19,39 @@
 
 #pragma once
 
-#include <Wt/Dbo/Field.h>
+#include <optional>
+#include <span>
+
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistFeedbackId.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artist;
-    class Session;
+    class ISession;
     class User;
 
-    class ArtistFeedback final : public Object<ArtistFeedback, ArtistFeedbackId>
+    class ArtistFeedback : public detail::Object<ArtistFeedback, ArtistFeedbackId>
     {
     public:
-        ArtistFeedback() = default;
+        static ArtistFeedback create(ISession& session, ArtistId artist, UserId user);
+        static void destroy(ISession& session, std::span<const ArtistFeedbackId> ids);
 
         // Search utility
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ArtistFeedbackId id);
-        static pointer find(Session& session, ArtistId artistId, UserId userId);
+        static std::size_t getCount(ISession& session);
+        static std::optional<ArtistFeedback> find(ISession& session, ArtistFeedbackId id);
+        static std::optional<ArtistFeedback> find(ISession& session, ArtistId artistId, UserId userId);
+
+        static void update(ISession& session, const ArtistFeedback& artistFeedback);
 
         // Accessors
-        ObjectPtr<Artist> getArtist() const { return _artist; }
-        ObjectPtr<User> getUser() const { return _user; }
+        ArtistId getArtistId() const { return _artistId; }
+        UserId getUserId() const { return _userId; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
         FeedbackValue getValue() const { return _value; }
 
@@ -55,25 +59,12 @@ namespace lms::db
         void setDateTime(const Wt::WDateTime& dateTime);
         void setValue(FeedbackValue value) { _value = value; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _dateTime, "date_time");
-            Wt::Dbo::field(a, _value, "value");
-
-            Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        ArtistFeedback(ObjectPtr<Artist> artist, ObjectPtr<User> user);
-        static pointer create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user);
+    protected:
+        ArtistFeedback() = default;
 
         Wt::WDateTime _dateTime; // when the value was last changed to non-None
         FeedbackValue _value{ FeedbackValue::None };
-
-        Wt::Dbo::ptr<Artist> _artist;
-        Wt::Dbo::ptr<User> _user;
+        ArtistId _artistId;
+        UserId _userId;
     };
 } // namespace lms::db

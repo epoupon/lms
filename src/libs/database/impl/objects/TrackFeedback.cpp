@@ -24,55 +24,61 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/User.hpp"
-
+#include "DboAccess.hpp"
+#include "Session.hpp"
+#include "TrackDbo.hpp"
+#include "TrackFeedbackDbo.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::TrackFeedback)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackFeedback)
 
 namespace lms::db
 {
-    TrackFeedback::TrackFeedback(ObjectPtr<Track> track, ObjectPtr<User> user)
-        : _track{ getDboPtr(track) }
-        , _user{ getDboPtr(user) }
+    dbo::TrackFeedback::TrackFeedback(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<User> user)
+        : _track{ std::move(track) }
+        , _user{ std::move(user) }
     {
     }
 
-    TrackFeedback::pointer TrackFeedback::create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user)
+    TrackFeedback TrackFeedback::create(ISession& session, TrackId track, UserId user)
     {
-        return session.getDboSession()->add(std::unique_ptr<TrackFeedback>{ new TrackFeedback{ track, user } });
+        return utils::addObject(session, std::unique_ptr<dbo::TrackFeedback>{ new dbo::TrackFeedback{ getDboSession(session)->loadLazy<dbo::Track>(track.getValue()), getDboSession(session)->loadLazy<dbo::User>(user.getValue()) } });
     }
 
-    std::size_t TrackFeedback::getCount(Session& session)
+    void TrackFeedback::destroy(ISession& session, std::span<const TrackFeedbackId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_feedback"));
+        utils::destroyObjects<dbo::TrackFeedback>(session, ids);
     }
 
-    TrackFeedback::pointer TrackFeedback::find(Session& session, TrackFeedbackId id)
+    std::size_t TrackFeedback::getCount(ISession& session)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackFeedback>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_feedback"));
     }
 
-    TrackFeedback::pointer TrackFeedback::find(Session& session, TrackId trackId, UserId userId)
+    std::optional<TrackFeedback> TrackFeedback::find(ISession& session, TrackFeedbackId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackFeedback>().where("track_id = ?").bind(trackId).where("user_id = ?").bind(userId));
+        checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackFeedback>().where("id = ?").bind(id));
     }
 
-    void TrackFeedback::find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func)
+    std::optional<TrackFeedback> TrackFeedback::find(ISession& session, TrackId trackId, UserId userId)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackFeedback>().where("track_id = ?").bind(trackId).where("user_id = ?").bind(userId));
+    }
 
-        auto query{ session.getDboSession()->find<TrackFeedback>() };
+    void TrackFeedback::find(ISession& session, const FindParameters& params, const std::function<void(const TrackFeedback&)>& func)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->find<dbo::TrackFeedback>() };
 
         if (params.user.isValid())
             query.where("user_id = ?").bind(params.user);
@@ -92,11 +98,16 @@ namespace lms::db
             break;
         }
 
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     void TrackFeedback::setDateTime(const Wt::WDateTime& dateTime)
     {
         _dateTime = utils::normalizeDateTime(dateTime);
+    }
+
+    void TrackFeedback::update(ISession& session, const TrackFeedback& trackFeedback)
+    {
+        utils::updateObject<dbo::TrackFeedback>(session, trackFeedback);
     }
 } // namespace lms::db

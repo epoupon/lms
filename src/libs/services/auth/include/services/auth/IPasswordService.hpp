@@ -21,7 +21,6 @@
 
 #include <string_view>
 
-#include <Wt/Dbo/ptr.h>
 #include <Wt/WDateTime.h>
 #include <boost/asio/ip/address.hpp>
 

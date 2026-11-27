@@ -28,7 +28,7 @@
 #include "core/http/IClient.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Podcast.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 
@@ -39,6 +39,7 @@
 #include "steps/DownloadPodcastArtworksStep.hpp"
 #include "steps/RefreshPodcastsStep.hpp"
 #include "steps/RemoveEpisodesStep.hpp"
+#include "steps/RemoveOrphanFilesStep.hpp"
 #include "steps/RemovePodcastsStep.hpp"
 
 #include "Exception.hpp"
@@ -97,12 +98,12 @@ namespace lms::podcast
 
         db::PodcastId podcastId;
         {
-            db::Session& session{ _refreshContext.db.getTLSSession() };
+            db::ISession& session{ _refreshContext.db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            db::Podcast::pointer podcast{ db::Podcast::find(session, url) };
+            std::optional<db::Podcast> podcast{ db::Podcast::find(session, url) };
             if (!podcast)
-                podcast = session.create<db::Podcast>(url);
+                podcast = db::Podcast::create(session, url);
 
             podcastId = podcast->getId();
         }
@@ -121,13 +122,14 @@ namespace lms::podcast
         abortCurrentRefresh(lock);
 
         {
-            db::Session& session{ _refreshContext.db.getTLSSession() };
+            db::ISession& session{ _refreshContext.db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            db::Podcast::pointer podcast{ db::Podcast::find(session, podcastId) };
+            std::optional<db::Podcast> podcast{ db::Podcast::find(session, podcastId) };
             if (podcast)
             {
-                podcast.modify()->setDeleteRequested(true);
+                podcast->setDeleteRequested(true);
+                db::Podcast::update(session, *podcast);
                 res = true;
             }
         }
@@ -155,13 +157,15 @@ namespace lms::podcast
         abortCurrentRefresh(lock);
 
         {
-            db::Session& session{ _refreshContext.db.getTLSSession() };
+            db::ISession& session{ _refreshContext.db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, episodeId) };
+            std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(session, episodeId) };
             if (episode)
             {
-                episode.modify()->setManualDownloadState(db::PodcastEpisode::ManualDownloadState::DownloadRequested);
+                episode->setManualDownloadState(db::PodcastEpisode::ManualDownloadState::DownloadRequested);
+                episode->setDownloadFailed(false); // try again, the user may know better
+                db::PodcastEpisode::update(session, *episode);
                 res = true;
             }
         }
@@ -180,13 +184,14 @@ namespace lms::podcast
         abortCurrentRefresh(lock);
 
         {
-            db::Session& session{ _refreshContext.db.getTLSSession() };
+            db::ISession& session{ _refreshContext.db.getTLSSession() };
             auto transaction{ session.createWriteTransaction() };
 
-            db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, episodeId) };
+            std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(session, episodeId) };
             if (episode)
             {
-                episode.modify()->setManualDownloadState(db::PodcastEpisode::ManualDownloadState::DeleteRequested);
+                episode->setManualDownloadState(db::PodcastEpisode::ManualDownloadState::DeleteRequested);
+                db::PodcastEpisode::update(session, *episode);
                 res = true;
             }
         }
@@ -199,7 +204,7 @@ namespace lms::podcast
 
     bool PodcastService::hasPodcasts() const
     {
-        db::Session& session{ _refreshContext.db.getTLSSession() };
+        db::ISession& session{ _refreshContext.db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         return db::Podcast::getCount(session) > 0;
@@ -275,6 +280,7 @@ namespace lms::podcast
         // order is important, each step is done only when the previous one is done
         _refreshSteps.emplace_back(std::make_unique<ClearTmpDirectoryStep>(_refreshContext, onDoneCallback));
         _refreshSteps.emplace_back(std::make_unique<CheckForMissingFilesStep>(_refreshContext, onDoneCallback));
+        _refreshSteps.emplace_back(std::make_unique<RemoveOrphanFilesStep>(_refreshContext, onDoneCallback));
         _refreshSteps.emplace_back(std::make_unique<RemovePodcastsStep>(_refreshContext, onDoneCallback));
         _refreshSteps.emplace_back(std::make_unique<RefreshPodcastsStep>(_refreshContext, onDoneCallback));
         _refreshSteps.emplace_back(std::make_unique<RemoveEpisodesStep>(_refreshContext, onDoneCallback));

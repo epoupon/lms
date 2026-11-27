@@ -34,8 +34,6 @@ namespace Wt::Dbo
 
 namespace lms::db
 {
-    class Session;
-
     class TransactionChecker
     {
     public:
@@ -52,9 +50,7 @@ namespace lms::db
         static void popReadTransaction(const Wt::Dbo::Session& session);
 
         static void checkWriteTransaction(const Wt::Dbo::Session& session);
-        static void checkWriteTransaction(const Session& session);
         static void checkReadTransaction(const Wt::Dbo::Session& session);
-        static void checkReadTransaction(const Session& session);
 
     private:
         static void pushTransaction(TransactionType type, const Wt::Dbo::Session& session);

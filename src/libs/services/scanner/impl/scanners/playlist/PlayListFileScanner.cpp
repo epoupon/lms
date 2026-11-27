@@ -19,12 +19,13 @@
 
 #include "PlayListFileScanner.hpp"
 
+#include <array>
 #include <fstream>
 #include <optional>
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/PlayListFile.hpp"
 
@@ -70,14 +71,14 @@ namespace lms::scanner
 
         PlayListFileScanOperation::OperationResult PlayListFileScanOperation::processResult()
         {
-            db::Session& dbSession{ getDb().getTLSSession() };
-            db::PlayListFile::pointer playList{ db::PlayListFile::find(dbSession, getFilePath()) };
+            db::ISession& dbSession{ getDb().getTLSSession() };
+            std::optional<db::PlayListFile> playList{ db::PlayListFile::find(dbSession, getFilePath()) };
 
             if (!_parsedPlayList)
             {
                 if (playList)
                 {
-                    playList.remove();
+                    db::PlayListFile::destroy(dbSession, std::array{ playList->getId() });
 
                     LMS_LOG(DBUPDATER, DEBUG, "Removed playlist file " << getFilePath());
                     return OperationResult::Removed;
@@ -88,19 +89,20 @@ namespace lms::scanner
 
             const bool added{ !playList };
             if (!playList)
-                playList = dbSession.create<db::PlayListFile>(getFilePath());
+                playList = db::PlayListFile::create(dbSession, getFilePath());
 
-            playList.modify()->setLastWriteTime(getLastWriteTime());
-            playList.modify()->setFileSize(getFileSize());
+            playList->setLastWriteTime(getLastWriteTime());
+            playList->setFileSize(getFileSize());
             if (!_parsedPlayList->name.empty())
-                playList.modify()->setName(_parsedPlayList->name);
+                playList->setName(_parsedPlayList->name);
             else
-                playList.modify()->setName(getFilePath().stem().string());
-            playList.modify()->setFiles(_parsedPlayList->files);
-            playList.modify()->setCoverImageFile(_parsedPlayList->coverImage.value_or(std::filesystem::path{}));
+                playList->setName(getFilePath().stem().string());
+            playList->setFiles(_parsedPlayList->files);
+            playList->setCoverImageFile(_parsedPlayList->coverImage.value_or(std::filesystem::path{}));
 
-            db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
-            playList.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary));
+            std::optional<db::MediaLibrary> mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
+            playList->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary).getId());
+            db::PlayListFile::update(dbSession, *playList);
 
             if (added)
             {
@@ -136,10 +138,10 @@ namespace lms::scanner
 
     bool PlayListFileScanner::needsScan(const FileToScan& file) const
     {
-        db::Session& dbSession{ _db.getTLSSession() };
+        db::ISession& dbSession{ _db.getTLSSession() };
         auto transaction{ _db.getTLSSession().createReadTransaction() };
 
-        const db::PlayListFile::pointer playList{ db::PlayListFile::find(dbSession, file.filePath) };
+        const std::optional<db::PlayListFile> playList{ db::PlayListFile::find(dbSession, file.filePath) };
         return !playList || playList->getLastWriteTime() != file.lastWriteTime;
     }
 

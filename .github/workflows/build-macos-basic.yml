@@ -14,7 +14,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          brew install pkg-config cmake boost ffmpeg libconfig taglib libarchive xxhash pugixml googletest onnxruntime openssl git
+          brew install pkg-config cmake boost ffmpeg libconfig taglib libarchive utf8proc xxhash pugixml googletest onnxruntime openssl git
 
       - name: Build and install Wt
         run: |

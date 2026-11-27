@@ -22,28 +22,28 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
+#include <span>
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
 #include "core/TaggedType.hpp"
 #include "core/media/ImageFormat.hpp"
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/DirectoryId.hpp"
 #include "database/objects/ImageId.hpp"
+#include "database/objects/detail/Object.hpp"
 #include "database/objects/detail/Types.hpp"
 
 namespace lms::db
 {
-    class Directory;
-    class Session;
+    class ISession;
 
-    class Image final : public Object<Image, ImageId>
+    class Image : public detail::Object<Image, ImageId>
     {
     public:
-        Image() = default;
+        static Image create(ISession& session, const std::filesystem::path& p);
+        static void destroy(ISession& session, std::span<const ImageId> ids);
 
         struct FindParameters
         {
@@ -73,13 +73,14 @@ namespace lms::db
         };
 
         // find
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, ImageId id);
-        static pointer find(Session& session, const std::filesystem::path& file);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& parameters, const std::function<void(const Image::pointer&)>& func);
-        static void find(Session& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(const Image::pointer&)>& func);
-        static void findAbsoluteFilePath(Session& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(ImageId imageId, const std::filesystem::path& absoluteFilePath)>& func);
+        static std::size_t getCount(ISession& session);
+        static std::optional<Image> find(ISession& session, ImageId id);
+        static std::optional<Image> find(ISession& session, const std::filesystem::path& file);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Image&)>& func);
+        static void find(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(const Image&)>& func);
+        static void findAbsoluteFilePath(ISession& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(ImageId imageId, const std::filesystem::path& absoluteFilePath)>& func);
+
+        static void update(ISession& session, const Image& image);
 
         // getters
         const std::filesystem::path& getAbsoluteFilePath() const { return _fileAbsolutePath; }
@@ -97,27 +98,11 @@ namespace lms::db
         void setWidth(std::size_t width) { _width = width; }
         void setHeight(std::size_t height) { _height = height; }
         void setFormat(core::media::ImageFormat format);
-        void setDirectory(const ObjectPtr<Directory>& directory) { _directory = getDboPtr(directory); }
+        void setDirectory(DirectoryId directory) { _directoryId = directory; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _fileAbsolutePath, "absolute_file_path");
-            Wt::Dbo::field(a, _fileStem, "stem");
-            Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
-            Wt::Dbo::field(a, _fileSize, "file_size");
-
-            Wt::Dbo::field(a, _width, "width");
-            Wt::Dbo::field(a, _height, "height");
-            Wt::Dbo::field(a, _format, "format");
-
-            Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        Image(const std::filesystem::path& p);
-        static pointer create(Session& session, const std::filesystem::path& p);
+    protected:
+        Image() = default;
+        explicit Image(const std::filesystem::path& p);
 
         std::filesystem::path _fileAbsolutePath;
         std::string _fileStem;
@@ -126,7 +111,6 @@ namespace lms::db
         int _width{};
         int _height{};
         detail::ImageFormat _format{ detail::ImageFormat::Unknown };
-
-        Wt::Dbo::ptr<Directory> _directory;
+        DirectoryId _directoryId;
     };
 } // namespace lms::db

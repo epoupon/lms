@@ -19,7 +19,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -31,6 +30,7 @@
 
 #include <gtest/gtest.h>
 
+#include "core/Ascii.hpp"
 #include "core/media/AudioFormat.hpp"
 
 #include "audio/IAudioDecoder.hpp"
@@ -170,7 +170,7 @@ namespace lms::audio::tests
         std::string sanitizeIdentifier(std::string_view name)
         {
             std::string res{ name };
-            std::replace_if(res.begin(), res.end(), [](char c) { return !std::isalnum(static_cast<unsigned char>(c)); }, '_');
+            std::replace_if(res.begin(), res.end(), [](char c) { return !core::ascii::isAlpha(c) && !core::ascii::isDigit(c); }, '_');
             return res;
         }
 

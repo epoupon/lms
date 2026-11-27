@@ -25,7 +25,7 @@
 #include "core/IJob.hpp"
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Image.hpp"
@@ -45,34 +45,34 @@ namespace lms::scanner
         };
         using PlayListArtworkAssociationContainer = std::deque<PlayListArtworkAssociation>;
 
-        db::Artwork::pointer computePreferredArtwork(db::Session& session, const db::PlayListFile::pointer& playListFile)
+        std::optional<db::Artwork> computePreferredArtwork(db::ISession& session, const db::PlayListFile& playListFile)
         {
             // Priority 1: explicit #EXTIMG: hint stored in the playlist file
-            const std::filesystem::path& coverImageFile{ playListFile->getCoverImageFile() };
+            const std::filesystem::path& coverImageFile{ playListFile.getCoverImageFile() };
             if (!coverImageFile.empty())
             {
-                const std::filesystem::path coverImagePath{ coverImageFile.is_relative() ? (playListFile->getDirectory()->getAbsolutePath() / coverImageFile).lexically_normal() : coverImageFile };
+                const std::filesystem::path coverImagePath{ coverImageFile.is_relative() ? (db::Directory::find(session, playListFile.getDirectoryId())->getAbsolutePath() / coverImageFile).lexically_normal() : coverImageFile };
 
-                const db::Image::pointer image{ db::Image::find(session, coverImagePath) };
+                const std::optional<db::Image> image{ db::Image::find(session, coverImagePath) };
                 if (image)
                     return db::Artwork::find(session, image->getId());
             }
 
             // Priority 2: image file with the same stem as the playlist in the same directory
-            db::Artwork::pointer artwork;
+            std::optional<db::Artwork> artwork;
             db::Image::FindParameters params;
-            params.setDirectory(playListFile->getDirectoryId());
-            params.setFileStem(playListFile->getAbsoluteFilePath().stem().string());
+            params.setDirectory(playListFile.getDirectoryId());
+            params.setFileStem(playListFile.getAbsoluteFilePath().stem().string());
 
-            db::Image::find(session, params, [&](const db::Image::pointer& image) {
+            db::Image::find(session, params, [&](const db::Image& image) {
                 if (!artwork)
-                    artwork = db::Artwork::find(session, image->getId());
+                    artwork = db::Artwork::find(session, image.getId());
             });
 
             return artwork;
         }
 
-        void updatePlayListPreferredArtworks(db::Session& session, PlayListArtworkAssociationContainer& associations, bool forceFullBatch)
+        void updatePlayListPreferredArtworks(db::ISession& session, PlayListArtworkAssociationContainer& associations, bool forceFullBatch)
         {
             constexpr std::size_t writeBatchSize{ 50 };
 
@@ -89,7 +89,7 @@ namespace lms::scanner
             }
         }
 
-        bool fetchNextPlayListIdRange(db::Session& session, db::PlayListFileId& lastRetrievedId, db::IdRange<db::PlayListFileId>& idRange)
+        bool fetchNextPlayListIdRange(db::ISession& session, db::PlayListFileId& lastRetrievedId, db::IdRange<db::PlayListFileId>& idRange)
         {
             constexpr std::size_t readBatchSize{ 100 };
 
@@ -123,18 +123,18 @@ namespace lms::scanner
                 auto& session{ _db.getTLSSession() };
                 auto transaction{ session.createReadTransaction() };
 
-                db::PlayListFile::find(session, _idRange, [this, &session](const db::PlayListFile::pointer& playListFile) {
-                    const db::Artwork::pointer preferredArtwork{ computePreferredArtwork(session, playListFile) };
+                db::PlayListFile::find(session, _idRange, [this, &session](const db::PlayListFile& playListFile) {
+                    const std::optional<db::Artwork> preferredArtwork{ computePreferredArtwork(session, playListFile) };
                     const db::ArtworkId newId{ preferredArtwork ? preferredArtwork->getId() : db::ArtworkId{} };
 
-                    if (newId != playListFile->getPreferredArtworkId())
+                    if (newId != playListFile.getPreferredArtworkId())
                     {
-                        _associations.push_back({ playListFile->getId(), newId });
+                        _associations.push_back({ playListFile.getId(), newId });
 
                         if (preferredArtwork)
-                            LMS_LOG(DBUPDATER, DEBUG, "Updating preferred artwork for playlist '" << playListFile->getName() << "' with image " << preferredArtwork->getAbsoluteFilePath());
+                            LMS_LOG(DBUPDATER, DEBUG, "Updating preferred artwork for playlist '" << playListFile.getName() << "' with image " << db::Artwork::getAbsoluteFilePath(session, preferredArtwork->getId()));
                         else
-                            LMS_LOG(DBUPDATER, DEBUG, "Removing preferred artwork from playlist '" << playListFile->getName() << "'");
+                            LMS_LOG(DBUPDATER, DEBUG, "Removing preferred artwork from playlist '" << playListFile.getName() << "'");
                     }
 
                     _processedCount++;

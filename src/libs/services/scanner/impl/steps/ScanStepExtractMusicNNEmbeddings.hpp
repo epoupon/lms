@@ -21,27 +21,17 @@
 
 #include "ScanStepBase.hpp"
 
-namespace lms::audio
-{
-    class IMusicNNEmbeddingExtractor;
-}
-
 namespace lms::scanner
 {
     class ScanStepExtractMusicNNEmbeddings : public ScanStepBase
     {
     public:
-        ScanStepExtractMusicNNEmbeddings(InitParams& initParams, const std::filesystem::path& modelPath, std::size_t maxPatchCountPerTrack);
-        ~ScanStepExtractMusicNNEmbeddings() override;
-        ScanStepExtractMusicNNEmbeddings(const ScanStepExtractMusicNNEmbeddings&) = delete;
-        ScanStepExtractMusicNNEmbeddings& operator=(const ScanStepExtractMusicNNEmbeddings&) = delete;
+        using ScanStepBase::ScanStepBase;
 
     private:
         ScanStep getStep() const override { return ScanStep::ExtractMusicNNEmbeddings; }
         core::LiteralString getStepName() const override { return "Extract MusicNN embeddings"; }
         bool needProcess(const ScanContext& context) const override;
         void process(ScanContext& context) override;
-
-        std::unique_ptr<audio::IMusicNNEmbeddingExtractor> _embeddingExtractor;
     };
 } // namespace lms::scanner

@@ -24,7 +24,7 @@
 #include "core/Service.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Track.hpp"
 
@@ -97,7 +97,7 @@ namespace lms::scanner
 
     bool AudioFileScanner::needsScan(const FileToScan& file) const
     {
-        db::Session& dbSession{ _db.getTLSSession() };
+        db::ISession& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
 
         std::optional<db::FileInfo> fileInfo{ db::Track::findFileInfo(dbSession, file.filePath) };

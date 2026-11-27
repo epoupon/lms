@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <array>
+#include <format>
 
 extern "C"
 {
@@ -110,7 +111,10 @@ namespace lms::audio::ffmpeg
     } // namespace
 
     AudioDecoder::AudioDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
-        : _parameters{ parameters }
+        : _filePath{ filePath }
+        , _parameters{ parameters }
+        , _lastSentPacketPts{ AV_NOPTS_VALUE }
+        , _lastSentPacketBytePosition{ -1 }
     {
         if (_parameters.channelCount > AV_NUM_DATA_POINTERS)
             throw Exception{ "Channel count exceeds maximum supported channels" };
@@ -154,25 +158,16 @@ namespace lms::audio::ffmpeg
 
         checkDecodedFormatIsSupported(*_context, *decoder, filePath);
 
-        if (offset.count() > 0)
+        // Demuxers may index only some streams: Matroska Cues usually list only the video keyframes, and seeking on the audio
+        // stream then reads the file up to the target. Picked before discarding, since this lookup favors non-discarded streams
+        _seekStreamIndex = ::av_find_default_stream_index(_context.get());
+
+        // Lets the demuxer skip the data of the other streams (cover art...) instead of reading it into packets we drop.
+        // The seek stream is kept: without Cues, Matroska indexes the keyframes of the non-discarded streams only
+        for (unsigned streamIndex{}; streamIndex < _context->nb_streams; ++streamIndex)
         {
-            const AVStream* stream{ _context->streams[_inputStreamIndex] };
-
-            using OffsetPeriod = decltype(offset)::period;
-            constexpr AVRational offsetTimebase{ static_cast<int>(OffsetPeriod::num), static_cast<int>(OffsetPeriod::den) };
-
-            _seekTargetTimestamp = static_cast<int64_t>(av_rescale_q(offset.count(), offsetTimebase, stream->time_base));
-            if (stream->start_time != AV_NOPTS_VALUE)
-                _seekTargetTimestamp += stream->start_time;
-
-            if (const auto container{ utils::containerFromDemuxerName(_context->iformat->name) }; !container || isSeekingSupported(*container))
-            {
-                const int seekError{ ::av_seek_frame(_context.get(), _inputStreamIndex, _seekTargetTimestamp, AVSEEK_FLAG_BACKWARD) };
-                if (seekError < 0)
-                    LMS_LOG(AUDIO, WARNING, "Failed to seek to offset: " << utils::averrorToString(seekError));
-            }
-
-            _startTrimPending = true;
+            if (streamIndex != static_cast<unsigned>(_inputStreamIndex) && streamIndex != static_cast<unsigned>(_seekStreamIndex))
+                _context->streams[streamIndex]->discard = AVDISCARD_ALL;
         }
 
         {
@@ -215,9 +210,16 @@ namespace lms::audio::ffmpeg
             static_cast<int>(_decoderContext->ch_layout.order),
             _decoderContext->ch_layout.u.mask,
         };
+
+        if (offset.count() > 0)
+            seek(offset);
     }
 
-    AudioDecoder::~AudioDecoder() = default;
+    AudioDecoder::~AudioDecoder()
+    {
+        if (_skippedPacketCount > 0)
+            LMS_LOG(AUDIO, WARNING, "Skipped " << _skippedPacketCount << " invalid packet(s) in " << _filePath);
+    }
 
     const PcmParameters& AudioDecoder::getParameters() const
     {
@@ -252,12 +254,19 @@ namespace lms::audio::ffmpeg
             {
                 _draining = true;
             }
+            else if (recvErr == AVERROR_INVALIDDATA)
+            {
+                skipInvalidPacket(recvErr);
+                continue;
+            }
             else if (recvErr < 0)
             {
                 throw FFmpegException{ "avcodec_receive_frame failed", recvErr };
             }
             else
             {
+                _frameDecoded = true;
+
                 const std::size_t outSampleCount{ resampleFrame(outputChannelBuffers, maxSamplesPerChannel, _decodedFrame.get()) };
                 ::av_frame_unref(_decodedFrame.get());
 
@@ -270,6 +279,10 @@ namespace lms::audio::ffmpeg
             // Drain resampler once decoder is drained
             if (_draining)
             {
+                // Otherwise a fully corrupt file would look like a valid empty one
+                if (!_frameDecoded && _skippedPacketCount > 0)
+                    throw FFmpegException{ "No decodable packet", AVERROR_INVALIDDATA };
+
                 try
                 {
                     const std::size_t outSampleCount{ drainResampler(outputChannelBuffers, maxSamplesPerChannel) };
@@ -292,6 +305,48 @@ namespace lms::audio::ffmpeg
     bool AudioDecoder::finished() const
     {
         return _finished;
+    }
+
+    void AudioDecoder::seek(std::chrono::microseconds offset)
+    {
+        const AVStream* stream{ _context->streams[_inputStreamIndex] };
+
+        using OffsetPeriod = decltype(offset)::period;
+        constexpr AVRational offsetTimebase{ static_cast<int>(OffsetPeriod::num), static_cast<int>(OffsetPeriod::den) };
+
+        _seekTargetTimestamp = static_cast<int64_t>(av_rescale_q(offset.count(), offsetTimebase, stream->time_base));
+        if (stream->start_time != AV_NOPTS_VALUE)
+            _seekTargetTimestamp += stream->start_time;
+
+        _startTrimPending = true;
+
+        // Samples buffered in the resampler come from before the target
+        ::swr_close(_resampleContext.get());
+        if (const int initErr{ ::swr_init(_resampleContext.get()) }; initErr < 0)
+            throw FFmpegException{ "Cannot initialize resampler", initErr };
+
+        if (const auto container{ utils::containerFromDemuxerName(_context->iformat->name) }; container && !isSeekingSupported(*container))
+            return;
+
+        // After a flush, decoders need the packets before the target to rebuild their state (MP3 bit reservoir, MDCT overlap, Opus pre-roll):
+        // seeking a bit earlier lets the trim drop these samples. Rounding down keeps the seek before the target
+        constexpr std::chrono::milliseconds seekPreroll{ 200 };
+        const std::int64_t startTime{ stream->start_time != AV_NOPTS_VALUE ? stream->start_time : 0 };
+        const std::int64_t prerollTimestamp{ std::max(startTime, _seekTargetTimestamp - ::av_rescale_q(seekPreroll.count(), AVRational{ 1, 1'000 }, stream->time_base)) };
+        const std::int64_t seekTimestamp{ ::av_rescale_q_rnd(prerollTimestamp, stream->time_base, _context->streams[_seekStreamIndex]->time_base, AV_ROUND_DOWN) };
+        const int seekError{ ::av_seek_frame(_context.get(), _seekStreamIndex, seekTimestamp, AVSEEK_FLAG_BACKWARD) };
+        if (seekError < 0)
+        {
+            LMS_LOG(AUDIO, WARNING, "Failed to seek to offset in " << _filePath << ": " << utils::averrorToString(seekError));
+            return;
+        }
+
+        // Everything read so far belongs to the previous position, including a packet left pending by EAGAIN
+        ::avcodec_flush_buffers(_decoderContext.get());
+        ::av_packet_unref(_inputPacket.get());
+        _eof = false;
+        _draining = false;
+        _finished = false;
     }
 
     std::chrono::milliseconds AudioDecoder::getEstimatedDuration() const
@@ -332,25 +387,41 @@ namespace lms::audio::ffmpeg
 
     void AudioDecoder::sendPendingPacket()
     {
-        int sendError{ ::avcodec_send_packet(_decoderContext.get(), _inputPacket.get()) };
+        _lastSentPacketPts = _inputPacket->pts;
+        _lastSentPacketBytePosition = _inputPacket->pos;
+
+        const int sendError{ ::avcodec_send_packet(_decoderContext.get(), _inputPacket.get()) };
         if (sendError == AVERROR(EAGAIN))
             return; // On EAGAIN, leaves _inputPacket referenced: feedDecoder() retries it on the next call
 
         ::av_packet_unref(_inputPacket.get());
         if (sendError == AVERROR_INVALIDDATA)
-        {
-            // we may be close to the end of the file, abort gracefully *only* if next packet is EOF
-            const int peekError{ ::av_read_frame(_context.get(), _inputPacket.get()) };
-            ::av_packet_unref(_inputPacket.get());
-            if (peekError == AVERROR_EOF)
-            {
-                LMS_LOG(AUDIO, DEBUG, "Invalid data in packet at end of file");
-                _eof = true;
-                sendError = 0;
-            }
-        }
-        if (sendError < 0)
+            skipInvalidPacket(sendError);
+        else if (sendError < 0)
             throw FFmpegException{ "avcodec_send_packet failed", sendError };
+    }
+
+    void AudioDecoder::skipInvalidPacket(int error)
+    {
+        ++_skippedPacketCount;
+        LMS_LOG(AUDIO, DEBUG, "Skipping invalid packet at " << describeLastSentPacketPosition() << " in " << _filePath << ": " << utils::averrorToString(error));
+    }
+
+    std::string AudioDecoder::describeLastSentPacketPosition() const
+    {
+        std::string res;
+
+        if (_lastSentPacketPts != AV_NOPTS_VALUE)
+        {
+            const AVStream* stream{ _context->streams[_inputStreamIndex] };
+            const std::int64_t startTime{ stream->start_time != AV_NOPTS_VALUE ? stream->start_time : 0 };
+            res = std::format("{:.3f} s", static_cast<double>(_lastSentPacketPts - startTime) * ::av_q2d(stream->time_base));
+        }
+
+        if (_lastSentPacketBytePosition >= 0)
+            res += std::format("{}byte {}", res.empty() ? "" : ", ", _lastSentPacketBytePosition);
+
+        return res.empty() ? "unknown position" : res;
     }
 
     void AudioDecoder::feedDecoder()
@@ -368,8 +439,10 @@ namespace lms::audio::ffmpeg
         if (readError == AVERROR_EOF)
         {
             _eof = true;
-            // flush decoder
-            ::avcodec_send_packet(_decoderContext.get(), nullptr);
+            // Flushing may report the decode error of the last buffered packet
+            const int flushError{ ::avcodec_send_packet(_decoderContext.get(), nullptr) };
+            if (flushError == AVERROR_INVALIDDATA)
+                skipInvalidPacket(flushError);
         }
         else if (readError < 0)
         {
@@ -381,6 +454,7 @@ namespace lms::audio::ffmpeg
         }
         else
         {
+            // discarded streams can actually still show up
             ::av_packet_unref(_inputPacket.get());
         }
     }

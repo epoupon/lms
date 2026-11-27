@@ -20,13 +20,15 @@
 #pragma once
 
 #include <memory>
+#include <string_view>
 
 #include "core/ScopedTmpDirectory.hpp"
 
 namespace lms::db
 {
     class IDb;
-}
+    class ISession;
+} // namespace lms::db
 
 // No test framework dependency: also used by benchmarks, which are built without tests
 namespace lms::db::tests
@@ -42,9 +44,18 @@ namespace lms::db::tests
 
         IDb& getDb() { return *_db; }
 
+        // Unlike IDb::prepare, leaves all the tables empty
+        void createTablesAndIndexes();
+
     private:
         // Declared first: the database must be closed before its directory is removed
         core::ScopedTmpDirectory _directory;
         std::unique_ptr<IDb> _db;
     };
+
+    // The caller must hold a write transaction
+    void executeStatement(ISession& session, std::string_view statement);
+
+    // The caller must hold a read transaction
+    bool areAllTablesEmpty(ISession& session);
 } // namespace lms::db::tests

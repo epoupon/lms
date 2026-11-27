@@ -19,7 +19,9 @@
 
 #include "Podcast.hpp"
 
-#include "database/Session.hpp"
+#include "core/Service.hpp"
+
+#include "database/ISession.hpp"
 #include "database/objects/Podcast.hpp"
 #include "database/objects/PodcastEpisode.hpp"
 #include "services/podcast/IPodcastService.hpp"
@@ -43,17 +45,17 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        auto processPodcast{ [&](const db::Podcast::pointer& podcast) {
+        auto processPodcast{ [&](const db::Podcast& podcast) {
             podcastsNode.addArrayChild("channel", createPodcastNode(context, podcast, includeEpisodes));
         } };
 
         if (podcastId.has_value())
         {
-            db::Podcast::pointer podcast{ db::Podcast::find(context.getDbSession(), podcastId.value()) };
+            std::optional<db::Podcast> podcast{ db::Podcast::find(context.getDbSession(), podcastId.value()) };
             if (!podcast)
                 throw RequestedDataNotFoundError{};
 
-            processPodcast(podcast);
+            processPodcast(*podcast);
         }
         else
             db::Podcast::find(context.getDbSession(), processPodcast);
@@ -76,7 +78,7 @@ namespace lms::api::subsonic
             db::PodcastEpisode::FindParameters findParameters;
             findParameters.setRange(db::Range{ .offset = 0, .size = count });
 
-            db::PodcastEpisode::find(context.getDbSession(), findParameters, [&](const db::PodcastEpisode::pointer& episode) {
+            db::PodcastEpisode::find(context.getDbSession(), findParameters, [&](const db::PodcastEpisode& episode) {
                 newestPodcastsNode.addArrayChild("episode", createPodcastEpisodeNode(episode));
             });
         }
@@ -147,11 +149,11 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(context.getDbSession(), episodeId) };
+        const std::optional<db::PodcastEpisode> episode{ db::PodcastEpisode::find(context.getDbSession(), episodeId) };
         if (!episode)
             throw RequestedDataNotFoundError{};
 
-        response.addNode("podcastEpisode", createPodcastEpisodeNode(episode));
+        response.addNode("podcastEpisode", createPodcastEpisodeNode(*episode));
 
         return response;
     }

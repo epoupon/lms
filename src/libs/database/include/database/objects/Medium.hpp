@@ -21,33 +21,29 @@
 
 #include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
-
 #include "database/IdRange.hpp"
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/MediumId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/Types.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artwork;
-    class Release;
-    class Session;
-    class Track;
+    class ISession;
 
-    class Medium final : public Object<Medium, MediumId>
+    class Medium : public detail::Object<Medium, MediumId>
     {
     public:
         static const std::size_t maxMediaLength{ 64 };
 
-        Medium() = default;
+        static Medium create(ISession& session, ReleaseId release);
+        static void destroy(ISession& session, std::span<const MediumId> ids);
 
         // find
         struct FindParameters
@@ -73,15 +69,17 @@ namespace lms::db
             }
         };
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, MediumId id);
-        static pointer find(Session& session, ReleaseId id, std::optional<std::size_t> position);
-        static void find(Session& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium::pointer&)>& func);
-        static IdRange<MediumId> findNextIdRange(Session& session, MediumId lastRetrievedId, std::size_t count);
-        static std::vector<MediumId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(ISession& session);
+        static std::optional<Medium> find(ISession& session, MediumId id);
+        static std::optional<Medium> find(ISession& session, ReleaseId id, std::optional<std::size_t> position);
+        static void find(ISession& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium&)>& func);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Medium&)>& func);
+        static IdRange<MediumId> findNextIdRange(ISession& session, MediumId lastRetrievedId, std::size_t count);
+        static std::vector<MediumId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt);
 
         // Updates
-        static void updatePreferredArtwork(Session& session, MediumId mediumId, ArtworkId artworkId);
+        static void update(ISession& session, const Medium& medium);
+        static void updatePreferredArtwork(ISession& session, MediumId mediumId, ArtworkId artworkId);
 
         // getters
         std::string_view getName() const { return _name; }
@@ -89,10 +87,8 @@ namespace lms::db
         std::optional<std::size_t> getTrackCount() const { return _trackCount; } // not necessarily the number of tracks in the medium, but the number of tracks that should be in the medium
         std::string_view getMedia() const { return _media; }
         std::optional<float> getReplayGain() const { return _replayGain; }
-        ReleaseId getReleaseId() const { return _release.id(); }
-        ObjectPtr<Release> getRelease() const { return _release; }
-        ObjectPtr<Artwork> getPreferredArtwork() const { return _preferredArtwork; }
-        ArtworkId getPreferredArtworkId() const { return _preferredArtwork.id(); }
+        ReleaseId getReleaseId() const { return _releaseId; }
+        ArtworkId getPreferredArtworkId() const { return _preferredArtworkId; }
 
         // setters
         void setName(std::string_view name) { _name = name; }
@@ -101,24 +97,8 @@ namespace lms::db
         void setMedia(std::string_view media) { _media = media; }
         void setReplayGain(std::optional<float> replayGain) { _replayGain = replayGain; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _position, "position");
-            Wt::Dbo::field(a, _trackCount, "track_count");
-            Wt::Dbo::field(a, _media, "media");
-            Wt::Dbo::field(a, _replayGain, "replay_gain");
-
-            Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "medium");
-        }
-
-    private:
-        friend class Session;
-        Medium(ObjectPtr<Release> release);
-        static pointer create(Session& session, ObjectPtr<Release> release);
+    protected:
+        Medium() = default;
 
         std::string _name;
         std::optional<int> _position; // position in the release
@@ -126,8 +106,7 @@ namespace lms::db
         std::string _media; // CD, etc.
         std::optional<float> _replayGain;
 
-        Wt::Dbo::ptr<Release> _release;
-        Wt::Dbo::ptr<Artwork> _preferredArtwork;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks; // tracks that match this medium
+        ReleaseId _releaseId;
+        ArtworkId _preferredArtworkId;
     };
 } // namespace lms::db

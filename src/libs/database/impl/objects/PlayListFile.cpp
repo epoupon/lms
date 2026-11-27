@@ -25,24 +25,21 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "database/Session.hpp"
-#include "database/objects/Artwork.hpp"
-#include "database/objects/Directory.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/MediaLibrary.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/TrackList.hpp"
-#include "database/objects/User.hpp"
-
+#include "ArtworkDbo.hpp"
+#include "DboAccess.hpp"
+#include "DirectoryDbo.hpp"
+#include "MediaLibraryDbo.hpp"
+#include "PlayListFileDbo.hpp"
+#include "Session.hpp"
+#include "TrackDbo.hpp"
+#include "TrackListDbo.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::PlayListFile)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::PlayListFile)
 
 namespace lms::db
 {
@@ -51,42 +48,47 @@ namespace lms::db
         setAbsoluteFilePath(file);
     }
 
-    PlayListFile::pointer PlayListFile::create(Session& session, const std::filesystem::path& file)
+    PlayListFile PlayListFile::create(ISession& session, const std::filesystem::path& file)
     {
-        return session.getDboSession()->add(std::unique_ptr<PlayListFile>{ new PlayListFile{ file } });
+        return utils::addObject(session, std::unique_ptr<dbo::PlayListFile>{ new dbo::PlayListFile{ file } });
     }
 
-    std::size_t PlayListFile::getCount(Session& session)
+    void PlayListFile::destroy(ISession& session, std::span<const PlayListFileId> ids)
     {
-        session.checkReadTransaction();
-
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM playlist_file"));
+        utils::destroyObjects<dbo::PlayListFile>(session, ids);
     }
 
-    PlayListFile::pointer PlayListFile::find(Session& session, const std::filesystem::path& p)
+    std::size_t PlayListFile::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<PlayListFile>>("SELECT pl_f from playlist_file pl_f").where("pl_f.absolute_file_path = ?").bind(p));
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM playlist_file"));
     }
 
-    void PlayListFile::find(Session& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func)
+    std::optional<PlayListFile> PlayListFile::find(ISession& session, const std::filesystem::path& p)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<PlayListFile>>("SELECT pl_f from playlist_file pl_f").orderBy("pl_f.id").where("pl_f.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayListFile>>("SELECT pl_f from playlist_file pl_f").where("pl_f.absolute_file_path = ?").bind(p));
+    }
 
-        utils::forEachQueryResult(query, [&](const PlayListFile::pointer& playList) {
+    void PlayListFile::find(ISession& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(const PlayListFile&)>& func)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayListFile>>("SELECT pl_f from playlist_file pl_f").orderBy("pl_f.id").where("pl_f.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+
+        utils::forEachQueryObject(query, [&](const PlayListFile& playList) {
             func(playList);
-            lastRetrievedId = playList->getId();
+            lastRetrievedId = playList.getId();
         });
     }
 
-    void PlayListFile::findAbsoluteFilePath(Session& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(PlayListFileId playListFileId, const std::filesystem::path& absoluteFilePath)>& func)
+    void PlayListFile::findAbsoluteFilePath(ISession& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(PlayListFileId playListFileId, const std::filesystem::path& absoluteFilePath)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<std::tuple<PlayListFileId, std::filesystem::path>>("SELECT pl_f.id, pl_f.absolute_file_path FROM playlist_file pl_f").orderBy("pl_f.id").where("pl_f.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+        auto query{ getDboSession(session)->query<std::tuple<PlayListFileId, std::filesystem::path>>("SELECT pl_f.id, pl_f.absolute_file_path FROM playlist_file pl_f").orderBy("pl_f.id").where("pl_f.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
         utils::forEachQueryResult(query, [&](const auto& res) {
             func(std::get<0>(res), std::get<1>(res));
@@ -94,20 +96,22 @@ namespace lms::db
         });
     }
 
-    void PlayListFile::find(Session& session, const IdRange<PlayListFileId>& idRange, const std::function<void(const PlayListFile::pointer&)>& func)
+    void PlayListFile::find(ISession& session, const IdRange<PlayListFileId>& idRange, const std::function<void(const PlayListFile&)>& func)
     {
+        checkReadTransaction(session);
+
         assert(idRange.isValid());
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<PlayListFile>>("SELECT pl_f from playlist_file pl_f").orderBy("pl_f.id").where("pl_f.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayListFile>>("SELECT pl_f from playlist_file pl_f").orderBy("pl_f.id").where("pl_f.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
 
-        utils::forEachQueryResult(query, [&](const PlayListFile::pointer& release) {
-            func(release);
-        });
+        utils::forEachQueryObject(query, func);
     }
 
-    IdRange<PlayListFileId> PlayListFile::findNextIdRange(Session& session, PlayListFileId lastRetrievedId, std::size_t count)
+    IdRange<PlayListFileId> PlayListFile::findNextIdRange(ISession& session, PlayListFileId lastRetrievedId, std::size_t count)
     {
-        auto query{ session.getDboSession()->query<std::tuple<PlayListFileId, PlayListFileId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT pl_f.id FROM playlist_file pl_f WHERE pl_f.id > ? ORDER BY pl_f.id LIMIT ?) sub") };
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<std::tuple<PlayListFileId, PlayListFileId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT pl_f.id FROM playlist_file pl_f WHERE pl_f.id > ? ORDER BY pl_f.id LIMIT ?) sub") };
         query.bind(lastRetrievedId);
         query.bind(static_cast<int>(count));
 
@@ -115,11 +119,14 @@ namespace lms::db
         return IdRange<PlayListFileId>{ .first = std::get<0>(res), .last = std::get<1>(res) };
     }
 
-    PlayListFile::pointer PlayListFile::find(Session& session, PlayListFileId id)
+    std::optional<PlayListFile> PlayListFile::find(ISession& session, PlayListFileId id)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<PlayListFile>>("SELECT pl_f from playlist_file pl_f").where("pl_f.id = ?").bind(id));
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->query<Wt::Dbo::ptr<dbo::PlayListFile>>("SELECT pl_f from playlist_file pl_f").where("pl_f.id = ?").bind(id));
     }
 
     std::vector<std::filesystem::path> PlayListFile::getFiles() const
@@ -144,31 +151,11 @@ namespace lms::db
         return files;
     }
 
-    TrackList::pointer PlayListFile::getTrackList() const
-    {
-        return _trackList.lock();
-    }
-
-    Directory::pointer PlayListFile::getDirectory() const
-    {
-        return _directory;
-    }
-
     void PlayListFile::setAbsoluteFilePath(const std::filesystem::path& filePath)
     {
         assert(filePath.is_absolute());
         _absoluteFilePath = filePath;
         _fileStem = filePath.stem();
-    }
-
-    void PlayListFile::setDirectory(ObjectPtr<Directory> directory)
-    {
-        _directory = getDboPtr(directory);
-    }
-
-    void PlayListFile::setTrackList(ObjectPtr<TrackList> trackList)
-    {
-        _trackList = getDboPtr(trackList);
     }
 
     void PlayListFile::setName(std::string_view name)
@@ -194,13 +181,20 @@ namespace lms::db
         _coverImageFile = file;
     }
 
-    void PlayListFile::updatePreferredArtwork(Session& session, PlayListFileId id, ArtworkId artworkId)
+    void PlayListFile::updatePreferredArtwork(ISession& session, PlayListFileId id, ArtworkId artworkId)
     {
-        session.checkWriteTransaction();
+        dbo::PlayListFile& playListFile{ utils::modifyObject<dbo::PlayListFile>(session, id) };
+        setRelation(*getDboSession(session), playListFile._preferredArtwork, artworkId);
+    }
 
-        if (artworkId.isValid())
-            utils::executeCommand(*session.getDboSession(), "UPDATE playlist_file SET preferred_artwork_id = ? WHERE id = ?", artworkId, id);
-        else
-            utils::executeCommand(*session.getDboSession(), "UPDATE playlist_file SET preferred_artwork_id = NULL WHERE id = ?", id);
+    void dbo::PlayListFile::applyIds()
+    {
+        setRelation(*session(), _mediaLibrary, _mediaLibraryId);
+        setRelation(*session(), _directory, _directoryId);
+    }
+
+    void PlayListFile::update(ISession& session, const PlayListFile& playListFile)
+    {
+        utils::updateObject<dbo::PlayListFile>(session, playListFile);
     }
 } // namespace lms::db

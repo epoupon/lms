@@ -265,7 +265,13 @@ namespace lms::db
     enum class TrackListType
     {
         PlayList = 0, // user controlled playlists
-        Internal = 1, // internal usage (current playqueue, history, ...)
+        Internal = 1, // the tracks of a play queue
+    };
+
+    enum class PlayQueueType
+    {
+        UI = 0,
+        Subsonic = 1,
     };
 
     enum class Advisory

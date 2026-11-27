@@ -34,7 +34,7 @@ namespace lms::db::tests
             EXPECT_EQ(AuthToken::getCount(session), 0);
         }
 
-        ScopedAuthToken token{ session, "myDomain", "foo", Wt::WDateTime{}, std::nullopt, user.lockAndGet() };
+        ScopedAuthToken token{ session, "myDomain", "foo", Wt::WDateTime{}, std::nullopt, user.getId() };
 
         {
             auto transaction{ session.createReadTransaction() };

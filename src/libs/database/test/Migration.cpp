@@ -17,7 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Common.hpp"
+#include <functional>
+#include <map>
 
 #include "core/String.hpp"
 #include "core/UUID.hpp"
@@ -52,19 +53,37 @@
 #include "database/objects/UIState.hpp"
 #include "database/objects/User.hpp"
 
+#include "Common.hpp"
+#include "Migration.hpp"
+#include "Session.hpp"
+#include "Utils.hpp"
+
 namespace lms::db::tests
 {
     namespace
     {
-        void executeStatements(db::Session& session, std::string_view statements)
+        void executeStatements(db::ISession& session, std::string_view statements)
         {
             for (std::string_view statement : core::stringUtils::splitString(statements, ';'))
             {
                 statement = core::stringUtils::stringTrim(statement, " \t\r\n");
                 if (!statement.empty())
-                    session.execute(statement);
+                    executeStatement(session, statement);
             }
         }
+
+        template<typename T>
+        T querySingleValue(db::ISession& session, std::string_view query)
+        {
+            return utils::fetchQuerySingleResult(getDboSession(session)->query<T>(std::string{ query }));
+        }
+
+        // Each side is written against the schema of its own version, as the code only maps the latest schema
+        struct MigrationStepTest
+        {
+            std::string_view statementsBefore;
+            std::function<void(db::ISession&)> checksAfter; // raw SQL only
+        };
     } // namespace
 
     TEST(Database, migration)
@@ -298,7 +317,8 @@ CREATE INDEX starred_track_user_scrobbler_idx ON starred_track(user_id,scrobbler
 -- Inserting artists (Artist A has a valid UUID MBID to verify round-trip through migration)
 INSERT INTO artist (version, name, sort_name, mbid) VALUES
 (1, 'Artist A', 'Artist A', '550e8400-e29b-41d4-a716-446655440000'),
-(2, 'Artist B', 'Artist B', 'mbid_artist_b');
+(2, 'Artist B', 'Artist B', 'mbid_artist_b'),
+(3, 'Björk', 'Björk', 'mbid_artist_bjork');
 
 -- Inserting releases (Release X has a valid UUID MBID to verify round-trip through migration)
 INSERT INTO release (version, name, mbid) VALUES
@@ -367,22 +387,71 @@ VALUES
 (1, 0, '2024-05-08T12:00:00', 1, 1),
 (1, 1, '2024-05-08T12:00:00', 1, 1);)" };
 
-        Session session{ db };
+        const std::unique_ptr<ISession> ownedSession{ db.createSession() };
+        ISession& session{ *ownedSession };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
             executeStatements(session, schemaV33);
-            session.execute("INSERT INTO version_info (version, db_version) VALUES (1, 33)");
+            executeStatement(session, "INSERT INTO version_info (version, db_version) VALUES (1, 33)");
 
             // Insert some base data
             executeStatements(session, createDummyData);
         }
 
-        // Now perform full migration
-        db.getTLSSession().migrateSchemaIfNeeded();
-        db.getTLSSession().createScanSettingsIfNeeded();
-        db.getTLSSession().createServerInfoIfNeeded();
+        // Key = version the step migrates from
+        const std::map<Version, MigrationStepTest> migrationStepTests{
+            { 119,
+              { .statementsBefore = R"(
+-- Track 1 linked to two mbid-less works with the same name (#905), track 2 to a same-name work of its own
+INSERT INTO work (id, version, name, mbid) VALUES
+(1, 1, 'Work', NULL),
+(2, 1, 'Work', NULL),
+(3, 1, 'Work', NULL);
+INSERT INTO track_work (work_id, track_id) VALUES
+(1, 1),
+(2, 1),
+(3, 2);
+)",
+                .checksAfter = [](db::ISession& session) {
+                    // duplicated works are removed along with their links, their track is marked for rescan
+                    EXPECT_EQ(querySingleValue<int>(session, "SELECT COUNT(*) FROM work WHERE id IN (1, 2)"), 0);
+                    EXPECT_EQ(querySingleValue<int>(session, "SELECT COUNT(*) FROM track_work WHERE track_id = 1"), 0);
+                    EXPECT_EQ(querySingleValue<int>(session, "SELECT scan_version FROM track WHERE id = 1"), -1);
+
+                    EXPECT_EQ(querySingleValue<int>(session, "SELECT COUNT(*) FROM track_work WHERE track_id = 2 AND work_id = 3"), 1);
+                    EXPECT_EQ(querySingleValue<int>(session, "SELECT scan_version FROM track WHERE id = 2"), 1);
+                } } },
+        };
+
+        // Now perform full migration, step by step
+        Session& migrationSession{ static_cast<Session&>(session) };
+        while (true)
+        {
+            Version version{};
+            {
+                auto transaction{ session.createReadTransaction() };
+                version = VersionInfo::get(migrationSession)->getVersion();
+            }
+
+            const auto itStepTest{ migrationStepTests.find(version) };
+            if (itStepTest != std::cend(migrationStepTests))
+            {
+                auto transaction{ session.createWriteTransaction() };
+                executeStatements(session, itStepTest->second.statementsBefore);
+            }
+
+            if (!migration::doDbMigrationStep(migrationSession))
+                break;
+
+            if (itStepTest != std::cend(migrationStepTests))
+            {
+                auto transaction{ session.createReadTransaction() };
+                itStepTest->second.checksAfter(session);
+            }
+        }
+        db.prepare(RecommendationEngineType::Clusters);
 
         // Now perform some dummy finds to ensure all fields are correctly mapped
         {
@@ -431,6 +500,9 @@ VALUES
             // migrateFromV112: sort names are no longer synthesized from the display name, existing ones are cleared
             EXPECT_TRUE(artist->getSortName().empty());
 
+            // migrateFromV118: existing names are folded
+            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "bjork" })).size(), 1);
+
             const auto releaseMBID{ core::UUID::fromString("6ba7b810-9dad-11d1-80b4-00c04fd430c8") };
             ASSERT_TRUE(releaseMBID);
             const auto release{ Release::find(session, *releaseMBID) };
@@ -451,14 +523,14 @@ VALUES
             // migrateFromV110: the two rows sharing (user, track, date_time) across Internal/ListenBrainz collapse into
             // one canonical listen (Internal dropped, since it's implicit) + one ListenBackendSync row; the third row
             // (different date_time) stays a separate canonical listen with its own delivery row
-            const auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(myUser->getId())) };
+            const auto listens{ Listen::findIds(session, Listen::FindParameters{}.setUser(myUser->getId())) };
             ASSERT_EQ(listens.size(), 2);
             EXPECT_EQ(ListenBackendSync::getCount(session), 2);
 
             for (const ListenId listenId : listens)
             {
-                const Listen::pointer listen{ Listen::find(session, listenId) };
-                const ListenBackendSync::pointer sync{ ListenBackendSync::find(session, listenId, ScrobblingBackend::ListenBrainz) };
+                const std::optional<Listen> listen{ Listen::find(session, listenId) };
+                const std::optional<ListenBackendSync> sync{ ListenBackendSync::find(session, listenId, ScrobblingBackend::ListenBrainz) };
                 ASSERT_TRUE(sync);
 
                 if (listen->getDateTime() == Wt::WDateTime{ Wt::WDate{ 2024, 5, 8 }, Wt::WTime{ 12, 0, 0 } })

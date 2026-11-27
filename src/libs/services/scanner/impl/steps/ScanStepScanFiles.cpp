@@ -27,7 +27,7 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "scanners/FileToScan.hpp"
 #include "scanners/IFileScanOperation.hpp"
 #include "scanners/IFileScanner.hpp"
@@ -274,7 +274,7 @@ namespace lms::scanner
 
         while ((forceBatch && scanOperations.size() >= writeBatchSize) || !scanOperations.empty())
         {
-            db::Session& dbSession{ _db.getTLSSession() };
+            db::ISession& dbSession{ _db.getTLSSession() };
             auto transaction{ dbSession.createWriteTransaction() };
 
             for (std::size_t i{}; !scanOperations.empty() && i < writeBatchSize; ++i)

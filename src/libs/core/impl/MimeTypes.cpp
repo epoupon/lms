@@ -21,7 +21,7 @@
 
 #include <unordered_map>
 
-#include "core/String.hpp"
+#include "core/Ascii.hpp"
 
 namespace lms::core
 {
@@ -70,7 +70,7 @@ namespace lms::core
             { ".webp", "image/webp" },
         };
 
-        auto it{ entries.find(core::stringUtils::stringToLower(fileExtension.c_str())) };
+        auto it{ entries.find(core::ascii::toLower(fileExtension.c_str())) };
         if (it == std::cend(entries))
             return "application/octet-stream";
 

@@ -21,7 +21,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 
 namespace lms::auth
@@ -35,9 +35,9 @@ namespace lms::auth
 
     UserId AuthServiceBase::getOrCreateUser(std::string_view loginName)
     {
-        Session& session{ getDbSession() };
+        ISession& session{ getDbSession() };
 
-        User::pointer user;
+        std::optional<User> user;
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -55,8 +55,9 @@ namespace lms::auth
 
                 LMS_LOG(AUTH, DEBUG, "Creating user '" << loginName << "', admin = " << (type == UserType::ADMIN));
 
-                user = session.create<User>(loginName);
-                user.modify()->setType(type);
+                user = User::create(session, loginName);
+                user->setType(type);
+                User::update(session, *user);
             }
         }
 
@@ -65,13 +66,13 @@ namespace lms::auth
 
     void AuthServiceBase::onUserAuthenticated(UserId userId)
     {
-        Session& session{ getDbSession() };
+        ISession& session{ getDbSession() };
 
         // Update last login only if relevant (avoid hammering write accesses to the database)
         {
             auto transaction{ session.createReadTransaction() };
 
-            const User::pointer user{ User::find(session, userId) };
+            const std::optional<User> user{ User::find(session, userId) };
             if (!user)
                 return;
 
@@ -82,12 +83,15 @@ namespace lms::auth
         {
             auto transaction{ session.createWriteTransaction() };
 
-            if (User::pointer user{ User::find(session, userId) })
-                user.modify()->setLastLogin(Wt::WDateTime::currentDateTime());
+            if (std::optional<User> user{ User::find(session, userId) })
+            {
+                user->setLastLogin(Wt::WDateTime::currentDateTime());
+                User::update(session, *user);
+            }
         }
     }
 
-    Session& AuthServiceBase::getDbSession()
+    ISession& AuthServiceBase::getDbSession()
     {
         return _db.getTLSSession();
     }

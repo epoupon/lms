@@ -20,27 +20,27 @@
 #pragma once
 
 #include <optional>
+#include <span>
 
-#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/RatedArtistId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artist;
-    class Session;
+    class ISession;
     class User;
 
-    class RatedArtist final : public Object<RatedArtist, RatedArtistId>
+    class RatedArtist : public detail::Object<RatedArtist, RatedArtistId>
     {
     public:
-        RatedArtist() = default;
+        static RatedArtist create(ISession& session, ArtistId artist, UserId user);
+        static void destroy(ISession& session, std::span<const RatedArtistId> ids);
 
         struct FindParameters
         {
@@ -60,14 +60,16 @@ namespace lms::db
         };
 
         // Search utility
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, RatedArtistId id);
-        static pointer find(Session& session, ArtistId artistId, UserId userId);
-        static void find(Session& session, const FindParameters& findParams, std::function<void(const pointer&)> func);
+        static std::size_t getCount(ISession& session);
+        static std::optional<RatedArtist> find(ISession& session, RatedArtistId id);
+        static std::optional<RatedArtist> find(ISession& session, ArtistId artistId, UserId userId);
+        static void find(ISession& session, const FindParameters& findParams, const std::function<void(const RatedArtist&)>& func);
+
+        static void update(ISession& session, const RatedArtist& ratedArtist);
 
         // Accessors
-        ObjectPtr<Artist> getArtist() const { return _artist; }
-        ObjectPtr<User> getUser() const { return _user; }
+        ArtistId getArtistId() const { return _artistId; }
+        UserId getUserId() const { return _userId; }
         Rating getRating() const { return _rating; }
         const Wt::WDateTime& getLastUpdated() const { return _lastUpdated; }
 
@@ -75,25 +77,12 @@ namespace lms::db
         void setRating(Rating rating) { _rating = rating; }
         void setLastUpdated(const Wt::WDateTime& lastUpdated);
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _rating, "rating");
-            Wt::Dbo::field(a, _lastUpdated, "last_updated");
-
-            Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        RatedArtist(ObjectPtr<Artist> artist, ObjectPtr<User> user);
-        static pointer create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user);
+    protected:
+        RatedArtist() = default;
 
         Rating _rating{};
         Wt::WDateTime _lastUpdated; // when it was rated for the last time
-
-        Wt::Dbo::ptr<Artist> _artist;
-        Wt::Dbo::ptr<User> _user;
+        ArtistId _artistId;
+        UserId _userId;
     };
 } // namespace lms::db

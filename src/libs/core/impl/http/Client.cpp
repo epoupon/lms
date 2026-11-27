@@ -18,7 +18,6 @@
  */
 
 #include "Client.hpp"
-#include "core/Exception.hpp"
 
 namespace lms::core::http
 {

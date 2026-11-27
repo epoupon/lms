@@ -20,36 +20,34 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "core/UUID.hpp"
 
 #include "database/IdRange.hpp"
-#include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/ArtworkId.hpp"
 #include "database/objects/FilterExpr.hpp"
 #include "database/objects/MediaLibraryId.hpp"
+#include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Artwork;
-    class Release;
-    class Session;
+    class ISession;
     class Track;
     class User;
 
-    class Artist final : public Object<Artist, ArtistId>
+    class Artist : public detail::Object<Artist, ArtistId>
     {
     public:
         static constexpr std::size_t maxNameLength{ 512 };
@@ -65,7 +63,8 @@ namespace lms::db
             std::optional<Range> range;
             UserId feedbackUser;                        // if valid, only artists that have feedback from this user
             std::optional<FeedbackValue> feedbackValue; // if set, only artists with feedback matching this value (any user, unless feedbackUser is also set)
-            TrackId track;                              // artists involved in this track
+            TrackId track;                              // artists involved in this track, in tag order unless sorted
+            ReleaseId release;                          // artists involved in this release, in tag order unless sorted: requires either releaseArtistsOnly or trackArtistLinkType
 
             FindParameters& setFilter(std::optional<FilterExpr> _filter, UserId _user = {})
             {
@@ -108,6 +107,11 @@ namespace lms::db
                 feedbackValue = _value;
                 return *this;
             }
+            FindParameters& setRelease(ReleaseId _release)
+            {
+                release = _release;
+                return *this;
+            }
             FindParameters& setTrack(TrackId _track)
             {
                 track = _track;
@@ -115,60 +119,50 @@ namespace lms::db
             }
         };
 
-        Artist() = default;
+        static Artist create(ISession& session, const std::string& name, const std::optional<core::UUID>& mbid = std::nullopt);
+        static void destroy(ISession& session, std::span<const ArtistId> ids);
 
         // Accessors
-        static std::size_t getCount(Session& session);
-        static std::size_t getCount(Session& session, const FindParameters& params);
-        static pointer find(Session& session, const core::UUID& MBID);
-        static pointer find(Session& session, ArtistId id);
-        static std::vector<pointer> find(Session& session, std::string_view name); // exact match on name field
-        static void find(Session& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist::pointer&)>& func, MediaLibraryId library = {});
-        static void find(Session& session, const IdRange<ArtistId>& idRange, const std::function<void(const Artist::pointer&)>& func);
-        static std::vector<pointer> find(Session& session, const FindParameters& params);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
-        static IdRange<ArtistId> findNextIdRange(Session& session, ArtistId lastRetrievedId, std::size_t count);
-        static std::vector<ArtistId> findIds(Session& session, const FindParameters& params);
-        static std::vector<ArtistId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // No track related
-        static bool exists(Session& session, ArtistId id);
-        static void findNameUpdates(Session& session, const std::function<void(const pointer& artist, std::string_view newName, std::string_view newSortName)>& func);
+        static std::size_t getCount(ISession& session);
+        static std::size_t getCount(ISession& session, const FindParameters& params);
+        static std::optional<Artist> find(ISession& session, const core::UUID& MBID);
+        static std::optional<Artist> find(ISession& session, ArtistId id);
+        static std::vector<Artist> find(ISession& session, std::string_view name); // exact match on name field
+        static void find(ISession& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist&)>& func, MediaLibraryId library = {});
+        static void find(ISession& session, const IdRange<ArtistId>& idRange, const std::function<void(const Artist&)>& func);
+        static std::vector<Artist> find(ISession& session, const FindParameters& params);
+        static void find(ISession& session, const FindParameters& params, const std::function<void(const Artist&)>& func);
+        static IdRange<ArtistId> findNextIdRange(ISession& session, ArtistId lastRetrievedId, std::size_t count);
+        static std::vector<ArtistId> findIds(ISession& session, const FindParameters& params);
+        static std::vector<ArtistId> findOrphanIds(ISession& session, std::optional<Range> range = std::nullopt); // No track related
+        static bool exists(ISession& session, ArtistId id);
+        static void findNameUpdates(ISession& session, const std::function<void(const Artist& artist, std::string_view newName, std::string_view newSortName)>& func);
 
         // Updates
-        static void updatePreferredArtwork(Session& session, ArtistId artistId, ArtworkId artworkId);
+        static void update(ISession& session, const Artist& artist);
+        static void updatePreferredArtwork(ISession& session, ArtistId artistId, ArtworkId artworkId);
 
         // Accessors
         const std::string& getName() const { return _name; }
         const std::string& getSortName() const { return _sortName; }
         std::optional<core::UUID> getMBID() const { return _mbid; }
         bool hasMBID() const { return _mbid.has_value(); }
-        ObjectPtr<Artwork> getPreferredArtwork() const;
-        ArtworkId getPreferredArtworkId() const;
+        ArtworkId getPreferredArtworkId() const { return _preferredArtworkId; }
 
         void setName(std::string_view name);
         void setMBID(const std::optional<core::UUID>& mbid) { _mbid = mbid; }
         void setSortName(std::string_view sortName);
-        void setPreferredArtwork(ObjectPtr<Artwork> artwork);
+        void setPreferredArtwork(ArtworkId artwork) { _preferredArtworkId = artwork; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _sortName, "sort_name");
-            Wt::Dbo::field(a, _mbid, "mbid");
-
-            Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
-        }
-
-    private:
-        friend class Session;
+    protected:
+        Artist() = default;
         // Create
         Artist(const std::string& name, const std::optional<core::UUID>& MBID = {});
-        static pointer create(Session& session, const std::string& name, const std::optional<core::UUID>& mbid = std::nullopt);
 
         std::string _name;
         std::string _sortName;
         std::optional<core::UUID> _mbid;
 
-        Wt::Dbo::ptr<Artwork> _preferredArtwork;
+        ArtworkId _preferredArtworkId;
     };
 } // namespace lms::db

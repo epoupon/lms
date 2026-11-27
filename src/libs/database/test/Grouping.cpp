@@ -36,7 +36,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Grouping::getCount(session), 1);
 
-            const Grouping::pointer found{ Grouping::find(session, grouping.getId()) };
+            const std::optional<Grouping> found{ Grouping::find(session, grouping.getId()) };
             ASSERT_TRUE(found);
             EXPECT_EQ(found->getName(), "Soundtrack");
         }
@@ -77,13 +77,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Grouping::findOrphanIds(session).size(), 2);
-            EXPECT_EQ(track->getGroupings().size(), 0);
-            EXPECT_EQ(track->getGroupingIds().size(), 0);
+            EXPECT_EQ(Grouping::findIds(session, Grouping::FindParameters{}.setTrack(track.getId())).size(), 0);
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setGroupings(std::array{ grouping1.get() });
+            Track::setGroupings(session, track.getId(), std::array{ grouping1.getId() });
         }
 
         {
@@ -96,14 +95,6 @@ namespace lms::db::tests
             const auto orphans{ Grouping::findOrphanIds(session) };
             ASSERT_EQ(orphans.size(), 1);
             EXPECT_EQ(orphans.front(), grouping2.getId());
-
-            const auto trackGroupings{ track->getGroupings() };
-            ASSERT_EQ(trackGroupings.size(), 1);
-            EXPECT_EQ(trackGroupings.front()->getId(), grouping1.getId());
-
-            const auto trackGroupingIds{ track->getGroupingIds() };
-            ASSERT_EQ(trackGroupingIds.size(), 1);
-            EXPECT_EQ(trackGroupingIds.front(), grouping1.getId());
         }
 
         {
@@ -125,14 +116,14 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setGroupings(std::array{ grouping1.get(), grouping2.get() });
+            Track::setGroupings(session, track.getId(), std::array{ grouping1.getId(), grouping2.getId() });
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(Grouping::findOrphanIds(session).size(), 0);
 
-            const auto trackGroupings{ track->getGroupings() };
+            const auto trackGroupings{ Grouping::findIds(session, Grouping::FindParameters{}.setTrack(track.getId())) };
             EXPECT_EQ(trackGroupings.size(), 2);
         }
 
@@ -174,9 +165,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setGroupings(std::array{ g1.get() });
-            track2.get().modify()->setGroupings(std::array{ g1.get() });
-            track3.get().modify()->setGroupings(std::array{ g2.get() });
+            Track::setGroupings(session, track1.getId(), std::array{ g1.getId() });
+            Track::setGroupings(session, track2.getId(), std::array{ g1.getId() });
+            Track::setGroupings(session, track3.getId(), std::array{ g2.getId() });
         }
 
         {
@@ -185,6 +176,37 @@ namespace lms::db::tests
             ASSERT_EQ(groupings.size(), 2);
             EXPECT_EQ(groupings[0], g1.getId());
             EXPECT_EQ(groupings[1], g2.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Grouping_sortByTrackCount_artist)
+    {
+        ScopedGrouping g1{ session, "Compilation" };
+        ScopedGrouping g2{ session, "Live" };
+        ScopedArtist artist{ session, "MyArtist" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            // linked three times to the same track: it still is a single track, counted per link g1 would come first
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Composer);
+            TrackArtistLink::create(session, track1.getId(), artist.getId(), TrackArtistLinkType::Lyricist);
+            TrackArtistLink::create(session, track2.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track3.getId(), artist.getId(), TrackArtistLinkType::Artist);
+            Track::setGroupings(session, track1.getId(), std::array{ g1.getId() });
+            Track::setGroupings(session, track2.getId(), std::array{ g2.getId() });
+            Track::setGroupings(session, track3.getId(), std::array{ g2.getId() });
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto groupings{ Grouping::findIds(session, Grouping::FindParameters{}.setArtist(artist.getId()).setSortMethod(GroupingSortMethod::TrackCountDesc)) };
+            ASSERT_EQ(groupings.size(), 2);
+            EXPECT_EQ(groupings[0], g2.getId());
+            EXPECT_EQ(groupings[1], g1.getId());
         }
     }
 } // namespace lms::db::tests

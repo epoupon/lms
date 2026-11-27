@@ -22,60 +22,75 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/User.hpp"
-
+#include "DboAccess.hpp"
+#include "RatedReleaseDbo.hpp"
+#include "ReleaseDbo.hpp"
+#include "Session.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::RatedRelease)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::RatedRelease)
 
 namespace lms::db
 {
-    RatedRelease::RatedRelease(ObjectPtr<Release> release, ObjectPtr<User> user)
-        : _release{ getDboPtr(release) }
-        , _user{ getDboPtr(user) }
+    dbo::RatedRelease::RatedRelease(Wt::Dbo::ptr<Release> release, Wt::Dbo::ptr<User> user)
+        : _release{ std::move(release) }
+        , _user{ std::move(user) }
     {
     }
 
-    RatedRelease::pointer RatedRelease::create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user)
+    RatedRelease RatedRelease::create(ISession& session, ReleaseId release, UserId user)
     {
-        return session.getDboSession()->add(std::unique_ptr<RatedRelease>{ new RatedRelease{ release, user } });
+        return utils::addObject(session, std::unique_ptr<dbo::RatedRelease>{ new dbo::RatedRelease{ getDboSession(session)->loadLazy<dbo::Release>(release.getValue()), getDboSession(session)->loadLazy<dbo::User>(user.getValue()) } });
     }
 
-    std::size_t RatedRelease::getCount(Session& session)
+    void RatedRelease::destroy(ISession& session, std::span<const RatedReleaseId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM rated_release"));
+        utils::destroyObjects<dbo::RatedRelease>(session, ids);
     }
 
-    RatedRelease::pointer RatedRelease::find(Session& session, RatedReleaseId id)
+    std::size_t RatedRelease::getCount(ISession& session)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<RatedRelease>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM rated_release"));
     }
 
-    RatedRelease::pointer RatedRelease::find(Session& session, ReleaseId releaseId, UserId userId)
+    std::optional<RatedRelease> RatedRelease::find(ISession& session, RatedReleaseId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<RatedRelease>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
+        checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::RatedRelease>().where("id = ?").bind(id));
     }
 
-    void RatedRelease::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    std::optional<RatedRelease> RatedRelease::find(ISession& session, ReleaseId releaseId, UserId userId)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::RatedRelease>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
+    }
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<RatedRelease>>("SELECT r_r FROM rated_release r_r") };
+    void RatedRelease::find(ISession& session, const FindParameters& params, const std::function<void(const RatedRelease&)>& func)
+    {
+        checkReadTransaction(session);
+
+        auto query{ getDboSession(session)->query<Wt::Dbo::ptr<dbo::RatedRelease>>("SELECT r_r FROM rated_release r_r") };
 
         if (params.user.isValid())
             query.where("r_r.user_id = ?").bind(params.user);
 
-        utils::forEachQueryRangeResult(query, params.range, func);
+        utils::forEachQueryRangeObject(query, params.range, func);
     }
 
     void RatedRelease::setLastUpdated(const Wt::WDateTime& lastUpdated)
     {
         _lastUpdated = utils::normalizeDateTime(lastUpdated);
+    }
+
+    void RatedRelease::update(ISession& session, const RatedRelease& ratedRelease)
+    {
+        utils::updateObject<dbo::RatedRelease>(session, ratedRelease);
     }
 } // namespace lms::db

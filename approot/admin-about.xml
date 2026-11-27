@@ -15,7 +15,7 @@
 								${tr:Lms.Admin.About.version}
 							</div>
 							<div class="col">
-								${version}
+								v${version}
 							</div>
 						</div>
 						<div class="row align-items-center">

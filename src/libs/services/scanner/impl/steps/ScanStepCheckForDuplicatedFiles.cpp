@@ -21,7 +21,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Track.hpp"
 
 #include "ScanContext.hpp"
@@ -38,7 +38,7 @@ namespace lms::scanner
     {
         using namespace db;
 
-        Session& session{ _db.getTLSSession() };
+        ISession& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
         const std::vector<TrackId> tracks = Track::findIdsTrackMBIDDuplicates(session);
@@ -47,7 +47,7 @@ namespace lms::scanner
             if (_abortScan)
                 break;
 
-            const Track::pointer track{ Track::find(session, trackId) };
+            const std::optional<Track> track{ Track::find(session, trackId) };
             if (auto trackMBID{ track->getTrackMBID() })
             {
                 LMS_LOG(DBUPDATER, INFO, "Found duplicated track MBID [" << trackMBID->toString() << "], file: " << track->getAbsoluteFilePath().string() << " - " << track->getName());

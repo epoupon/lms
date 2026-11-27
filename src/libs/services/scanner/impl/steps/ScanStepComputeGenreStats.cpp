@@ -20,7 +20,7 @@
 #include "ScanStepComputeGenreStats.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Genre.hpp"
 
 #include "ScanContext.hpp"
@@ -36,7 +36,7 @@ namespace lms::scanner
     {
         using namespace db;
 
-        Session& dbSession{ _db.getTLSSession() };
+        ISession& dbSession{ _db.getTLSSession() };
 
         const std::size_t genreCount{ [&] {
             auto transaction{ dbSession.createReadTransaction() };
@@ -68,9 +68,10 @@ namespace lms::scanner
 
                 {
                     auto transaction{ dbSession.createWriteTransaction() };
-                    auto genre{ Genre::find(dbSession, genreId) };
-                    genre.modify()->setTrackCount(trackCount);
-                    genre.modify()->setReleaseCount(releaseCount);
+                    std::optional<Genre> genre{ Genre::find(dbSession, genreId) };
+                    genre->setTrackCount(trackCount);
+                    genre->setReleaseCount(releaseCount);
+                    Genre::update(dbSession, *genre);
                 }
 
                 context.currentStepStats.processedElems++;

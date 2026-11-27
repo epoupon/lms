@@ -28,9 +28,11 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/ScanSettings.hpp"
+
+#include "helpers/FileStats.hpp"
 
 #include "scanners/ImageFileScanner.hpp"
 #include "scanners/artistinfo/ArtistInfoFileScanner.hpp"
@@ -87,13 +89,13 @@ namespace lms::scanner
             return current;
         }
 
-        std::optional<ScannerSettings> readScannerSettings(db::Session& session, std::string_view name)
+        std::optional<ScannerSettings> readScannerSettings(db::ISession& session, std::string_view name)
         {
             std::optional<ScannerSettings> settings;
 
             auto transaction{ session.createReadTransaction() };
 
-            const ScanSettings::pointer scanSettings{ ScanSettings::find(session, name) };
+            const std::optional<ScanSettings> scanSettings{ ScanSettings::find(session, name) };
             if (!scanSettings)
                 return settings;
 
@@ -103,11 +105,11 @@ namespace lms::scanner
             settings->startTime = scanSettings->getUpdateStartTime();
             settings->updatePeriod = scanSettings->getUpdatePeriod();
 
-            MediaLibrary::find(session, [&](const MediaLibrary::pointer& mediaLibrary) {
+            MediaLibrary::find(session, [&](const MediaLibrary& mediaLibrary) {
                 MediaLibraryInfo info;
-                info.firstScan = mediaLibrary->isEmpty();
-                info.id = mediaLibrary->getId();
-                info.rootDirectory = mediaLibrary->getPath().lexically_normal();
+                info.firstScan = MediaLibrary::isEmpty(session, mediaLibrary.getId());
+                info.id = mediaLibrary.getId();
+                info.rootDirectory = mediaLibrary.getPath().lexically_normal();
                 info.ignoreRules = loadIgnoreRules(info.rootDirectory / ".lmsignore");
 
                 settings->mediaLibraries.push_back(info);
@@ -136,16 +138,17 @@ namespace lms::scanner
             return settings;
         }
 
-        void writeScannerSettings(db::Session& session, std::string_view name, const ScannerSettings& settings)
+        void writeScannerSettings(db::ISession& session, std::string_view name, const ScannerSettings& settings)
         {
             auto transaction{ session.createWriteTransaction() };
 
-            ScanSettings::pointer scanSettings{ ScanSettings::find(session, name) };
+            std::optional<ScanSettings> scanSettings{ ScanSettings::find(session, name) };
             if (!scanSettings)
-                scanSettings = session.create<ScanSettings>(name);
+                scanSettings = ScanSettings::create(session, name);
 
-            scanSettings.modify()->setAllowMBIDArtistMerge(settings.allowArtistMBIDFallback);
-            scanSettings.modify()->setSkipSingleReleasePlayLists(settings.skipSingleReleasePlayLists);
+            scanSettings->setAllowMBIDArtistMerge(settings.allowArtistMBIDFallback);
+            scanSettings->setSkipSingleReleasePlayLists(settings.skipSingleReleasePlayLists);
+            ScanSettings::update(session, *scanSettings);
             // TODO add more fields
         }
 
@@ -176,20 +179,20 @@ namespace lms::scanner
         _ioService.setThreadCount(1);
 
         LMS_LOG(DBUPDATER, INFO, "Using " << _jobScheduler->getThreadCount() << " thread(s) for jobs");
-        _jobScheduler->setShouldAbortCallback([this]() { return _abortScan; });
+        _jobScheduler->setShouldAbortCallback([this]() { return _abortScan.load(); });
 
         std::size_t totalFileCount{};
         {
             auto& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
-            totalFileCount = session.getFileStats().getTotalFileCount();
+            totalFileCount = helpers::getFileStats(session).getTotalFileCount();
         }
 
         // Force optimize in case scanner aborted during a large import, but do this only if there are enough elements in the database
         // Otherwise, indexes may be not used and queries may be slower and slower while adding more and more elements in the db
         LMS_LOG(DBUPDATER, INFO, "Scanned file count = " << totalFileCount);
         if (totalFileCount >= 1'000)
-            _db.getTLSSession().fullAnalyze();
+            _db.analyze();
 
         refreshTracingLoggerStats();
         refreshScanSettings();
@@ -404,8 +407,8 @@ namespace lms::scanner
 
         {
             auto transaction{ _db.getTLSSession().createReadTransaction() };
-            const db::FileStats stats{ _db.getTLSSession().getFileStats() };
-            LMS_LOG(DBUPDATER, INFO, stats.getTotalFileCount() << " total files: " << stats.artistInfoCount << " artist info, " << stats.imageCount << " images, " << stats.playListCount << " playlists, " << stats.trackCount << " tracks, " << stats.trackLyricsCount << " lyrics");
+            const helpers::FileStats fileStats{ helpers::getFileStats(_db.getTLSSession()) };
+            LMS_LOG(DBUPDATER, INFO, fileStats.getTotalFileCount() << " total files: " << fileStats.artistInfoCount << " artist info, " << fileStats.imageCount << " images, " << fileStats.playListCount << " playlists, " << fileStats.trackCount << " tracks, " << fileStats.trackLyricsCount << " lyrics");
         }
 
         if (!_abortScan)
@@ -460,6 +463,7 @@ namespace lms::scanner
 
                 LMS_LOG(DBUPDATER, DEBUG, "Starting scan step '" << scanStep->getStepName() << "'");
                 notifyInProgress(context.currentStepStats);
+                _lastScanInProgressEmit = {};
                 scanStep->process(context);
                 notifyInProgress(context.currentStepStats);
                 LMS_LOG(DBUPDATER, DEBUG, "Completed scan step '" << scanStep->getStepName() << "'");
@@ -533,7 +537,7 @@ namespace lms::scanner
 
         // Audio extraction scan step must be last as it is the most long running
         if (_settings.extractMusicNNEmbeddings)
-            _scanSteps.emplace_back(std::make_unique<ScanStepExtractMusicNNEmbeddings>(params, _settings.musicnnModelPath, _settings.musicnnMaxPatchCountPerTrack));
+            _scanSteps.emplace_back(std::make_unique<ScanStepExtractMusicNNEmbeddings>(params));
     }
 
     void ScannerService::notifyInProgress(const ScanStepStats& stepStats)

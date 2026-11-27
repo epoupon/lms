@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <latch>
+#include <optional>
 
 #include <boost/asio/bind_executor.hpp>
 #include <boost/asio/dispatch.hpp>
@@ -31,6 +32,7 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
+#include "core/Version.hpp"
 #include "core/http/UrlValidation.hpp"
 
 #include "WtHttpClient.hpp"
@@ -64,6 +66,13 @@ namespace lms::core::http
                 res = stringUtils::readAs<T>(*headerValue);
 
             return res;
+        }
+
+        const std::string& getUserAgent()
+        {
+            // some servers may drop clients that send no User-Agent
+            static const std::string userAgent{ "LMS/" + std::string{ getVersion() } };
+            return userAgent;
         }
     } // namespace
 
@@ -175,11 +184,13 @@ namespace lms::core::http
                 requests.pop_front();
 
                 request->bytesReceived = 0; // reset before each dispatch attempt, including retries
+                if (request->getParameters().onAttemptStarted)
+                    request->getParameters().onAttemptStarted();
 
                 if (!sendRequest(*request))
                 {
                     if (request->getParameters().onFailureFunc)
-                        request->getParameters().onFailureFunc();
+                        request->getParameters().onFailureFunc(std::nullopt);
                     continue;
                 }
 
@@ -213,12 +224,20 @@ namespace lms::core::http
         switch (request.getType())
         {
         case ClientRequest::Type::GET:
-            res = _httpClient->get(url, request.getGETParameters().headers);
-            break;
+            {
+                std::vector<Wt::Http::Message::Header> headers{ request.getGETParameters().headers };
+                headers.emplace_back("User-Agent", getUserAgent());
+                res = _httpClient->get(url, headers);
+                break;
+            }
 
         case ClientRequest::Type::POST:
-            res = _httpClient->post(url, request.getPOSTParameters().message);
-            break;
+            {
+                Wt::Http::Message message{ request.getPOSTParameters().message };
+                message.addHeader("User-Agent", getUserAgent());
+                res = _httpClient->post(url, message);
+                break;
+            }
         }
 
         if (!res)
@@ -306,7 +325,7 @@ namespace lms::core::http
         {
             LOG(ERROR, "Too many retries, giving up operation and throttle");
             if (request->getParameters().onFailureFunc)
-                request->getParameters().onFailureFunc();
+                request->getParameters().onFailureFunc(std::nullopt);
         }
     }
 
@@ -343,7 +362,7 @@ namespace lms::core::http
             {
                 LOG(ERROR, "Send error, status = " << msg.status() << ", body = '" << msg.body() << "'");
                 if (requestParameters.onFailureFunc)
-                    requestParameters.onFailureFunc();
+                    requestParameters.onFailureFunc(msg.status());
             }
         }
 

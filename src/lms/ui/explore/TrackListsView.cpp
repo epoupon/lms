@@ -22,7 +22,7 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/TrackList.hpp"
 
 #include "DropDownMenuSelector.hpp"
@@ -113,7 +113,7 @@ namespace lms::ui
     {
         const db::Range range{ static_cast<std::size_t>(_container->getCount()), _batchSize };
 
-        db::Session& session{ LmsApp->getDbSession() };
+        db::ISession& session{ LmsApp->getDbSession() };
         auto transaction{ session.createReadTransaction() };
 
         db::TrackList::FindParameters params;
@@ -146,19 +146,18 @@ namespace lms::ui
             break;
         }
 
-        const auto trackListIds{ db::TrackList::find(session, params) };
-        for (const db::TrackListId trackListId : trackListIds)
-        {
-            if (const db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), trackListId) })
-                addTracklist(trackList);
-        }
+        std::size_t trackListCount{};
+        db::TrackList::find(session, params, [&](const db::TrackList& trackList) {
+            addTracklist(trackList);
+            ++trackListCount;
+        });
 
-        _container->setHasMore(trackListIds.size() == _batchSize);
+        _container->setHasMore(trackListCount == _batchSize);
     }
 
-    void TrackLists::addTracklist(const db::ObjectPtr<db::TrackList>& trackList)
+    void TrackLists::addTracklist(const db::TrackList& trackList)
     {
-        const db::TrackListId trackListId{ trackList->getId() };
+        const db::TrackListId trackListId{ trackList.getId() };
 
         WTemplate* entry{ _container->addNew<Template>(Wt::WString::tr("Lms.Explore.TrackLists.template.entry")) };
         entry->bindWidget("name", utils::createTrackListAnchor(trackList));

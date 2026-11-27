@@ -22,48 +22,63 @@
 #include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Session.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/User.hpp"
-
+#include "DboAccess.hpp"
+#include "ReleaseDbo.hpp"
+#include "ReleaseFeedbackDbo.hpp"
+#include "Session.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::ReleaseFeedback)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::ReleaseFeedback)
 
 namespace lms::db
 {
-    ReleaseFeedback::ReleaseFeedback(ObjectPtr<Release> release, ObjectPtr<User> user)
-        : _release{ getDboPtr(release) }
-        , _user{ getDboPtr(user) }
+    dbo::ReleaseFeedback::ReleaseFeedback(Wt::Dbo::ptr<Release> release, Wt::Dbo::ptr<User> user)
+        : _release{ std::move(release) }
+        , _user{ std::move(user) }
     {
     }
 
-    ReleaseFeedback::pointer ReleaseFeedback::create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user)
+    ReleaseFeedback ReleaseFeedback::create(ISession& session, ReleaseId release, UserId user)
     {
-        return session.getDboSession()->add(std::unique_ptr<ReleaseFeedback>{ new ReleaseFeedback{ release, user } });
+        return utils::addObject(session, std::unique_ptr<dbo::ReleaseFeedback>{ new dbo::ReleaseFeedback{ getDboSession(session)->loadLazy<dbo::Release>(release.getValue()), getDboSession(session)->loadLazy<dbo::User>(user.getValue()) } });
     }
 
-    std::size_t ReleaseFeedback::getCount(Session& session)
+    void ReleaseFeedback::destroy(ISession& session, std::span<const ReleaseFeedbackId> ids)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM release_feedback"));
+        utils::destroyObjects<dbo::ReleaseFeedback>(session, ids);
     }
 
-    ReleaseFeedback::pointer ReleaseFeedback::find(Session& session, ReleaseFeedbackId id)
+    std::size_t ReleaseFeedback::getCount(ISession& session)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ReleaseFeedback>().where("id = ?").bind(id));
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM release_feedback"));
     }
 
-    ReleaseFeedback::pointer ReleaseFeedback::find(Session& session, ReleaseId releaseId, UserId userId)
+    std::optional<ReleaseFeedback> ReleaseFeedback::find(ISession& session, ReleaseFeedbackId id)
     {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ReleaseFeedback>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
+        checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ReleaseFeedback>().where("id = ?").bind(id));
+    }
+
+    std::optional<ReleaseFeedback> ReleaseFeedback::find(ISession& session, ReleaseId releaseId, UserId userId)
+    {
+        checkReadTransaction(session);
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::ReleaseFeedback>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId));
     }
 
     void ReleaseFeedback::setDateTime(const Wt::WDateTime& dateTime)
     {
         _dateTime = utils::normalizeDateTime(dateTime);
+    }
+
+    void ReleaseFeedback::update(ISession& session, const ReleaseFeedback& releaseFeedback)
+    {
+        utils::updateObject<dbo::ReleaseFeedback>(session, releaseFeedback);
     }
 } // namespace lms::db

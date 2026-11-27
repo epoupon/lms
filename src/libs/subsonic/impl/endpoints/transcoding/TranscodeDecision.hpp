@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <optional>
 #include <string_view>
 #include <vector>
@@ -33,6 +34,13 @@
 namespace lms::api::subsonic
 {
     struct ClientInfo;
+
+    // Bitrate picked when encoding a lossless source to a lossy format and the client sets no limit
+    inline constexpr std::size_t defaultLossyTranscodeBitrate{ 256'000 };
+
+    // Ceiling on a lossy source bitrate reused as the target: re-encoding higher gains nothing,
+    // and some encoders reject higher rates (libopus: 256 kbps per channel)
+    inline constexpr std::size_t maxLossyToLossyTranscodeBitrate{ 256'000 };
 
     namespace detail
     {
@@ -70,7 +78,7 @@ namespace lms::api::subsonic
         };
 
         using TranscodeDecisionResult = std::variant<DirectPlayResult, TranscodeResult, FailureResult>;
-        TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const audio::AudioProperties& source);
+        TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const audio::AudioProperties& source, std::size_t sourceFileBitrate);
 
         std::optional<audio::TranscodeOutputFormat> findAudioFormatByName(std::string_view containerName, std::string_view codecName);
         std::optional<audio::TranscodeOutputFormat> findSupportedTranscodeOutputFormat(std::string_view containerName, std::string_view codecName);

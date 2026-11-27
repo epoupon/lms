@@ -19,10 +19,13 @@
 
 #include "Bookmarks.hpp"
 
-#include "database/Session.hpp"
+#include <array>
+
+#include "database/ISession.hpp"
 #include "database/objects/PlayQueue.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackBookmark.hpp"
+#include "database/objects/TrackList.hpp"
 #include "database/objects/User.hpp"
 
 #include "ParameterParsing.hpp"
@@ -36,18 +39,15 @@ namespace lms::api::subsonic
     {
         auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const auto bookmarkIds{ db::TrackBookmark::find(context.getDbSession(), context.getUser()->getId()) };
-
         Response response{ Response::createOkResponse() };
         Response::Node& bookmarksNode{ response.createNode("bookmarks") };
 
-        for (const db::TrackBookmarkId bookmarkId : bookmarkIds)
-        {
-            const db::TrackBookmark::pointer bookmark{ db::TrackBookmark::find(context.getDbSession(), bookmarkId) };
-            Response::Node bookmarkNode{ createBookmarkNode(bookmark) };
-            bookmarkNode.addChild("entry", createSongNode(context, bookmark->getTrack(), context.getUser()));
+        db::TrackBookmark::find(context.getDbSession(), context.getUser()->getId(), [&](const db::TrackBookmark& bookmark) {
+            Response::Node bookmarkNode{ createBookmarkNode(context.getDbSession(), bookmark) };
+            if (const std::optional<db::Track> track{ db::Track::find(context.getDbSession(), bookmark.getTrackId()) })
+                bookmarkNode.addChild("entry", createSongNode(context, *track));
             bookmarksNode.addArrayChild("bookmark", std::move(bookmarkNode));
-        }
+        });
 
         return response;
     }
@@ -61,18 +61,19 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createWriteTransaction() };
 
-        const db::Track::pointer track{ db::Track::find(context.getDbSession(), trackId) };
+        const std::optional<db::Track> track{ db::Track::find(context.getDbSession(), trackId) };
         if (!track)
             throw RequestedDataNotFoundError{};
 
         // Replace any existing bookmark
-        auto bookmark{ db::TrackBookmark::find(context.getDbSession(), context.getUser()->getId(), trackId) };
+        std::optional<db::TrackBookmark> bookmark{ db::TrackBookmark::find(context.getDbSession(), context.getUser()->getId(), trackId) };
         if (!bookmark)
-            bookmark = context.getDbSession().create<db::TrackBookmark>(context.getUser(), track);
+            bookmark = db::TrackBookmark::create(context.getDbSession(), context.getUser()->getId(), trackId);
 
-        bookmark.modify()->setOffset(std::chrono::milliseconds{ position });
+        bookmark->setOffset(std::chrono::milliseconds{ position });
         if (comment)
-            bookmark.modify()->setComment(*comment);
+            bookmark->setComment(*comment);
+        db::TrackBookmark::update(context.getDbSession(), *bookmark);
 
         return Response::createOkResponse();
     }
@@ -84,48 +85,41 @@ namespace lms::api::subsonic
 
         auto transaction{ context.getDbSession().createWriteTransaction() };
 
-        auto bookmark{ db::TrackBookmark::find(context.getDbSession(), context.getUser()->getId(), trackId) };
+        const std::optional<db::TrackBookmark> bookmark{ db::TrackBookmark::find(context.getDbSession(), context.getUser()->getId(), trackId) };
         if (!bookmark)
             throw RequestedDataNotFoundError{};
 
-        bookmark.remove();
+        db::TrackBookmark::destroy(context.getDbSession(), std::array{ bookmark->getId() });
 
         return Response::createOkResponse();
     }
 
-    static db::PlayQueue::pointer getOrCreatePlayQueue(RequestContext& context)
+    static db::PlayQueue getOrCreatePlayQueue(RequestContext& context)
     {
-        constexpr std::string_view name;
-
-        db::PlayQueue::pointer playQueue;
         {
             auto transaction{ context.getDbSession().createReadTransaction() };
 
-            playQueue = db::PlayQueue::find(context.getDbSession(), context.getUser()->getId(), name);
+            if (std::optional<db::PlayQueue> playQueue{ db::PlayQueue::find(context.getDbSession(), context.getUser()->getId(), db::PlayQueueType::Subsonic) })
+                return *playQueue;
         }
 
-        if (!playQueue)
-        {
-            auto transaction{ context.getDbSession().createWriteTransaction() };
+        auto transaction{ context.getDbSession().createWriteTransaction() };
 
-            playQueue = db::PlayQueue::find(context.getDbSession(), context.getUser()->getId(), name);
-            if (!playQueue)
-            {
-                playQueue = context.getDbSession().create<db::PlayQueue>(context.getUser(), name);
-                playQueue.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
-            }
-        }
+        if (std::optional<db::PlayQueue> playQueue{ db::PlayQueue::find(context.getDbSession(), context.getUser()->getId(), db::PlayQueueType::Subsonic) })
+            return *playQueue;
+
+        db::PlayQueue playQueue{ db::PlayQueue::create(context.getDbSession(), context.getUser()->getId(), db::PlayQueueType::Subsonic) };
+        playQueue.setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+        db::PlayQueue::update(context.getDbSession(), playQueue);
 
         return playQueue;
     }
 
-    // PlayQueue makes use of a dedicated internal playlist
     static Response handleGetPlayQueueCommon(RequestContext& context, bool byIndex)
     {
         Response response{ Response::createOkResponse() };
 
-        const db::PlayQueue::pointer playQueue{ getOrCreatePlayQueue(context) };
-        assert(playQueue);
+        const db::PlayQueue playQueue{ getOrCreatePlayQueue(context) };
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
@@ -133,21 +127,27 @@ namespace lms::api::subsonic
 
         // mandatory fields
         playQueueNode.setAttribute("username", context.getUser()->getLoginName());
-        playQueueNode.setAttribute("changed", core::stringUtils::toISO8601String(playQueue->getLastModifiedDateTime()));
+        playQueueNode.setAttribute("changed", core::stringUtils::toISO8601String(playQueue.getLastModifiedDateTime()));
         playQueueNode.setAttribute("changedBy", ""); // we don't store the client name (could be several same clients on several devices...)
 
         // optional fields
-        if (!playQueue->isEmpty())
+        if (!db::TrackList::isEmpty(context.getDbSession(), playQueue.getTrackListId()))
         {
             if (byIndex)
-                playQueueNode.setAttribute("index", playQueue->getCurrentIndex());
-            else if (const db::Track::pointer currentTrack{ playQueue->getTrackAtCurrentIndex() })
-                playQueueNode.setAttribute("current", idToString(currentTrack->getId()));
+            {
+                playQueueNode.setAttribute("index", playQueue.getCurrentIndex());
+            }
+            else
+            {
+                const auto currentTrackIds{ db::Track::findIds(context.getDbSession(), db::Track::FindParameters{}.setTrackList(playQueue.getTrackListId()).setRange(db::Range{ playQueue.getCurrentIndex(), 1 })) };
+                if (!currentTrackIds.empty())
+                    playQueueNode.setAttribute("current", idToString(currentTrackIds.front()));
+            }
 
-            playQueueNode.setAttribute("position", std::chrono::duration_cast<std::chrono::milliseconds>(playQueue->getCurrentPositionInTrack()).count());
+            playQueueNode.setAttribute("position", std::chrono::duration_cast<std::chrono::milliseconds>(playQueue.getCurrentPositionInTrack()).count());
 
-            playQueue->visitTracks([&](const db::Track::pointer& track) {
-                playQueueNode.addArrayChild("entry", createSongNode(context, track, true /* id3 */));
+            db::Track::find(context.getDbSession(), db::Track::FindParameters{}.setTrackList(playQueue.getTrackListId()), [&](const db::Track& track) {
+                playQueueNode.addArrayChild("entry", createSongNode(context, track));
             });
         }
 
@@ -169,29 +169,36 @@ namespace lms::api::subsonic
         std::vector<db::TrackId> trackIds{ getMultiParametersAs<db::TrackId>(context.getParameters(), "id") };
         const std::optional<db::TrackId> currentTrackId{ byIndex ? std::nullopt : getParameterAs<db::TrackId>(context.getParameters(), "current") };
         const std::optional<std::size_t> currentIndex{ byIndex ? getParameterAs<std::size_t>(context.getParameters(), "currentIndex") : std::nullopt };
-        const std::chrono::milliseconds currentPositionInTrack{ getParameterAs<std::size_t>(context.getParameters(), "current").value_or(0) };
+        const std::chrono::milliseconds currentPositionInTrack{ getParameterAs<std::size_t>(context.getParameters(), "position").value_or(0) };
 
-        db::PlayQueue::pointer playQueue{ getOrCreatePlayQueue(context) };
-        assert(playQueue);
+        db::PlayQueue playQueue{ getOrCreatePlayQueue(context) };
 
         {
             auto transaction{ context.getDbSession().createWriteTransaction() };
 
             // no id means we clear the play queue (see https://github.com/opensubsonic/open-subsonic-api/pull/106)
-            playQueue.modify()->clear();
+            db::TrackList::clear(context.getDbSession(), playQueue.getTrackListId());
 
+            playQueue.setCurrentIndex(0);
+            bool currentFound{};
+            bool currentSkipped{};
             std::size_t currentPlayQueueIndex{};
             std::size_t currentTrackIndex{};
             for (db::TrackId trackId : trackIds)
             {
-                if (const db::Track::pointer track{ db::Track::find(context.getDbSession(), trackId) })
+                if (const std::optional<db::Track> track{ db::Track::find(context.getDbSession(), trackId) })
                 {
-                    playQueue.modify()->addTrack(track);
+                    db::TrackListEntry::create(context.getDbSession(), trackId, playQueue.getTrackListId());
 
-                    if ((currentTrackId && *currentTrackId == track->getId())
-                        || (currentIndex && *currentIndex == currentTrackIndex))
+                    // "current" is a track id: when the track is queued several times, take its first occurrence
+                    // "currentIndex" may point to an unknown track: resume on the next known one
+                    if (!currentFound
+                        && ((currentTrackId && *currentTrackId == track->getId())
+                            || (currentIndex && currentTrackIndex >= *currentIndex)))
                     {
-                        playQueue.modify()->setCurrentIndex(currentPlayQueueIndex);
+                        playQueue.setCurrentIndex(currentPlayQueueIndex);
+                        currentFound = true;
+                        currentSkipped = currentIndex && currentTrackIndex != *currentIndex;
                     }
 
                     currentPlayQueueIndex++;
@@ -200,8 +207,10 @@ namespace lms::api::subsonic
                 currentTrackIndex++;
             }
 
-            playQueue.modify()->setCurrentPositionInTrack(currentPositionInTrack);
-            playQueue.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+            // The position only applies to the requested current track
+            playQueue.setCurrentPositionInTrack(currentFound && !currentSkipped ? currentPositionInTrack : std::chrono::milliseconds{ 0 });
+            playQueue.setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+            db::PlayQueue::update(context.getDbSession(), playQueue);
         }
 
         return Response::createOkResponse();

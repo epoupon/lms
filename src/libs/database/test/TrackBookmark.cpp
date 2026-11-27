@@ -35,13 +35,15 @@ namespace lms::db::tests
             EXPECT_EQ(TrackBookmark::getCount(session), 0);
         }
 
-        ScopedTrackBookmark bookmark{ session, user.lockAndGet(), track.lockAndGet() };
+        ScopedTrackBookmark bookmark{ session, user.getId(), track.getId() };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            bookmark.get().modify()->setComment("MyComment");
-            bookmark.get().modify()->setOffset(std::chrono::milliseconds{ 5 });
+            std::optional<TrackBookmark> updatedBookmark{ bookmark.get() };
+            updatedBookmark->setComment("MyComment");
+            updatedBookmark->setOffset(std::chrono::milliseconds{ 5 });
+            TrackBookmark::update(session, *updatedBookmark);
         }
 
         {
@@ -49,16 +51,17 @@ namespace lms::db::tests
 
             EXPECT_EQ(TrackBookmark::getCount(session), 1);
 
-            const auto bookmarks{ TrackBookmark::find(session, user.getId()) };
-            ASSERT_EQ(bookmarks.size(), 1);
-            EXPECT_EQ(bookmarks.front(), bookmark.getId());
+            std::vector<TrackBookmarkId> visitedIds;
+            TrackBookmark::find(session, user.getId(), [&](const TrackBookmark& userBookmark) { visitedIds.push_back(userBookmark.getId()); });
+            ASSERT_EQ(visitedIds.size(), 1);
+            EXPECT_EQ(visitedIds.front(), bookmark.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
 
             auto userBookmark{ TrackBookmark::find(session, user.getId(), track.getId()) };
             ASSERT_TRUE(userBookmark);
-            EXPECT_EQ(userBookmark, bookmark.get());
+            EXPECT_EQ(userBookmark->getId(), bookmark.getId());
 
             EXPECT_EQ(userBookmark->getOffset(), std::chrono::milliseconds{ 5 });
             EXPECT_EQ(userBookmark->getComment(), "MyComment");

@@ -25,6 +25,7 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WCheckBox.h>
 #include <Wt/WContainerWidget.h>
+#include <Wt/WDateTime.h>
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
@@ -35,7 +36,8 @@
 #include "core/EnumSet.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
+#include "database/objects/Listen.hpp"
 #include "database/objects/User.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
@@ -60,39 +62,56 @@ namespace lms::ui
                 loadData();
             }
 
-            void saveData()
+            // turning scrobbling on while there are existing listens that could be sent
+            bool needsExportChoice() const
+            {
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+
+                if (LmsApp->getUser().getScrobblingBackends().contains(db::ScrobblingBackend::LastFm) || Wt::asNumber(value(EnableScrobblingField)) == 0)
+                    return false;
+
+                return !db::Listen::findIds(LmsApp->getDbSession(), db::Listen::FindParameters{}.setUser(LmsApp->getUserId()).setRange(db::Range{ 0, 1 })).empty();
+            }
+
+            // exportSince only matters when turning scrobbling on
+            void saveData(const Wt::WDateTime& exportSince)
             {
                 db::UserId userId;
                 bool scrobblingTurnedOn{};
+                bool scrobblingTurnedOff{};
 
                 {
                     auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-                    db::User::pointer user{ LmsApp->getUser() };
-                    userId = user->getId();
+                    db::User user{ LmsApp->getUser() };
+                    userId = user.getId();
 
-                    const bool wasScrobblingEnabled{ user->getScrobblingBackends().contains(db::ScrobblingBackend::LastFm) };
+                    const bool wasScrobblingEnabled{ user.getScrobblingBackends().contains(db::ScrobblingBackend::LastFm) };
                     const bool scrobblingEnabled{ Wt::asNumber(value(EnableScrobblingField)) != 0 };
 
-                    core::EnumSet<db::ScrobblingBackend> scrobblingBackends{ user->getScrobblingBackends() };
+                    core::EnumSet<db::ScrobblingBackend> scrobblingBackends{ user.getScrobblingBackends() };
                     if (scrobblingEnabled)
                         scrobblingBackends.insert(db::ScrobblingBackend::LastFm);
                     else
                         scrobblingBackends.erase(db::ScrobblingBackend::LastFm);
-                    user.modify()->setScrobblingBackends(scrobblingBackends);
+                    user.setScrobblingBackends(scrobblingBackends);
+                    db::User::update(LmsApp->getDbSession(), user);
 
                     scrobblingTurnedOn = !wasScrobblingEnabled && scrobblingEnabled;
+                    scrobblingTurnedOff = wasScrobblingEnabled && !scrobblingEnabled;
                 }
 
                 if (scrobblingTurnedOn)
-                    core::Service<scrobbling::IScrobblingService>::get()->requestImmediateExport(userId, db::ScrobblingBackend::LastFm);
+                    core::Service<scrobbling::IScrobblingService>::get()->requestImmediateExport(userId, db::ScrobblingBackend::LastFm, exportSince);
+                else if (scrobblingTurnedOff)
+                    core::Service<scrobbling::IScrobblingService>::get()->resetExports(userId, db::ScrobblingBackend::LastFm);
             }
 
             void loadData()
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                const db::User::pointer user{ LmsApp->getUser() };
+                const db::User user{ LmsApp->getUser() };
 
-                setValue(EnableScrobblingField, user->getScrobblingBackends().contains(db::ScrobblingBackend::LastFm));
+                setValue(EnableScrobblingField, user.getScrobblingBackends().contains(db::ScrobblingBackend::LastFm));
             }
         };
     } // namespace
@@ -123,15 +142,31 @@ namespace lms::ui
 
         t->setFormWidget(LastFmSettingsModel::EnableScrobblingField, std::make_unique<Wt::WCheckBox>());
 
-        utils::bindSaveDiscardButtons(t, model.get(), [model, this] { 
-            model->saveData(); updateAccountCardVisibility(); }, [model] { model->loadData(); });
+        const auto save{ [model, this](const Wt::WDateTime& exportSince) {
+            model->saveData(exportSince);
+            updateAccountCardVisibility();
+        } };
+
+        utils::bindSaveDiscardButtons(
+            t, model.get(),
+            [model, save] {
+                if (model->needsExportChoice())
+                {
+                    utils::showExportListensModal(Wt::WString::tr("Lms.Settings.lastfm"), save);
+                    return false;
+                }
+
+                save(Wt::WDateTime{});
+                return true;
+            },
+            [model] { model->loadData(); });
         t->updateView(model.get());
     }
 
     void LastFmSettingsView::updateAccountCardVisibility()
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-        _accountCard->setHidden(!LmsApp->getUser()->getScrobblingBackends().contains(db::ScrobblingBackend::LastFm));
+        _accountCard->setHidden(!LmsApp->getUser().getScrobblingBackends().contains(db::ScrobblingBackend::LastFm));
     }
 
     void LastFmSettingsView::refreshAccountCard()
@@ -144,7 +179,7 @@ namespace lms::ui
 
         const bool linked{ [&] {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            return !LmsApp->getUser()->getLastFmSessionKey().empty();
+            return !LmsApp->getUser().getLastFmSessionKey().empty();
         }() };
 
         lastFmCard->setCondition("if-linked", linked);
@@ -162,7 +197,9 @@ namespace lms::ui
                     .connect(this, [this, modalPtr] {
                         {
                             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-                            LmsApp->getUser().modify()->setLastFmSessionKey("");
+                            db::User user{ LmsApp->getUser() };
+                            user.setLastFmSessionKey("");
+                            db::User::update(LmsApp->getDbSession(), user);
                         }
                         LmsApp->getModalManager().dispose(modalPtr);
                         refreshView();
@@ -193,10 +230,10 @@ namespace lms::ui
         // pre-fill from DB if credentials already exist
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            const db::User::pointer user{ LmsApp->getUser() };
-            if (const auto key{ user->getLastFmApiKey() }; !key.empty())
+            const db::User user{ LmsApp->getUser() };
+            if (const auto key{ user.getLastFmApiKey() }; !key.empty())
                 apiKeyEdit->setValueText(Wt::WString::fromUTF8(std::string{ key }));
-            if (const auto secret{ user->getLastFmApiSecret() }; !secret.empty())
+            if (const auto secret{ user.getLastFmApiSecret() }; !secret.empty())
                 apiSecretEdit->setValueText(Wt::WString::fromUTF8(std::string{ secret }));
         }
 
@@ -223,7 +260,7 @@ namespace lms::ui
 
             if (apiKey.empty() || apiSecret.empty())
             {
-                LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.lastfm-missing-credentials"));
+                LmsApp->notifyMsg(notification::Type::Warning, Wt::WString::tr("Lms.Settings.lastfm-missing-credentials"));
                 return;
             }
 
@@ -246,7 +283,7 @@ namespace lms::ui
                 },
                 [sessionId] {
                     LmsApplication::post(sessionId, [] {
-                        LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.lastfm-auth-error"));
+                        LmsApp->notifyMsg(notification::Type::Warning, Wt::WString::tr("Lms.Settings.lastfm-auth-error"));
                         wApp->triggerUpdate();
                     });
                 });
@@ -259,17 +296,19 @@ namespace lms::ui
             core::Service<scrobbling::IScrobblingService>::get()->continueLastFmLink(
                 userId,
                 [sessionId, userId, modalPtr, this] {
-                    core::Service<scrobbling::IScrobblingService>::get()->requestImmediateExport(userId, db::ScrobblingBackend::LastFm);
+                    // older listens were already queued as chosen when the backend was turned on: just send them now
+                    core::Service<scrobbling::IScrobblingService>::get()->requestImmediateExport(userId, db::ScrobblingBackend::LastFm, Wt::WDateTime::currentDateTime());
                     LmsApplication::post(sessionId, [sessionId, modalPtr, this] {
                         LmsApp->getModalManager().dispose(modalPtr);
                         refreshView();
                         wApp->triggerUpdate();
-                        LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.export-started"));
+                        if (utils::hasPendingExports(db::ScrobblingBackend::LastFm))
+                            LmsApp->notifyMsg(notification::Type::Info, Wt::WString::tr("Lms.Settings.export-started"));
                     });
                 },
                 [sessionId] {
                     LmsApplication::post(sessionId, [] {
-                        LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.lastfm-auth-error"));
+                        LmsApp->notifyMsg(notification::Type::Warning, Wt::WString::tr("Lms.Settings.lastfm-auth-error"));
                         wApp->triggerUpdate();
                     });
                 });

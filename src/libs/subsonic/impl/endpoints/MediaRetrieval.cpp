@@ -21,12 +21,13 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <chrono>
 
+#include "core/Ascii.hpp"
 #include "core/FileResourceHandlerCreator.hpp"
 #include "core/ILogger.hpp"
 #include "core/IResourceHandler.hpp"
-#include "core/String.hpp"
 #include "core/media/Codec.hpp"
 #include "core/media/Container.hpp"
 #include "core/media/MimeType.hpp"
@@ -34,7 +35,7 @@
 #include "audio/ITranscoder.hpp"
 #include "audio/TranscodeTypes.hpp"
 
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/PodcastEpisodeId.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackLyrics.hpp"
@@ -50,6 +51,7 @@
 #include "SubsonicResponse.hpp"
 #include "responses/Lyrics.hpp"
 #include "transcoding/AudioFileInfo.hpp"
+#include "transcoding/TranscodeDecision.hpp"
 
 namespace lms::api::subsonic
 {
@@ -72,7 +74,7 @@ namespace lms::api::subsonic
         const SupportedTranscodeFormat* selectSupportedTranscodeOutputFormatByLegacyName(std::string_view legacyFormatName)
         {
             const auto it{ std::find_if(std::cbegin(supportedTranscodeFormats), std::cend(supportedTranscodeFormats), [&](const SupportedTranscodeFormat& candidate) {
-                return core::stringUtils::stringCaseInsensitiveEqual(candidate.legacyName, legacyFormatName)
+                return core::ascii::caseInsensitiveEqual(candidate.legacyName, legacyFormatName)
                     && audio::isEncodingSupported(candidate.format.container, candidate.format.codec);
             }) };
             if (it == std::cend(supportedTranscodeFormats))
@@ -117,6 +119,8 @@ namespace lms::api::subsonic
             const bool estimateContentLength{ getParameterAs<bool>(context.getParameters(), "estimateContentLength").value_or(false) };
 
             const AudioFileInfo audioFileInfo{ getAudioFileInfo(context.getDbSession(), audioId) };
+            const std::size_t sourceBitrate{ audioFileInfo.audioProperties.bitrate.value_or(audioFileInfo.fileBitrate) };
+            assert(sourceBitrate > 0); // an unknown audio bitrate always comes with a known file size
 
             StreamParameters parameters;
             parameters.audioProperties = audioFileInfo.audioProperties;
@@ -136,6 +140,7 @@ namespace lms::api::subsonic
                     LMS_LOG(API_SUBSONIC, ERROR, "Format '" << format << "' is not available (unrecognized name, or not supported by this build): ignoring");
             }
 
+            assert(context.getUser()); // must be authenticated here
             if (!requestedFormat && context.getUser()->getSubsonicEnableTranscodingByDefault())
             {
                 if (const auto* found{ selectSupportedTranscodeOutputFormatByDbFormat(context.getUser()->getSubsonicDefaultTranscodingOutputFormat()) })
@@ -148,15 +153,15 @@ namespace lms::api::subsonic
                 if (!core::media::getCodecDesc(audioFileInfo.audioProperties.codec).isLossless && maxBitRate > 0)
                     throw BadParameterGenericError{ "maxBitRate", "Cannot limit bitrate when requesting a lossless format from a lossy source" };
 
-                if (core::media::getCodecDesc(audioFileInfo.audioProperties.codec).isLossless && maxBitRate > 0 && audioFileInfo.audioProperties.bitrate > maxBitRate)
-                    throw BadParameterGenericError{ "maxBitRate", "Cannot honor maxBitRate, source is lossless with higher bitrate (" + std::to_string(audioFileInfo.audioProperties.bitrate) + " bps)" };
+                if (core::media::getCodecDesc(audioFileInfo.audioProperties.codec).isLossless && maxBitRate > 0 && sourceBitrate > maxBitRate)
+                    throw BadParameterGenericError{ "maxBitRate", "Cannot honor maxBitRate, source is lossless with higher bitrate (" + std::to_string(sourceBitrate) + " bps)" };
 
                 // we accept to transcode from a lossy format to a lossless one
             }
 
-            if (!requestedFormat && (maxBitRate == 0 || audioFileInfo.audioProperties.bitrate <= maxBitRate))
+            if (!requestedFormat && (maxBitRate == 0 || audioFileInfo.fileBitrate <= maxBitRate))
             {
-                LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate (" << audioFileInfo.audioProperties.bitrate << " bps) is compatible with parameters => no transcoding");
+                LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate (" << audioFileInfo.fileBitrate << " bps) is compatible with parameters => no transcoding");
                 return parameters; // no transcoding needed
             }
 
@@ -165,9 +170,9 @@ namespace lms::api::subsonic
             if (requestedFormat && requestedFormat->format.container == audioFileInfo.audioProperties.container && requestedFormat->format.codec == audioFileInfo.audioProperties.codec)
             {
                 //  same codec => check if compatible with max bitrate
-                if (maxBitRate == 0 || audioFileInfo.audioProperties.bitrate <= maxBitRate)
+                if (maxBitRate == 0 || audioFileInfo.fileBitrate <= maxBitRate)
                 {
-                    LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate (" << audioFileInfo.audioProperties.bitrate << " bps) and format are compatible with parameters => no transcoding");
+                    LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate (" << audioFileInfo.fileBitrate << " bps) and format are compatible with parameters => no transcoding");
                     return parameters; // no transcoding needed
                 }
 
@@ -197,8 +202,8 @@ namespace lms::api::subsonic
                 }
                 else
                 {
-                    bitrate = audioFileInfo.audioProperties.bitrate;
-                    LMS_LOG(API_SUBSONIC, DEBUG, "Source is lossy, selecting source bitrate (" << *bitrate << " bps) for transcoding");
+                    bitrate = std::min<std::size_t>(sourceBitrate, maxLossyToLossyTranscodeBitrate);
+                    LMS_LOG(API_SUBSONIC, DEBUG, "Source is lossy, selecting source bitrate capped to " << maxLossyToLossyTranscodeBitrate << " bps (" << *bitrate << " bps) for transcoding");
                 }
 
                 if (maxBitRate > 0) // Honor provided maxBitRate, if any
@@ -247,7 +252,7 @@ namespace lms::api::subsonic
             lyricsParams.setSortMethod(db::TrackLyricsSortMethod::ExternalFirst);
             lyricsParams.setRange(db::Range{ 0, 1 });
 
-            db::TrackLyrics::find(context.getDbSession(), lyricsParams, [&](const db::TrackLyrics::pointer& lyrics) {
+            db::TrackLyrics::find(context.getDbSession(), lyricsParams, [&](const db::TrackLyrics& lyrics) {
                 response.addNode("lyrics", createLyricsNode(context, lyrics));
             });
         }
@@ -265,7 +270,7 @@ namespace lms::api::subsonic
         lyricsList.createEmptyArrayChild("structuredLyrics");
 
         auto transaction{ context.getDbSession().createReadTransaction() };
-        const db::Track::pointer track{ db::Track::find(context.getDbSession(), id) };
+        const std::optional<db::Track> track{ db::Track::find(context.getDbSession(), id) };
         if (track)
         {
             db::TrackLyrics::FindParameters params;
@@ -273,7 +278,7 @@ namespace lms::api::subsonic
             params.setExternal(true); // First try to only report external lyrics as they are often duplicate of embedded lyrics and support more features
 
             bool hasExternalLyrics{};
-            db::TrackLyrics::find(context.getDbSession(), params, [&](const db::TrackLyrics::pointer& lyrics) {
+            db::TrackLyrics::find(context.getDbSession(), params, [&](const db::TrackLyrics& lyrics) {
                 lyricsList.addArrayChild("structuredLyrics", createStructuredLyricsNode(context, lyrics));
                 hasExternalLyrics = true;
             });
@@ -281,7 +286,7 @@ namespace lms::api::subsonic
             if (!hasExternalLyrics)
             {
                 params.setExternal(false);
-                db::TrackLyrics::find(context.getDbSession(), params, [&](const db::TrackLyrics::pointer& lyrics) {
+                db::TrackLyrics::find(context.getDbSession(), params, [&](const db::TrackLyrics& lyrics) {
                     lyricsList.addArrayChild("structuredLyrics", createStructuredLyricsNode(context, lyrics));
                 });
             }

@@ -29,7 +29,8 @@
 
 #include "core/TaggedType.hpp"
 
-#include "database/Object.hpp"
+#include "database/Types.hpp"
+#include "database/objects/PlayQueueId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
 
@@ -38,7 +39,6 @@
 namespace lms::db
 {
     class Track;
-    class TrackList;
     class TrackListEntry;
 } // namespace lms::db
 
@@ -81,10 +81,12 @@ namespace lms::ui
         std::size_t getCount();
 
     private:
-        void initTrackLists();
+        void initPlayQueue();
+        void saveCurrentIndex(std::size_t index);
 
         void notifyAddedTracks(std::size_t nbAddedTracks) const;
-        db::ObjectPtr<db::TrackList> getQueue() const;
+        std::vector<db::TrackListEntry> getEntries(db::Range range) const;
+        std::optional<db::TrackListEntry> getEntry(std::size_t pos) const;
         bool isFull() const;
 
         void clearTracks();
@@ -92,7 +94,7 @@ namespace lms::ui
         std::vector<db::TrackId> getAndClearTracksFrom(std::size_t pos);
         void advanceTrack(ResetNextPlayPos resetNextPlayPos);
         void addSome();
-        void addEntry(const db::ObjectPtr<db::TrackListEntry>& entry);
+        void addEntry(const db::TrackListEntry& entry);
         void enqueueRadioTracksIfNeeded();
         void enqueueRadioTracks();
         void updateInfo();
@@ -103,7 +105,7 @@ namespace lms::ui
         void loadTrack(std::size_t pos, bool play, ResetNextPlayPos resetNextPlayPos = ResetNextPlayPos{ true });
         void stop();
 
-        std::optional<float> getReplayGain(std::size_t pos, const db::ObjectPtr<db::Track>& track) const;
+        std::optional<float> getReplayGain(std::size_t pos, const db::Track& track) const;
         void saveAsTrackList();
 
         void exportToNewTrackList(const Wt::WString& name);
@@ -114,7 +116,8 @@ namespace lms::ui
 
         Filters& _filters;
         bool _mediaPlayerSettingsLoaded{};
-        db::TrackListId _queueId{};
+        db::PlayQueueId _playQueueId{};
+        db::TrackListId _trackListId{};
         InfiniteScrollingContainer* _entriesContainer{};
         Wt::WText* _nbTracks{};
         Wt::WText* _duration{};

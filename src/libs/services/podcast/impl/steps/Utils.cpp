@@ -24,40 +24,40 @@
 
 #include "core/ILogger.hpp"
 #include "core/UUID.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/Podcast.hpp"
 
 namespace lms::podcast::utils
 {
-    std::filesystem::path getPodcastRelativePath(const db::Podcast::pointer& podcast)
+    std::filesystem::path getPodcastRelativePath(const db::Podcast& podcast)
     {
-        assert(podcast);
-        return podcast->getId().toString();
+        return podcast.getId().toString();
     }
 
-    db::Artwork::pointer createArtworkFromImage(db::Session& session, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
+    std::optional<db::Artwork> createArtworkFromImage(db::ISession& session, const std::filesystem::path& filePath, const image::ImageProperties& probedImage)
     {
         std::error_code ec;
         const auto fileSize{ std::filesystem::file_size(filePath, ec) };
         if (ec)
         {
             LMS_LOG(PODCAST, ERROR, "Failed to get file size of " << filePath << ": " << ec.message());
-            return db::Artwork::pointer{};
+            return std::nullopt;
         }
 
-        db::Image::pointer image{ session.create<db::Image>(filePath) };
-        image.modify()->setFileSize(static_cast<std::size_t>(fileSize));
+        db::Image image{ db::Image::create(session, filePath) };
+        image.setFileSize(static_cast<std::size_t>(fileSize));
         if (probedImage.dimensions)
         {
-            image.modify()->setWidth(probedImage.dimensions->width);
-            image.modify()->setHeight(probedImage.dimensions->height);
+            image.setWidth(probedImage.dimensions->width);
+            image.setHeight(probedImage.dimensions->height);
         }
-        image.modify()->setLastWriteTime(Wt::WDateTime::currentDateTime());
-        image.modify()->setFormat(probedImage.format);
+        image.setLastWriteTime(Wt::WDateTime::currentDateTime());
+        image.setFormat(probedImage.format);
+        db::Image::update(session, image);
 
-        return session.create<db::Artwork>(image);
+        return db::Artwork::create(session, image.getId());
     }
 
     std::string generateRandomFileName()
@@ -68,10 +68,10 @@ namespace lms::podcast::utils
     void removeFile(const std::filesystem::path& filePath)
     {
         std::error_code ec;
-        std::filesystem::remove(filePath, ec);
+        const bool removed{ std::filesystem::remove(filePath, ec) };
         if (ec)
             LMS_LOG(PODCAST, WARNING, "Failed to remove file " << filePath << ": " << ec.message());
-        else
+        else if (removed)
             LMS_LOG(PODCAST, DEBUG, "Removed file " << filePath);
     }
 } // namespace lms::podcast::utils

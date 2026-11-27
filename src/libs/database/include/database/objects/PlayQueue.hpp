@@ -20,78 +20,58 @@
 #pragma once
 
 #include <chrono>
-#include <string>
-#include <string_view>
+#include <optional>
+#include <span>
+#include <vector>
 
-#include <Wt/Dbo/Field.h>
-#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
-#include "database/Object.hpp"
-#include "database/objects/TrackId.hpp"
+#include "database/objects/PlayQueueId.hpp"
+#include "database/objects/TrackListId.hpp"
+#include "database/objects/Types.hpp"
 #include "database/objects/UserId.hpp"
-
-LMS_DECLARE_IDTYPE(PlayQueueId)
+#include "database/objects/detail/Object.hpp"
 
 namespace lms::db
 {
-    class Session;
-    class Track;
-    class User;
+    class ISession;
 
-    // Usage only for subsonic API
-    class PlayQueue final : public Object<PlayQueue, PlayQueueId>
+    // PlayQueue is a tracklist + a cursor on an internal track list
+    class PlayQueue : public detail::Object<PlayQueue, PlayQueueId>
     {
     public:
-        PlayQueue() = default;
+        static PlayQueue create(ISession& session, UserId user, PlayQueueType type);
+        static void destroy(ISession& session, std::span<const PlayQueueId> ids);
 
-        static std::size_t getCount(Session& session);
-        static pointer find(Session& session, PlayQueueId playQueueId);
-        static pointer find(Session& session, UserId userId, std::string_view name);
+        static std::size_t getCount(ISession& session);
+        static std::optional<PlayQueue> find(ISession& session, PlayQueueId playQueueId);
+        static std::optional<PlayQueue> find(ISession& session, UserId userId, PlayQueueType type);
+        static std::vector<PlayQueueId> findIds(ISession& session, UserId userId);
+
+        static void update(ISession& session, const PlayQueue& playQueue);
 
         // Accessors
-        std::string_view getName() const { return _name; }
+        PlayQueueType getType() const { return _type; }
+        TrackListId getTrackListId() const { return _trackListId; }
         std::size_t getCurrentIndex() const { return _currentIndex; }
         std::chrono::milliseconds getCurrentPositionInTrack() const { return _currentPositionInTrack; }
-        ObjectPtr<User> getUser() const { return _user; }
-        ObjectPtr<Track> getTrack(std::size_t index) const;
-        ObjectPtr<Track> getTrackAtCurrentIndex() const;
-        // Get tracks, ordered by position
-        std::vector<TrackId> getTrackIds() const;
-        void visitTracks(const std::function<void(const ObjectPtr<Track>& track)>& visitor) const;
+        UserId getUserId() const { return _userId; }
         Wt::WDateTime getLastModifiedDateTime() const { return _lastModifiedDateTime; }
-        bool isEmpty() const { return _tracks.empty(); }
 
         // Modifiers
         void setCurrentIndex(std::size_t index) { _currentIndex = index; }
         void setCurrentPositionInTrack(std::chrono::milliseconds position) { _currentPositionInTrack = position; }
-        void clear();
-        void addTrack(const ObjectPtr<Track>& track);
         void setLastModifiedDateTime(const Wt::WDateTime& lastModified) { _lastModifiedDateTime = lastModified; }
 
-        template<class Action>
-        void persist(Action& a)
-        {
-            Wt::Dbo::field(a, _name, "name");
-            Wt::Dbo::field(a, _currentIndex, "current_index");
-            Wt::Dbo::field(a, _currentPositionInTrack, "current_position_in_track");
-            Wt::Dbo::field(a, _lastModifiedDateTime, "last_modified_date_time");
+    protected:
+        PlayQueue() = default;
+        explicit PlayQueue(PlayQueueType type);
 
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "playqueue_track", "", Wt::Dbo::OnDeleteCascade);
-        }
-
-    private:
-        friend class Session;
-        PlayQueue(const ObjectPtr<User>& user, std::string_view name);
-        static pointer create(Session& session, const ObjectPtr<User>& user, std::string_view name);
-
-        std::string _name;
+        PlayQueueType _type{ PlayQueueType::UI };
         int _currentIndex{};
         std::chrono::duration<int, std::milli> _currentPositionInTrack{};
         Wt::WDateTime _lastModifiedDateTime;
-
-        Wt::Dbo::ptr<User> _user;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
+        UserId _userId;
+        TrackListId _trackListId;
     };
 } // namespace lms::db

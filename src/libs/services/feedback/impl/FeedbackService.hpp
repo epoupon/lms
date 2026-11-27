@@ -71,6 +71,7 @@ namespace lms::feedback
 
         void requestImmediateImport(db::UserId userId, db::FeedbackBackend backend) override;
         void requestImmediateExport(db::UserId userId, db::FeedbackBackend backend) override;
+        void resetExports(db::UserId userId, db::FeedbackBackend backend) override;
 
         core::EnumSet<db::FeedbackBackend> getUserFeedbackBackends(db::UserId userId);
         void markPendingExports(db::UserId userId, db::FeedbackBackend backend);

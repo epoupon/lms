@@ -21,60 +21,69 @@
 
 #include <Wt/Dbo/Impl.h>
 
-#include "database/Session.hpp"
-#include "database/objects/Genre.hpp"
-#include "database/objects/Grouping.hpp"
-#include "database/objects/Language.hpp"
-#include "database/objects/Mood.hpp"
-#include "database/objects/Track.hpp"
-#include "database/objects/User.hpp"
-
+#include "DboAccess.hpp"
+#include "Session.hpp"
+#include "TrackBookmarkDbo.hpp"
+#include "TrackDbo.hpp"
+#include "UserDbo.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 
-DBO_INSTANTIATE_TEMPLATES(lms::db::TrackBookmark)
+LMS_DB_INSTANTIATE_OBJECT(lms::db::TrackBookmark)
 
 namespace lms::db
 {
-    TrackBookmark::TrackBookmark(ObjectPtr<User> user, ObjectPtr<Track> track)
-        : _user{ getDboPtr(user) }
-        , _track{ getDboPtr(track) }
+    dbo::TrackBookmark::TrackBookmark(Wt::Dbo::ptr<User> user, Wt::Dbo::ptr<Track> track)
+        : _user{ std::move(user) }
+        , _track{ std::move(track) }
     {
     }
 
-    TrackBookmark::pointer TrackBookmark::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track)
+    TrackBookmark TrackBookmark::create(ISession& session, UserId user, TrackId track)
     {
-        return session.getDboSession()->add(std::unique_ptr<TrackBookmark>{ new TrackBookmark{ user, track } });
+        return utils::addObject(session, std::unique_ptr<dbo::TrackBookmark>{ new dbo::TrackBookmark{ getDboSession(session)->loadLazy<dbo::User>(user.getValue()), getDboSession(session)->loadLazy<dbo::Track>(track.getValue()) } });
     }
 
-    std::size_t TrackBookmark::getCount(Session& session)
+    void TrackBookmark::destroy(ISession& session, std::span<const TrackBookmarkId> ids)
     {
-        session.checkReadTransaction();
-
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_bookmark"));
+        utils::destroyObjects<dbo::TrackBookmark>(session, ids);
     }
 
-    std::vector<TrackBookmarkId> TrackBookmark::find(Session& session, UserId userId, std::optional<Range> range)
+    std::size_t TrackBookmark::getCount(ISession& session)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        auto query{ session.getDboSession()->query<TrackBookmarkId>("SELECT id from track_bookmark").where("user_id = ?").bind(userId) };
-
-        return utils::execRangeQuery<TrackBookmarkId>(query, range);
+        return utils::fetchQuerySingleResult(getDboSession(session)->query<int>("SELECT COUNT(*) FROM track_bookmark"));
     }
 
-    TrackBookmark::pointer TrackBookmark::find(Session& session, UserId userId, TrackId trackId)
+    void TrackBookmark::find(ISession& session, UserId userId, const std::function<void(const TrackBookmark&)>& func)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackBookmark>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId));
+        auto query{ getDboSession(session)->find<dbo::TrackBookmark>().where("user_id = ?").bind(userId) };
+
+        utils::forEachQueryObject(query, func);
     }
 
-    TrackBookmark::pointer TrackBookmark::find(Session& session, TrackBookmarkId id)
+    std::optional<TrackBookmark> TrackBookmark::find(ISession& session, UserId userId, TrackId trackId)
     {
-        session.checkReadTransaction();
+        checkReadTransaction(session);
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackBookmark>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackBookmark>().where("user_id = ?").bind(userId).where("track_id = ?").bind(trackId));
     }
 
+    std::optional<TrackBookmark> TrackBookmark::find(ISession& session, TrackBookmarkId id)
+    {
+        checkReadTransaction(session);
+
+        if (!id.isValid())
+            return std::nullopt;
+
+        return utils::fetchQuerySingleObject(getDboSession(session)->find<dbo::TrackBookmark>().where("id = ?").bind(id));
+    }
+
+    void TrackBookmark::update(ISession& session, const TrackBookmark& trackBookmark)
+    {
+        utils::updateObject<dbo::TrackBookmark>(session, trackBookmark);
+    }
 } // namespace lms::db

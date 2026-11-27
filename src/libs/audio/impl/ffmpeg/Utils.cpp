@@ -83,7 +83,7 @@ namespace lms::audio::ffmpeg::utils
 
         void avLogCallback(void*, int level, const char* fmt, va_list vl)
         {
-            if (!core::Service<core::logging::ILogger>::get() || core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
+            if (!core::Service<core::logging::ILogger>::get() || !core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
                 return;
 
             if (level > AV_LOG_WARNING)
@@ -141,6 +141,17 @@ namespace lms::audio::ffmpeg::utils
             AudioFormatCapability{ .format = { core::media::Container::ASF, core::media::Codec::WMA9Lossless }, .demuxerNames = { "asf" }, .muxerNames = { "asf", "asf_stream" } },
             AudioFormatCapability{ .format = { core::media::Container::DSF, core::media::Codec::DSD }, .demuxerNames = { "dsf" }, .muxerNames = { "dsf" } },
             AudioFormatCapability{ .format = { core::media::Container::FLAC, core::media::Codec::FLAC }, .demuxerNames = { "flac" }, .muxerNames = { "flac" } },
+            AudioFormatCapability{ .format = { core::media::Container::Matroska, core::media::Codec::AAC }, .demuxerNames = { "matroska" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::Matroska, core::media::Codec::AC3 }, .demuxerNames = { "matroska" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::Matroska, core::media::Codec::ALAC }, .demuxerNames = { "matroska" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::Matroska, core::media::Codec::EAC3 }, .demuxerNames = { "matroska" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::Matroska, core::media::Codec::FLAC }, .demuxerNames = { "matroska" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::Matroska, core::media::Codec::MP3 }, .demuxerNames = { "matroska" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::Matroska, core::media::Codec::Opus }, .demuxerNames = { "matroska" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::Matroska, core::media::Codec::PCM }, .demuxerNames = { "matroska" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::Matroska, core::media::Codec::TrueAudio }, .demuxerNames = { "matroska" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::Matroska, core::media::Codec::Vorbis }, .demuxerNames = { "matroska" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::Matroska, core::media::Codec::WavPack }, .demuxerNames = { "matroska" }, .muxerNames = {} },
             AudioFormatCapability{ .format = { core::media::Container::MP4, core::media::Codec::AAC }, .demuxerNames = { "mp4" }, .muxerNames = {} },
             AudioFormatCapability{ .format = { core::media::Container::MP4, core::media::Codec::ALAC }, .demuxerNames = { "mp4" }, .muxerNames = {} },
             AudioFormatCapability{ .format = { core::media::Container::MP4, core::media::Codec::AC3 }, .demuxerNames = { "mp4" }, .muxerNames = {} },
@@ -158,6 +169,9 @@ namespace lms::audio::ffmpeg::utils
             AudioFormatCapability{ .format = { core::media::Container::TrueAudio, core::media::Codec::TrueAudio }, .demuxerNames = { "tta" }, .muxerNames = { "tta" } },
             AudioFormatCapability{ .format = { core::media::Container::WAV, core::media::Codec::PCM }, .demuxerNames = { "wav" }, .muxerNames = { "wav" } },
             AudioFormatCapability{ .format = { core::media::Container::WavPack, core::media::Codec::WavPack }, .demuxerNames = { "wv" }, .muxerNames = { "wv" } },
+            // Same demuxer as Matroska: keep after the Matroska entries so that FFmpeg reports Matroska for both (WebM is a subset)
+            AudioFormatCapability{ .format = { core::media::Container::WebM, core::media::Codec::Opus }, .demuxerNames = { "matroska" }, .muxerNames = {} },
+            AudioFormatCapability{ .format = { core::media::Container::WebM, core::media::Codec::Vorbis }, .demuxerNames = { "matroska" }, .muxerNames = {} },
         };
 
         const AVInputFormat* findFirstAvailableDemuxer(const CandidateNames& names)

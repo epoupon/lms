@@ -28,7 +28,7 @@
 
 #include "core/Md5.hpp"
 #include "core/String.hpp"
-#include "database/Session.hpp"
+#include "database/ISession.hpp"
 #include "database/objects/User.hpp"
 
 namespace lms::scrobbling::lastFm::utils
@@ -52,12 +52,12 @@ namespace lms::scrobbling::lastFm::utils
         }
     } // namespace
 
-    LastFmCredentials getLastFmCredentials(db::Session& session, db::UserId userId)
+    LastFmCredentials getLastFmCredentials(db::ISession& session, db::UserId userId)
     {
         LastFmCredentials creds;
 
         auto transaction{ session.createReadTransaction() };
-        if (const db::User::pointer user{ db::User::find(session, userId) })
+        if (const std::optional<db::User> user{ db::User::find(session, userId) })
         {
             creds.apiKey = user->getLastFmApiKey();
             creds.apiSecret = user->getLastFmApiSecret();
