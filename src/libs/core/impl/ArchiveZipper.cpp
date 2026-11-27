@@ -122,9 +122,6 @@ namespace lms::zip
         if (::archive_write_set_option(_archive.get(), "zip", "compression", "deflate") != ARCHIVE_OK)
             throw ArchiveException{ _archive.get() };
 
-        if (::archive_write_set_option(_archive.get(), "zip", "hdrcharset", "UTF-8") != ARCHIVE_OK)
-            throw ArchiveException{ _archive.get() };
-
         int res{ ::archive_write_open(_archive.get(), this, archiveOpen, archiveWrite, archiveClose) };
         if (res != ARCHIVE_OK)
             throw ArchiveException{ _archive.get() };
@@ -154,11 +151,7 @@ namespace lms::zip
 
                     _currentArchiveEntry = createArchiveEntry(*_currentEntry);
                     _currentEntryOffset = 0;
-                    const int res{ ::archive_write_header(_archive.get(), _currentArchiveEntry.get()) };
-                    // a name that is not valid UTF-8 is written as is: better than failing the whole archive
-                    if (res == ARCHIVE_WARN)
-                        LMS_LOG(UTILS, WARNING, "Archive entry '" << _currentEntry->fileName << "': " << ArchiveException::getError(_archive.get()));
-                    else if (res != ARCHIVE_OK)
+                    if (::archive_write_header(_archive.get(), _currentArchiveEntry.get()) != ARCHIVE_OK)
                         throw ArchiveException{ _archive.get() };
                 }
 
@@ -242,7 +235,8 @@ namespace lms::zip
             if (!archiveEntry)
                 throw Exception{ "Cannot create archive entry control struct" };
 
-            ::archive_entry_set_pathname_utf8(archiveEntry.get(), entry.fileName.c_str());
+            // raw bytes, without the zip UTF-8 flag: libarchive only sets it by converting names through the locale charset, which fails for non-ASCII names in the "C" locale on musl
+            ::archive_entry_set_pathname(archiveEntry.get(), entry.fileName.c_str());
             ::archive_entry_set_size(archiveEntry.get(), std::filesystem::file_size(entry.filePath));
             ::archive_entry_set_mode(archiveEntry.get(), permsToMode(std::filesystem::status(entry.filePath).permissions()));
             ::archive_entry_set_filetype(archiveEntry.get(), AE_IFREG);

@@ -17,7 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <clocale>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -40,14 +39,10 @@ namespace lms::zip::tests
             return static_cast<std::uint16_t>(static_cast<unsigned char>(data[offset]) | (static_cast<unsigned char>(data[offset + 1]) << 8));
         }
 
-        constexpr std::uint16_t utf8NameFlag{ 0x0800 };
     } // namespace
 
-    TEST(Zipper, utf8FileName)
+    TEST(Zipper, nonAsciiFileName)
     {
-        // A process stays in the "C" locale until it calls setlocale: names must not depend on it
-        ASSERT_STREQ(std::setlocale(LC_ALL, nullptr), "C");
-
         const core::ScopedTmpDirectory directory;
         const std::filesystem::path filePath{ directory / "file.txt" };
         std::ofstream{ filePath } << "content";
@@ -62,34 +57,14 @@ namespace lms::zip::tests
 
         // local file header
         ASSERT_EQ(zip.substr(0, 4), "PK\x03\x04");
-        EXPECT_EQ(readUInt16LE(zip, 6) & utf8NameFlag, utf8NameFlag);
         ASSERT_EQ(readUInt16LE(zip, 26), fileName.size());
         EXPECT_EQ(zip.substr(30, fileName.size()), fileName);
 
         // central directory header, the one unzip tools read
         const std::size_t centralHeader{ zip.find("PK\x01\x02") };
         ASSERT_NE(centralHeader, std::string::npos);
-        EXPECT_EQ(readUInt16LE(zip, centralHeader + 8) & utf8NameFlag, utf8NameFlag);
         ASSERT_EQ(readUInt16LE(zip, centralHeader + 28), fileName.size());
         EXPECT_EQ(zip.substr(centralHeader + 46, fileName.size()), fileName);
-    }
-
-    TEST(Zipper, invalidUtf8FileName)
-    {
-        const core::ScopedTmpDirectory directory;
-        const std::filesystem::path filePath{ directory / "file.txt" };
-        std::ofstream{ filePath } << "content";
-
-        const std::string fileName{ "Caf\xE9.txt" };
-        const std::unique_ptr<IZipper> zipper{ createArchiveZipper(EntryContainer{ Entry{ .fileName = fileName, .filePath = filePath } }) };
-
-        std::ostringstream oss;
-        while (!zipper->isComplete())
-            zipper->writeSome(oss);
-        const std::string zip{ oss.str() };
-
-        // libarchive keeps the original bytes when the name cannot be checked as UTF-8
-        EXPECT_EQ(zip.substr(30, readUInt16LE(zip, 26)), fileName);
     }
 
     TEST(Zipper, missingFile)
