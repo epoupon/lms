@@ -23,6 +23,6 @@ namespace lms::core
 {
     std::string_view getVersion()
     {
-        return "v" "@LMS_VERSION@";
+        return "@LMS_VERSION@";
     }
 } // namespace lms::core

@@ -17,6 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <optional>
 #include <span>
 #include <thread>
@@ -47,21 +48,22 @@ namespace lms::core::http::tests
                 };
                 Type type;
                 std::string url;
+                std::vector<Wt::Http::Message::Header> headers;
             };
 
             void setFollowRedirect(bool) override {}
             void setTimeout(std::chrono::steady_clock::duration) override {}
             void setMaximumResponseSize(std::size_t) override {}
 
-            bool get(const std::string& url, const std::vector<Wt::Http::Message::Header>&) override
+            bool get(const std::string& url, const std::vector<Wt::Http::Message::Header>& headers) override
             {
-                _calls.push_back(Call{ .type = Call::Type::Get, .url = url });
+                _calls.push_back(Call{ .type = Call::Type::Get, .url = url, .headers = headers });
                 return true;
             }
 
-            bool post(const std::string& url, const Wt::Http::Message&) override
+            bool post(const std::string& url, const Wt::Http::Message& message) override
             {
-                _calls.push_back(Call{ .type = Call::Type::Post, .url = url });
+                _calls.push_back(Call{ .type = Call::Type::Post, .url = url, .headers = message.headers() });
                 return true;
             }
 
@@ -158,6 +160,34 @@ namespace lms::core::http::tests
         EXPECT_TRUE(successCalled);
         EXPECT_FALSE(failureCalled);
         EXPECT_EQ(_httpClient->getCalls().size(), 1u);
+    }
+
+    TEST_F(SendQueueTest, UserAgentAddedToRequests)
+    {
+        ClientGETRequestParameters getParams;
+        getParams.relativeUrl = "/get";
+        getParams.headers.emplace_back("Authorization", "Token foo");
+        _queue->sendRequest(std::make_unique<ClientRequest>(std::move(getParams)));
+        pump();
+
+        ClientPOSTRequestParameters postParams;
+        postParams.relativeUrl = "/post";
+        _queue->sendRequest(std::make_unique<ClientRequest>(std::move(postParams)));
+        Wt::Http::Message okMsg;
+        okMsg.setStatus(200);
+        _httpClient->simulateDone({}, okMsg);
+        pump();
+
+        ASSERT_EQ(_httpClient->getCalls().size(), 2u);
+        for (const StubWtHttpClient::Call& call : _httpClient->getCalls())
+        {
+            const auto userAgent{ std::ranges::find(call.headers, "User-Agent", &Wt::Http::Message::Header::name) };
+            ASSERT_NE(userAgent, call.headers.end()) << call.url;
+            EXPECT_TRUE(userAgent->value().starts_with("LMS/")) << userAgent->value();
+        }
+
+        const std::vector<Wt::Http::Message::Header>& getHeaders{ _httpClient->getCalls()[0].headers };
+        EXPECT_NE(std::ranges::find(getHeaders, "Authorization", &Wt::Http::Message::Header::name), getHeaders.end());
     }
 
     TEST_F(SendQueueTest, StreamTruncatedButVerifiedComplete)
