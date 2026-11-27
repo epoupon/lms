@@ -75,6 +75,7 @@ namespace lms::scrobbling
         std::optional<TimedListen> recordListen(const Listen& listen, const Wt::WDateTime& listenedAt, std::optional<std::chrono::seconds> duration);
 
         void insertNowPlayingEntry(const Listen& listen);
+        Wt::WDateTime takeListenStartDateTime(const Listen& listen);
 
         db::IDb& _db;
         std::unordered_map<db::ScrobblingBackend, std::unique_ptr<IScrobblingBackend>> _scrobblingBackends;
@@ -87,6 +88,7 @@ namespace lms::scrobbling
             Clock::time_point startedAt;
             Clock::time_point expiryAt;
             db::TrackId trackId;
+            bool listenRecorded{}; // so that playing the track again starts a new listen
         };
         std::unordered_map<db::UserId, NowPlayingEntry> _nowPlayingEntries;
     };

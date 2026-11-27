@@ -71,7 +71,7 @@ namespace lms::scrobbling
 
     void ScrobblingService::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
     {
-        const std::optional<TimedListen> recordedListen{ recordListen(listen, Wt::WDateTime::currentDateTime(), duration) };
+        const std::optional<TimedListen> recordedListen{ recordListen(listen, takeListenStartDateTime(listen), duration) };
         if (!recordedListen)
             return;
 
@@ -261,8 +261,32 @@ namespace lms::scrobbling
 
             std::unique_lock lock{ _nowPlayingEntriesMutex };
 
+            // Players report the track again when resuming after a pause: keep when it started
+            const auto it{ _nowPlayingEntries.find(listen.userId) };
+            const bool isResume{ it != _nowPlayingEntries.end() && it->second.trackId == listen.trackId && !it->second.listenRecorded && it->second.expiryAt > now };
+
             // Add an extra delay to ensure the listen is not purged too early
-            _nowPlayingEntries.insert_or_assign(listen.userId, NowPlayingEntry{ .startedAt = now, .expiryAt = now + track->getDuration() + std::chrono::seconds{ 5 }, .trackId = listen.trackId });
+            _nowPlayingEntries.insert_or_assign(listen.userId, NowPlayingEntry{ .startedAt = isResume ? it->second.startedAt : now, .expiryAt = now + track->getDuration() + std::chrono::seconds{ 5 }, .trackId = listen.trackId, .listenRecorded = false });
         }
+    }
+
+    // Listens are dated when they started playing, as Last.fm and ListenBrainz expect. Dated now if the start of this track was not reported (or too long ago)
+    Wt::WDateTime ScrobblingService::takeListenStartDateTime(const Listen& listen)
+    {
+        const Clock::time_point now{ Clock::now() };
+        const std::chrono::system_clock::time_point systemNow{ std::chrono::system_clock::now() };
+
+        std::unique_lock lock{ _nowPlayingEntriesMutex };
+
+        const auto it{ _nowPlayingEntries.find(listen.userId) };
+        if (it == _nowPlayingEntries.end())
+            return Wt::WDateTime{ systemNow };
+
+        NowPlayingEntry& entry{ it->second };
+        if (entry.trackId != listen.trackId || entry.listenRecorded || entry.expiryAt <= now)
+            return Wt::WDateTime{ systemNow };
+
+        entry.listenRecorded = true;
+        return Wt::WDateTime{ systemNow - std::chrono::duration_cast<std::chrono::system_clock::duration>(now - entry.startedAt) };
     }
 } // namespace lms::scrobbling
